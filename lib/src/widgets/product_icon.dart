@@ -1,69 +1,80 @@
 import 'package:flutter/material.dart';
+import 'package:sinwar_shoping/src/themes/light_color.dart';
 import 'package:sinwar_shoping/src/widgets/title_text.dart';
 
+import '../design/app_colors.dart';
+import '../design/app_spacing.dart';
+import '../design/app_text_styles.dart';
 import '../model/category.dart';
-import '../themes/light_color.dart';
 import '../themes/theme.dart';
 import 'extentions.dart';
+import '../shared/widgets/app_image.dart';
 
 class ProductIcon extends StatelessWidget {
   // final String imagePath;
   // final String text;
   final ValueChanged<Categories>? onSelected;
   final Categories model;
-  const ProductIcon({super.key, required this.model, this.onSelected});
+  final String? label;
+  const ProductIcon({
+    super.key,
+    required this.model,
+    this.onSelected,
+    this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
     return model.id == null
-        ? Container(width: 5)
+        ? const SizedBox(width: AppSpacing.xs)
         : Container(
-            margin: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-            child:
-                Container(
-                  padding: AppTheme.hPadding,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
+            margin: AppSpacing.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.xl,
+            ),
+            child: Container(
+              padding: AppTheme.hPadding,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius:
+                    BorderRadius.all(Radius.circular(AppSpacing.radiusLg)),
+                color: model.isSelected
+                    ? Theme.of(context).colorScheme.surface
+                    : AppColors.transparent,
+                border: Border.all(
+                  color: model.isSelected
+                      ? AppColors.accentOrange
+                      : Theme.of(context).dividerColor,
+                  width: model.isSelected
+                      ? AppSpacing.borderThick
+                      : AppSpacing.borderThin,
+                ),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
                     color: model.isSelected
-                        ? LightColor.background
-                        : Colors.transparent,
-                    border: Border.all(
-                      color: model.isSelected
-                          ? LightColor.orange
-                          : LightColor.grey,
-                      width: model.isSelected ? 2 : 1,
+                        ? AppColors.highlightSoft
+                        : AppColors.white,
+                    blurRadius: AppSpacing.jumbo,
+                    spreadRadius: AppSpacing.sm,
+                    offset: const Offset(AppSpacing.sm, AppSpacing.sm),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: <Widget>[
+                  model.image != null
+                      ? AppImage(path: model.image!)
+                      : const SizedBox.shrink(),
+                  if ((label ?? model.name) != null)
+                    TitleText(
+                      text: label ?? model.name!,
+                      style: AppTextStyles.titleSmall(context), fontSize: 24, color: LightColor.iconColor,
                     ),
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: model.isSelected
-                            ? Color(0xfffbf2ef)
-                            : Colors.white,
-                        blurRadius: 10,
-                        spreadRadius: 5,
-                        offset: Offset(5, 5),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      model.image != null
-                          ? Image.asset(model.image!)
-                          : SizedBox(),
-                      model.name == null
-                          ? Container()
-                          : Container(
-                              child: TitleText(
-                                text: model.name,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                              ),
-                            ),
-                    ],
-                  ),
-                ).ripple(() {
-                  onSelected?.call(model);
-                }, borderRadius: BorderRadius.all(Radius.circular(10))),
+                ],
+              ),
+            ).ripple(() {
+              onSelected?.call(model);
+            }, borderRadius: BorderRadius.all(Radius.circular(AppSpacing.radiusLg))),
           );
   }
 }

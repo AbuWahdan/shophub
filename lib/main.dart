@@ -1,26 +1,48 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:sinwar_shoping/src/config/route.dart';
+import 'package:sinwar_shoping/src/l10n/app_localizations.dart';
+import 'package:sinwar_shoping/src/state/app_settings.dart';
 import 'package:sinwar_shoping/src/themes/theme.dart';
 
-void main() => runApp(MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppSettings.load();
+  runApp(const MyApp());
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ShopHub - E-Commerce',
-      theme: AppTheme.lightTheme.copyWith(
-        textTheme: GoogleFonts.mulishTextTheme(Theme.of(context).textTheme),
-      ),
-      darkTheme: AppTheme.darkTheme.copyWith(
-        textTheme: GoogleFonts.mulishTextTheme(Theme.of(context).textTheme),
-      ),
-      debugShowCheckedModeBanner: false,
-      routes: Routes.getRoute(),
-      initialRoute: '/',
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: AppSettings.themeMode,
+      builder: (context, themeMode, child) {
+        return ValueListenableBuilder<Locale?>(
+          valueListenable: AppSettings.locale,
+          builder: (context, locale, child) {
+            return MaterialApp(
+              onGenerateTitle: (context) =>
+                  AppLocalizations.of(context).appTitle,
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: themeMode,
+              locale: locale,
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              debugShowCheckedModeBanner: false,
+              routes: Routes.getRoute(),
+              initialRoute: '/',
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../config/app_constants.dart';
+import '../design/app_colors.dart';
+import '../design/app_spacing.dart';
+import '../design/app_text_styles.dart';
+import '../l10n/l10n.dart';
 import '../model/data.dart';
 import '../model/product.dart';
-import '../themes/light_color.dart';
+import '../shared/dialogs/app_dialogs.dart';
+import '../shared/widgets/app_button.dart';
+import '../shared/widgets/empty_state.dart';
+import '../shared/widgets/app_image.dart';
+import '../shared/widgets/quantity_stepper.dart';
 import '../themes/theme.dart';
 
 class ShoppingCartPage extends StatefulWidget {
@@ -76,38 +85,22 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   }
 
   void _showRemoveConfirmation(int index) {
-    showDialog(
+    final l10n = context.l10n;
+    AppDialogs.showConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Remove Item'),
-        content: const Text('Remove this item from your cart?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      title: l10n.cartRemoveItemTitle,
+      message: l10n.cartRemoveItemMessage,
+      confirmLabel: l10n.commonRemove,
+      cancelLabel: l10n.commonCancel,
+      onConfirm: () {
+        _removeItem(index);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.cartItemRemoved),
+            duration: const Duration(seconds: 2),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _removeItem(index);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Item removed from cart'),
-                  duration: const Duration(seconds: 2),
-                  action: SnackBarAction(
-                    label: 'Undo',
-                    onPressed: () {
-                      // Could implement undo here
-                    },
-                  ),
-                ),
-              );
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -118,10 +111,12 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     bool hasDiscount = product.discountPrice != null;
 
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+      ),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: AppSpacing.insetsMd,
         child: Column(
           children: [
             Row(
@@ -129,15 +124,15 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
               children: [
                 // Product Image
                 Container(
-                  width: 80,
-                  height: 80,
+                  width: AppSpacing.imageMd,
+                  height: AppSpacing.imageMd,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    color: Theme.of(context).colorScheme.surface,
                   ),
-                  child: Image.asset(product.images[0], fit: BoxFit.cover),
+                  child: AppImage(path: product.images[0], fit: BoxFit.cover),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 // Product Info
                 Expanded(
                   child: Column(
@@ -147,34 +142,27 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                         product.name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
+                        style: AppTextStyles.titleMedium(context),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.xs),
                       // Price Display
-                      Row(
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.xs,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
                             '\$${product.finalPrice.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: LightColor.skyBlue,
-                              fontSize: 14,
-                            ),
+                            style: AppTextStyles.labelLarge(context)
+                                .copyWith(color: AppColors.primary),
                           ),
-                          if (hasDiscount) ...[
-                            const SizedBox(width: 8),
+                          if (hasDiscount)
                             Text(
                               '\$${product.price.toStringAsFixed(2)}',
-                              style: TextStyle(
+                              style: AppTextStyles.bodySmall(context).copyWith(
                                 decoration: TextDecoration.lineThrough,
-                                color: Colors.grey,
-                                fontSize: 12,
                               ),
                             ),
-                          ],
                         ],
                       ),
                     ],
@@ -182,75 +170,44 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                 ),
                 // Delete Button
                 IconButton(
-                  icon: const Icon(Icons.close, size: 20),
+                  icon: const Icon(Icons.close, size: AppSpacing.iconMd),
                   onPressed: () => _showRemoveConfirmation(index),
-                  color: Colors.grey,
+                  color: Theme.of(context).colorScheme.onSurface,
                   constraints: const BoxConstraints(),
                   padding: EdgeInsets.zero,
                 ),
               ],
             ),
-            const Divider(height: 16),
+            const Divider(height: AppSpacing.lg),
             // Quantity Selector
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Quantity'),
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey[300]!),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove, size: 18),
-                        onPressed: quantity > 1
-                            ? () => _updateQuantity(index, quantity - 1)
-                            : null,
-                        constraints: const BoxConstraints(
-                          minWidth: 36,
-                          minHeight: 36,
-                        ),
-                        padding: EdgeInsets.zero,
-                      ),
-                      SizedBox(
-                        width: 40,
-                        child: Center(
-                          child: Text(
-                            '$quantity',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add, size: 18),
-                        onPressed: quantity < 10
-                            ? () => _updateQuantity(index, quantity + 1)
-                            : null,
-                        constraints: const BoxConstraints(
-                          minWidth: 36,
-                          minHeight: 36,
-                        ),
-                        padding: EdgeInsets.zero,
-                      ),
-                    ],
-                  ),
+                Text(context.l10n.cartQuantity,
+                    style: AppTextStyles.bodyMedium(context)),
+                QuantityStepper(
+                  value: quantity,
+                  onDecrement: quantity > 1
+                      ? () => _updateQuantity(index, quantity - 1)
+                      : null,
+                  onIncrement: quantity < AppConstants.checkoutMaxQuantity
+                      ? () => _updateQuantity(index, quantity + 1)
+                      : null,
                 ),
               ],
             ),
-            const Divider(height: 16),
+            const Divider(height: AppSpacing.lg),
             // Item Total
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Item Total', style: TextStyle(color: Colors.grey)),
+                Text(
+                  context.l10n.cartItemTotal,
+                  style: AppTextStyles.bodySmall(context),
+                ),
                 Text(
                   '\$${itemTotal.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                  style: AppTextStyles.labelLarge(context),
                 ),
               ],
             ),
@@ -261,35 +218,17 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   }
 
   Widget _buildEmptyCart() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.grey[300]),
-          const SizedBox(height: 16),
-          Text(
-            'Your Cart is Empty',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Add items to get started',
-            style: TextStyle(color: Colors.grey[500]),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () {
-              // Navigate to home/shopping
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            },
-            icon: const Icon(Icons.shopping_bag),
-            label: const Text('Start Shopping'),
-          ),
-        ],
+    return EmptyState(
+      icon: Icons.shopping_cart_outlined,
+      title: context.l10n.cartEmptyTitle,
+      message: context.l10n.cartEmptyMessage,
+      action: AppButton(
+        label: context.l10n.cartStartShopping,
+        onPressed: () {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        },
+        leading: const Icon(Icons.shopping_bag),
+        fullWidth: false,
       ),
     );
   }
@@ -310,90 +249,80 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Shopping Cart'),
+        title: Text(context.l10n.cartTitle),
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
-      body: Column(
-        children: [
-          // Cart Items
-          Expanded(
-            child: cartItems.isEmpty
-                ? _buildEmptyCart()
-                : SingleChildScrollView(
-                    padding: AppTheme.padding,
-                    child: _cartItems(),
-                  ),
-          ),
-          // Price Summary & Checkout
-          if (cartItems.isNotEmpty)
-            Container(
+      body: cartItems.isEmpty
+          ? _buildEmptyCart()
+          : ListView(
               padding: AppTheme.padding,
-              decoration: BoxDecoration(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                border: Border(
-                  top: BorderSide(color: Colors.grey[200]!, width: 1),
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Price Breakdown
-                  _buildPriceSummaryRow(
-                    'Subtotal',
-                    '\$${originalPrice.toStringAsFixed(2)}',
-                  ),
-                  const SizedBox(height: 8),
-                  if (totalDiscount > 0)
-                    _buildPriceSummaryRow(
-                      'Discount',
-                      '-\$${totalDiscount.toStringAsFixed(2)}',
-                      isDiscount: true,
+              children: [
+                _cartItems(),
+                const SizedBox(height: AppSpacing.hero),
+              ],
+            ),
+      bottomNavigationBar: cartItems.isEmpty
+          ? null
+          : SafeArea(
+              child: Container(
+                padding: AppTheme.padding,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  border: Border(
+                    top: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: AppSpacing.borderThin,
                     ),
-                  if (totalDiscount > 0) const SizedBox(height: 8),
-                  _buildPriceSummaryRow('Shipping', 'Free', isHighlight: true),
-                  const Divider(height: 16),
-                  // Total
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Total',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text(
-                        '\$${totalPrice.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: LightColor.skyBlue,
-                        ),
-                      ),
-                    ],
                   ),
-                  const SizedBox(height: 16),
-                  // Checkout Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildPriceSummaryRow(
+                      context.l10n.cartSubtotal,
+                      '\$${originalPrice.toStringAsFixed(2)}',
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    if (totalDiscount > 0)
+                      _buildPriceSummaryRow(
+                        context.l10n.cartDiscount,
+                        '-\$${totalDiscount.toStringAsFixed(2)}',
+                        isDiscount: true,
+                      ),
+                    if (totalDiscount > 0)
+                      const SizedBox(height: AppSpacing.sm),
+                    _buildPriceSummaryRow(
+                      context.l10n.cartShipping,
+                      context.l10n.cartShippingFree,
+                      isHighlight: true,
+                    ),
+                    const Divider(height: AppSpacing.lg),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          context.l10n.cartTotal,
+                          style: AppTextStyles.titleMedium(context),
+                        ),
+                        Text(
+                          '\$${totalPrice.toStringAsFixed(2)}',
+                          style: AppTextStyles.titleLarge(context)
+                              .copyWith(color: AppColors.primary),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppButton(
+                      label: context.l10n.cartCheckout,
                       onPressed: () {
                         Navigator.pushNamed(context, '/checkout');
                       },
-                      child: const Text(
-                        'Proceed to Checkout',
-                        style: TextStyle(fontSize: 16),
-                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-        ],
-      ),
     );
   }
 
@@ -408,17 +337,17 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
       children: [
         Text(
           label,
-          style: TextStyle(
-            color: isHighlight ? LightColor.skyBlue : Colors.grey[600],
-            fontWeight: isHighlight ? FontWeight.w600 : FontWeight.normal,
-          ),
+          style: isHighlight
+              ? AppTextStyles.labelLarge(context)
+                  .copyWith(color: AppColors.primary)
+              : AppTextStyles.bodySmall(context),
         ),
         Text(
           value,
-          style: TextStyle(
-            color: isDiscount ? LightColor.skyBlue : Colors.grey[600],
-            fontWeight: isDiscount ? FontWeight.w600 : FontWeight.normal,
-          ),
+          style: isDiscount
+              ? AppTextStyles.labelLarge(context)
+                  .copyWith(color: AppColors.primary)
+              : AppTextStyles.bodySmall(context),
         ),
       ],
     );

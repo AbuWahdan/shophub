@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
-import '../themes/light_color.dart';
+
+import '../design/app_colors.dart';
+import '../design/app_spacing.dart';
+import '../design/app_text_styles.dart';
+import '../l10n/l10n.dart';
+import '../shared/dialogs/app_dialogs.dart';
+import '../shared/widgets/app_button.dart';
+import '../shared/widgets/section_header.dart';
+import '../state/app_settings.dart';
 import '../themes/theme.dart';
 
 class ProfileSettingsPage extends StatefulWidget {
@@ -10,194 +18,179 @@ class ProfileSettingsPage extends StatefulWidget {
 }
 
 class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
-  bool isDarkMode = false;
-  String selectedLanguage = 'English';
+  ThemeMode _themeMode = ThemeMode.system;
+  String _selectedLanguage = 'system';
+
+  @override
+  void initState() {
+    super.initState();
+    _themeMode = AppSettings.themeMode.value;
+    _selectedLanguage = AppSettings.locale.value?.languageCode ?? 'system';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text('Settings')),
+      appBar: AppBar(title: Text(l10n.settingsTitle)),
       body: ListView(
         padding: AppTheme.padding,
         children: [
           _buildSection(
-            title: 'Display',
+            title: l10n.settingsDisplay,
             children: [
               _buildSettingItem(
                 icon: Icons.dark_mode,
-                title: 'Dark Mode',
-                trailing: Switch(
-                  value: isDarkMode,
-                  onChanged: (value) {
+                title: l10n.settingsTheme,
+                trailing: DropdownButton<ThemeMode>(
+                  value: _themeMode,
+                  onChanged: (value) async {
+                    if (value == null) return;
                     setState(() {
-                      isDarkMode = value;
+                      _themeMode = value;
                     });
+                    await AppSettings.setThemeMode(value);
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          value ? 'Dark mode enabled' : 'Light mode enabled',
-                        ),
-                      ),
+                      SnackBar(content: Text(l10n.settingsThemeUpdated)),
                     );
                   },
+                  items: [
+                    DropdownMenuItem(
+                      value: ThemeMode.system,
+                      child: Text(l10n.themeSystem),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.light,
+                      child: Text(l10n.themeLight),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.dark,
+                      child: Text(l10n.themeDark),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
           _buildSection(
-            title: 'Language & Region',
+            title: l10n.settingsLanguageRegion,
             children: [_buildLanguageDropdown()],
           ),
-          SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
           _buildSection(
-            title: 'Account',
+            title: l10n.settingsAccount,
             children: [
               _buildSettingItem(
                 icon: Icons.email,
-                title: 'Email Notifications',
-                subtitle: 'Orders, offers, and updates',
+                title: l10n.settingsEmailNotifications,
+                subtitle: l10n.settingsEmailNotificationsSubtitle,
                 trailing: Switch(value: true, onChanged: (_) {}),
               ),
-              Divider(),
+              const Divider(),
               _buildSettingItem(
                 icon: Icons.notifications,
-                title: 'Push Notifications',
-                subtitle: 'Stay updated with deals',
+                title: l10n.settingsPushNotifications,
+                subtitle: l10n.settingsPushNotificationsSubtitle,
                 trailing: Switch(value: true, onChanged: (_) {}),
               ),
             ],
           ),
-          SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
           _buildSection(
-            title: 'About',
+            title: l10n.settingsAbout,
             children: [
               _buildSettingItem(
                 icon: Icons.info,
-                title: 'About ShopHub',
+                title: l10n.settingsAboutApp,
                 onTap: () {
-                  showAboutDialog(
+                  AppDialogs.showAbout(
                     context: context,
-                    applicationName: 'ShopHub',
-                    applicationVersion: '1.0.0',
-                    applicationLegalese: '© 2024 ShopHub. All rights reserved.',
+                    applicationName: l10n.appTitle,
+                    applicationVersion: l10n.appVersion,
+                    legalese: l10n.appLegalese,
                   );
                 },
               ),
-              Divider(),
+              const Divider(),
               _buildSettingItem(
                 icon: Icons.privacy_tip,
-                title: 'Privacy Policy',
+                title: l10n.settingsPrivacyPolicy,
                 onTap: () {
-                  _showDialog(
-                    context,
-                    'Privacy Policy',
-                    'Your privacy is important to us. We collect and process personal data in accordance with our privacy policy.',
+                  AppDialogs.showInfo(
+                    context: context,
+                    title: l10n.settingsPrivacyPolicy,
+                    message: l10n.settingsPrivacyPolicyContent,
+                    closeLabel: l10n.commonClose,
                   );
                 },
               ),
-              Divider(),
+              const Divider(),
               _buildSettingItem(
                 icon: Icons.description,
-                title: 'Terms & Conditions',
+                title: l10n.settingsTerms,
                 onTap: () {
-                  _showDialog(
-                    context,
-                    'Terms & Conditions',
-                    'By using ShopHub, you agree to these terms and conditions.',
+                  AppDialogs.showInfo(
+                    context: context,
+                    title: l10n.settingsTerms,
+                    message: l10n.settingsTermsContent,
+                    closeLabel: l10n.commonClose,
                   );
                 },
               ),
-              Divider(),
+              const Divider(),
               _buildSettingItem(
                 icon: Icons.help,
-                title: 'Help & Support',
+                title: l10n.settingsHelp,
                 onTap: () {
-                  _showDialog(
-                    context,
-                    'Help & Support',
-                    'Contact us at support@shophub.com for assistance.',
+                  AppDialogs.showInfo(
+                    context: context,
+                    title: l10n.settingsHelp,
+                    message: l10n.settingsHelpContent,
+                    closeLabel: l10n.commonClose,
                   );
                 },
               ),
             ],
           ),
-          SizedBox(height: 24),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text('Logout?'),
-                    content: Text('Are you sure you want to logout?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          Navigator.pushReplacementNamed(context, '/login');
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.red,
-                        ),
-                        child: Text('Logout'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-              child: Text('Logout', style: TextStyle(color: Colors.white)),
-            ),
+          const SizedBox(height: AppSpacing.xxl),
+          AppButton(
+            label: l10n.settingsLogout,
+            style: AppButtonStyle.danger,
+            onPressed: () {
+              AppDialogs.showConfirmation(
+                context: context,
+                title: l10n.settingsLogoutConfirmTitle,
+                message: l10n.settingsLogoutConfirmMessage,
+                confirmLabel: l10n.commonLogout,
+                cancelLabel: l10n.commonCancel,
+                onConfirm: () {
+                  Navigator.pushReplacementNamed(context, '/login');
+                },
+              );
+            },
           ),
-          SizedBox(height: 16),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade700,
-              ),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text('Delete Account?'),
-                    content: Text(
-                      'This action cannot be undone. All your data will be permanently deleted.',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Account deleted')),
-                          );
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.red,
-                        ),
-                        child: Text('Delete'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-              child: Text(
-                'Delete Account',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
+          const SizedBox(height: AppSpacing.md),
+          AppButton(
+            label: l10n.settingsDeleteAccount,
+            style: AppButtonStyle.danger,
+            onPressed: () {
+              AppDialogs.showConfirmation(
+                context: context,
+                title: l10n.settingsDeleteAccountConfirmTitle,
+                message: l10n.settingsDeleteAccountConfirmMessage,
+                confirmLabel: l10n.commonDelete,
+                cancelLabel: l10n.commonCancel,
+                onConfirm: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.settingsAccountDeleted)),
+                  );
+                },
+              );
+            },
           ),
-          SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.xxxl),
         ],
       ),
     );
@@ -210,17 +203,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              color: LightColor.skyBlue,
-            ),
-          ),
-        ),
+        SectionHeader(title: title),
         ...children,
       ],
     );
@@ -234,49 +217,49 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     VoidCallback? onTap,
   }) {
     return ListTile(
-      leading: Icon(icon, color: LightColor.skyBlue),
-      title: Text(title),
-      subtitle: subtitle != null ? Text(subtitle) : null,
-      trailing: trailing ?? Icon(Icons.arrow_forward_ios, size: 16),
+      leading: Icon(icon, color: AppColors.primary),
+      title: Text(title, style: AppTextStyles.bodyLarge(context)),
+      subtitle: subtitle != null
+          ? Text(subtitle!, style: AppTextStyles.bodySmall(context))
+          : null,
+      trailing: trailing ??
+          const Icon(Icons.arrow_forward_ios, size: AppSpacing.iconSm),
       onTap: onTap,
     );
   }
 
   Widget _buildLanguageDropdown() {
+    final l10n = context.l10n;
     return ListTile(
-      leading: Icon(Icons.language, color: LightColor.skyBlue),
-      title: Text('Language'),
+      leading: Icon(Icons.language, color: AppColors.primary),
+      title: Text(l10n.settingsLanguage, style: AppTextStyles.bodyLarge(context)),
       trailing: DropdownButton<String>(
-        value: selectedLanguage,
-        items: ['English', 'Arabic', 'Spanish', 'French']
-            .map((lang) => DropdownMenuItem(value: lang, child: Text(lang)))
-            .toList(),
-        onChanged: (value) {
-          if (value != null) {
-            setState(() {
-              selectedLanguage = value;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Language changed to $value')),
-            );
-          }
-        },
-      ),
-    );
-  }
-
-  void _showDialog(BuildContext context, String title, String content) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: SingleChildScrollView(child: Text(content)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Close'),
+        value: _selectedLanguage,
+        items: [
+          DropdownMenuItem(
+            value: 'system',
+            child: Text(l10n.languageSystem),
+          ),
+          DropdownMenuItem(
+            value: 'en',
+            child: Text(l10n.languageEnglish),
+          ),
+          DropdownMenuItem(
+            value: 'ar',
+            child: Text(l10n.languageArabic),
           ),
         ],
+        onChanged: (value) async {
+          if (value == null) return;
+          setState(() {
+            _selectedLanguage = value;
+          });
+          await AppSettings.setLocale(value == 'system' ? null : Locale(value));
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.settingsLanguageUpdated)),
+          );
+        },
       ),
     );
   }

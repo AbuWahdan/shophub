@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
-import '../themes/light_color.dart';
+import 'package:sinwar_shoping/src/config/app_images.dart';
+
+import '../design/app_colors.dart';
+import '../design/app_spacing.dart';
+import '../design/app_text_styles.dart';
+import '../l10n/l10n.dart';
+import '../shared/dialogs/app_dialogs.dart';
+import '../shared/widgets/app_image.dart';
 import '../themes/theme.dart';
 import 'orders_page.dart';
 import 'addresses_page.dart';
@@ -10,38 +17,46 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return SingleChildScrollView(
       padding: AppTheme.padding,
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 50,
-            backgroundImage: AssetImage('assets/user.png'),
+          ClipOval(
+            child: AppImage(
+              path: AppImages.userProfilePlaceholder,
+              width: AppSpacing.hero,
+              height: AppSpacing.hero,
+              fit: BoxFit.cover,
+            ),
           ),
-          SizedBox(height: 16),
-          Text('John Doe', style: AppTheme.h4Style),
-          SizedBox(height: 8),
-          Text('john.doe@example.com', style: AppTheme.subTitleStyle),
-          SizedBox(height: 24),
-          _buildMenuItem(context, Icons.shopping_bag, 'Orders', () {
+          const SizedBox(height: AppSpacing.lg),
+          Text(l10n.accountUserName, style: AppTextStyles.titleLarge(context)),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l10n.accountUserEmail,
+            style: AppTextStyles.bodySmall(context),
+          ),
+          const SizedBox(height: AppSpacing.xxl),
+          _buildMenuItem(context, Icons.shopping_bag, l10n.profileOrders, () {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => OrdersPage()),
             );
           }),
-          _buildMenuItem(context, Icons.location_on, 'Addresses', () {
+          _buildMenuItem(context, Icons.location_on, l10n.profileAddresses, () {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => AddressesPage()),
             );
           }),
-          _buildMenuItem(context, Icons.settings, 'Settings', () {
+          _buildMenuItem(context, Icons.settings, l10n.profileSettings, () {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => ProfileSettingsPage()),
             );
           }),
-          _buildMenuItem(context, Icons.help_outline, 'Help & Support', () {
+          _buildMenuItem(context, Icons.help_outline, l10n.profileHelp, () {
             _showHelpDialog(context);
           }),
         ],
@@ -56,30 +71,26 @@ class ProfilePage extends StatelessWidget {
     VoidCallback onTap,
   ) {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+      ),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: ListTile(
-        leading: Icon(icon, color: LightColor.skyBlue),
-        title: Text(title),
-        trailing: Icon(Icons.arrow_forward_ios, size: 16),
+        leading: Icon(icon, color: AppColors.primary),
+        title: Text(title, style: AppTextStyles.bodyLarge(context)),
+        trailing: const Icon(Icons.arrow_forward_ios, size: AppSpacing.iconSm),
         onTap: onTap,
       ),
     );
   }
 
   void _showHelpDialog(BuildContext context) {
-    showDialog(
+    final l10n = context.l10n;
+    AppDialogs.showInfo(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Help & Support'),
-        content: Text('Contact us at support@shophub.com for any assistance.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Close'),
-          ),
-        ],
-      ),
+      title: l10n.profileHelp,
+      message: l10n.profileHelpMessage,
+      closeLabel: l10n.commonClose,
     );
   }
 }

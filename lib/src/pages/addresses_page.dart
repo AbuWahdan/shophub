@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
-import '../model/data.dart';
+
+import '../design/app_colors.dart';
+import '../design/app_spacing.dart';
+import '../design/app_text_styles.dart';
+import '../l10n/l10n.dart';
 import '../model/address.dart';
-import '../themes/light_color.dart';
+import '../model/data.dart';
+import '../shared/dialogs/app_dialogs.dart';
+import '../shared/widgets/app_button.dart';
+import '../shared/widgets/app_text_field.dart';
 import '../themes/theme.dart';
 
 class AddressesPage extends StatefulWidget {
@@ -22,19 +29,20 @@ class _AddressesPageState extends State<AddressesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text('Delivery Addresses')),
+      appBar: AppBar(title: Text(l10n.addressesTitle)),
       body: ListView.builder(
         padding: AppTheme.padding,
         itemCount: addresses.length + 1,
         itemBuilder: (context, index) {
           if (index == addresses.length) {
             return Padding(
-              padding: EdgeInsets.only(top: 16),
-              child: ElevatedButton.icon(
+              padding: const EdgeInsets.only(top: AppSpacing.lg),
+              child: AppButton(
                 onPressed: () => _showAddressForm(context),
-                icon: Icon(Icons.add),
-                label: Text('Add New Address'),
+                label: l10n.addressesAddNew,
+                leading: const Icon(Icons.add),
               ),
             );
           }
@@ -48,9 +56,9 @@ class _AddressesPageState extends State<AddressesPage> {
 
   Widget _buildAddressCard(BuildContext context, Address address, int index) {
     return Card(
-      margin: EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: AppSpacing.insetsLg,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -63,65 +71,64 @@ class _AddressesPageState extends State<AddressesPage> {
                     children: [
                       Text(
                         address.name,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                        style: AppTextStyles.titleSmall(context),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.xs),
                       Text(
                         address.street,
-                        style: TextStyle(color: Colors.grey),
+                        style: AppTextStyles.bodySmall(context),
                       ),
                       Text(
                         '${address.city}, ${address.state} ${address.zipCode}',
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                        style: AppTextStyles.bodySmall(context),
                       ),
                     ],
                   ),
                 ),
                 if (address.isDefault)
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: AppSpacing.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
                     decoration: BoxDecoration(
-                      color: LightColor.skyBlue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                     ),
                     child: Text(
-                      'Default',
-                      style: TextStyle(
-                        color: LightColor.skyBlue,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      context.l10n.addressesDefault,
+                      style: AppTextStyles.labelSmall(context)
+                          .copyWith(color: AppColors.primary),
                     ),
                   ),
               ],
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Text(
               address.phone,
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              style: AppTextStyles.bodySmall(context),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 if (!address.isDefault)
                   TextButton(
                     onPressed: () => _setDefault(index),
-                    child: Text('Set Default'),
+                    child: Text(context.l10n.addressesSetDefault),
                   ),
-                SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 TextButton(
                   onPressed: () => _editAddress(context, index),
-                  child: Text('Edit'),
+                  child: Text(context.l10n.commonEdit),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 TextButton(
                   onPressed: () => _deleteAddress(index),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  child: Text('Delete'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                  ),
+                  child: Text(context.l10n.commonDelete),
                 ),
               ],
             ),
@@ -141,31 +148,21 @@ class _AddressesPageState extends State<AddressesPage> {
   }
 
   void _deleteAddress(int index) {
-    showDialog(
+    final l10n = context.l10n;
+    AppDialogs.showConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Delete Address?'),
-        content: Text('This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                addresses.removeAt(index);
-              });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text('Address deleted')));
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text('Delete'),
-          ),
-        ],
-      ),
+      title: l10n.addressesDeleteTitle,
+      message: l10n.addressesDeleteMessage,
+      confirmLabel: l10n.commonDelete,
+      cancelLabel: l10n.commonCancel,
+      onConfirm: () {
+        setState(() {
+          addresses.removeAt(index);
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.addressesDeleted)));
+      },
     );
   }
 
@@ -174,7 +171,7 @@ class _AddressesPageState extends State<AddressesPage> {
   }
 
   void _showAddressForm(BuildContext context, {Address? address, int? index}) {
-    showDialog(
+    AppDialogs.showCustom(
       context: context,
       builder: (context) => AddressFormDialog(
         address: address,
@@ -189,7 +186,9 @@ class _AddressesPageState extends State<AddressesPage> {
           Navigator.pop(context);
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text('Address saved successfully')));
+          ).showSnackBar(
+            SnackBar(content: Text(context.l10n.addressesSaved)),
+          );
         },
       ),
     );
@@ -245,48 +244,57 @@ class _AddressFormDialogState extends State<AddressFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return AlertDialog(
-      title: Text(widget.address == null ? 'Add Address' : 'Edit Address'),
+      title: Text(
+        widget.address == null ? l10n.addressesAddTitle : l10n.addressesEditTitle,
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
+            AppTextField(
               controller: nameController,
-              decoration: InputDecoration(
-                labelText: 'Name',
-                hintText: 'e.g., Home',
-              ),
+              label: l10n.addressesNameLabel,
+              hintText: l10n.addressesNameHint,
             ),
-            SizedBox(height: 16),
-            TextField(
+            const SizedBox(height: AppSpacing.lg),
+            AppTextField(
               controller: phoneController,
-              decoration: InputDecoration(labelText: 'Phone'),
+              label: l10n.addressesPhoneLabel,
+              hintText: l10n.addressesPhoneHint,
+              keyboardType: TextInputType.phone,
             ),
-            SizedBox(height: 16),
-            TextField(
+            const SizedBox(height: AppSpacing.lg),
+            AppTextField(
               controller: streetController,
-              decoration: InputDecoration(labelText: 'Street Address'),
+              label: l10n.addressesStreetLabel,
+              hintText: l10n.addressesStreetHint,
             ),
-            SizedBox(height: 16),
-            TextField(
+            const SizedBox(height: AppSpacing.lg),
+            AppTextField(
               controller: cityController,
-              decoration: InputDecoration(labelText: 'City'),
+              label: l10n.addressesCityLabel,
+              hintText: l10n.addressesCityHint,
             ),
-            SizedBox(height: 16),
-            TextField(
+            const SizedBox(height: AppSpacing.lg),
+            AppTextField(
               controller: stateController,
-              decoration: InputDecoration(labelText: 'State'),
+              label: l10n.addressesStateLabel,
+              hintText: l10n.addressesStateHint,
             ),
-            SizedBox(height: 16),
-            TextField(
+            const SizedBox(height: AppSpacing.lg),
+            AppTextField(
               controller: zipController,
-              decoration: InputDecoration(labelText: 'Zip Code'),
+              label: l10n.addressesZipLabel,
+              hintText: l10n.addressesZipHint,
+              keyboardType: TextInputType.number,
             ),
-            SizedBox(height: 16),
-            TextField(
+            const SizedBox(height: AppSpacing.lg),
+            AppTextField(
               controller: countryController,
-              decoration: InputDecoration(labelText: 'Country'),
+              label: l10n.addressesCountryLabel,
+              hintText: l10n.addressesCountryHint,
             ),
           ],
         ),
@@ -294,9 +302,13 @@ class _AddressFormDialogState extends State<AddressFormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('Cancel'),
+          child: Text(l10n.commonCancel),
         ),
-        ElevatedButton(onPressed: _saveAddress, child: Text('Save')),
+        AppButton(
+          label: l10n.commonSave,
+          onPressed: _saveAddress,
+          fullWidth: false,
+        ),
       ],
     );
   }
@@ -308,7 +320,7 @@ class _AddressFormDialogState extends State<AddressFormDialog> {
         cityController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Please fill all fields')));
+      ).showSnackBar(SnackBar(content: Text(context.l10n.addressesFillAll)));
       return;
     }
 

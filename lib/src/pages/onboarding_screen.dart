@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import '../themes/light_color.dart';
+
+import '../design/app_colors.dart';
+import '../design/app_spacing.dart';
+import '../design/app_text_styles.dart';
+import '../l10n/l10n.dart';
 
 /// Onboarding flow with page indicators
 class OnboardingScreen extends StatefulWidget {
@@ -13,32 +17,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   late PageController _pageController;
   int _currentPage = 0;
 
-  final List<OnboardingPage> pages = [
-    OnboardingPage(
-      title: 'Welcome to ShopHub',
-      subtitle: 'Discover the best products at unbeatable prices',
-      icon: Icons.shopping_bag,
-      color: LightColor.skyBlue,
-    ),
-    OnboardingPage(
-      title: 'Fast Delivery',
-      subtitle: 'Get your orders delivered quickly to your doorstep',
-      icon: Icons.local_shipping,
-      color: LightColor.lightBlue,
-    ),
-    OnboardingPage(
-      title: 'Secure Payment',
-      subtitle: 'Shop with confidence using our secure payment options',
-      icon: Icons.lock,
-      color: LightColor.orange,
-    ),
-    OnboardingPage(
-      title: 'Best Deals',
-      subtitle: 'Enjoy exclusive offers and discounts every day',
-      icon: Icons.local_offer,
-      color: LightColor.skyBlue,
-    ),
-  ];
+  List<OnboardingPage> _pages(BuildContext context) => [
+        OnboardingPage(
+          title: context.l10n.onboardingWelcomeTitle,
+          subtitle: context.l10n.onboardingWelcomeSubtitle,
+          icon: Icons.shopping_bag,
+          color: AppColors.primary,
+        ),
+        OnboardingPage(
+          title: context.l10n.onboardingDeliveryTitle,
+          subtitle: context.l10n.onboardingDeliverySubtitle,
+          icon: Icons.local_shipping,
+          color: AppColors.secondary,
+        ),
+        OnboardingPage(
+          title: context.l10n.onboardingSecureTitle,
+          subtitle: context.l10n.onboardingSecureSubtitle,
+          icon: Icons.lock,
+          color: AppColors.accentOrange,
+        ),
+        OnboardingPage(
+          title: context.l10n.onboardingDealsTitle,
+          subtitle: context.l10n.onboardingDealsSubtitle,
+          icon: Icons.local_offer,
+          color: AppColors.primary,
+        ),
+      ];
 
   @override
   void initState() {
@@ -53,7 +57,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _goToNextPage() {
-    if (_currentPage < pages.length - 1) {
+    final totalPages = _pages(context).length;
+    if (_currentPage < totalPages - 1) {
       _pageController.nextPage(
         duration: Duration(milliseconds: 500),
         curve: Curves.easeInOut,
@@ -65,6 +70,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final pages = _pages(context);
     return Scaffold(
       body: Stack(
         children: [
@@ -81,24 +87,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             },
           ),
           Positioned(
-            top: 24,
-            right: 20,
+            top: AppSpacing.xl,
+            right: AppSpacing.xl,
             child: TextButton(
               onPressed: () {
                 Navigator.of(context).pushReplacementNamed('/login');
               },
               child: Text(
-                'Skip',
-                style: TextStyle(
-                  color: LightColor.skyBlue,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                context.l10n.onboardingSkip,
+                style: AppTextStyles.labelLarge(context)
+                    .copyWith(color: AppColors.primary),
               ),
             ),
           ),
           Positioned(
-            bottom: 40,
+            bottom: AppSpacing.jumbo,
             left: 0,
             right: 0,
             child: Column(
@@ -108,31 +111,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   children: List.generate(
                     pages.length,
                     (index) => Container(
-                      width: _currentPage == index ? 24 : 8,
-                      height: 8,
-                      margin: EdgeInsets.symmetric(horizontal: 4),
+                      width: _currentPage == index
+                          ? AppSpacing.xxl
+                          : AppSpacing.sm,
+                      height: AppSpacing.sm,
+                      margin: AppSpacing.symmetric(horizontal: AppSpacing.xs),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                         color: _currentPage == index
-                            ? LightColor.skyBlue
-                            : LightColor.lightGrey,
+                            ? AppColors.primary
+                            : AppColors.neutral300,
                       ),
                     ),
                   ),
                 ),
-                SizedBox(height: 32),
+                const SizedBox(height: AppSpacing.xxxl),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  padding: AppSpacing.horizontal(AppSpacing.xl),
                   child: SizedBox(
                     width: double.infinity,
-                    height: 48,
+                    height: AppSpacing.buttonMd,
                     child: ElevatedButton(
                       onPressed: _goToNextPage,
                       child: Text(
                         _currentPage == pages.length - 1
-                            ? 'Get Started'
-                            : 'Next',
-                        style: TextStyle(fontSize: 16),
+                            ? context.l10n.onboardingGetStarted
+                            : context.l10n.onboardingNext,
+                        style: AppTextStyles.labelLarge(context),
                       ),
                     ),
                   ),
@@ -158,33 +163,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 120,
-            height: 120,
+            width: AppSpacing.imageLg,
+            height: AppSpacing.imageLg,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.2),
+              color: AppColors.white.withOpacity(0.2),
             ),
-            child: Icon(page.icon, size: 60, color: Colors.white),
+            child: Icon(
+              page.icon,
+              size: AppSpacing.iconXl,
+              color: AppColors.white,
+            ),
           ),
-          SizedBox(height: 48),
+          const SizedBox(height: AppSpacing.giant),
           Text(
             page.title,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            style: AppTextStyles.headlineLarge(context)
+                .copyWith(color: AppColors.white),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32),
+            padding: AppSpacing.horizontal(AppSpacing.xxxl),
             child: Text(
               page.subtitle,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white.withOpacity(0.9),
-              ),
+              style: AppTextStyles.bodyLarge(context)
+                  .copyWith(color: AppColors.white.withOpacity(0.9)),
               textAlign: TextAlign.center,
             ),
           ),

@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import '../design/app_colors.dart';
+import '../design/app_spacing.dart';
+import '../design/app_text_styles.dart';
+import '../l10n/l10n.dart';
+import '../l10n/order_l10n.dart';
 import '../model/data.dart';
 import '../model/order.dart';
-import '../themes/light_color.dart';
+import '../shared/widgets/app_image.dart';
 import '../themes/theme.dart';
 
 class OrdersPage extends StatelessWidget {
@@ -10,7 +17,7 @@ class OrdersPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('My Orders')),
+      appBar: AppBar(title: Text(context.l10n.ordersTitle)),
       body: ListView.builder(
         padding: AppTheme.padding,
         itemCount: AppData.orderList.length,
@@ -24,7 +31,7 @@ class OrdersPage extends StatelessWidget {
 
   Widget _buildOrderCard(BuildContext context, Order order) {
     return Card(
-      margin: EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -35,7 +42,7 @@ class OrdersPage extends StatelessWidget {
           );
         },
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: AppSpacing.insetsLg,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -43,49 +50,53 @@ class OrdersPage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Order ${order.id}',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    context.l10n.ordersOrderId(order.id),
+                    style: AppTextStyles.titleSmall(context),
                   ),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: AppSpacing.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.xs,
+                    ),
                     decoration: BoxDecoration(
                       color: _getStatusColor(order.status).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
                     ),
                     child: Text(
-                      order.status.displayName,
-                      style: TextStyle(
-                        color: _getStatusColor(order.status),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
+                      order.status.label(context),
+                      style: AppTextStyles.labelSmall(context)
+                          .copyWith(color: _getStatusColor(order.status)),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Text(
-                'Placed on ${order.date.toString().split(' ')[0]}',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
+                context.l10n.ordersPlacedOn(
+                  DateFormat.yMMMd(Localizations.localeOf(context).toString())
+                      .format(order.date),
+                ),
+                style: AppTextStyles.bodySmall(context),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '${order.items.length} item${order.items.length > 1 ? 's' : ''}',
-                    style: TextStyle(color: Colors.grey),
+                    context.l10n.ordersItemCount(order.items.length),
+                    style: AppTextStyles.bodySmall(context),
                   ),
                   Text(
                     '\$${order.total.toStringAsFixed(2)}',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: AppTextStyles.titleMedium(context),
                   ),
                 ],
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Text(
-                'Est. Delivery: ${order.estimatedDelivery}',
-                style: TextStyle(color: LightColor.skyBlue, fontSize: 12),
+                context.l10n.ordersEstimatedDelivery(order.estimatedDelivery),
+                style: AppTextStyles.bodySmall(context)
+                    .copyWith(color: AppColors.primary),
               ),
             ],
           ),
@@ -97,15 +108,15 @@ class OrdersPage extends StatelessWidget {
   Color _getStatusColor(OrderStatus status) {
     switch (status) {
       case OrderStatus.pending:
-        return Colors.orange;
+        return AppColors.warning;
       case OrderStatus.processing:
-        return Colors.blue;
+        return AppColors.primary;
       case OrderStatus.shipped:
-        return Colors.purple;
+        return AppColors.secondary;
       case OrderStatus.delivered:
-        return Colors.green;
+        return AppColors.success;
       case OrderStatus.cancelled:
-        return Colors.red;
+        return AppColors.error;
     }
   }
 }
@@ -118,54 +129,51 @@ class OrderDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Order Details')),
+      appBar: AppBar(title: Text(context.l10n.orderDetailsTitle)),
       body: SingleChildScrollView(
         padding: AppTheme.padding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildStatusTimeline(),
-            SizedBox(height: 32),
+            _buildStatusTimeline(context),
+            const SizedBox(height: AppSpacing.xxxl),
             Text(
-              'Items',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              context.l10n.orderDetailsItems,
+              style: AppTextStyles.titleMedium(context),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             ...order.items.map((item) {
               return Padding(
-                padding: EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                 child: Row(
                   children: [
-                    Image.asset(
-                      item.image,
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
+                    AppImage(
+                      path: item.image,
+                      width: AppSpacing.imageSm,
+                      height: AppSpacing.imageSm,
                     ),
-                    SizedBox(width: 16),
+                    const SizedBox(width: AppSpacing.lg),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             item.productName,
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: AppTextStyles.bodyLarge(context),
                           ),
                           if (item.selectedSize != null)
                             Text(
-                              'Size: ${item.selectedSize}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
+                              context.l10n.orderDetailsSize(
+                                item.selectedSize!,
                               ),
+                              style: AppTextStyles.bodySmall(context),
                             ),
                           if (item.selectedColor != null)
                             Text(
-                              'Color: ${item.selectedColor}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
+                              context.l10n.orderDetailsColor(
+                                item.selectedColor!,
                               ),
+                              style: AppTextStyles.bodySmall(context),
                             ),
                         ],
                       ),
@@ -174,30 +182,50 @@ class OrderDetailsPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          'Qty: ${item.quantity}',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          context.l10n.orderDetailsQuantity(item.quantity),
+                          style: AppTextStyles.labelLarge(context),
                         ),
-                        Text('\$${item.price}'),
+                        Text(
+                          '\$${item.price}',
+                          style: AppTextStyles.bodyMedium(context),
+                        ),
                       ],
                     ),
                   ],
                 ),
               );
             }),
-            Divider(height: 32),
-            _buildSummaryRow('Subtotal', order.subtotal),
-            _buildSummaryRow('Shipping', order.shipping),
+            const Divider(height: AppSpacing.xxxl),
+            _buildSummaryRow(
+              context,
+              context.l10n.orderDetailsSubtotal,
+              order.subtotal,
+            ),
+            _buildSummaryRow(
+              context,
+              context.l10n.orderDetailsShipping,
+              order.shipping,
+            ),
             if (order.discount > 0)
-              _buildSummaryRow('Discount', -order.discount),
-            Divider(),
-            _buildSummaryRow('Total', order.total, isBold: true),
+              _buildSummaryRow(
+                context,
+                context.l10n.orderDetailsDiscount,
+                -order.discount,
+              ),
+            const Divider(),
+            _buildSummaryRow(
+              context,
+              context.l10n.orderDetailsTotal,
+              order.total,
+              isBold: true,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatusTimeline() {
+  Widget _buildStatusTimeline(BuildContext context) {
     final statuses = [
       OrderStatus.pending,
       OrderStatus.processing,
@@ -210,10 +238,10 @@ class OrderDetailsPage extends StatelessWidget {
     return Column(
       children: [
         Text(
-          'Order Status',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          context.l10n.orderDetailsStatus,
+          style: AppTextStyles.titleMedium(context),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         Row(
           children: [
             ...List.generate(statuses.length, (index) {
@@ -222,24 +250,30 @@ class OrderDetailsPage extends StatelessWidget {
                 child: Column(
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: AppSpacing.jumbo,
+                      height: AppSpacing.jumbo,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isCompleted ? Colors.green : Colors.grey[300],
+                        color: isCompleted
+                            ? AppColors.success
+                            : AppColors.neutral300,
                       ),
                       child: Center(
                         child: Icon(
                           isCompleted ? Icons.check : Icons.circle,
-                          color: isCompleted ? Colors.white : Colors.grey[500],
-                          size: 20,
+                          color: isCompleted
+                              ? AppColors.white
+                              : AppColors.neutral500,
+                          size: AppSpacing.iconMd,
                         ),
                       ),
                     ),
                     if (index < statuses.length - 1)
                       Container(
-                        height: 2,
-                        color: isCompleted ? Colors.green : Colors.grey[300],
+                        height: AppSpacing.borderThick,
+                        color: isCompleted
+                            ? AppColors.success
+                            : AppColors.neutral300,
                       ),
                   ],
                 ),
@@ -247,13 +281,13 @@ class OrderDetailsPage extends StatelessWidget {
             }),
           ],
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: statuses.map((status) {
             return Text(
-              status.displayName,
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+              status.label(context),
+              style: AppTextStyles.bodySmall(context),
             );
           }).toList(),
         ),
@@ -261,23 +295,28 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryRow(String label, double value, {bool isBold = false}) {
+  Widget _buildSummaryRow(
+    BuildContext context,
+    String label,
+    double value, {
+    bool isBold = false,
+  }) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: AppSpacing.symmetric(vertical: AppSpacing.sm),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            ),
+            style: isBold
+                ? AppTextStyles.titleSmall(context)
+                : AppTextStyles.bodySmall(context),
           ),
           Text(
             '\$${value.toStringAsFixed(2)}',
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            ),
+            style: isBold
+                ? AppTextStyles.titleSmall(context)
+                : AppTextStyles.bodySmall(context),
           ),
         ],
       ),

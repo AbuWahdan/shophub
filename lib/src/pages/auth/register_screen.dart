@@ -1,4 +1,11 @@
 import 'package:flutter/material.dart';
+
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
+import '../../l10n/l10n.dart';
+import '../../shared/validation/auth_validators.dart';
+import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/app_text_field.dart';
 import '../../themes/theme.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -13,6 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = false;
@@ -28,40 +36,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text('Create Account')),
+      appBar: AppBar(title: Text(l10n.registerTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: AppTheme.padding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Full Name',
-                  hintText: 'Enter your full name',
-                  prefixIcon: Icon(Icons.person_outlined),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppTextField(
+                  controller: _nameController,
+                  label: l10n.registerFullNameLabel,
+                  hintText: l10n.registerFullNameHint,
+                  prefixIcon: const Icon(Icons.person_outlined),
+                  validator: (value) {
+                    final trimmed = value?.trim() ?? '';
+                    if (trimmed.isEmpty) return l10n.validationNameRequired;
+                    return null;
+                  },
+                  textInputAction: TextInputAction.next,
                 ),
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'Enter your email',
-                  prefixIcon: Icon(Icons.email_outlined),
+                const SizedBox(height: AppSpacing.lg),
+                AppTextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  label: l10n.registerEmailLabel,
+                  hintText: l10n.registerEmailHint,
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  validator: (value) => AuthValidators.email(
+                    value,
+                    emptyMessage: l10n.validationEmailRequired,
+                    invalidMessage: l10n.validationEmailInvalid,
+                  ),
+                  textInputAction: TextInputAction.next,
                 ),
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  hintText: 'Enter your password',
-                  prefixIcon: Icon(Icons.lock_outlined),
+                const SizedBox(height: AppSpacing.lg),
+                AppTextField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  label: l10n.registerPasswordLabel,
+                  hintText: l10n.registerPasswordHint,
+                  prefixIcon: const Icon(Icons.lock_outlined),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
@@ -74,16 +92,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       });
                     },
                   ),
+                  validator: (value) => AuthValidators.password(
+                    value,
+                    emptyMessage: l10n.validationPasswordRequired,
+                    tooShortMessage: l10n.validationPasswordTooShort,
+                  ),
+                  textInputAction: TextInputAction.next,
                 ),
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: _confirmPasswordController,
-                obscureText: _obscureConfirmPassword,
-                decoration: InputDecoration(
-                  labelText: 'Confirm Password',
-                  hintText: 'Re-enter your password',
-                  prefixIcon: Icon(Icons.lock_outlined),
+                const SizedBox(height: AppSpacing.lg),
+                AppTextField(
+                  controller: _confirmPasswordController,
+                  obscureText: _obscureConfirmPassword,
+                  label: l10n.registerConfirmPasswordLabel,
+                  hintText: l10n.registerConfirmPasswordHint,
+                  prefixIcon: const Icon(Icons.lock_outlined),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureConfirmPassword
@@ -96,50 +118,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       });
                     },
                   ),
+                  validator: (value) => AuthValidators.confirmPassword(
+                    value,
+                    original: _passwordController.text,
+                    emptyMessage: l10n.validationConfirmPasswordRequired,
+                    mismatchMessage: l10n.validationConfirmPasswordMismatch,
+                  ),
                 ),
-              ),
-              SizedBox(height: 20),
-              Row(
-                children: [
-                  Checkbox(
-                    value: _agreeToTerms,
-                    onChanged: (value) {
-                      setState(() {
-                        _agreeToTerms = value ?? false;
-                      });
-                    },
-                  ),
-                  Expanded(
-                    child: Text(
-                      'I agree to Terms of Service and Privacy Policy',
-                      style: TextStyle(fontSize: 12),
+                const SizedBox(height: AppSpacing.xl),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Checkbox(
+                      value: _agreeToTerms,
+                      onChanged: (value) {
+                        setState(() {
+                          _agreeToTerms = value ?? false;
+                        });
+                      },
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.xs),
+                        child: Text(
+                          l10n.registerAgreeTerms,
+                          style: AppTextStyles.bodySmall(context),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xxl),
+                AppButton(
+                  label: l10n.registerCreateAccount,
                   onPressed: _agreeToTerms
                       ? () {
-                          Navigator.of(context).pushNamed('/otp');
+                          if (_formKey.currentState?.validate() ?? false) {
+                            Navigator.of(context).pushNamed('/otp');
+                          }
                         }
                       : null,
-                  child: Text('Create Account'),
                 ),
-              ),
-              SizedBox(height: 16),
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text('Already have an account? Sign In'),
+                const SizedBox(height: AppSpacing.md),
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text(l10n.registerHaveAccount),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

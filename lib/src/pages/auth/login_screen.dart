@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../themes/light_color.dart';
+
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
+import '../../l10n/l10n.dart';
+import '../../shared/validation/auth_validators.dart';
+import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/app_text_field.dart';
 import '../../themes/theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,6 +18,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
 
   @override
@@ -23,34 +30,53 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
           padding: AppTheme.padding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 24),
-              Text('Welcome Back', style: AppTheme.h1Style),
-              SizedBox(height: 8),
-              Text('Sign in to your account', style: AppTheme.subTitleStyle),
-              SizedBox(height: 32),
-              TextField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email or Phone',
-                  hintText: 'Enter your email or phone',
-                  prefixIcon: Icon(Icons.email_outlined),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: AppSpacing.xxl),
+                Text(l10n.loginWelcomeBack,
+                    style: AppTextStyles.headlineLarge(context)),
+                const SizedBox(height: AppSpacing.sm),
+                Text(l10n.loginSubtitle,
+                    style: AppTextStyles.bodyMedium(context)),
+                const SizedBox(height: AppSpacing.xxxl),
+                AppTextField(
+                  controller: _emailController,
+                  label: l10n.loginEmailOrPhoneLabel,
+                  hintText: l10n.loginEmailOrPhoneHint,
+                  keyboardType: TextInputType.emailAddress,
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  validator: (value) {
+                    final trimmed = value?.trim() ?? '';
+                    if (trimmed.contains('@')) {
+                      return AuthValidators.email(
+                        trimmed,
+                        emptyMessage: l10n.validationEmailRequired,
+                        invalidMessage: l10n.validationEmailInvalid,
+                      );
+                    }
+                    return AuthValidators.phone(
+                      trimmed,
+                      emptyMessage: l10n.validationPhoneRequired,
+                      invalidMessage: l10n.validationPhoneInvalid,
+                    );
+                  },
+                  textInputAction: TextInputAction.next,
                 ),
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  hintText: 'Enter your password',
-                  prefixIcon: Icon(Icons.lock_outlined),
+                const SizedBox(height: AppSpacing.lg),
+                AppTextField(
+                  controller: _passwordController,
+                  label: l10n.loginPasswordLabel,
+                  hintText: l10n.loginPasswordHint,
+                  obscureText: _obscurePassword,
+                  prefixIcon: const Icon(Icons.lock_outlined),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
@@ -63,58 +89,56 @@ class _LoginScreenState extends State<LoginScreen> {
                       });
                     },
                   ),
+                  validator: (value) => AuthValidators.password(
+                    value,
+                    emptyMessage: l10n.validationPasswordRequired,
+                    tooShortMessage: l10n.validationPasswordTooShort,
+                  ),
                 ),
-              ),
-              SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
+                const SizedBox(height: AppSpacing.md),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      // Navigate to forgot password
+                    },
+                    child: Text(l10n.loginForgotPassword),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xxl),
+                AppButton(
+                  label: l10n.loginSignIn,
                   onPressed: () {
-                    // Navigate to forgot password
+                    if (_formKey.currentState?.validate() ?? false) {
+                      Navigator.of(context).pushReplacementNamed('/main');
+                    }
                   },
-                  child: Text('Forgot Password?'),
                 ),
-              ),
-              SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
+                  label: l10n.loginContinueAsGuest,
+                  style: AppButtonStyle.outlined,
                   onPressed: () {
                     Navigator.of(context).pushReplacementNamed('/main');
                   },
-                  child: Text('Sign In'),
                 ),
-              ),
-              SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.of(context).pushReplacementNamed('/main');
-                  },
-                  child: Text('Continue as Guest'),
+                const SizedBox(height: AppSpacing.xxl),
+                Center(
+                  child: Text(
+                    l10n.loginNoAccount,
+                    style: AppTextStyles.bodyMedium(context),
+                  ),
                 ),
-              ),
-              SizedBox(height: 24),
-              Center(child: Text('Don\'t have an account?')),
-              SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
+                  label: l10n.loginCreateAccount,
+                  style: AppButtonStyle.secondary,
                   onPressed: () {
                     Navigator.of(context).pushNamed('/register');
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[100],
-                    foregroundColor: LightColor.skyBlue,
-                  ),
-                  child: Text('Create Account'),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

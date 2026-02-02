@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
-import '../themes/light_color.dart';
+
+import '../design/app_colors.dart';
+import '../design/app_spacing.dart';
+import '../design/app_text_styles.dart';
+import '../l10n/l10n.dart';
+import '../shared/widgets/app_button.dart';
 import '../themes/theme.dart';
 
 class OrderSuccessScreen extends StatefulWidget {
@@ -29,7 +34,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
 
     // Scale animation for checkmark
     _scaleController = AnimationController(
-      duration: Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 800),
       vsync: this,
     );
 
@@ -39,7 +44,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
 
     // Pulse animation for the circle
     _pulseController = AnimationController(
-      duration: Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     )..repeat();
 
@@ -60,6 +65,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       body: Column(
         children: [
@@ -76,26 +82,26 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                         ScaleTransition(
                           scale: _pulseAnimation,
                           child: Container(
-                            width: 200,
-                            height: 200,
+                            width: AppSpacing.massive,
+                            height: AppSpacing.massive,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: LightColor.skyBlue.withOpacity(0.1),
+                              color: AppColors.primary.withOpacity(0.1),
                             ),
                           ),
                         ),
                         // Main circle
                         Container(
-                          width: 150,
-                          height: 150,
+                          width: AppSpacing.hero,
+                          height: AppSpacing.hero,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: LightColor.skyBlue,
+                            color: AppColors.primary,
                             boxShadow: [
                               BoxShadow(
-                                color: LightColor.skyBlue.withOpacity(0.3),
-                                blurRadius: 20,
-                                spreadRadius: 5,
+                                color: AppColors.primary.withOpacity(0.3),
+                                blurRadius: AppSpacing.jumbo,
+                                spreadRadius: AppSpacing.sm,
                               ),
                             ],
                           ),
@@ -104,36 +110,32 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                               scale: _scaleAnimation,
                               child: Icon(
                                 Icons.check_circle,
-                                size: 100,
-                                color: Colors.white,
+                                size: AppSpacing.hero,
+                                color: AppColors.white,
                               ),
                             ),
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 40),
+                    const SizedBox(height: AppSpacing.jumbo),
                     Text(
-                      'Order Confirmed!',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
+                      l10n.orderSuccessTitle,
+                      style: AppTextStyles.headlineLarge(context),
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.lg),
                     Text(
-                      'Your order has been placed successfully',
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      l10n.orderSuccessSubtitle,
+                      style: AppTextStyles.bodyMedium(context),
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: 32),
+                    const SizedBox(height: AppSpacing.xxxl),
                     Container(
-                      padding: EdgeInsets.all(20),
+                      padding: AppSpacing.insetsXl,
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,42 +144,39 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Order ID',
-                                style: TextStyle(color: Colors.grey[600]),
+                                l10n.orderSuccessOrderId,
+                                style: AppTextStyles.bodySmall(context),
                               ),
                               Text(
                                 widget.orderId,
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                                style: AppTextStyles.labelLarge(context),
                               ),
                             ],
                           ),
-                          SizedBox(height: 12),
-                          Divider(),
-                          SizedBox(height: 12),
+                          const SizedBox(height: AppSpacing.md),
+                          const Divider(),
+                          const SizedBox(height: AppSpacing.md),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Total Amount',
-                                style: TextStyle(color: Colors.grey[600]),
+                                l10n.orderSuccessTotalAmount,
+                                style: AppTextStyles.bodySmall(context),
                               ),
                               Text(
                                 '\$${widget.totalAmount.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: LightColor.skyBlue,
-                                ),
+                                style: AppTextStyles.titleMedium(context)
+                                    .copyWith(color: AppColors.primary),
                               ),
                             ],
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(height: 32),
+                    const SizedBox(height: AppSpacing.xxxl),
                     Text(
-                      'Thank you for your purchase!',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      l10n.orderSuccessThanks,
+                      style: AppTextStyles.bodySmall(context),
                     ),
                   ],
                 ),
@@ -188,7 +187,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
             padding: AppTheme.padding,
             child: Column(
               children: [
-                ElevatedButton(
+                AppButton(
                   onPressed: () {
                     Navigator.pushNamedAndRemoveUntil(
                       context,
@@ -196,20 +195,15 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                       (route) => false,
                     );
                   },
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(double.infinity, 50),
-                  ),
-                  child: Text('Continue Shopping'),
+                  label: l10n.orderSuccessContinueShopping,
                 ),
-                SizedBox(height: 12),
-                OutlinedButton(
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
                   onPressed: () {
                     Navigator.pushNamed(context, '/orders');
                   },
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: Size(double.infinity, 50),
-                  ),
-                  child: Text('View Orders'),
+                  label: l10n.orderSuccessViewOrders,
+                  style: AppButtonStyle.outlined,
                 ),
               ],
             ),

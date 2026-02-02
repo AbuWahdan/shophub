@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+
+import '../design/app_colors.dart';
+import '../design/app_spacing.dart';
+import '../design/app_text_styles.dart';
+import '../l10n/l10n.dart';
 import '../model/data.dart';
 import '../model/product.dart';
-import '../themes/light_color.dart';
 import '../themes/theme.dart';
 import '../widgets/product_card.dart';
 
@@ -20,7 +24,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
   double selectedMinPrice = 0;
   double selectedMaxPrice = 10000;
   int selectedRating = 0;
-  String sortBy = 'Best Selling';
+  SortOption sortBy = SortOption.bestSelling;
 
   List<Product> get filteredProducts {
     return AppData.productList.where((product) {
@@ -37,15 +41,15 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
       return matchesSearch && matchesCategory && matchesPrice && matchesRating;
     }).toList()..sort((a, b) {
       switch (sortBy) {
-        case 'Price Low to High':
+        case SortOption.priceLowHigh:
           return a.finalPrice.compareTo(b.finalPrice);
-        case 'Price High to Low':
+        case SortOption.priceHighLow:
           return b.finalPrice.compareTo(a.finalPrice);
-        case 'Best Rating':
+        case SortOption.bestRating:
           return b.rating.compareTo(a.rating);
-        case 'Newest':
+        case SortOption.newest:
           return b.id.compareTo(a.id);
-        default:
+        case SortOption.bestSelling:
           return b.soldCount.compareTo(a.soldCount);
       }
     });
@@ -54,7 +58,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Search & Filter')),
+      appBar: AppBar(title: Text(context.l10n.searchFilterTitle)),
       body: Column(
         children: [
           Padding(
@@ -66,11 +70,11 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
                 });
               },
               decoration: InputDecoration(
-                hintText: 'Search products...',
-                prefixIcon: Icon(Icons.search),
+                hintText: context.l10n.searchFilterHint,
+                prefixIcon: const Icon(Icons.search),
                 suffixIcon: searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: Icon(Icons.clear),
+                        icon: const Icon(Icons.clear),
                         onPressed: () {
                           setState(() {
                             searchQuery = '';
@@ -83,55 +87,62 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
           ),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 16),
+            padding: AppSpacing.horizontal(AppSpacing.lg),
             child: Row(
               children: [
                 _buildFilterChip(
-                  'Category',
+                  context.l10n.searchFilterCategory,
                   Icons.category,
                   () => _showCategoryBottomSheet(),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 _buildFilterChip(
-                  'Price',
+                  context.l10n.searchFilterPrice,
                   Icons.attach_money,
                   () => _showPriceBottomSheet(),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 _buildFilterChip(
-                  'Rating',
+                  context.l10n.searchFilterRating,
                   Icons.star,
                   () => _showRatingBottomSheet(),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 _buildFilterChip(
-                  'Sort',
+                  context.l10n.searchFilterSort,
                   Icons.sort,
                   () => _showSortBottomSheet(),
                 ),
               ],
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Expanded(
             child: filteredProducts.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.search_off, size: 64, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text('No products found'),
+                        const Icon(
+                          Icons.search_off,
+                          size: AppSpacing.giant,
+                          color: AppColors.neutral500,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        Text(
+                          context.l10n.searchFilterNoResults,
+                          style: AppTextStyles.bodyMedium(context),
+                        ),
                       ],
                     ),
                   )
                 : GridView.builder(
-                    padding: EdgeInsets.all(16),
+                    padding: AppSpacing.insetsLg,
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       childAspectRatio: 0.75,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
+                      mainAxisSpacing: AppSpacing.lg,
+                      crossAxisSpacing: AppSpacing.lg,
                     ),
                     itemCount: filteredProducts.length,
                     itemBuilder: (context, index) {
@@ -155,9 +166,9 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
     return InkWell(
       onTap: onTap,
       child: Chip(
-        label: Text(label),
-        avatar: Icon(icon, size: 18),
-        backgroundColor: Colors.grey[100],
+        label: Text(label, style: AppTextStyles.bodySmall(context)),
+        avatar: Icon(icon, size: AppSpacing.iconSm),
+        backgroundColor: Theme.of(context).colorScheme.surface,
       ),
     );
   }
@@ -166,29 +177,37 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusLg),
+        ),
       ),
       builder: (context) {
         return Padding(
-          padding: EdgeInsets.all(16),
+          padding: AppSpacing.insetsLg,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Select Category',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                context.l10n.searchFilterSelectCategory,
+                style: AppTextStyles.titleMedium(context),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               ...AppData.categoryList.map((category) {
+                final categoryName = category.name ?? '';
                 return ListTile(
-                  title: Text(category.name ?? ''),
-                  trailing: selectedCategory == category.name
-                      ? Icon(Icons.check, color: LightColor.skyBlue)
+                  title: Text(
+                    _categoryLabel(context, categoryName),
+                    style: AppTextStyles.bodyLarge(context),
+                  ),
+                  trailing: selectedCategory == categoryName
+                      ? const Icon(Icons.check, color: AppColors.primary)
                       : null,
                   onTap: () {
                     setState(() {
-                      selectedCategory = category.name ?? 'All';
+                      selectedCategory = categoryName.isEmpty
+                          ? 'All'
+                          : categoryName;
                     });
                     Navigator.pop(context);
                   },
@@ -205,25 +224,27 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusLg),
+        ),
       ),
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Padding(
-              padding: EdgeInsets.all(16),
+              padding: AppSpacing.insetsLg,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Price Range',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    context.l10n.searchFilterPriceRange,
+                    style: AppTextStyles.titleMedium(context),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   Text(
                     '\$${selectedMinPrice.toStringAsFixed(0)} - \$${selectedMaxPrice.toStringAsFixed(0)}',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: AppTextStyles.titleSmall(context),
                   ),
                   RangeSlider(
                     values: RangeValues(selectedMinPrice, selectedMaxPrice),
@@ -236,7 +257,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
                       });
                     },
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -244,7 +265,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
                         setState(() {});
                         Navigator.pop(context);
                       },
-                      child: Text('Apply'),
+                      child: Text(context.l10n.commonApply),
                     ),
                   ),
                 ],
@@ -260,20 +281,22 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusLg),
+        ),
       ),
       builder: (context) {
         return Padding(
-          padding: EdgeInsets.all(16),
+          padding: AppSpacing.insetsLg,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Minimum Rating',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                context.l10n.searchFilterMinimumRating,
+                style: AppTextStyles.titleMedium(context),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               ...List.generate(5, (index) {
                 final rating = 5 - index;
                 return ListTile(
@@ -282,8 +305,8 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
                       rating,
                       (i) => Icon(
                         Icons.star,
-                        size: 18,
-                        color: LightColor.yellowColor,
+                        size: AppSpacing.iconSm,
+                        color: AppColors.accentYellow,
                       ),
                     ),
                   ),
@@ -297,7 +320,10 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
                 );
               }),
               ListTile(
-                title: Text('Any Rating'),
+                title: Text(
+                  context.l10n.searchFilterAnyRating,
+                  style: AppTextStyles.bodyLarge(context),
+                ),
                 trailing: selectedRating == 0 ? Icon(Icons.check) : null,
                 onTap: () {
                   setState(() {
@@ -317,30 +343,26 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusLg),
+        ),
       ),
       builder: (context) {
         return Padding(
-          padding: EdgeInsets.all(16),
+          padding: AppSpacing.insetsLg,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Sort By',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                context.l10n.searchFilterSortBy,
+                style: AppTextStyles.titleMedium(context),
               ),
-              SizedBox(height: 16),
-              ...[
-                'Best Selling',
-                'Price Low to High',
-                'Price High to Low',
-                'Best Rating',
-                'Newest',
-              ].map((sort) {
+              const SizedBox(height: AppSpacing.lg),
+              ...SortOption.values.map((sort) {
                 return ListTile(
-                  title: Text(sort),
-                  trailing: sortBy == sort ? Icon(Icons.check) : null,
+                  title: Text(_sortLabel(context, sort)),
+                  trailing: sortBy == sort ? const Icon(Icons.check) : null,
                   onTap: () {
                     setState(() {
                       sortBy = sort;
@@ -355,4 +377,48 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
       },
     );
   }
+
+  String _categoryLabel(BuildContext context, String category) {
+    final l10n = context.l10n;
+    switch (category) {
+      case 'All':
+        return l10n.categoryAll;
+      case 'Sneakers':
+        return l10n.categorySneakers;
+      case 'Jackets':
+        return l10n.categoryJackets;
+      case 'Watches':
+        return l10n.categoryWatches;
+      case 'Electronics':
+        return l10n.categoryElectronics;
+      case 'Clothing':
+        return l10n.categoryClothing;
+      default:
+        return category;
+    }
+  }
+
+  String _sortLabel(BuildContext context, SortOption option) {
+    final l10n = context.l10n;
+    switch (option) {
+      case SortOption.bestSelling:
+        return l10n.searchFilterSortBestSelling;
+      case SortOption.priceLowHigh:
+        return l10n.searchFilterSortPriceLowHigh;
+      case SortOption.priceHighLow:
+        return l10n.searchFilterSortPriceHighLow;
+      case SortOption.bestRating:
+        return l10n.searchFilterSortBestRating;
+      case SortOption.newest:
+        return l10n.searchFilterSortNewest;
+    }
+  }
+}
+
+enum SortOption {
+  bestSelling,
+  priceLowHigh,
+  priceHighLow,
+  bestRating,
+  newest,
 }

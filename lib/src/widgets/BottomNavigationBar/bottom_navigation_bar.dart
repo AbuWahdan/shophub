@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../themes/light_color.dart';
+import '../../design/app_colors.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
 import 'bottom_curved_painter.dart';
 
 class CustomBottomNavigationBar extends StatefulWidget {
@@ -72,25 +74,29 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
   Widget _icon(IconData icon, bool isEnable, int index) {
     return Expanded(
       child: InkWell(
-        borderRadius: BorderRadius.all(Radius.circular(50)),
+        borderRadius: BorderRadius.all(Radius.circular(AppSpacing.radiusPill)),
         onTap: () {
           _handlePressed(index);
         },
         child: AnimatedContainer(
-          duration: Duration(milliseconds: 500),
+          duration: const Duration(milliseconds: 500),
           alignment: isEnable ? Alignment.topCenter : Alignment.center,
           child: AnimatedContainer(
-            height: isEnable ? 40 : 20,
-            duration: Duration(milliseconds: 300),
+            height: isEnable ? AppSpacing.jumbo : AppSpacing.xl,
+            duration: const Duration(milliseconds: 300),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: isEnable ? LightColor.orange : Colors.white,
+              color: isEnable
+                  ? AppColors.accentOrange
+                  : Theme.of(context).colorScheme.surface,
               boxShadow: <BoxShadow>[
                 BoxShadow(
-                  color: isEnable ? Color(0xfffeece2) : Colors.white,
-                  blurRadius: 10,
-                  spreadRadius: 5,
-                  offset: Offset(5, 5),
+                  color: isEnable
+                      ? AppColors.highlightSoft
+                      : Theme.of(context).colorScheme.surface,
+                  blurRadius: AppSpacing.jumbo,
+                  spreadRadius: AppSpacing.sm,
+                  offset: const Offset(AppSpacing.sm, AppSpacing.sm),
                 ),
               ],
               shape: BoxShape.circle,
@@ -102,7 +108,7 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
                   child: Icon(
                     icon,
                     color: isEnable
-                        ? LightColor.background
+                        ? AppColors.white
                         : Theme.of(context).iconTheme.color,
                   ),
                 ),
@@ -112,10 +118,10 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
                     right: 0,
                     top: 0,
                     child: Container(
-                      width: 20,
-                      height: 20,
+                      width: AppSpacing.xl,
+                      height: AppSpacing.xl,
                       decoration: BoxDecoration(
-                        color: Colors.red,
+                        color: AppColors.error,
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -123,11 +129,8 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
                           widget.cartBadgeCount > 99
                               ? '99+'
                               : widget.cartBadgeCount.toString(),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: AppTextStyles.labelSmall(context)
+                              .copyWith(color: AppColors.white),
                         ),
                       ),
                     ),
@@ -156,8 +159,8 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
 
   double _getButtonContainerWidth() {
     double width = MediaQuery.of(context).size.width;
-    if (width > 400.0) {
-      width = 400.0;
+    if (width > AppSpacing.navMaxWidth) {
+      width = AppSpacing.navMaxWidth;
     }
     return width;
   }
@@ -172,28 +175,28 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
     _yController.value = 1.0;
     _xController.animateTo(
       _indexToPosition(index) / MediaQuery.of(context).size.width,
-      duration: Duration(milliseconds: 620),
+      duration: const Duration(milliseconds: 620),
     );
-    Future.delayed(Duration(milliseconds: 500), () {
-      _yController.animateTo(1.0, duration: Duration(milliseconds: 1200));
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _yController.animateTo(1.0, duration: const Duration(milliseconds: 1200));
     });
-    _yController.animateTo(0.0, duration: Duration(milliseconds: 300));
+    _yController.animateTo(0.0, duration: const Duration(milliseconds: 300));
   }
 
   @override
   Widget build(BuildContext context) {
     final appSize = MediaQuery.of(context).size;
-    final height = 60.0;
+    final height = AppSpacing.navHeight;
     return SizedBox(
       width: appSize.width,
-      height: 60,
+      height: AppSpacing.navHeight,
       child: Stack(
         children: [
           Positioned(
             left: 0,
             bottom: 0,
             width: appSize.width,
-            height: height - 10,
+            height: height - AppSpacing.sm,
             child: _buildBackground(),
           ),
           Positioned(

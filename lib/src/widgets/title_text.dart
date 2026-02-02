@@ -1,24 +1,21 @@
+import 'package:flutter/material.dart';
 
-import 'package:flutter/cupertino.dart';
-import 'package:google_fonts/google_fonts.dart';
-
-import '../themes/light_color.dart';
+import '../design/app_text_styles.dart';
 
 class TitleText extends StatelessWidget {
-  final String? text;
-  final double fontSize;
-  final Color color;
-  final FontWeight fontWeight;
-  const TitleText(
-      {super.key,
-        this.text,
-        this.fontSize = 18,
-        this.color = LightColor.titleTextColor,
-        this.fontWeight = FontWeight.w800});
+  final String text;
+  final TextStyle? style;
+
+  const TitleText({
+    super.key,
+    required this.text,
+    this.style, required int fontSize, required Color color,
+  });
   @override
   Widget build(BuildContext context) {
-    return Text(text ?? '',
-        style: GoogleFonts.mulish(
-            fontSize: fontSize, fontWeight: fontWeight, color: color));
+    return Text(
+      text,
+      style: style ?? AppTextStyles.titleLarge(context),
+    );
   }
 }

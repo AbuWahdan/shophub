@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../themes/light_color.dart';
+
+import '../../design/app_colors.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
+import '../../l10n/l10n.dart';
+import '../../shared/validation/auth_validators.dart';
+import '../../shared/widgets/app_button.dart';
 import '../../themes/theme.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
@@ -14,6 +20,8 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
   late List<TextEditingController> _otpControllers;
   late AnimationController _timerController;
   int _remainingSeconds = 60;
+  final _formKey = GlobalKey<FormState>();
+  static const int _otpLength = 6;
 
   @override
   void initState() {
@@ -24,7 +32,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
 
   void _startTimer() {
     _timerController = AnimationController(
-      duration: Duration(seconds: 60),
+      duration: const Duration(seconds: 60),
       vsync: this,
     );
 
@@ -60,88 +68,105 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text('Verify OTP')),
+      appBar: AppBar(title: Text(l10n.otpTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: AppTheme.padding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(height: 24),
-              Text(
-                'Enter Verification Code',
-                style: AppTheme.h3Style,
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 12),
-              Text(
-                'We\'ve sent a 6-digit code to your email',
-                style: AppTheme.subTitleStyle,
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 40),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(
-                  6,
-                  (index) => SizedBox(
-                    width: 48,
-                    height: 56,
-                    child: TextField(
-                      controller: _otpControllers[index],
-                      textAlign: TextAlign.center,
-                      keyboardType: TextInputType.number,
-                      maxLength: 1,
-                      decoration: InputDecoration(
-                        counterText: '',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: AppSpacing.xxl),
+                Text(
+                  l10n.otpEnterCode,
+                  style: AppTextStyles.headlineSmall(context),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  l10n.otpSubtitle,
+                  style: AppTextStyles.bodyMedium(context),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.jumbo),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  alignment: WrapAlignment.center,
+                  children: List.generate(
+                    _otpLength,
+                    (index) => SizedBox(
+                      width: AppSpacing.buttonMd,
+                      height: AppSpacing.buttonLg,
+                      child: TextFormField(
+                        controller: _otpControllers[index],
+                        textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        maxLength: 1,
+                        validator: (value) => AuthValidators.otp(
+                          value,
+                          length: 1,
+                          emptyMessage: l10n.validationOtpRequired,
+                          invalidMessage: l10n.validationOtpInvalid,
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: LightColor.skyBlue,
-                            width: 2,
+                        decoration: InputDecoration(
+                          counterText: '',
+                          border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppSpacing.radiusLg),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.circular(AppSpacing.radiusLg),
+                            borderSide: const BorderSide(
+                              color: AppColors.primary,
+                              width: AppSpacing.borderThick,
+                            ),
                           ),
                         ),
+                        onChanged: (value) => _onOTPChanged(value, index),
                       ),
-                      onChanged: (value) => _onOTPChanged(value, index),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(height: 32),
-              if (_remainingSeconds > 0)
-                Text(
-                  'Resend code in ${_remainingSeconds}s',
-                  style: TextStyle(color: LightColor.grey, fontSize: 14),
-                )
-              else
-                TextButton(
+                const SizedBox(height: AppSpacing.xxl),
+                if (_remainingSeconds > 0)
+                  Text(
+                    l10n.otpResendIn(_remainingSeconds),
+                    style: AppTextStyles.bodySmall(context),
+                  )
+                else
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _remainingSeconds = 60;
+                        _startTimer();
+                      });
+                    },
+                    child: Text(l10n.otpResend),
+                  ),
+                const SizedBox(height: AppSpacing.xxl),
+                AppButton(
+                  label: l10n.otpVerify,
                   onPressed: () {
-                    setState(() {
-                      _remainingSeconds = 60;
-                      _startTimer();
-                    });
-                  },
-                  child: Text('Resend Code'),
-                ),
-              SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
+                    if (!(_formKey.currentState?.validate() ?? false)) return;
                     final otp = _getOTP();
-                    if (otp.length == 6) {
+                    final validation = AuthValidators.otp(
+                      otp,
+                      length: _otpLength,
+                      emptyMessage: l10n.validationOtpRequired,
+                      invalidMessage: l10n.validationOtpInvalidLength,
+                    );
+                    if (validation == null) {
                       Navigator.of(context).pushReplacementNamed('/main');
                     }
                   },
-                  child: Text('Verify'),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

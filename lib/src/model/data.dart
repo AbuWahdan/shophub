@@ -1,5 +1,5 @@
+import 'package:sinwar_shoping/src/config/app_images.dart';
 import 'package:sinwar_shoping/src/model/product.dart';
-
 import 'category.dart';
 import 'address.dart';
 import 'order.dart';
@@ -11,7 +11,7 @@ class AppData {
       id: 1,
       name: 'Nike Air Max 200',
       category: 'Sneakers',
-      images: ['assets/shooe_tilt_1.png', 'assets/shoe_thumb_1.png'],
+      images: [AppImages.shoeTilt1, AppImages.shoeThumb1],
       price: 240.00,
       discountPrice: 200.00,
       description: 'Comfortable running shoes with Air Max technology.',
@@ -26,7 +26,7 @@ class AppData {
       id: 2,
       name: 'Nike Air Max 97',
       category: 'Sneakers',
-      images: ['assets/shoe_tilt_2.png', 'assets/shoe_thumb_2.png'],
+      images: [AppImages.shoeTilt2, AppImages.shoeThumb2],
       price: 220.00,
       description: 'Iconic sneakers with visible Air cushioning.',
       sizes: ['7', '8', '9', '10'],
@@ -40,7 +40,7 @@ class AppData {
       id: 3,
       name: 'Adidas Ultraboost',
       category: 'Sneakers',
-      images: ['assets/shoe_thumb_3.png'],
+      images: [AppImages.shoeThumb3],
       price: 180.00,
       discountPrice: 150.00,
       description: 'Boost technology for energy return.',
@@ -53,7 +53,7 @@ class AppData {
       id: 4,
       name: 'Puma RS-X',
       category: 'Sneakers',
-      images: ['assets/shoe_thumb_4.png'],
+      images: [AppImages.shoeThumb4],
       price: 120.00,
       description: 'Retro style with modern comfort.',
       sizes: ['7', '8', '9', '10'],
@@ -65,7 +65,7 @@ class AppData {
       id: 5,
       name: 'Levi\'s Denim Jacket',
       category: 'Jackets',
-      images: ['assets/jacket.png'],
+      images: [AppImages.jacket],
       price: 89.99,
       discountPrice: 70.00,
       description: 'Classic denim jacket for everyday wear.',
@@ -78,7 +78,7 @@ class AppData {
       id: 6,
       name: 'Rolex Submariner',
       category: 'Watches',
-      images: ['assets/watch.png'],
+      images: [AppImages.watch],
       price: 8500.00,
       description: 'Luxury dive watch with Oystersteel.',
       sizes: ['40mm', '41mm'],
@@ -90,7 +90,7 @@ class AppData {
       id: 7,
       name: 'Samsung Galaxy Watch',
       category: 'Watches',
-      images: ['assets/watch.png'],
+      images: [AppImages.watch],
       price: 399.99,
       discountPrice: 349.99,
       description: 'Smartwatch with health tracking.',
@@ -103,7 +103,7 @@ class AppData {
       id: 8,
       name: 'MacBook Pro 14"',
       category: 'Electronics',
-      images: ['assets/macbook.png'], // Assuming asset exists or placeholder
+      images: [AppImages.macbook],
       price: 1999.00,
       description: 'Powerful laptop with M2 chip.',
       sizes: ['14"'],
@@ -115,7 +115,7 @@ class AppData {
       id: 9,
       name: 'iPhone 15 Pro',
       category: 'Electronics',
-      images: ['assets/iphone.png'],
+      images: [AppImages.iphone],
       price: 999.00,
       discountPrice: 949.00,
       description: 'Latest iPhone with Pro camera system.',
@@ -128,7 +128,7 @@ class AppData {
       id: 10,
       name: 'Sony WH-1000XM5',
       category: 'Electronics',
-      images: ['assets/headphones.png'],
+      images: [AppImages.headphones],
       price: 349.99,
       description: 'Noise cancelling wireless headphones.',
       sizes: ['One Size'],
@@ -136,13 +136,11 @@ class AppData {
       rating: 4.6,
       reviewCount: 400,
     ),
-    // Continue adding up to 50
-    // For brevity, I'll add a few more, but in practice, generate 50
     Product(
       id: 11,
       name: 'Nike T-Shirt',
       category: 'Clothing',
-      images: ['assets/tshirt.png'],
+      images: [AppImages.tshirt],
       price: 29.99,
       description: 'Comfortable cotton t-shirt.',
       sizes: ['S', 'M', 'L', 'XL'],
@@ -150,12 +148,24 @@ class AppData {
       rating: 4.2,
       reviewCount: 180,
     ),
-    // Add more products
+    Product(
+      id: 12,
+      name: 'Levi\'s Jeans',
+      category: 'Clothing',
+      images: [AppImages.clothing],
+      price: 59.99,
+      discountPrice: 49.99,
+      description: 'Classic denim jeans.',
+      sizes: ['30x30', '32x30', '34x30', '36x30'],
+      colors: ['Blue', 'Black'],
+      rating: 4.3,
+      reviewCount: 250,
+    ),
     Product(
       id: 13,
       name: 'Samsung Galaxy S23',
       category: 'Electronics',
-      images: ['assets/phone.png'],
+      images: [AppImages.phone],
       price: 799.99,
       discountPrice: 749.99,
       description: 'Latest Samsung flagship phone.',
@@ -168,7 +178,7 @@ class AppData {
       id: 14,
       name: 'Dell XPS 13',
       category: 'Electronics',
-      images: ['assets/laptop.png'],
+      images: [AppImages.laptop],
       price: 1299.99,
       description: 'Ultra-portable laptop.',
       sizes: ['13"'],
@@ -176,17 +186,40 @@ class AppData {
       rating: 4.5,
       reviewCount: 600,
     ),
-    // Continue adding up to 50...
-    // For brevity, I'll stop here, but in practice, add all 50.
+    // Continue adding more products with AppImages
+    Product(
+      id: 15,
+      name: 'Apple AirPods Pro',
+      category: 'Electronics',
+      images: [AppImages.headphones],
+      price: 249.99,
+      description: 'Wireless earbuds with active noise cancellation.',
+      sizes: ['One Size'],
+      colors: ['White'],
+      rating: 4.7,
+      reviewCount: 1200,
+    ),
+    Product(
+      id: 16,
+      name: 'Hoodie',
+      category: 'Clothing',
+      images: [AppImages.clothing],
+      price: 45.00,
+      discountPrice: 35.00,
+      description: 'Warm and comfortable hoodie.',
+      sizes: ['S', 'M', 'L', 'XL'],
+      colors: ['Black', 'Gray', 'Navy'],
+      rating: 4.4,
+      reviewCount: 180,
+    ),
   ];
 
-  // For simplicity, keep cartList as is, but update to match new Product structure
   static List<Product> cartList = [
     Product(
       id: 1,
       name: 'Nike Air Max 200',
       category: 'Sneakers',
-      images: ['assets/small_tilt_shoe_1.png'],
+      images: [AppImages.smallTiltShoe1],
       price: 240.00,
       description: 'Comfortable running shoes.',
       sizes: ['10'],
@@ -198,7 +231,7 @@ class AppData {
       id: 2,
       name: 'Nike Air Max 97',
       category: 'Sneakers',
-      images: ['assets/small_tilt_shoe_2.png'],
+      images: [AppImages.smallTiltShoe2],
       price: 190.00,
       description: 'Iconic sneakers.',
       sizes: ['9'],
@@ -210,7 +243,7 @@ class AppData {
       id: 3,
       name: 'Adidas Ultraboost',
       category: 'Sneakers',
-      images: ['assets/small_tilt_shoe_3.png'],
+      images: [AppImages.smallTiltShoe3],
       price: 220.00,
       description: 'Boost technology.',
       sizes: ['8'],
@@ -221,44 +254,44 @@ class AppData {
   ];
 
   static List<Categories> categoryList = [
-    Categories(id: 0, name: "All", image: 'assets/all.png', isSelected: true),
+    Categories(id: 0, name: "All", image: AppImages.all, isSelected: true),
     Categories(
       id: 1,
       name: "Sneakers",
-      image: 'assets/shoe_thumb_2.png',
+      image: AppImages.shoeThumb2,
       isSelected: false,
     ),
     Categories(
       id: 2,
       name: "Jackets",
-      image: 'assets/jacket.png',
+      image: AppImages.jacket,
       isSelected: false,
     ),
     Categories(
       id: 3,
       name: "Watches",
-      image: 'assets/watch.png',
+      image: AppImages.watch,
       isSelected: false,
     ),
     Categories(
       id: 4,
       name: "Electronics",
-      image: 'assets/electronics.png',
+      image: AppImages.electronics,
       isSelected: false,
     ),
     Categories(
       id: 5,
       name: "Clothing",
-      image: 'assets/clothing.png',
+      image: AppImages.clothing,
       isSelected: false,
     ),
   ];
 
   static List<String> showThumbnailList = [
-    "assets/shoe_thumb_5.png",
-    "assets/shoe_thumb_1.png",
-    "assets/shoe_thumb_4.png",
-    "assets/shoe_thumb_3.png",
+    AppImages.shoeThumb5,
+    AppImages.shoeThumb1,
+    AppImages.shoeThumb4,
+    AppImages.shoeThumb3,
   ];
 
   static List<Address> addressList = [
@@ -293,7 +326,7 @@ class AppData {
         OrderItem(
           productId: 1,
           productName: 'Nike Air Max 200',
-          image: 'assets/shooe_tilt_1.png',
+          image: AppImages.shoeTilt1,
           price: 200.00,
           quantity: 1,
           selectedSize: '10',
@@ -302,7 +335,7 @@ class AppData {
         OrderItem(
           productId: 5,
           productName: 'Classic Analog Watch',
-          image: 'assets/watch_1.png',
+          image: AppImages.watch,
           price: 89.99,
           quantity: 1,
           selectedSize: null,
@@ -324,7 +357,7 @@ class AppData {
         OrderItem(
           productId: 10,
           productName: 'Premium Winter Jacket',
-          image: 'assets/jacket_1.png',
+          image: AppImages.jacket,
           price: 150.00,
           quantity: 1,
           selectedSize: 'M',
@@ -346,7 +379,7 @@ class AppData {
         OrderItem(
           productId: 15,
           productName: 'Sports Running Shoes',
-          image: 'assets/shoe_thumb_3.png',
+          image: AppImages.shoeThumb3,
           price: 120.00,
           quantity: 2,
           selectedSize: '9',

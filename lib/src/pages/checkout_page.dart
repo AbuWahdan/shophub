@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
-import '../model/data.dart';
+
+import '../config/app_constants.dart';
+import '../design/app_colors.dart';
+import '../design/app_spacing.dart';
+import '../design/app_text_styles.dart';
+import '../l10n/l10n.dart';
 import '../model/address.dart';
-import '../themes/light_color.dart';
+import '../model/data.dart';
+import '../shared/widgets/app_image.dart';
 import 'order_success_screen.dart';
 
 class CheckoutPage extends StatefulWidget {
@@ -24,8 +30,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: Text('Checkout')),
+      appBar: AppBar(title: Text(l10n.checkoutTitle)),
       body: Stepper(
         currentStep: _currentStep,
         onStepContinue: () {
@@ -46,17 +53,17 @@ class _CheckoutPageState extends State<CheckoutPage> {
         },
         steps: [
           Step(
-            title: Text('Delivery Address'),
+            title: Text(l10n.checkoutDeliveryAddress),
             content: _buildAddressStep(),
             isActive: _currentStep >= 0,
           ),
           Step(
-            title: Text('Payment Method'),
+            title: Text(l10n.checkoutPaymentMethod),
             content: _buildPaymentStep(),
             isActive: _currentStep >= 1,
           ),
           Step(
-            title: Text('Order Review'),
+            title: Text(l10n.checkoutOrderReview),
             content: _buildReviewStep(),
             isActive: _currentStep >= 2,
           ),
@@ -72,8 +79,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ...AppData.addressList.map((address) {
           return Card(
             child: RadioListTile<String>(
-              title: Text(address.name),
-              subtitle: Text(address.fullAddress),
+              title: Text(address.name, style: AppTextStyles.bodyLarge(context)),
+              subtitle:
+                  Text(address.fullAddress, style: AppTextStyles.bodySmall(context)),
               value: address.id,
               groupValue: _selectedAddress.id,
               onChanged: (value) {
@@ -88,13 +96,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ),
           );
         }),
-        SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         ElevatedButton.icon(
           onPressed: () {
             // Navigate to add address
           },
-          icon: Icon(Icons.add),
-          label: Text('Add New Address'),
+          icon: const Icon(Icons.add),
+          label: Text(context.l10n.checkoutAddNewAddress),
         ),
       ],
     );
@@ -104,13 +112,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildPaymentOption('card', 'Credit/Debit Card', Icons.credit_card),
-        SizedBox(height: 12),
-        _buildPaymentOption('cod', 'Cash on Delivery', Icons.local_atm),
-        SizedBox(height: 12),
+        _buildPaymentOption(
+          'card',
+          context.l10n.checkoutPaymentCard,
+          Icons.credit_card,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _buildPaymentOption(
+          'cod',
+          context.l10n.checkoutPaymentCash,
+          Icons.local_atm,
+        ),
+        const SizedBox(height: AppSpacing.md),
         _buildPaymentOption(
           'wallet',
-          'Digital Wallet',
+          context.l10n.checkoutPaymentWallet,
           Icons.account_balance_wallet,
           enabled: false,
         ),
@@ -126,7 +142,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }) {
     return Card(
       child: RadioListTile<String>(
-        title: Text(label),
+        title: Text(label, style: AppTextStyles.bodyLarge(context)),
         secondary: Icon(icon),
         value: value,
         groupValue: _selectedPaymentMethod,
@@ -145,38 +161,54 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   Widget _buildReviewStep() {
     double subtotal = 0;
-    double shipping = 10.0;
+    double shipping = AppConstants.checkoutShippingFlat;
     double discount = 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Order Summary',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          context.l10n.checkoutOrderSummary,
+          style: AppTextStyles.titleMedium(context),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         ...AppData.cartList.map((item) {
           subtotal += item.finalPrice;
           return ListTile(
-            leading: Image.asset(item.images[0]),
-            title: Text(item.name),
-            subtitle: Text('Qty: 1'),
-            trailing: Text('\$${item.finalPrice}'),
+            leading: AppImage(
+              path: item.images[0],
+              width: AppSpacing.imageSm,
+              height: AppSpacing.imageSm,
+            ),
+            title: Text(item.name, style: AppTextStyles.bodyLarge(context)),
+            subtitle: Text(
+              context.l10n.checkoutQuantity(1),
+              style: AppTextStyles.bodySmall(context),
+            ),
+            trailing: Text(
+              '\$${item.finalPrice}',
+              style: AppTextStyles.bodyMedium(context),
+            ),
           );
         }),
-        Divider(),
-        _buildSummaryRow('Subtotal', '\$${subtotal.toStringAsFixed(2)}'),
-        _buildSummaryRow('Shipping', '\$${shipping.toStringAsFixed(2)}'),
+        const Divider(),
+        _buildSummaryRow(
+          context.l10n.checkoutSubtotal,
+          '\$${subtotal.toStringAsFixed(2)}',
+        ),
+        _buildSummaryRow(
+          context.l10n.checkoutShipping,
+          '\$${shipping.toStringAsFixed(2)}',
+        ),
         if (discount > 0)
           _buildSummaryRow(
-            'Discount',
+            context.l10n.checkoutDiscount,
             '-\$${discount.toStringAsFixed(2)}',
-            color: LightColor.orange,
+            color: AppColors.accentOrange,
           ),
-        Divider(),
+        const Divider(),
         _buildSummaryRow(
-          'Total',
+          context.l10n.checkoutTotal,
           '\$${(subtotal + shipping - discount).toStringAsFixed(2)}',
           isBold: true,
         ),
@@ -191,22 +223,22 @@ class _CheckoutPageState extends State<CheckoutPage> {
     Color? color,
   }) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: AppSpacing.symmetric(vertical: AppSpacing.sm),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            ),
+            style: isBold
+                ? AppTextStyles.titleSmall(context)
+                : AppTextStyles.bodySmall(context),
           ),
           Text(
             value,
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              color: color,
-            ),
+            style: (isBold
+                    ? AppTextStyles.titleSmall(context)
+                    : AppTextStyles.bodySmall(context))
+                .copyWith(color: color),
           ),
         ],
       ),
@@ -220,7 +252,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
       total += item.finalPrice;
     }
 
-    final orderId = 'ORD-${DateTime.now().millisecondsSinceEpoch}';
+    final orderId =
+        '${context.l10n.orderIdPrefix}${DateTime.now().millisecondsSinceEpoch}';
 
     Navigator.pushReplacement(
       context,

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import '../themes/light_color.dart';
+
+import '../design/app_colors.dart';
+import '../design/app_spacing.dart';
+import '../design/app_text_styles.dart';
+import '../l10n/l10n.dart';
 
 /// Splash Screen with fade animation
 class SplashScreen extends StatefulWidget {
@@ -18,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
 
@@ -29,7 +33,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/onboarding');
       }
@@ -50,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [LightColor.skyBlue, LightColor.lightBlue],
+            colors: [AppColors.primary, AppColors.secondary],
           ),
         ),
         child: Center(
@@ -67,35 +71,30 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
                   child: Container(
-                    width: 120,
-                    height: 120,
+                    width: AppSpacing.imageLg,
+                    height: AppSpacing.imageLg,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.2),
+                      color: AppColors.white.withOpacity(0.2),
                     ),
                     child: Icon(
                       Icons.shopping_bag,
-                      size: 60,
-                      color: Colors.white,
+                      size: AppSpacing.iconXl,
+                      color: AppColors.white,
                     ),
                   ),
                 ),
-                SizedBox(height: 32),
+                const SizedBox(height: AppSpacing.xxxl),
                 Text(
-                  'ShopHub',
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  context.l10n.splashTitle,
+                  style: AppTextStyles.displayMedium(context)
+                      .copyWith(color: AppColors.white),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Your Premium Shopping Destination',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
+                  context.l10n.splashSubtitle,
+                  style: AppTextStyles.bodyMedium(context)
+                      .copyWith(color: AppColors.white.withOpacity(0.8)),
                 ),
               ],
             ),
