@@ -47,25 +47,21 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            AnimatedSwitcher(
-              duration: Duration(milliseconds: 300),
-              switchInCurve: Curves.easeInToLinear,
-              switchOutCurve: Curves.easeOutBack,
-              child: pages[currentIndex],
-            ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: CustomBottomNavigationBar(
-                onIconPresedCallback: onBottomIconPressed,
-                cartBadgeCount: cartItemCount,
-              ),
-            ),
-          ],
+        bottom: false,
+        child: AnimatedSwitcher(
+          duration: Duration(milliseconds: 300),
+          switchInCurve: Curves.easeInToLinear,
+          switchOutCurve: Curves.easeOutBack,
+          child: pages[currentIndex],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: CustomBottomNavigationBar(
+          onIconPresedCallback: onBottomIconPressed,
+          cartBadgeCount: cartItemCount,
         ),
       ),
     );

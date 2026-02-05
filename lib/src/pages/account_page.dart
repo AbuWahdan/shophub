@@ -118,7 +118,7 @@ class AccountPage extends StatelessWidget {
                   title: l10n.accountHelp,
                   subtitle: l10n.accountHelpSubtitle,
                   onTap: () {
-                    _showHelpDialog(context);
+                    Navigator.pushNamed(context, '/help');
                   },
                 ),
                 _MenuItem(
@@ -126,12 +126,7 @@ class AccountPage extends StatelessWidget {
                   title: l10n.accountAbout,
                   subtitle: l10n.accountAboutSubtitle,
                   onTap: () {
-                    AppDialogs.showAbout(
-                      context: context,
-                      applicationName: l10n.appTitle,
-                      applicationVersion: l10n.appVersion,
-                      legalese: l10n.appLegalese,
-                    );
+                    Navigator.pushNamed(context, '/about');
                   },
                 ),
               ],
@@ -243,16 +238,6 @@ class AccountPage extends StatelessWidget {
         }),
         const SizedBox(height: AppSpacing.sm),
       ],
-    );
-  }
-
-  void _showHelpDialog(BuildContext context) {
-    final l10n = context.l10n;
-    AppDialogs.showInfo(
-      context: context,
-      title: l10n.accountHelp,
-      message: l10n.accountHelpMessage,
-      closeLabel: l10n.commonClose,
     );
   }
 

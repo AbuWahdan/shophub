@@ -16,7 +16,7 @@ class AppColors {
   static const Color error = Color(0xffd32f2f);
 
   // Light scheme
-  static const Color backgroundLight = Color(0xffffffff);
+  static const Color backgroundLight = Color(0xfff7f5f0);
   static const Color surfaceLight = Color(0xfff7f7f8);
   static const Color cardLight = Color(0xffffffff);
   static const Color dividerLight = Color(0xffe1e2e4);

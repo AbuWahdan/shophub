@@ -55,13 +55,22 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
   double _indexToPosition(int index) {
     // Calculate button positions based off of their
     // index (works with `MainAxisAlignment.spaceAround`)
-    const buttonCount = 4.0;
+    const buttonCount = 4;
     final appWidth = MediaQuery.of(context).size.width;
     final buttonsWidth = _getButtonContainerWidth();
     final startX = (appWidth - buttonsWidth) / 2;
+    final effectiveIndex = _resolveIndexForDirection(index, buttonCount);
     return startX +
-        index.toDouble() * buttonsWidth / buttonCount +
+        effectiveIndex.toDouble() * buttonsWidth / buttonCount +
         buttonsWidth / (buttonCount * 2.0);
+  }
+
+  int _resolveIndexForDirection(int index, int buttonCount) {
+    final direction = Directionality.of(context);
+    if (direction == TextDirection.rtl) {
+      return buttonCount - 1 - index;
+    }
+    return index;
   }
 
   @override

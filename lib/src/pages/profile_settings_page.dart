@@ -20,6 +20,8 @@ class ProfileSettingsPage extends StatefulWidget {
 class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
   ThemeMode _themeMode = ThemeMode.system;
   String _selectedLanguage = 'system';
+  bool _emailNotificationsEnabled = true;
+  bool _pushNotificationsEnabled = true;
 
   @override
   void initState() {
@@ -86,14 +88,28 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 icon: Icons.email,
                 title: l10n.settingsEmailNotifications,
                 subtitle: l10n.settingsEmailNotificationsSubtitle,
-                trailing: Switch(value: true, onChanged: (_) {}),
+                trailing: Switch(
+                  value: _emailNotificationsEnabled,
+                  onChanged: (value) {
+                    setState(() {
+                      _emailNotificationsEnabled = value;
+                    });
+                  },
+                ),
               ),
               const Divider(),
               _buildSettingItem(
                 icon: Icons.notifications,
                 title: l10n.settingsPushNotifications,
                 subtitle: l10n.settingsPushNotificationsSubtitle,
-                trailing: Switch(value: true, onChanged: (_) {}),
+                trailing: Switch(
+                  value: _pushNotificationsEnabled,
+                  onChanged: (value) {
+                    setState(() {
+                      _pushNotificationsEnabled = value;
+                    });
+                  },
+                ),
               ),
             ],
           ),
@@ -105,12 +121,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 icon: Icons.info,
                 title: l10n.settingsAboutApp,
                 onTap: () {
-                  AppDialogs.showAbout(
-                    context: context,
-                    applicationName: l10n.appTitle,
-                    applicationVersion: l10n.appVersion,
-                    legalese: l10n.appLegalese,
-                  );
+                  Navigator.pushNamed(context, '/about');
                 },
               ),
               const Divider(),
@@ -118,12 +129,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 icon: Icons.privacy_tip,
                 title: l10n.settingsPrivacyPolicy,
                 onTap: () {
-                  AppDialogs.showInfo(
-                    context: context,
-                    title: l10n.settingsPrivacyPolicy,
-                    message: l10n.settingsPrivacyPolicyContent,
-                    closeLabel: l10n.commonClose,
-                  );
+                  Navigator.pushNamed(context, '/privacy');
                 },
               ),
               const Divider(),
@@ -131,12 +137,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 icon: Icons.description,
                 title: l10n.settingsTerms,
                 onTap: () {
-                  AppDialogs.showInfo(
-                    context: context,
-                    title: l10n.settingsTerms,
-                    message: l10n.settingsTermsContent,
-                    closeLabel: l10n.commonClose,
-                  );
+                  Navigator.pushNamed(context, '/terms');
                 },
               ),
               const Divider(),
@@ -144,12 +145,15 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 icon: Icons.help,
                 title: l10n.settingsHelp,
                 onTap: () {
-                  AppDialogs.showInfo(
-                    context: context,
-                    title: l10n.settingsHelp,
-                    message: l10n.settingsHelpContent,
-                    closeLabel: l10n.commonClose,
-                  );
+                  Navigator.pushNamed(context, '/help');
+                },
+              ),
+              const Divider(),
+              _buildSettingItem(
+                icon: Icons.article_outlined,
+                title: MaterialLocalizations.of(context).licensesPageTitle,
+                onTap: () {
+                  Navigator.pushNamed(context, '/licenses');
                 },
               ),
             ],
@@ -220,7 +224,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
       leading: Icon(icon, color: AppColors.primary),
       title: Text(title, style: AppTextStyles.bodyLarge(context)),
       subtitle: subtitle != null
-          ? Text(subtitle!, style: AppTextStyles.bodySmall(context))
+          ? Text(subtitle, style: AppTextStyles.bodySmall(context))
           : null,
       trailing: trailing ??
           const Icon(Icons.arrow_forward_ios, size: AppSpacing.iconSm),

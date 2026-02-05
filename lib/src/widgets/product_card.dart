@@ -8,11 +8,16 @@ import '../model/product.dart';
 import '../pages/product_details_new.dart';
 import '../shared/widgets/app_image.dart';
 
-class ProductCard extends StatelessWidget {
+class ProductCard extends StatefulWidget {
   final Product product;
   final ValueChanged<Product>? onSelected;
   const ProductCard({super.key, required this.product, this.onSelected});
 
+  @override
+  State<ProductCard> createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<ProductCard> {
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -26,10 +31,10 @@ class ProductCard extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ProductDetailsPage(product: product),
+              builder: (context) => ProductDetailsPage(product: widget.product),
             ),
           );
-          onSelected?.call(product);
+          widget.onSelected?.call(widget.product);
         },
         child: Padding(
           padding: AppSpacing.insetsSm,
@@ -41,10 +46,10 @@ class ProductCard extends StatelessWidget {
                   children: [
                     Center(
                       child: Hero(
-                        tag: 'product_${product.id}',
+                        tag: 'product_${widget.product.id}',
                         child: AppImage(
-                          path: product.images.isNotEmpty
-                              ? product.images.first
+                          path: widget.product.images.isNotEmpty
+                              ? widget.product.images.first
                               : AppImages.placeholder,
                           fit: BoxFit.cover,
                         ),
@@ -55,15 +60,18 @@ class ProductCard extends StatelessWidget {
                       right: AppSpacing.sm,
                       child: IconButton(
                         icon: Icon(
-                          product.isFavorite
+                          widget.product.isFavorite
                               ? Icons.favorite
                               : Icons.favorite_border,
-                          color: product.isFavorite
+                          color: widget.product.isFavorite
                               ? AppColors.error
                               : Theme.of(context).iconTheme.color,
                         ),
                         onPressed: () {
-                          // Toggle like
+                          setState(() {
+                            widget.product.isFavorite =
+                                !widget.product.isFavorite;
+                          });
                         },
                       ),
                     ),
@@ -72,7 +80,7 @@ class ProductCard extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                product.name,
+                widget.product.name,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.bodyMedium(context),
@@ -82,21 +90,21 @@ class ProductCard extends StatelessWidget {
                 spacing: AppSpacing.sm,
                 runSpacing: AppSpacing.xs,
                 children: [
-                  if (product.discountPrice != null) ...[
+                  if (widget.product.discountPrice != null) ...[
                     Text(
-                      '\$${product.finalPrice.toStringAsFixed(2)}',
+                      '\$${widget.product.finalPrice.toStringAsFixed(2)}',
                       style: AppTextStyles.labelLarge(context)
                           .copyWith(color: AppColors.primary),
                     ),
                     Text(
-                      '\$${product.price.toStringAsFixed(2)}',
+                      '\$${widget.product.price.toStringAsFixed(2)}',
                       style: AppTextStyles.bodySmall(context).copyWith(
                         decoration: TextDecoration.lineThrough,
                       ),
                     ),
                   ] else
                     Text(
-                      '\$${product.price.toStringAsFixed(2)}',
+                      '\$${widget.product.price.toStringAsFixed(2)}',
                       style: AppTextStyles.labelLarge(context),
                     ),
                 ],

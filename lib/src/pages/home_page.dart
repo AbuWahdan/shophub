@@ -6,7 +6,6 @@ import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
 import '../themes/theme.dart';
-import '../widgets/extentions.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_icon.dart';
 
@@ -21,16 +20,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  Widget _icon(IconData icon, {Color? color}) {
-    return Container(
-      padding: AppSpacing.insetsSm,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.all(Radius.circular(AppSpacing.radiusLg)),
-        color: Theme.of(context).scaffoldBackgroundColor,
-        boxShadow: AppTheme.shadow,
-      ),
-      child: Icon(icon, color: color ?? Theme.of(context).iconTheme.color),
-    ).ripple(() {}, borderRadius: BorderRadius.all(Radius.circular(13)));
+  final TextEditingController _searchController = TextEditingController();
+  bool _hasSearchText = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Widget _categoryWidget() {
@@ -92,40 +88,61 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _search() {
+    final iconColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
     return Container(
       margin: AppTheme.padding,
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Container(
-              height: AppSpacing.buttonSm,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.all(Radius.circular(AppSpacing.radiusMd)),
-              ),
-              child: TextField(
-                decoration: InputDecoration(
-                  border: InputBorder.none,
-                  hintText: context.l10n.homeSearchHint,
-                  hintStyle: AppTextStyles.bodySmall(context),
-                  contentPadding: AppSpacing.only(
-                    left: AppSpacing.sm,
-                    right: AppSpacing.sm,
-                    top: AppSpacing.xs,
+      child: Container(
+        height: AppSpacing.buttonSm,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.all(Radius.circular(AppSpacing.radiusMd)),
+        ),
+        child: TextField(
+          controller: _searchController,
+          onChanged: (value) {
+            setState(() {
+              _hasSearchText = value.trim().isNotEmpty;
+            });
+          },
+          decoration: InputDecoration(
+            border: InputBorder.none,
+            hintText: context.l10n.homeSearchHint,
+            hintStyle: AppTextStyles.bodySmall(context),
+            contentPadding: AppSpacing.only(
+              left: AppSpacing.sm,
+              right: AppSpacing.sm,
+              top: AppSpacing.xs,
+            ),
+            suffixIconConstraints: const BoxConstraints(
+              minHeight: AppSpacing.buttonSm,
+              minWidth: 96,
+            ),
+            suffixIcon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    _hasSearchText ? Icons.close : Icons.camera_alt_outlined,
+                    color: iconColor,
                   ),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                  ),
+                  onPressed: () {
+                    if (_hasSearchText) {
+                      _searchController.clear();
+                      setState(() {
+                        _hasSearchText = false;
+                      });
+                    }
+                  },
                 ),
-              ),
+                IconButton(
+                  icon: Icon(Icons.search, color: iconColor),
+                  onPressed: () {},
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: AppSpacing.xl),
-          _icon(Icons.filter_list,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
-        ],
+        ),
       ),
     );
   }

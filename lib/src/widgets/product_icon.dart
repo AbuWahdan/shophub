@@ -26,10 +26,10 @@ class ProductIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return model.id == null
-        ? const SizedBox(width: AppSpacing.xs)
+          ? const SizedBox(width: AppSpacing.xs)
         : Container(
-            margin: AppSpacing.symmetric(
-              horizontal: AppSpacing.lg,
+            margin: const EdgeInsets.symmetric(
+              horizontal: 2,
               vertical: AppSpacing.xl,
             ),
             child: Container(
