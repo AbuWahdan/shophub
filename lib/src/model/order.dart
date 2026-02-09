@@ -9,6 +9,7 @@ class Order {
   DateTime date;
   String? addressId;
   String estimatedDelivery;
+  String paymentMethod;
 
   Order({
     required this.id,
@@ -21,6 +22,7 @@ class Order {
     required this.date,
     this.addressId,
     required this.estimatedDelivery,
+    required this.paymentMethod,
   });
 }
 

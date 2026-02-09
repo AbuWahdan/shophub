@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
+import '../../l10n/l10n.dart';
 import 'bottom_curved_painter.dart';
 
 class CustomBottomNavigationBar extends StatefulWidget {
@@ -80,7 +81,7 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
     super.dispose();
   }
 
-  Widget _icon(IconData icon, bool isEnable, int index) {
+  Widget _icon(IconData icon, String label, bool isEnable, int index) {
     return Expanded(
       child: InkWell(
         borderRadius: BorderRadius.all(Radius.circular(AppSpacing.radiusPill)),
@@ -90,62 +91,76 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 500),
           alignment: isEnable ? Alignment.topCenter : Alignment.center,
-          child: AnimatedContainer(
-            height: isEnable ? AppSpacing.jumbo : AppSpacing.xl,
-            duration: const Duration(milliseconds: 300),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: isEnable
-                  ? AppColors.accentOrange
-                  : Theme.of(context).colorScheme.surface,
-              boxShadow: <BoxShadow>[
-                BoxShadow(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                height: isEnable ? AppSpacing.jumbo : AppSpacing.xxl,
+                duration: const Duration(milliseconds: 300),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
                   color: isEnable
-                      ? AppColors.highlightSoft
+                      ? AppColors.accentOrange
                       : Theme.of(context).colorScheme.surface,
-                  blurRadius: AppSpacing.jumbo,
-                  spreadRadius: AppSpacing.sm,
-                  offset: const Offset(AppSpacing.sm, AppSpacing.sm),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: isEnable
+                          ? AppColors.highlightSoft
+                          : Theme.of(context).colorScheme.surface,
+                      blurRadius: AppSpacing.jumbo,
+                      spreadRadius: AppSpacing.sm,
+                      offset: const Offset(AppSpacing.sm, AppSpacing.sm),
+                    ),
+                  ],
+                  shape: BoxShape.circle,
                 ),
-              ],
-              shape: BoxShape.circle,
-            ),
-            child: Stack(
-              children: [
-                Opacity(
-                  opacity: isEnable ? _yController.value : 1,
-                  child: Icon(
-                    icon,
-                    color: isEnable
-                        ? AppColors.white
-                        : Theme.of(context).iconTheme.color,
-                  ),
-                ),
-                // Cart badge
-                if (index == 2 && widget.cartBadgeCount > 0)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      width: AppSpacing.xl,
-                      height: AppSpacing.xl,
-                      decoration: BoxDecoration(
-                        color: AppColors.error,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          widget.cartBadgeCount > 99
-                              ? '99+'
-                              : widget.cartBadgeCount.toString(),
-                          style: AppTextStyles.labelSmall(context)
-                              .copyWith(color: AppColors.white),
-                        ),
+                child: Stack(
+                  children: [
+                    Opacity(
+                      opacity: isEnable ? _yController.value : 1,
+                      child: Icon(
+                        icon,
+                        color: isEnable
+                            ? AppColors.white
+                            : Theme.of(context).iconTheme.color,
                       ),
                     ),
-                  ),
-              ],
-            ),
+                    // Cart badge
+                    if (index == 2 && widget.cartBadgeCount > 0)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          width: AppSpacing.xl,
+                          height: AppSpacing.xl,
+                          decoration: BoxDecoration(
+                            color: AppColors.error,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              widget.cartBadgeCount > 99
+                                  ? '99+'
+                                  : widget.cartBadgeCount.toString(),
+                              style: AppTextStyles.labelSmall(context)
+                                  .copyWith(color: AppColors.white),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                label,
+                style: AppTextStyles.labelSmall(context).copyWith(
+                  color: isEnable
+                      ? AppColors.primary
+                      : Theme.of(context).iconTheme.color,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -196,6 +211,7 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
   Widget build(BuildContext context) {
     final appSize = MediaQuery.of(context).size;
     final height = AppSpacing.navHeight;
+    final l10n = context.l10n;
     return SizedBox(
       width: appSize.width,
       height: AppSpacing.navHeight,
@@ -216,10 +232,20 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: <Widget>[
-                _icon(Icons.home, _selectedIndex == 0, 0),
-                _icon(Icons.category, _selectedIndex == 1, 1),
-                _icon(Icons.card_travel, _selectedIndex == 2, 2),
-                _icon(Icons.person, _selectedIndex == 3, 3),
+                _icon(Icons.home, l10n.navHome, _selectedIndex == 0, 0),
+                _icon(
+                  Icons.category,
+                  l10n.navCategories,
+                  _selectedIndex == 1,
+                  1,
+                ),
+                _icon(
+                  Icons.card_travel,
+                  l10n.navCart,
+                  _selectedIndex == 2,
+                  2,
+                ),
+                _icon(Icons.person, l10n.navAccount, _selectedIndex == 3, 3),
               ],
             ),
           ),

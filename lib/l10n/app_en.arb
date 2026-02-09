@@ -159,6 +159,7 @@
       "count": {}
     }
   },
+  "orderDetailsPaymentMethod": "Payment method",
   "orderDetailsSubtotal": "Subtotal",
   "orderDetailsShipping": "Shipping",
   "orderDetailsDiscount": "Discount",
@@ -200,6 +201,18 @@
   "categoryWatches": "Watches",
   "categoryElectronics": "Electronics",
   "categoryClothing": "Clothing",
+  "categoriesAll": "All Categories",
+  "categoriesSelectTitle": "Select categories",
+  "categoriesSelectedCount": "Categories ({count})",
+  "@categoriesSelectedCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "navHome": "Home",
+  "navCategories": "Categories",
+  "navCart": "Cart",
+  "navAccount": "Account",
   "categoriesSearchHint": "Search products and categories",
   "homeSearchHint": "Search Products",
   "onboardingWelcomeTitle": "Welcome to ShopHub",
@@ -225,6 +238,12 @@
   "commonRemove": "Remove",
   "cartItemRemoved": "Item removed from cart",
   "cartQuantity": "Quantity",
+  "cartAvailableStock": "Available: {count}",
+  "@cartAvailableStock": {
+    "placeholders": {
+      "count": {}
+    }
+  },
   "cartItemTotal": "Item Total",
   "cartEmptyTitle": "Your Cart is Empty",
   "cartEmptyMessage": "Add items to get started",
@@ -238,10 +257,17 @@
   "cartCheckout": "Proceed to Checkout",
   "productTotalPrice": "Total Price",
   "productAddToCart": "Add to Cart",
+  "productSelectSizeQuantity": "Please select a size and quantity.",
   "productAddedToCart": "{name} added to cart",
   "@productAddedToCart": {
     "placeholders": {
       "name": {}
+    }
+  },
+  "productAvailableStock": "Available: {count}",
+  "@productAvailableStock": {
+    "placeholders": {
+      "count": {}
     }
   },
   "productReviews": "({count} reviews)",
@@ -284,7 +310,7 @@
   "loginPasswordLabel": "Password",
   "loginPasswordHint": "Enter your password",
   "validationPasswordRequired": "Password is required",
-  "validationPasswordTooShort": "Password must be at least 8 characters",
+  "validationPasswordTooShort": "Password must be at least 6 characters",
   "loginForgotPassword": "Forgot Password?",
   "loginSignIn": "Sign In",
   "loginContinueAsGuest": "Continue as Guest",

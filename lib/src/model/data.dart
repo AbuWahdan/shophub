@@ -5,6 +5,30 @@ import 'address.dart';
 import 'order.dart';
 
 class AppData {
+  static Map<String, List<String>> _colorImages(
+    List<String> images,
+    List<String> colors,
+  ) {
+    return {
+      for (final color in colors) color: images,
+    };
+  }
+
+  static Map<String, Map<String, int>> _variantStock(
+    List<String> sizes,
+    List<String> colors,
+    int seed,
+  ) {
+    return {
+      for (var sizeIndex = 0; sizeIndex < sizes.length; sizeIndex++)
+        sizes[sizeIndex]: {
+          for (var colorIndex = 0; colorIndex < colors.length; colorIndex++)
+            colors[colorIndex]:
+                ((seed + sizeIndex * 3 + colorIndex * 5) % 9) + 1,
+        },
+    };
+  }
+
   static List<Product> productList = [
     // Existing ones updated
     Product(
@@ -17,6 +41,15 @@ class AppData {
       description: 'Comfortable running shoes with Air Max technology.',
       sizes: ['7', '8', '9', '10', '11'],
       colors: ['Black', 'White', 'Red'],
+      imagesByColor: _colorImages(
+        [AppImages.shoeTilt1, AppImages.shoeThumb1],
+        ['Black', 'White', 'Red'],
+      ),
+      stockByVariant: _variantStock(
+        ['7', '8', '9', '10', '11'],
+        ['Black', 'White', 'Red'],
+        1,
+      ),
       rating: 4.5,
       reviewCount: 120,
       isFavorite: false,
@@ -31,6 +64,15 @@ class AppData {
       description: 'Iconic sneakers with visible Air cushioning.',
       sizes: ['7', '8', '9', '10'],
       colors: ['Silver', 'Black'],
+      imagesByColor: _colorImages(
+        [AppImages.shoeTilt2, AppImages.shoeThumb2],
+        ['Silver', 'Black'],
+      ),
+      stockByVariant: _variantStock(
+        ['7', '8', '9', '10'],
+        ['Silver', 'Black'],
+        2,
+      ),
       rating: 4.7,
       reviewCount: 95,
       isFavorite: false,
@@ -46,6 +88,15 @@ class AppData {
       description: 'Boost technology for energy return.',
       sizes: ['6', '7', '8', '9', '10', '11', '12'],
       colors: ['Black', 'White', 'Blue'],
+      imagesByColor: _colorImages(
+        [AppImages.shoeThumb3],
+        ['Black', 'White', 'Blue'],
+      ),
+      stockByVariant: _variantStock(
+        ['6', '7', '8', '9', '10', '11', '12'],
+        ['Black', 'White', 'Blue'],
+        3,
+      ),
       rating: 4.6,
       reviewCount: 200,
     ),
@@ -58,6 +109,15 @@ class AppData {
       description: 'Retro style with modern comfort.',
       sizes: ['7', '8', '9', '10'],
       colors: ['Pink', 'Black', 'White'],
+      imagesByColor: _colorImages(
+        [AppImages.shoeThumb4],
+        ['Pink', 'Black', 'White'],
+      ),
+      stockByVariant: _variantStock(
+        ['7', '8', '9', '10'],
+        ['Pink', 'Black', 'White'],
+        4,
+      ),
       rating: 4.3,
       reviewCount: 80,
     ),
@@ -71,6 +131,15 @@ class AppData {
       description: 'Classic denim jacket for everyday wear.',
       sizes: ['S', 'M', 'L', 'XL'],
       colors: ['Blue', 'Black'],
+      imagesByColor: _colorImages(
+        [AppImages.jacket],
+        ['Blue', 'Black'],
+      ),
+      stockByVariant: _variantStock(
+        ['S', 'M', 'L', 'XL'],
+        ['Blue', 'Black'],
+        5,
+      ),
       rating: 4.4,
       reviewCount: 150,
     ),
@@ -83,6 +152,15 @@ class AppData {
       description: 'Luxury dive watch with Oystersteel.',
       sizes: ['40mm', '41mm'],
       colors: ['Black', 'Green'],
+      imagesByColor: _colorImages(
+        [AppImages.watch],
+        ['Black', 'Green'],
+      ),
+      stockByVariant: _variantStock(
+        ['40mm', '41mm'],
+        ['Black', 'Green'],
+        6,
+      ),
       rating: 4.9,
       reviewCount: 50,
     ),
@@ -96,6 +174,15 @@ class AppData {
       description: 'Smartwatch with health tracking.',
       sizes: ['42mm', '46mm'],
       colors: ['Black', 'Silver'],
+      imagesByColor: _colorImages(
+        [AppImages.watch],
+        ['Black', 'Silver'],
+      ),
+      stockByVariant: _variantStock(
+        ['42mm', '46mm'],
+        ['Black', 'Silver'],
+        7,
+      ),
       rating: 4.5,
       reviewCount: 300,
     ),
@@ -108,6 +195,15 @@ class AppData {
       description: 'Powerful laptop with M2 chip.',
       sizes: ['14"'],
       colors: ['Space Gray', 'Silver'],
+      imagesByColor: _colorImages(
+        [AppImages.macbook],
+        ['Space Gray', 'Silver'],
+      ),
+      stockByVariant: _variantStock(
+        ['14"'],
+        ['Space Gray', 'Silver'],
+        8,
+      ),
       rating: 4.8,
       reviewCount: 500,
     ),
@@ -121,6 +217,15 @@ class AppData {
       description: 'Latest iPhone with Pro camera system.',
       sizes: ['128GB', '256GB', '512GB'],
       colors: ['Natural Titanium', 'Blue Titanium'],
+      imagesByColor: _colorImages(
+        [AppImages.iphone],
+        ['Natural Titanium', 'Blue Titanium'],
+      ),
+      stockByVariant: _variantStock(
+        ['128GB', '256GB', '512GB'],
+        ['Natural Titanium', 'Blue Titanium'],
+        9,
+      ),
       rating: 4.7,
       reviewCount: 1000,
     ),
@@ -133,6 +238,15 @@ class AppData {
       description: 'Noise cancelling wireless headphones.',
       sizes: ['One Size'],
       colors: ['Black', 'Silver'],
+      imagesByColor: _colorImages(
+        [AppImages.headphones],
+        ['Black', 'Silver'],
+      ),
+      stockByVariant: _variantStock(
+        ['One Size'],
+        ['Black', 'Silver'],
+        10,
+      ),
       rating: 4.6,
       reviewCount: 400,
     ),
@@ -145,6 +259,15 @@ class AppData {
       description: 'Comfortable cotton t-shirt.',
       sizes: ['S', 'M', 'L', 'XL'],
       colors: ['White', 'Black', 'Gray'],
+      imagesByColor: _colorImages(
+        [AppImages.tshirt],
+        ['White', 'Black', 'Gray'],
+      ),
+      stockByVariant: _variantStock(
+        ['S', 'M', 'L', 'XL'],
+        ['White', 'Black', 'Gray'],
+        11,
+      ),
       rating: 4.2,
       reviewCount: 180,
     ),
@@ -158,6 +281,15 @@ class AppData {
       description: 'Classic denim jeans.',
       sizes: ['30x30', '32x30', '34x30', '36x30'],
       colors: ['Blue', 'Black'],
+      imagesByColor: _colorImages(
+        [AppImages.clothing],
+        ['Blue', 'Black'],
+      ),
+      stockByVariant: _variantStock(
+        ['30x30', '32x30', '34x30', '36x30'],
+        ['Blue', 'Black'],
+        12,
+      ),
       rating: 4.3,
       reviewCount: 250,
     ),
@@ -171,6 +303,15 @@ class AppData {
       description: 'Latest Samsung flagship phone.',
       sizes: ['128GB', '256GB'],
       colors: ['Phantom Black', 'Cream'],
+      imagesByColor: _colorImages(
+        [AppImages.phone],
+        ['Phantom Black', 'Cream'],
+      ),
+      stockByVariant: _variantStock(
+        ['128GB', '256GB'],
+        ['Phantom Black', 'Cream'],
+        13,
+      ),
       rating: 4.6,
       reviewCount: 800,
     ),
@@ -183,6 +324,15 @@ class AppData {
       description: 'Ultra-portable laptop.',
       sizes: ['13"'],
       colors: ['Silver', 'Black'],
+      imagesByColor: _colorImages(
+        [AppImages.laptop],
+        ['Silver', 'Black'],
+      ),
+      stockByVariant: _variantStock(
+        ['13"'],
+        ['Silver', 'Black'],
+        14,
+      ),
       rating: 4.5,
       reviewCount: 600,
     ),
@@ -196,6 +346,15 @@ class AppData {
       description: 'Wireless earbuds with active noise cancellation.',
       sizes: ['One Size'],
       colors: ['White'],
+      imagesByColor: _colorImages(
+        [AppImages.headphones],
+        ['White'],
+      ),
+      stockByVariant: _variantStock(
+        ['One Size'],
+        ['White'],
+        15,
+      ),
       rating: 4.7,
       reviewCount: 1200,
     ),
@@ -209,6 +368,15 @@ class AppData {
       description: 'Warm and comfortable hoodie.',
       sizes: ['S', 'M', 'L', 'XL'],
       colors: ['Black', 'Gray', 'Navy'],
+      imagesByColor: _colorImages(
+        [AppImages.clothing],
+        ['Black', 'Gray', 'Navy'],
+      ),
+      stockByVariant: _variantStock(
+        ['S', 'M', 'L', 'XL'],
+        ['Black', 'Gray', 'Navy'],
+        16,
+      ),
       rating: 4.4,
       reviewCount: 180,
     ),
@@ -464,6 +632,7 @@ class AppData {
       date: DateTime.now().subtract(Duration(days: 15)),
       addressId: '1',
       estimatedDelivery: 'Delivered on Nov 15, 2024',
+      paymentMethod: 'Credit/Debit Card',
     ),
     Order(
       id: 'ORD-002',
@@ -486,6 +655,7 @@ class AppData {
       date: DateTime.now().subtract(Duration(days: 5)),
       addressId: '1',
       estimatedDelivery: 'Arriving on Dec 5, 2024',
+      paymentMethod: 'Cash on Delivery',
     ),
     Order(
       id: 'ORD-003',
@@ -508,6 +678,7 @@ class AppData {
       date: DateTime.now().subtract(Duration(days: 2)),
       addressId: '2',
       estimatedDelivery: 'Arriving on Dec 3, 2024',
+      paymentMethod: 'Digital Wallet',
     ),
   ];
 

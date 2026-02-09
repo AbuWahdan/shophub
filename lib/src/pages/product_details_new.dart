@@ -41,6 +41,20 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     super.dispose();
   }
 
+  List<String> get _displayImages =>
+      widget.product.imagesForColor(_selectedColor);
+
+  void _resetImageCarousel() {
+    if (_currentImageIndex != 0) {
+      setState(() {
+        _currentImageIndex = 0;
+      });
+    }
+    if (_imageController.hasClients) {
+      _imageController.jumpToPage(0);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -111,55 +125,68 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             child: SafeArea(
               child: Container(
                 padding: AppSpacing.insetsLg,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.neutral300.withOpacity(0.6),
-                    blurRadius: AppSpacing.jumbo,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          context.l10n.productTotalPrice,
-                          style: AppTextStyles.bodySmall(context),
-                        ),
-                        Text(
-                          '\$${(widget.product.finalPrice * _quantity).toStringAsFixed(2)}',
-                          style: AppTextStyles.titleLarge(context),
-                        ),
-                      ],
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.neutral300.withOpacity(0.6),
+                      blurRadius: AppSpacing.jumbo,
+                      offset: const Offset(0, -2),
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    flex: 2,
-                    child: AppButton(
-                      label: context.l10n.productAddToCart,
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              context.l10n.productAddedToCart(
-                                widget.product.name,
-                              ),
-                            ),
-                            duration: const Duration(seconds: 2),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            context.l10n.productTotalPrice,
+                            style: AppTextStyles.bodySmall(context),
                           ),
-                        );
-                      },
+                          Text(
+                            '\$${(widget.product.finalPrice * _quantity).toStringAsFixed(2)}',
+                            style: AppTextStyles.titleLarge(context),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      flex: 2,
+                      child: AppButton(
+                        label: context.l10n.productAddToCart,
+                        onPressed: () {
+                          if (_selectedSize == null ||
+                              _selectedColor == null ||
+                              _quantity < 1) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  context.l10n.productSelectSizeQuantity,
+                                ),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                            return;
+                          }
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                context.l10n.productAddedToCart(
+                                  widget.product.name,
+                                ),
+                              ),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -169,54 +196,113 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   }
 
   Widget _buildImageCarousel() {
-    return Stack(
+    final images = _displayImages;
+    return Column(
       children: [
-        Container(
-          height: AppSpacing.imageHero,
-          color: Theme.of(context).colorScheme.surface,
-          child: PageView.builder(
-            controller: _imageController,
-            onPageChanged: (index) {
-              setState(() {
-                _currentImageIndex = index;
-              });
-            },
-            itemCount: widget.product.images.length,
-            itemBuilder: (context, index) {
-              return Hero(
-                tag: 'product_${widget.product.id}',
-                child: AppImage(
-                  path: widget.product.images[index],
-                  fit: BoxFit.cover,
-                ),
-              );
-            },
-          ),
-        ),
-        Positioned(
-          bottom: AppSpacing.md,
-          left: 0,
-          right: 0,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              widget.product.images.length,
-              (index) => Container(
-                width: _currentImageIndex == index
-                    ? AppSpacing.xxl
-                    : AppSpacing.sm,
-                height: AppSpacing.sm,
-                margin: AppSpacing.symmetric(horizontal: AppSpacing.xs),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                  color: _currentImageIndex == index
-                      ? AppColors.primary
-                      : Theme.of(context).colorScheme.surface.withOpacity(0.6),
+        Stack(
+          children: [
+            Container(
+              height: AppSpacing.imageHero,
+              color: Theme.of(context).colorScheme.surface,
+              child: PageView.builder(
+                controller: _imageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentImageIndex = index;
+                  });
+                },
+                itemCount: images.length,
+                itemBuilder: (context, index) {
+                  return Hero(
+                    tag: 'product_${widget.product.id}',
+                    child: AppImage(
+                      path: images[index],
+                      fit: BoxFit.cover,
+                    ),
+                  );
+                },
+              ),
+            ),
+            Positioned(
+              bottom: AppSpacing.md,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  images.length,
+                  (index) => Container(
+                    width: _currentImageIndex == index
+                        ? AppSpacing.xxl
+                        : AppSpacing.sm,
+                    height: AppSpacing.sm,
+                    margin: AppSpacing.symmetric(horizontal: AppSpacing.xs),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                      color: _currentImageIndex == index
+                          ? AppColors.primary
+                          : Theme.of(context)
+                              .colorScheme
+                              .surface
+                              .withOpacity(0.6),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
+        if (images.length > 1)
+          Padding(
+            padding: AppSpacing.symmetric(vertical: AppSpacing.md),
+            child: SizedBox(
+              height: AppSpacing.imageSm,
+              child: ListView.separated(
+                padding: AppSpacing.horizontal(AppSpacing.lg),
+                scrollDirection: Axis.horizontal,
+                itemCount: images.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(width: AppSpacing.sm),
+                itemBuilder: (context, index) {
+                  final isActive = _currentImageIndex == index;
+                  return GestureDetector(
+                    onTap: () {
+                      _imageController.animateToPage(
+                        index,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOut,
+                      );
+                      setState(() {
+                        _currentImageIndex = index;
+                      });
+                    },
+                    child: Container(
+                      padding: AppSpacing.all(AppSpacing.xs),
+                      decoration: BoxDecoration(
+                        borderRadius:
+                            BorderRadius.circular(AppSpacing.radiusSm),
+                        border: Border.all(
+                          color: isActive
+                              ? AppColors.primary
+                              : Theme.of(context).dividerColor,
+                          width: isActive
+                              ? AppSpacing.borderThick
+                              : AppSpacing.borderThin,
+                        ),
+                        color: Theme.of(context).colorScheme.surface,
+                      ),
+                      child: AppImage(
+                        path: images[index],
+                        width: AppSpacing.imageSm,
+                        height: AppSpacing.imageSm,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -414,6 +500,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 setState(() {
                   _selectedColor = color;
                 });
+                _resetImageCarousel();
               },
               child: Stack(
                 alignment: Alignment.center,
@@ -448,6 +535,11 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   }
 
   Widget _buildQuantitySection() {
+    final bool hasVariantSelection =
+        _selectedSize != null && _selectedColor != null;
+    final int? availableStock = hasVariantSelection
+        ? widget.product.stockFor(_selectedSize!, _selectedColor!)
+        : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -455,6 +547,14 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           context.l10n.productQuantity,
           style: AppTextStyles.titleMedium(context),
         ),
+        if (availableStock != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            context.l10n.productAvailableStock(availableStock),
+            style: AppTextStyles.bodySmall(context)
+                .copyWith(color: AppColors.accentOrange),
+          ),
+        ],
         const SizedBox(height: AppSpacing.md),
         QuantityStepper(
           value: _quantity,

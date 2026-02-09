@@ -4,6 +4,7 @@ import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
+import '../services/storage_service.dart';
 
 /// Splash Screen with fade animation
 class SplashScreen extends StatefulWidget {
@@ -33,10 +34,12 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/onboarding');
-      }
+    Future.delayed(const Duration(seconds: 3), () async {
+      final isLoggedIn = await StorageService().isLoggedIn();
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed(
+        isLoggedIn ? '/main' : '/onboarding',
+      );
     });
   }
 

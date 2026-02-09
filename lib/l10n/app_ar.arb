@@ -159,6 +159,7 @@
       "count": {}
     }
   },
+  "orderDetailsPaymentMethod": "طريقة الدفع",
   "orderDetailsSubtotal": "الإجمالي الفرعي",
   "orderDetailsShipping": "الشحن",
   "orderDetailsDiscount": "الخصم",
@@ -200,6 +201,18 @@
   "categoryWatches": "الساعات",
   "categoryElectronics": "الإلكترونيات",
   "categoryClothing": "الملابس",
+  "categoriesAll": "كل الفئات",
+  "categoriesSelectTitle": "اختر الفئات",
+  "categoriesSelectedCount": "الفئات ({count})",
+  "@categoriesSelectedCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "navHome": "الرئيسية",
+  "navCategories": "الفئات",
+  "navCart": "السلة",
+  "navAccount": "الحساب",
   "categoriesSearchHint": "ابحث عن المنتجات والفئات",
   "homeSearchHint": "ابحث عن المنتجات",
   "onboardingWelcomeTitle": "مرحبًا بك في شوب هَب",
@@ -225,6 +238,12 @@
   "commonRemove": "إزالة",
   "cartItemRemoved": "تمت إزالة المنتج من السلة",
   "cartQuantity": "الكمية",
+  "cartAvailableStock": "المتاح: {count}",
+  "@cartAvailableStock": {
+    "placeholders": {
+      "count": {}
+    }
+  },
   "cartItemTotal": "إجمالي المنتج",
   "cartEmptyTitle": "سلتك فارغة",
   "cartEmptyMessage": "أضف منتجات للبدء",
@@ -238,10 +257,17 @@
   "cartCheckout": "المتابعة للدفع",
   "productTotalPrice": "السعر الإجمالي",
   "productAddToCart": "أضف إلى السلة",
+  "productSelectSizeQuantity": "يرجى اختيار المقاس والكمية.",
   "productAddedToCart": "تمت إضافة {name} إلى السلة",
   "@productAddedToCart": {
     "placeholders": {
       "name": {}
+    }
+  },
+  "productAvailableStock": "المتاح: {count}",
+  "@productAvailableStock": {
+    "placeholders": {
+      "count": {}
     }
   },
   "productReviews": "({count} مراجعة)",
@@ -284,7 +310,7 @@
   "loginPasswordLabel": "كلمة المرور",
   "loginPasswordHint": "أدخل كلمة المرور",
   "validationPasswordRequired": "كلمة المرور مطلوبة",
-  "validationPasswordTooShort": "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
+  "validationPasswordTooShort": "كلمة المرور يجب أن تكون 6 أحرف على الأقل",
   "loginForgotPassword": "نسيت كلمة المرور؟",
   "loginSignIn": "تسجيل الدخول",
   "loginContinueAsGuest": "المتابعة كضيف",

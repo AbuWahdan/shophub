@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/src/config/route.dart';
 import 'package:sinwar_shoping/src/l10n/app_localizations.dart';
 import 'package:sinwar_shoping/src/state/app_settings.dart';
+import 'package:sinwar_shoping/src/state/auth_state.dart';
 import 'package:sinwar_shoping/src/themes/theme.dart';
 
 Future<void> main() async {
@@ -16,33 +18,36 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: AppSettings.themeMode,
-      builder: (context, themeMode, child) {
-        return ValueListenableBuilder<Locale?>(
-          valueListenable: AppSettings.locale,
-          builder: (context, locale, child) {
-            return MaterialApp(
-              onGenerateTitle: (context) =>
-                  AppLocalizations.of(context).appTitle,
-              theme: AppTheme.lightTheme,
-              darkTheme: AppTheme.darkTheme,
-              themeMode: themeMode,
-              locale: locale,
-              supportedLocales: AppLocalizations.supportedLocales,
-              localizationsDelegates: const [
-                AppLocalizations.delegate,
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-              ],
-              debugShowCheckedModeBanner: false,
-              routes: Routes.getRoute(),
-              initialRoute: '/',
-            );
-          },
-        );
-      },
+    return ChangeNotifierProvider(
+      create: (_) => AuthState()..initialize(),
+      child: ValueListenableBuilder<ThemeMode>(
+        valueListenable: AppSettings.themeMode,
+        builder: (context, themeMode, child) {
+          return ValueListenableBuilder<Locale?>(
+            valueListenable: AppSettings.locale,
+            builder: (context, locale, child) {
+              return MaterialApp(
+                onGenerateTitle: (context) =>
+                    AppLocalizations.of(context).appTitle,
+                theme: AppTheme.lightTheme,
+                darkTheme: AppTheme.darkTheme,
+                themeMode: themeMode,
+                locale: locale,
+                supportedLocales: AppLocalizations.supportedLocales,
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                debugShowCheckedModeBanner: false,
+                onGenerateRoute: AppRoutes.onGenerateRoute,  // Changed this
+                initialRoute: AppRoutes.splash,  // Changed this
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

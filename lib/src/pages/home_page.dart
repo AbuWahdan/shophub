@@ -5,6 +5,7 @@ import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
+import '../model/product.dart';
 import '../themes/theme.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_icon.dart';
@@ -22,6 +23,19 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _searchController = TextEditingController();
   bool _hasSearchText = false;
+  final Set<String> _selectedCategories = {'All'};
+
+  List<Product> get _filteredProducts {
+    final query = _searchController.text.trim().toLowerCase();
+    return AppData.productList.where((product) {
+      final matchesSearch = query.isEmpty ||
+          product.name.toLowerCase().contains(query) ||
+          product.category.toLowerCase().contains(query);
+      final matchesCategory = _selectedCategories.contains('All') ||
+          _selectedCategories.contains(product.category);
+      return matchesSearch && matchesCategory;
+    }).toList();
+  }
 
   @override
   void dispose() {
@@ -42,11 +56,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 model: category,
                 label: _categoryLabel(context, category.name ?? ''),
                 onSelected: (model) {
+                  if (model.name == 'All') {
+                    _showCategoryMultiSelect();
+                    return;
+                  }
                   setState(() {
-                    for (var item in AppData.categoryList) {
-                      item.isSelected = false;
-                    }
-                    model.isSelected = true;
+                    _selectedCategories
+                      ..clear()
+                      ..add(model.name ?? 'All');
+                    _syncCategorySelection();
                   });
                 },
               ),
@@ -68,9 +86,9 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisSpacing: AppSpacing.lg,
           crossAxisSpacing: AppSpacing.lg,
         ),
-        itemCount: AppData.productList.length,
+        itemCount: _filteredProducts.length,
         itemBuilder: (context, index) {
-          final product = AppData.productList[index];
+          final product = _filteredProducts[index];
           return ProductCard(
             product: product,
             onSelected: (model) {
@@ -100,6 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         child: TextField(
           controller: _searchController,
+          onTap: _showCategoryMultiSelect,
           onChanged: (value) {
             setState(() {
               _hasSearchText = value.trim().isNotEmpty;
@@ -157,9 +176,110 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[_search(), _categoryWidget(), _productWidget()],
+          children: <Widget>[
+            _search(),
+            Padding(
+              padding: AppTheme.hPadding,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _showCategoryMultiSelect,
+                  icon: const Icon(Icons.tune),
+                  label: Text(
+                    _selectedCategories.contains('All')
+                        ? context.l10n.categoriesAll
+                        : context.l10n.categoriesSelectedCount(
+                            _selectedCategories.length,
+                          ),
+                  ),
+                ),
+              ),
+            ),
+            _categoryWidget(),
+            _productWidget(),
+          ],
         ),
       ),
+    );
+  }
+
+  void _syncCategorySelection() {
+    for (var item in AppData.categoryList) {
+      final name = item.name ?? '';
+      item.isSelected = _selectedCategories.contains('All')
+          ? name == 'All'
+          : _selectedCategories.contains(name);
+    }
+  }
+
+  void _showCategoryMultiSelect() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusLg),
+        ),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final categories = AppData.categoryList
+                .where((category) => category.name != null)
+                .toList();
+            return Padding(
+              padding: AppSpacing.insetsLg,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    context.l10n.categoriesSelectTitle,
+                    style: AppTextStyles.titleMedium(context),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    child: ListView(
+                      children: categories.map((category) {
+                        final name = category.name!;
+                        final isAll = name == 'All';
+                        final isSelected = _selectedCategories.contains(name);
+                        return CheckboxListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(
+                            _categoryLabel(context, name),
+                            style: AppTextStyles.bodyLarge(context),
+                          ),
+                          value: isSelected,
+                          onChanged: (checked) {
+                            setModalState(() {
+                              if (isAll) {
+                                _selectedCategories
+                                  ..clear()
+                                  ..add('All');
+                              } else if (checked == true) {
+                                _selectedCategories.remove('All');
+                                _selectedCategories.add(name);
+                              } else {
+                                _selectedCategories.remove(name);
+                                if (_selectedCategories.isEmpty) {
+                                  _selectedCategories.add('All');
+                                }
+                              }
+                            });
+                            setState(_syncCategorySelection);
+                          },
+                          controlAffinity: ListTileControlAffinity.trailing,
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

@@ -818,6 +818,12 @@ abstract class AppLocalizations {
   /// **'Qty: {count}'**
   String orderDetailsQuantity(Object count);
 
+  /// No description provided for @orderDetailsPaymentMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment method'**
+  String get orderDetailsPaymentMethod;
+
   /// No description provided for @orderDetailsSubtotal.
   ///
   /// In en, this message translates to:
@@ -1064,6 +1070,48 @@ abstract class AppLocalizations {
   /// **'Clothing'**
   String get categoryClothing;
 
+  /// No description provided for @categoriesAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All Categories'**
+  String get categoriesAll;
+
+  /// No description provided for @categoriesSelectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select categories'**
+  String get categoriesSelectTitle;
+
+  /// No description provided for @categoriesSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories ({count})'**
+  String categoriesSelectedCount(Object count);
+
+  /// No description provided for @navHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get navHome;
+
+  /// No description provided for @navCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get navCategories;
+
+  /// No description provided for @navCart.
+  ///
+  /// In en, this message translates to:
+  /// **'Cart'**
+  String get navCart;
+
+  /// No description provided for @navAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get navAccount;
+
   /// No description provided for @categoriesSearchHint.
   ///
   /// In en, this message translates to:
@@ -1214,6 +1262,12 @@ abstract class AppLocalizations {
   /// **'Quantity'**
   String get cartQuantity;
 
+  /// No description provided for @cartAvailableStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Available: {count}'**
+  String cartAvailableStock(Object count);
+
   /// No description provided for @cartItemTotal.
   ///
   /// In en, this message translates to:
@@ -1292,11 +1346,23 @@ abstract class AppLocalizations {
   /// **'Add to Cart'**
   String get productAddToCart;
 
+  /// No description provided for @productSelectSizeQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a size and quantity.'**
+  String get productSelectSizeQuantity;
+
   /// No description provided for @productAddedToCart.
   ///
   /// In en, this message translates to:
   /// **'{name} added to cart'**
   String productAddedToCart(Object name);
+
+  /// No description provided for @productAvailableStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Available: {count}'**
+  String productAvailableStock(Object count);
 
   /// No description provided for @productReviews.
   ///
@@ -1445,7 +1511,7 @@ abstract class AppLocalizations {
   /// No description provided for @validationPasswordTooShort.
   ///
   /// In en, this message translates to:
-  /// **'Password must be at least 8 characters'**
+  /// **'Password must be at least 6 characters'**
   String get validationPasswordTooShort;
 
   /// No description provided for @loginForgotPassword.

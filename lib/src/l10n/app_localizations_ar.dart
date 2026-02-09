@@ -390,6 +390,9 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get orderDetailsPaymentMethod => 'طريقة الدفع';
+
+  @override
   String get orderDetailsSubtotal => 'الإجمالي الفرعي';
 
   @override
@@ -513,6 +516,29 @@ class AppLocalizationsAr extends AppLocalizations {
   String get categoryClothing => 'الملابس';
 
   @override
+  String get categoriesAll => 'كل الفئات';
+
+  @override
+  String get categoriesSelectTitle => 'اختر الفئات';
+
+  @override
+  String categoriesSelectedCount(Object count) {
+    return 'الفئات ($count)';
+  }
+
+  @override
+  String get navHome => 'الرئيسية';
+
+  @override
+  String get navCategories => 'الفئات';
+
+  @override
+  String get navCart => 'السلة';
+
+  @override
+  String get navAccount => 'الحساب';
+
+  @override
   String get categoriesSearchHint => 'ابحث عن المنتجات والفئات';
 
   @override
@@ -589,6 +615,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cartQuantity => 'الكمية';
 
   @override
+  String cartAvailableStock(Object count) {
+    return 'المتاح: $count';
+  }
+
+  @override
   String get cartItemTotal => 'إجمالي المنتج';
 
   @override
@@ -628,8 +659,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get productAddToCart => 'أضف إلى السلة';
 
   @override
+  String get productSelectSizeQuantity => 'يرجى اختيار المقاس والكمية.';
+
+  @override
   String productAddedToCart(Object name) {
     return 'تمت إضافة $name إلى السلة';
+  }
+
+  @override
+  String productAvailableStock(Object count) {
+    return 'المتاح: $count';
   }
 
   @override
@@ -712,7 +751,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get validationPasswordTooShort =>
-      'كلمة المرور يجب أن تكون 8 أحرف على الأقل';
+      'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
 
   @override
   String get loginForgotPassword => 'نسيت كلمة المرور؟';

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
+import '../../state/auth_state.dart';
 import '../../shared/validation/auth_validators.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
@@ -16,14 +18,14 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -31,6 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final authState = context.watch<AuthState>();
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -48,25 +51,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: AppTextStyles.bodyMedium(context)),
                 const SizedBox(height: AppSpacing.xxxl),
                 AppTextField(
-                  controller: _emailController,
-                  label: l10n.loginEmailOrPhoneLabel,
-                  hintText: l10n.loginEmailOrPhoneHint,
-                  keyboardType: TextInputType.emailAddress,
-                  prefixIcon: const Icon(Icons.email_outlined),
+                  controller: _usernameController,
+                  label: 'Username',
+                  hintText: 'Enter your username',
+                  keyboardType: TextInputType.text,
+                  prefixIcon: const Icon(Icons.person_outlined),
                   validator: (value) {
                     final trimmed = value?.trim() ?? '';
-                    if (trimmed.contains('@')) {
-                      return AuthValidators.email(
-                        trimmed,
-                        emptyMessage: l10n.validationEmailRequired,
-                        invalidMessage: l10n.validationEmailInvalid,
-                      );
-                    }
-                    return AuthValidators.phone(
-                      trimmed,
-                      emptyMessage: l10n.validationPhoneRequired,
-                      invalidMessage: l10n.validationPhoneInvalid,
-                    );
+                    if (trimmed.isEmpty) return 'Username is required';
+                    return null;
                   },
                   textInputAction: TextInputAction.next,
                 ),
@@ -93,6 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     value,
                     emptyMessage: l10n.validationPasswordRequired,
                     tooShortMessage: l10n.validationPasswordTooShort,
+                    minLength: 6,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -108,11 +102,40 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: AppSpacing.xxl),
                 AppButton(
                   label: l10n.loginSignIn,
-                  onPressed: () {
-                    if (_formKey.currentState?.validate() ?? false) {
-                      Navigator.of(context).pushReplacementNamed('/main');
-                    }
-                  },
+                  leading: authState.isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : null,
+                  onPressed: authState.isLoading
+                      ? null
+                      : () async {
+                          if (!(_formKey.currentState?.validate() ?? false)) {
+                            return;
+                          }
+                          final success = await context.read<AuthState>().login(
+                                _usernameController.text.trim(),
+                                _passwordController.text.trim(),
+                              );
+                          if (!mounted) return;
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Login successful.'),
+                              ),
+                            );
+                            Navigator.of(context)
+                                .pushReplacementNamed('/main');
+                            return;
+                          }
+                          final message = authState.errorMessage ??
+                              'Invalid credentials. Please try again.';
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(message)),
+                          );
+                        },
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppButton(

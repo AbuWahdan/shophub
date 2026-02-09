@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
+import '../../model/user.dart';
+import '../../state/auth_state.dart';
 import '../../shared/validation/auth_validators.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
@@ -16,27 +19,68 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _usernameController = TextEditingController();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _countryController = TextEditingController(text: 'Jordan');
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = false;
+  String _passwordStrength = 'Weak';
+  Color _passwordStrengthColor = Colors.redAccent;
+
+  @override
+  void initState() {
+    super.initState();
+    _passwordController.addListener(_updatePasswordStrength);
+    _updatePasswordStrength();
+  }
 
   @override
   void dispose() {
+    _passwordController.removeListener(_updatePasswordStrength);
+    _usernameController.dispose();
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    _countryController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
+  void _updatePasswordStrength() {
+    final value = _passwordController.text;
+    final trimmed = value.trim();
+    String label = 'Weak';
+    Color color = Colors.redAccent;
+    if (trimmed.length >= 10 &&
+        RegExp(r'[A-Z]').hasMatch(trimmed) &&
+        RegExp(r'[0-9]').hasMatch(trimmed)) {
+      label = 'Strong';
+      color = Colors.green;
+    } else if (trimmed.length >= 6) {
+      label = 'Medium';
+      color = Colors.orange;
+    }
+    if (label != _passwordStrength) {
+      setState(() {
+        _passwordStrength = label;
+        _passwordStrengthColor = color;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final authState = context.watch<AuthState>();
     return Scaffold(
       appBar: AppBar(title: Text(l10n.registerTitle)),
       body: SafeArea(
@@ -47,6 +91,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                AppTextField(
+                  controller: _usernameController,
+                  label: 'Username',
+                  hintText: 'Enter your username',
+                  prefixIcon: const Icon(Icons.person_outline),
+                  validator: (value) {
+                    final trimmed = value?.trim() ?? '';
+                    if (trimmed.isEmpty) return 'Username is required';
+                    return null;
+                  },
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: AppSpacing.lg),
                 AppTextField(
                   controller: _nameController,
                   label: l10n.registerFullNameLabel,
@@ -75,6 +132,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 AppTextField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  label: 'Phone',
+                  hintText: 'Enter your phone number',
+                  prefixIcon: const Icon(Icons.phone_outlined),
+                  validator: (value) => AuthValidators.phone(
+                    value,
+                    emptyMessage: l10n.validationPhoneRequired,
+                    invalidMessage: l10n.validationPhoneInvalid,
+                  ),
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                AppTextField(
+                  controller: _addressController,
+                  label: 'Address',
+                  hintText: 'Enter your address',
+                  prefixIcon: const Icon(Icons.location_on_outlined),
+                  validator: (value) {
+                    final trimmed = value?.trim() ?? '';
+                    if (trimmed.isEmpty) return 'Address is required';
+                    return null;
+                  },
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                AppTextField(
+                  controller: _countryController,
+                  label: 'Country',
+                  hintText: 'Enter your country',
+                  prefixIcon: const Icon(Icons.flag_outlined),
+                  validator: (value) {
+                    final trimmed = value?.trim() ?? '';
+                    if (trimmed.isEmpty) return 'Country is required';
+                    return null;
+                  },
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                AppTextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   label: l10n.registerPasswordLabel,
@@ -96,8 +193,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     value,
                     emptyMessage: l10n.validationPasswordRequired,
                     tooShortMessage: l10n.validationPasswordTooShort,
+                    minLength: 6,
                   ),
                   textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Password strength: $_passwordStrength',
+                  style: AppTextStyles.bodySmall(context)
+                      .copyWith(color: _passwordStrengthColor),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 AppTextField(
@@ -151,13 +255,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: AppSpacing.xxl),
                 AppButton(
                   label: l10n.registerCreateAccount,
-                  onPressed: _agreeToTerms
-                      ? () {
-                          if (_formKey.currentState?.validate() ?? false) {
-                            Navigator.of(context).pushNamed('/otp');
-                          }
-                        }
+                  leading: authState.isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : null,
+                  onPressed: !_agreeToTerms || authState.isLoading
+                      ? null
+                      : () async {
+                          if (!(_formKey.currentState?.validate() ?? false)) {
+                            return;
+                          }
+                          final user = User(
+                            username: _usernameController.text.trim(),
+                            password: _passwordController.text.trim(),
+                            fullname: _nameController.text.trim(),
+                            email: _emailController.text.trim(),
+                            phone: _phoneController.text.trim(),
+                            address: _addressController.text.trim(),
+                            role: 'customer',
+                            country: _countryController.text.trim(),
+                          );
+                          final success =
+                              await context.read<AuthState>().register(user);
+                          if (!mounted) return;
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Registration successful.'),
+                              ),
+                            );
+                            Navigator.of(context)
+                                .pushReplacementNamed('/login');
+                            return;
+                          }
+                          final message = authState.errorMessage ??
+                              'Registration failed. Please try again.';
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(message)),
+                          );
+                        },
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Center(

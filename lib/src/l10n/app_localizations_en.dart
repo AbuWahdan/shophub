@@ -392,6 +392,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get orderDetailsPaymentMethod => 'Payment method';
+
+  @override
   String get orderDetailsSubtotal => 'Subtotal';
 
   @override
@@ -515,6 +518,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get categoryClothing => 'Clothing';
 
   @override
+  String get categoriesAll => 'All Categories';
+
+  @override
+  String get categoriesSelectTitle => 'Select categories';
+
+  @override
+  String categoriesSelectedCount(Object count) {
+    return 'Categories ($count)';
+  }
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String get navCategories => 'Categories';
+
+  @override
+  String get navCart => 'Cart';
+
+  @override
+  String get navAccount => 'Account';
+
+  @override
   String get categoriesSearchHint => 'Search products and categories';
 
   @override
@@ -595,6 +621,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cartQuantity => 'Quantity';
 
   @override
+  String cartAvailableStock(Object count) {
+    return 'Available: $count';
+  }
+
+  @override
   String get cartItemTotal => 'Item Total';
 
   @override
@@ -634,8 +665,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get productAddToCart => 'Add to Cart';
 
   @override
+  String get productSelectSizeQuantity => 'Please select a size and quantity.';
+
+  @override
   String productAddedToCart(Object name) {
     return '$name added to cart';
+  }
+
+  @override
+  String productAvailableStock(Object count) {
+    return 'Available: $count';
   }
 
   @override
@@ -718,7 +757,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get validationPasswordTooShort =>
-      'Password must be at least 8 characters';
+      'Password must be at least 6 characters';
 
   @override
   String get loginForgotPassword => 'Forgot Password?';

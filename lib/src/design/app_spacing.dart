@@ -60,6 +60,9 @@ class AppSpacing {
   static const EdgeInsets insetsXl = EdgeInsets.all(xl);
   static const EdgeInsets insetsXxl = EdgeInsets.all(xxl);
 
+  // EdgeInsets factory methods
+  static EdgeInsets all(double value) => EdgeInsets.all(value);
+
   static EdgeInsets horizontal(double value) =>
       EdgeInsets.symmetric(horizontal: value);
 

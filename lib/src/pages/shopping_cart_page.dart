@@ -7,6 +7,7 @@ import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
 import '../model/product.dart';
+import '../pages/product_details_new.dart';
 import '../shared/dialogs/app_dialogs.dart';
 import '../shared/widgets/app_button.dart';
 import '../shared/widgets/empty_state.dart';
@@ -66,6 +67,19 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     });
   }
 
+  void _openProductDetails(Product product) {
+    final match = AppData.productList.firstWhere(
+      (item) => item.id == product.id,
+      orElse: () => product,
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductDetailsPage(product: match),
+      ),
+    );
+  }
+
   double get totalPrice {
     return cartItems.fold(
       0,
@@ -109,109 +123,131 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     int quantity = item['quantity'];
     double itemTotal = product.finalPrice * quantity;
     bool hasDiscount = product.discountPrice != null;
+    final selectedSize =
+        product.sizes.isNotEmpty ? product.sizes.first : null;
+    final selectedColor =
+        product.colors.isNotEmpty ? product.colors.first : null;
+    final availableStock = (selectedSize != null && selectedColor != null)
+        ? product.stockFor(selectedSize, selectedColor)
+        : null;
 
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
       ),
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Padding(
-        padding: AppSpacing.insetsMd,
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Product Image
-                Container(
-                  width: AppSpacing.imageMd,
-                  height: AppSpacing.imageMd,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                    color: Theme.of(context).colorScheme.surface,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        onTap: () => _openProductDetails(product),
+        child: Padding(
+          padding: AppSpacing.insetsMd,
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Product Image
+                  Container(
+                    width: AppSpacing.imageMd,
+                    height: AppSpacing.imageMd,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                      color: Theme.of(context).colorScheme.surface,
+                    ),
+                    child: AppImage(path: product.images[0], fit: BoxFit.cover),
                   ),
-                  child: AppImage(path: product.images[0], fit: BoxFit.cover),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                // Product Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        product.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.titleMedium(context),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      // Price Display
-                      Wrap(
-                        spacing: AppSpacing.sm,
-                        runSpacing: AppSpacing.xs,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Text(
-                            '\$${product.finalPrice.toStringAsFixed(2)}',
-                            style: AppTextStyles.labelLarge(context)
-                                .copyWith(color: AppColors.primary),
-                          ),
-                          if (hasDiscount)
+                  const SizedBox(width: AppSpacing.md),
+                  // Product Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.titleMedium(context),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        // Price Display
+                        Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.xs,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
                             Text(
-                              '\$${product.price.toStringAsFixed(2)}',
+                              '\$${product.finalPrice.toStringAsFixed(2)}',
+                              style: AppTextStyles.labelLarge(context)
+                                  .copyWith(color: AppColors.primary),
+                            ),
+                            if (hasDiscount)
+                              Text(
+                                '\$${product.price.toStringAsFixed(2)}',
+                                style:
+                                    AppTextStyles.bodySmall(context).copyWith(
+                                  decoration: TextDecoration.lineThrough,
+                                ),
+                              ),
+                          ],
+                        ),
+                        if (availableStock != null)
+                          Padding(
+                            padding: AppSpacing.only(top: AppSpacing.xs),
+                            child: Text(
+                              context.l10n.cartAvailableStock(availableStock),
                               style: AppTextStyles.bodySmall(context).copyWith(
-                                decoration: TextDecoration.lineThrough,
+                                color: AppColors.accentOrange,
                               ),
                             ),
-                        ],
-                      ),
-                    ],
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                // Delete Button
-                IconButton(
-                  icon: const Icon(Icons.close, size: AppSpacing.iconMd),
-                  onPressed: () => _showRemoveConfirmation(index),
-                  color: Theme.of(context).colorScheme.onSurface,
-                  constraints: const BoxConstraints(),
-                  padding: EdgeInsets.zero,
-                ),
-              ],
-            ),
-            const Divider(height: AppSpacing.lg),
-            // Quantity Selector
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(context.l10n.cartQuantity,
-                    style: AppTextStyles.bodyMedium(context)),
-                QuantityStepper(
-                  value: quantity,
-                  onDecrement: quantity > 1
-                      ? () => _updateQuantity(index, quantity - 1)
-                      : null,
-                  onIncrement: quantity < AppConstants.checkoutMaxQuantity
-                      ? () => _updateQuantity(index, quantity + 1)
-                      : null,
-                ),
-              ],
-            ),
-            const Divider(height: AppSpacing.lg),
-            // Item Total
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  context.l10n.cartItemTotal,
-                  style: AppTextStyles.bodySmall(context),
-                ),
-                Text(
-                  '\$${itemTotal.toStringAsFixed(2)}',
-                  style: AppTextStyles.labelLarge(context),
-                ),
-              ],
-            ),
-          ],
+                  // Delete Button
+                  IconButton(
+                    icon: const Icon(Icons.close, size: AppSpacing.iconMd),
+                    onPressed: () => _showRemoveConfirmation(index),
+                    color: Theme.of(context).colorScheme.onSurface,
+                    constraints: const BoxConstraints(),
+                    padding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
+              const Divider(height: AppSpacing.lg),
+              // Quantity Selector
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(context.l10n.cartQuantity,
+                      style: AppTextStyles.bodyMedium(context)),
+                  QuantityStepper(
+                    value: quantity,
+                    onDecrement: quantity > 1
+                        ? () => _updateQuantity(index, quantity - 1)
+                        : null,
+                    onIncrement: quantity < AppConstants.checkoutMaxQuantity
+                        ? () => _updateQuantity(index, quantity + 1)
+                        : null,
+                  ),
+                ],
+              ),
+              const Divider(height: AppSpacing.lg),
+              // Item Total
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    context.l10n.cartItemTotal,
+                    style: AppTextStyles.bodySmall(context),
+                  ),
+                  Text(
+                    '\$${itemTotal.toStringAsFixed(2)}',
+                    style: AppTextStyles.labelLarge(context),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -196,6 +196,12 @@ class OrderDetailsPage extends StatelessWidget {
               );
             }),
             const Divider(height: AppSpacing.xxxl),
+            _buildInfoRow(
+              context,
+              context.l10n.orderDetailsPaymentMethod,
+              order.paymentMethod,
+            ),
+            const SizedBox(height: AppSpacing.sm),
             _buildSummaryRow(
               context,
               context.l10n.orderDetailsSubtotal,
@@ -317,6 +323,30 @@ class OrderDetailsPage extends StatelessWidget {
             style: isBold
                 ? AppTextStyles.titleSmall(context)
                 : AppTextStyles.bodySmall(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(
+    BuildContext context,
+    String label,
+    String value,
+  ) {
+    return Padding(
+      padding: AppSpacing.symmetric(vertical: AppSpacing.sm),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: AppTextStyles.bodySmall(context)),
+          Flexible(
+            child: Text(
+              value,
+              style: AppTextStyles.bodySmall(context),
+              textAlign: TextAlign.right,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),

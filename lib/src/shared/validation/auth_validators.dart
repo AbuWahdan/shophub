@@ -21,10 +21,11 @@ class AuthValidators {
     String? value, {
     required String emptyMessage,
     required String tooShortMessage,
+    int minLength = 6,
   }) {
     final trimmed = value?.trim() ?? '';
     if (trimmed.isEmpty) return emptyMessage;
-    if (trimmed.length < 8) return tooShortMessage;
+    if (trimmed.length < minLength) return tooShortMessage;
     return null;
   }
 
