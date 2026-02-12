@@ -102,16 +102,6 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
                   color: isEnable
                       ? AppColors.accentOrange
                       : Theme.of(context).colorScheme.surface,
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: isEnable
-                          ? AppColors.highlightSoft
-                          : Theme.of(context).colorScheme.surface,
-                      blurRadius: AppSpacing.jumbo,
-                      spreadRadius: AppSpacing.sm,
-                      offset: const Offset(AppSpacing.sm, AppSpacing.sm),
-                    ),
-                  ],
                   shape: BoxShape.circle,
                 ),
                 child: Stack(
@@ -142,8 +132,9 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
                               widget.cartBadgeCount > 99
                                   ? '99+'
                                   : widget.cartBadgeCount.toString(),
-                              style: AppTextStyles.labelSmall(context)
-                                  .copyWith(color: AppColors.white),
+                              style: AppTextStyles.labelSmall(
+                                context,
+                              ).copyWith(color: AppColors.white),
                             ),
                           ),
                         ),
@@ -239,12 +230,7 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
                   _selectedIndex == 1,
                   1,
                 ),
-                _icon(
-                  Icons.card_travel,
-                  l10n.navCart,
-                  _selectedIndex == 2,
-                  2,
-                ),
+                _icon(Icons.card_travel, l10n.navCart, _selectedIndex == 2, 2),
                 _icon(Icons.person, l10n.navAccount, _selectedIndex == 3, 3),
               ],
             ),

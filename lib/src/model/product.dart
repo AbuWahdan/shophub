@@ -15,6 +15,7 @@ class Product {
   int soldCount;
   bool isFavorite;
   bool isSelected;
+  int quantity;
 
   Product({
     required this.id,
@@ -33,6 +34,7 @@ class Product {
     this.soldCount = 0,
     this.isFavorite = false,
     this.isSelected = false,
+    this.quantity = 0,
   });
 
   int get discountPercentage {

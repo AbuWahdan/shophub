@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../config/app_constants.dart';
+import '../config/route.dart';
 import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/address.dart';
+import '../model/cart_item.dart';
 import '../model/data.dart';
+import '../model/order.dart';
 import '../shared/widgets/app_image.dart';
-import 'order_success_screen.dart';
+import '../shared/widgets/empty_state.dart';
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -21,16 +25,28 @@ class _CheckoutPageState extends State<CheckoutPage> {
   int _currentStep = 0;
   late Address _selectedAddress;
   String _selectedPaymentMethod = 'card';
+  late List<CartItem> _cartItems;
 
   @override
   void initState() {
     super.initState();
     _selectedAddress = AppData.addressList.first;
+    _cartItems = AppData.cartItems;
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    if (_cartItems.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.checkoutTitle)),
+        body: EmptyState(
+          icon: Icons.shopping_cart_outlined,
+          title: l10n.cartEmptyTitle,
+          message: l10n.cartEmptyMessage,
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(title: Text(l10n.checkoutTitle)),
       body: Stepper(
@@ -79,9 +95,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ...AppData.addressList.map((address) {
           return Card(
             child: RadioListTile<String>(
-              title: Text(address.name, style: AppTextStyles.bodyLarge(context)),
-              subtitle:
-                  Text(address.fullAddress, style: AppTextStyles.bodySmall(context)),
+              title: Text(
+                address.name,
+                style: AppTextStyles.bodyLarge(context),
+              ),
+              subtitle: Text(
+                address.fullAddress,
+                style: AppTextStyles.bodySmall(context),
+              ),
               value: address.id,
               groupValue: _selectedAddress.id,
               onChanged: (value) {
@@ -172,21 +193,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
           style: AppTextStyles.titleMedium(context),
         ),
         const SizedBox(height: AppSpacing.lg),
-        ...AppData.cartList.map((item) {
-          subtotal += item.finalPrice;
+        ..._cartItems.map((item) {
+          subtotal += item.total;
           return ListTile(
             leading: AppImage(
-              path: item.images[0],
+              path: item.product.images[0],
               width: AppSpacing.imageSm,
               height: AppSpacing.imageSm,
             ),
-            title: Text(item.name, style: AppTextStyles.bodyLarge(context)),
+            title: Text(
+              item.product.name,
+              style: AppTextStyles.bodyLarge(context),
+            ),
             subtitle: Text(
-              context.l10n.checkoutQuantity(1),
+              context.l10n.checkoutQuantity(item.quantity),
               style: AppTextStyles.bodySmall(context),
             ),
             trailing: Text(
-              '\$${item.finalPrice}',
+              '\$${item.total.toStringAsFixed(2)}',
               style: AppTextStyles.bodyMedium(context),
             ),
           );
@@ -235,10 +259,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ),
           Text(
             value,
-            style: (isBold
-                    ? AppTextStyles.titleSmall(context)
-                    : AppTextStyles.bodySmall(context))
-                .copyWith(color: color),
+            style:
+                (isBold
+                        ? AppTextStyles.titleSmall(context)
+                        : AppTextStyles.bodySmall(context))
+                    .copyWith(color: color),
           ),
         ],
       ),
@@ -246,21 +271,66 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   void _showOrderConfirmation() {
-    // Calculate total from cart
-    double total = 0;
-    for (var item in AppData.cartList) {
-      total += item.finalPrice;
+    double subtotal = 0;
+    for (final item in _cartItems) {
+      subtotal += item.total;
     }
+    final shipping = AppConstants.checkoutShippingFlat;
+    final discount = 0.0;
+    final total = subtotal + shipping - discount;
 
     final orderId =
         '${context.l10n.orderIdPrefix}${DateTime.now().millisecondsSinceEpoch}';
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            OrderSuccessScreen(orderId: orderId, totalAmount: total),
+    AppData.orderList.insert(
+      0,
+      Order(
+        id: orderId,
+        items: _cartItems
+            .map(
+              (item) => OrderItem(
+                productId: item.product.id,
+                productName: item.product.name,
+                image: item.product.images.first,
+                price: item.product.finalPrice,
+                quantity: item.quantity,
+                selectedSize: item.selectedSize,
+                selectedColor: item.selectedColor,
+              ),
+            )
+            .toList(),
+        subtotal: subtotal,
+        shipping: shipping,
+        discount: discount,
+        total: total,
+        status: OrderStatus.pending,
+        date: DateTime.now(),
+        addressId: _selectedAddress.id,
+        estimatedDelivery:
+            DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(
+              DateTime.now().add(
+                const Duration(days: AppConstants.deliveryEndDays),
+              ),
+            ),
+        paymentMethod: _paymentMethodLabel(context, _selectedPaymentMethod),
       ),
     );
+
+    AppData.cartItems.clear();
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, AppRoutes.orders);
+  }
+
+  String _paymentMethodLabel(BuildContext context, String method) {
+    switch (method) {
+      case 'card':
+        return context.l10n.checkoutPaymentCard;
+      case 'cod':
+        return context.l10n.checkoutPaymentCash;
+      case 'wallet':
+        return context.l10n.checkoutPaymentWallet;
+      default:
+        return method;
+    }
   }
 }

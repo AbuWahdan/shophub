@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../config/app_constants.dart';
+import '../config/route.dart';
+import '../config/ui_text.dart';
 import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
+import '../model/cart_item.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
 import '../model/product.dart';
-import '../pages/product_details_new.dart';
 import '../shared/dialogs/app_dialogs.dart';
 import '../shared/widgets/app_button.dart';
 import '../shared/widgets/empty_state.dart';
@@ -24,7 +26,7 @@ class ShoppingCartPage extends StatefulWidget {
 }
 
 class _ShoppingCartPageState extends State<ShoppingCartPage> {
-  late List<Map<String, dynamic>> cartItems;
+  late List<CartItem> cartItems;
 
   @override
   void initState() {
@@ -33,9 +35,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   }
 
   void _initializeCart() {
-    cartItems = AppData.cartList
-        .map((product) => {'product': product, 'quantity': 1})
-        .toList();
+    cartItems = AppData.cartItems;
     // Use postFrame callback to avoid setState during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _notifyCartUpdate();
@@ -51,7 +51,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   void _removeItem(int index) {
     if (!mounted) return;
     setState(() {
-      cartItems.removeAt(index);
+      AppData.removeFromCartAt(index);
     });
     // Notify parent after state update completes in a separate frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -63,34 +63,35 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     if (!mounted) return;
     if (quantity < 1) return; // Prevent invalid quantities
     setState(() {
-      cartItems[index]['quantity'] = quantity;
+      cartItems[index].quantity = quantity;
     });
   }
 
-  void _openProductDetails(Product product) {
+  void _openProductDetails(CartItem cartItem) {
+    final product = cartItem.product;
     final match = AppData.productList.firstWhere(
       (item) => item.id == product.id,
       orElse: () => product,
     );
-    Navigator.push(
+    Navigator.pushNamed(
       context,
-      MaterialPageRoute(
-        builder: (context) => ProductDetailsPage(product: match),
-      ),
+      AppRoutes.productDetails,
+      arguments: {
+        'product': match,
+        'selectedSize': cartItem.selectedSize,
+        'selectedColor': cartItem.selectedColor,
+      },
     );
   }
 
   double get totalPrice {
-    return cartItems.fold(
-      0,
-      (sum, item) => sum + (item['product'].finalPrice * item['quantity']),
-    );
+    return cartItems.fold(0, (sum, item) => sum + item.total);
   }
 
   double get originalPrice {
     return cartItems.fold(
       0,
-      (sum, item) => sum + (item['product'].price * item['quantity']),
+      (sum, item) => sum + (item.product.price * item.quantity),
     );
   }
 
@@ -118,18 +119,14 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     );
   }
 
-  Widget _buildCartItemCard(int index, Map<String, dynamic> item) {
-    Product product = item['product'];
-    int quantity = item['quantity'];
+  Widget _buildCartItemCard(int index, CartItem item) {
+    Product product = item.product;
+    int quantity = item.quantity;
     double itemTotal = product.finalPrice * quantity;
     bool hasDiscount = product.discountPrice != null;
-    final selectedSize =
-        product.sizes.isNotEmpty ? product.sizes.first : null;
-    final selectedColor =
-        product.colors.isNotEmpty ? product.colors.first : null;
-    final availableStock = (selectedSize != null && selectedColor != null)
-        ? product.stockFor(selectedSize, selectedColor)
-        : null;
+    final selectedSize = item.selectedSize;
+    final selectedColor = item.selectedColor;
+    final availableStock = product.stockFor(selectedSize, selectedColor);
 
     return Card(
       shape: RoundedRectangleBorder(
@@ -138,7 +135,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        onTap: () => _openProductDetails(product),
+        onTap: () => _openProductDetails(item),
         child: Padding(
           padding: AppSpacing.insetsMd,
           child: Column(
@@ -177,29 +174,40 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                           children: [
                             Text(
                               '\$${product.finalPrice.toStringAsFixed(2)}',
-                              style: AppTextStyles.labelLarge(context)
-                                  .copyWith(color: AppColors.primary),
+                              style: AppTextStyles.labelLarge(
+                                context,
+                              ).copyWith(color: AppColors.primary),
                             ),
                             if (hasDiscount)
                               Text(
                                 '\$${product.price.toStringAsFixed(2)}',
-                                style:
-                                    AppTextStyles.bodySmall(context).copyWith(
-                                  decoration: TextDecoration.lineThrough,
-                                ),
+                                style: AppTextStyles.bodySmall(context)
+                                    .copyWith(
+                                      decoration: TextDecoration.lineThrough,
+                                    ),
                               ),
                           ],
                         ),
-                        if (availableStock != null)
-                          Padding(
-                            padding: AppSpacing.only(top: AppSpacing.xs),
-                            child: Text(
-                              context.l10n.cartAvailableStock(availableStock),
-                              style: AppTextStyles.bodySmall(context).copyWith(
-                                color: AppColors.accentOrange,
+                        Padding(
+                          padding: AppSpacing.only(top: AppSpacing.xs),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                UiText.cartVariantLabel
+                                    .replaceFirst('{size}', selectedSize)
+                                    .replaceFirst('{color}', selectedColor),
+                                style: AppTextStyles.bodySmall(context),
                               ),
-                            ),
+                              Text(
+                                context.l10n.cartAvailableStock(availableStock),
+                                style: AppTextStyles.bodySmall(
+                                  context,
+                                ).copyWith(color: AppColors.accentOrange),
+                              ),
+                            ],
                           ),
+                        ),
                       ],
                     ),
                   ),
@@ -218,8 +226,10 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(context.l10n.cartQuantity,
-                      style: AppTextStyles.bodyMedium(context)),
+                  Text(
+                    context.l10n.cartQuantity,
+                    style: AppTextStyles.bodyMedium(context),
+                  ),
                   QuantityStepper(
                     value: quantity,
                     onDecrement: quantity > 1
@@ -343,8 +353,9 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                         ),
                         Text(
                           '\$${totalPrice.toStringAsFixed(2)}',
-                          style: AppTextStyles.titleLarge(context)
-                              .copyWith(color: AppColors.primary),
+                          style: AppTextStyles.titleLarge(
+                            context,
+                          ).copyWith(color: AppColors.primary),
                         ),
                       ],
                     ),
@@ -352,7 +363,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                     AppButton(
                       label: context.l10n.cartCheckout,
                       onPressed: () {
-                        Navigator.pushNamed(context, '/checkout');
+                        Navigator.pushNamed(context, AppRoutes.checkout);
                       },
                     ),
                   ],
@@ -374,15 +385,17 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
         Text(
           label,
           style: isHighlight
-              ? AppTextStyles.labelLarge(context)
-                  .copyWith(color: AppColors.primary)
+              ? AppTextStyles.labelLarge(
+                  context,
+                ).copyWith(color: AppColors.primary)
               : AppTextStyles.bodySmall(context),
         ),
         Text(
           value,
           style: isDiscount
-              ? AppTextStyles.labelLarge(context)
-                  .copyWith(color: AppColors.primary)
+              ? AppTextStyles.labelLarge(
+                  context,
+                ).copyWith(color: AppColors.primary)
               : AppTextStyles.bodySmall(context),
         ),
       ],

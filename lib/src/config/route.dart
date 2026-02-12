@@ -5,12 +5,19 @@ import 'package:sinwar_shoping/src/pages/auth/login_screen.dart';
 import 'package:sinwar_shoping/src/pages/auth/otp_screen.dart';
 import 'package:sinwar_shoping/src/pages/auth/register_screen.dart';
 import 'package:sinwar_shoping/src/pages/categories_page.dart';
+import 'package:sinwar_shoping/src/pages/checkout_page.dart';
 import 'package:sinwar_shoping/src/pages/info_page.dart';
 import 'package:sinwar_shoping/src/pages/main_page.dart';
 import 'package:sinwar_shoping/src/pages/onboarding_screen.dart';
 import 'package:sinwar_shoping/src/pages/orders_page.dart';
+import 'package:sinwar_shoping/src/pages/products/insert_product_page.dart';
+import 'package:sinwar_shoping/src/pages/product_comments_page.dart';
+import 'package:sinwar_shoping/src/pages/product_details_new.dart';
+import 'package:sinwar_shoping/src/pages/profile_settings_page.dart';
 import 'package:sinwar_shoping/src/pages/search_filter_page.dart';
 import 'package:sinwar_shoping/src/pages/splash_screen.dart';
+import 'package:sinwar_shoping/src/pages/wishlist_page.dart';
+import 'package:sinwar_shoping/src/model/product.dart';
 import '../l10n/app_localizations.dart';
 
 class AppRoutes {
@@ -25,6 +32,10 @@ class AppRoutes {
   static const String search = '/search';
   static const String orders = '/orders';
   static const String addresses = '/addresses';
+  static const String checkout = '/checkout';
+  static const String wishlist = '/wishlist';
+  static const String productComments = '/product-comments';
+  static const String productDetails = '/product-details';
   static const String settings = '/settings';
   static const String privacy = '/privacy';
   static const String terms = '/terms';
@@ -34,11 +45,11 @@ class AppRoutes {
   static const String scheduleService = '/schedule-service';
   static const String serviceDetails = '/service-details';
   static const String categoryList = '/category-list';
+  static const String insertProduct = '/products/insert';
   // ... add other route constants
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     final args = settings.arguments as Map<String, dynamic>?;
-
     switch (settings.name) {
       case splash:
         return MaterialPageRoute(
@@ -100,11 +111,23 @@ class AppRoutes {
           builder: (_) => const AddressesPage(),
         );
 
-      // case settings:
-      //   return MaterialPageRoute(
-      //     settings: settings,
-      //     builder: (_) => const ProfileSettingsPage(),
-      //   );
+      case checkout:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const CheckoutPage(),
+        );
+
+      case wishlist:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const WishlistPage(),
+        );
+
+      case AppRoutes.settings:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const ProfileSettingsPage(),
+        );
 
       case privacy:
         return MaterialPageRoute(
@@ -161,11 +184,41 @@ class AppRoutes {
           },
         );
 
+      case insertProduct:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const InsertProductPage(),
+        );
+
+      case productComments:
+        final productId = args?['productId'] as int? ?? 0;
+        final productName = args?['productName'] as String? ?? '';
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => ProductCommentsPage(
+            productId: productId,
+            productName: productName,
+          ),
+        );
+
+      case productDetails:
+        final product = args?['product'] as Product?;
+        final selectedSize = args?['selectedSize'] as String?;
+        final selectedColor = args?['selectedColor'] as String?;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => ProductDetailsPage(
+            product: product!,
+            initialSize: selectedSize,
+            initialColor: selectedColor,
+          ),
+        );
+
       // case scheduleService:
       //   final serviceName = args?['serviceName'] as String?;
       //   final service = args?['service'];
       //   final appointmentId = args?['appointmentId'] as String?;
-        
+
       //   return MaterialPageRoute(
       //     settings: settings,
       //     builder: (_) => ScheduleServiceScreen(
@@ -177,7 +230,7 @@ class AppRoutes {
 
       // case serviceDetails:
       //   final service = args?['service'];
-        
+
       //   return MaterialPageRoute(
       //     settings: settings,
       //     builder: (_) => ServiceDetailsScreen(service: service!),
@@ -185,7 +238,7 @@ class AppRoutes {
 
       // case categoryList:
       //   final categoryName = args?['categoryName'] as String? ?? 'All';
-        
+
       //   return MaterialPageRoute(
       //     settings: settings,
       //     builder: (_) => CategoryListScreen(categoryName: categoryName),
@@ -194,11 +247,8 @@ class AppRoutes {
       default:
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const Scaffold(
-            body: Center(
-              child: Text('Route not found'),
-            ),
-          ),
+          builder: (_) =>
+              const Scaffold(body: Center(child: Text('Route not found'))),
         );
     }
   }

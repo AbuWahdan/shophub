@@ -1,17 +1,17 @@
 import 'package:sinwar_shoping/src/config/app_images.dart';
 import 'package:sinwar_shoping/src/model/product.dart';
+import 'cart_item.dart';
 import 'category.dart';
 import 'address.dart';
 import 'order.dart';
+import 'product_comment.dart';
 
 class AppData {
   static Map<String, List<String>> _colorImages(
     List<String> images,
     List<String> colors,
   ) {
-    return {
-      for (final color in colors) color: images,
-    };
+    return {for (final color in colors) color: images};
   }
 
   static Map<String, Map<String, int>> _variantStock(
@@ -131,10 +131,7 @@ class AppData {
       description: 'Classic denim jacket for everyday wear.',
       sizes: ['S', 'M', 'L', 'XL'],
       colors: ['Blue', 'Black'],
-      imagesByColor: _colorImages(
-        [AppImages.jacket],
-        ['Blue', 'Black'],
-      ),
+      imagesByColor: _colorImages([AppImages.jacket], ['Blue', 'Black']),
       stockByVariant: _variantStock(
         ['S', 'M', 'L', 'XL'],
         ['Blue', 'Black'],
@@ -152,15 +149,8 @@ class AppData {
       description: 'Luxury dive watch with Oystersteel.',
       sizes: ['40mm', '41mm'],
       colors: ['Black', 'Green'],
-      imagesByColor: _colorImages(
-        [AppImages.watch],
-        ['Black', 'Green'],
-      ),
-      stockByVariant: _variantStock(
-        ['40mm', '41mm'],
-        ['Black', 'Green'],
-        6,
-      ),
+      imagesByColor: _colorImages([AppImages.watch], ['Black', 'Green']),
+      stockByVariant: _variantStock(['40mm', '41mm'], ['Black', 'Green'], 6),
       rating: 4.9,
       reviewCount: 50,
     ),
@@ -174,15 +164,8 @@ class AppData {
       description: 'Smartwatch with health tracking.',
       sizes: ['42mm', '46mm'],
       colors: ['Black', 'Silver'],
-      imagesByColor: _colorImages(
-        [AppImages.watch],
-        ['Black', 'Silver'],
-      ),
-      stockByVariant: _variantStock(
-        ['42mm', '46mm'],
-        ['Black', 'Silver'],
-        7,
-      ),
+      imagesByColor: _colorImages([AppImages.watch], ['Black', 'Silver']),
+      stockByVariant: _variantStock(['42mm', '46mm'], ['Black', 'Silver'], 7),
       rating: 4.5,
       reviewCount: 300,
     ),
@@ -199,11 +182,7 @@ class AppData {
         [AppImages.macbook],
         ['Space Gray', 'Silver'],
       ),
-      stockByVariant: _variantStock(
-        ['14"'],
-        ['Space Gray', 'Silver'],
-        8,
-      ),
+      stockByVariant: _variantStock(['14"'], ['Space Gray', 'Silver'], 8),
       rating: 4.8,
       reviewCount: 500,
     ),
@@ -238,15 +217,8 @@ class AppData {
       description: 'Noise cancelling wireless headphones.',
       sizes: ['One Size'],
       colors: ['Black', 'Silver'],
-      imagesByColor: _colorImages(
-        [AppImages.headphones],
-        ['Black', 'Silver'],
-      ),
-      stockByVariant: _variantStock(
-        ['One Size'],
-        ['Black', 'Silver'],
-        10,
-      ),
+      imagesByColor: _colorImages([AppImages.headphones], ['Black', 'Silver']),
+      stockByVariant: _variantStock(['One Size'], ['Black', 'Silver'], 10),
       rating: 4.6,
       reviewCount: 400,
     ),
@@ -281,10 +253,7 @@ class AppData {
       description: 'Classic denim jeans.',
       sizes: ['30x30', '32x30', '34x30', '36x30'],
       colors: ['Blue', 'Black'],
-      imagesByColor: _colorImages(
-        [AppImages.clothing],
-        ['Blue', 'Black'],
-      ),
+      imagesByColor: _colorImages([AppImages.clothing], ['Blue', 'Black']),
       stockByVariant: _variantStock(
         ['30x30', '32x30', '34x30', '36x30'],
         ['Blue', 'Black'],
@@ -324,15 +293,8 @@ class AppData {
       description: 'Ultra-portable laptop.',
       sizes: ['13"'],
       colors: ['Silver', 'Black'],
-      imagesByColor: _colorImages(
-        [AppImages.laptop],
-        ['Silver', 'Black'],
-      ),
-      stockByVariant: _variantStock(
-        ['13"'],
-        ['Silver', 'Black'],
-        14,
-      ),
+      imagesByColor: _colorImages([AppImages.laptop], ['Silver', 'Black']),
+      stockByVariant: _variantStock(['13"'], ['Silver', 'Black'], 14),
       rating: 4.5,
       reviewCount: 600,
     ),
@@ -346,15 +308,8 @@ class AppData {
       description: 'Wireless earbuds with active noise cancellation.',
       sizes: ['One Size'],
       colors: ['White'],
-      imagesByColor: _colorImages(
-        [AppImages.headphones],
-        ['White'],
-      ),
-      stockByVariant: _variantStock(
-        ['One Size'],
-        ['White'],
-        15,
-      ),
+      imagesByColor: _colorImages([AppImages.headphones], ['White']),
+      stockByVariant: _variantStock(['One Size'], ['White'], 15),
       rating: 4.7,
       reviewCount: 1200,
     ),
@@ -382,44 +337,23 @@ class AppData {
     ),
   ];
 
-  static List<Product> cartList = [
-    Product(
-      id: 1,
-      name: 'Nike Air Max 200',
-      category: 'Sneakers',
-      images: [AppImages.smallTiltShoe1],
-      price: 240.00,
-      description: 'Comfortable running shoes.',
-      sizes: ['10'],
-      colors: ['Black'],
-      rating: 4.5,
-      reviewCount: 120,
+  static final List<CartItem> cartItems = [
+    CartItem(
+      product: productList[0],
+      quantity: 1,
+      selectedSize: '10',
+      selectedColor: 'Black',
     ),
-    Product(
-      id: 2,
-      name: 'Nike Air Max 97',
-      category: 'Sneakers',
-      images: [AppImages.smallTiltShoe2],
-      price: 190.00,
-      description: 'Iconic sneakers.',
-      sizes: ['9'],
-      colors: ['Silver'],
-      rating: 4.7,
-      reviewCount: 95,
-    ),
-    Product(
-      id: 3,
-      name: 'Adidas Ultraboost',
-      category: 'Sneakers',
-      images: [AppImages.smallTiltShoe3],
-      price: 220.00,
-      description: 'Boost technology.',
-      sizes: ['8'],
-      colors: ['White'],
-      rating: 4.6,
-      reviewCount: 200,
+    CartItem(
+      product: productList[1],
+      quantity: 1,
+      selectedSize: '9',
+      selectedColor: 'Silver',
     ),
   ];
+
+  static final Set<int> _wishlistIds = <int>{};
+  static final Map<int, Product> _wishlistProducts = <int, Product>{};
 
   static List<Categories> categoryList = [
     Categories(id: 0, name: "All", image: AppImages.all, isSelected: true),
@@ -681,6 +615,94 @@ class AppData {
       paymentMethod: 'Digital Wallet',
     ),
   ];
+
+  static List<ProductComment> productComments = [
+    ProductComment(
+      productId: 1,
+      userName: 'Ava',
+      rating: 5,
+      comment: 'Very comfortable and light.',
+      date: DateTime.now().subtract(const Duration(days: 4)),
+      imageUrls: [AppImages.shoeThumb1, AppImages.shoeTilt1],
+    ),
+    ProductComment(
+      productId: 1,
+      userName: 'Noah',
+      rating: 4,
+      comment: 'Great quality, true to size.',
+      date: DateTime.now().subtract(const Duration(days: 9)),
+    ),
+    ProductComment(
+      productId: 2,
+      userName: 'Mia',
+      rating: 4.5,
+      comment: 'Looks premium and feels good.',
+      date: DateTime.now().subtract(const Duration(days: 6)),
+      imageUrls: [AppImages.shoeThumb2],
+    ),
+  ];
+
+  static bool isFavorite(int productId) => _wishlistIds.contains(productId);
+
+  static void syncFavoriteFor(Product product) {
+    product.isFavorite = isFavorite(product.id);
+  }
+
+  static void toggleFavorite(Product product) {
+    final id = product.id;
+    if (_wishlistIds.contains(id)) {
+      _wishlistIds.remove(id);
+      _wishlistProducts.remove(id);
+      product.isFavorite = false;
+      return;
+    }
+
+    _wishlistIds.add(id);
+    _wishlistProducts[id] = product;
+    product.isFavorite = true;
+  }
+
+  static List<Product> get wishlistProducts =>
+      _wishlistProducts.values.toList();
+
+  static void addToCart({
+    required Product product,
+    required int quantity,
+    required String size,
+    required String color,
+  }) {
+    final existingIndex = cartItems.indexWhere(
+      (item) =>
+          item.product.id == product.id &&
+          item.selectedSize == size &&
+          item.selectedColor == color,
+    );
+
+    if (existingIndex >= 0) {
+      cartItems[existingIndex].quantity += quantity;
+      return;
+    }
+
+    cartItems.add(
+      CartItem(
+        product: product,
+        quantity: quantity,
+        selectedSize: size,
+        selectedColor: color,
+      ),
+    );
+  }
+
+  static void removeFromCartAt(int index) {
+    if (index < 0 || index >= cartItems.length) return;
+    cartItems.removeAt(index);
+  }
+
+  static List<ProductComment> commentsForProduct(int productId) {
+    return productComments
+        .where((comment) => comment.productId == productId)
+        .toList();
+  }
 
   static String description =
       "Clean lines, versatile and timeless—the people shoe returns with the Nike Air Max 90. Featuring the same iconic Waffle sole, stitched overlays and classic TPU accents you come to love, it lets you walk among the pantheon of Air. Nothing as fly, nothing as comfortable, nothing as proven. The Nike Air Max 90 stays true to its OG running roots with the iconic Waffle sole, stitched overlays and classic TPU details. Classic colours celebrate your fresh look while Max Air cushioning adds comfort to the journey.";

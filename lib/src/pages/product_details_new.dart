@@ -2,20 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../config/app_constants.dart';
+import '../config/route.dart';
+import '../config/ui_text.dart';
 import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
+import '../model/data.dart';
 import '../model/product.dart';
 import '../shared/widgets/app_button.dart';
 import '../shared/widgets/app_image.dart';
-import '../shared/widgets/quantity_stepper.dart';
 import '../themes/theme.dart';
 
 class ProductDetailsPage extends StatefulWidget {
   final Product product;
+  final String? initialSize;
+  final String? initialColor;
 
-  const ProductDetailsPage({super.key, required this.product});
+  const ProductDetailsPage({
+    super.key,
+    required this.product,
+    this.initialSize,
+    this.initialColor,
+  });
 
   @override
   State<ProductDetailsPage> createState() => _ProductDetailsPageState();
@@ -33,6 +42,13 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   void initState() {
     super.initState();
     _imageController = PageController();
+    _selectedSize =
+        widget.initialSize ??
+        (widget.product.sizes.isNotEmpty ? widget.product.sizes.first : null);
+    _selectedColor =
+        widget.initialColor ??
+        (widget.product.colors.isNotEmpty ? widget.product.colors.first : null);
+    AppData.syncFavoriteFor(widget.product);
   }
 
   @override
@@ -76,11 +92,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       const SizedBox(height: AppSpacing.xxl),
                       _buildPriceSection(),
                       const SizedBox(height: AppSpacing.xxl),
-                      _buildSizeSelector(),
-                      const SizedBox(height: AppSpacing.lg),
-                      _buildColorSelector(),
-                      const SizedBox(height: AppSpacing.xxl),
-                      _buildQuantitySection(),
+                      _buildCommentsSection(),
                       const SizedBox(height: AppSpacing.xxl),
                       _buildShippingInfo(),
                       const SizedBox(height: AppSpacing.xxl),
@@ -111,7 +123,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   ),
                   onPressed: () {
                     setState(() {
-                      widget.product.isFavorite = !widget.product.isFavorite;
+                      AppData.toggleFavorite(widget.product);
                     });
                   },
                 ),
@@ -158,20 +170,22 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       flex: 2,
                       child: AppButton(
                         label: context.l10n.productAddToCart,
-                        onPressed: () {
-                          if (_selectedSize == null ||
-                              _selectedColor == null ||
-                              _quantity < 1) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  context.l10n.productSelectSizeQuantity,
-                                ),
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                            return;
-                          }
+                        onPressed: () async {
+                          final selection = await _showVariantPickerSheet();
+                          if (!mounted || selection == null) return;
+                          setState(() {
+                            _selectedSize = selection.size;
+                            _selectedColor = selection.color;
+                            _quantity = selection.quantity;
+                          });
+                          _resetImageCarousel();
+                          AppData.addToCart(
+                            product: widget.product,
+                            quantity: selection.quantity,
+                            size: selection.size,
+                            color: selection.color,
+                          );
+                          if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
@@ -213,11 +227,11 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 },
                 itemCount: images.length,
                 itemBuilder: (context, index) {
-                  return Hero(
-                    tag: 'product_${widget.product.id}',
-                    child: AppImage(
-                      path: images[index],
-                      fit: BoxFit.cover,
+                  return GestureDetector(
+                    onTap: () => _openImageViewer(images, index),
+                    child: Hero(
+                      tag: 'product_${widget.product.id}',
+                      child: AppImage(path: images[index], fit: BoxFit.cover),
                     ),
                   );
                 },
@@ -241,10 +255,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                       color: _currentImageIndex == index
                           ? AppColors.primary
-                          : Theme.of(context)
-                              .colorScheme
-                              .surface
-                              .withOpacity(0.6),
+                          : Theme.of(
+                              context,
+                            ).colorScheme.surface.withOpacity(0.6),
                     ),
                   ),
                 ),
@@ -276,11 +289,13 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                         _currentImageIndex = index;
                       });
                     },
+                    onDoubleTap: () => _openImageViewer(images, index),
                     child: Container(
                       padding: AppSpacing.all(AppSpacing.xs),
                       decoration: BoxDecoration(
-                        borderRadius:
-                            BorderRadius.circular(AppSpacing.radiusSm),
+                        borderRadius: BorderRadius.circular(
+                          AppSpacing.radiusSm,
+                        ),
                         border: Border.all(
                           color: isActive
                               ? AppColors.primary
@@ -307,6 +322,15 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     );
   }
 
+  void _openImageViewer(List<String> images, int initialIndex) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            _ProductImageViewer(images: images, initialIndex: initialIndex),
+      ),
+    );
+  }
+
   Widget _buildProductInfo() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -318,10 +342,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text(
-          widget.product.category,
-          style: AppTextStyles.bodySmall(context),
-        ),
+        Text(widget.product.category, style: AppTextStyles.bodySmall(context)),
       ],
     );
   }
@@ -355,8 +376,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         ),
         Text(
           context.l10n.productSold(widget.product.soldCount),
-          style: AppTextStyles.bodySmall(context)
-              .copyWith(color: AppColors.accentOrange),
+          style: AppTextStyles.bodySmall(
+            context,
+          ).copyWith(color: AppColors.accentOrange),
         ),
       ],
     );
@@ -370,16 +392,17 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           children: [
             Text(
               '\$${widget.product.finalPrice.toStringAsFixed(2)}',
-              style: AppTextStyles.headlineLarge(context)
-                  .copyWith(color: AppColors.primary),
+              style: AppTextStyles.headlineLarge(
+                context,
+              ).copyWith(color: AppColors.primary),
             ),
             const SizedBox(width: AppSpacing.md),
             if (widget.product.discountPrice != null) ...[
               Text(
                 '\$${widget.product.price.toStringAsFixed(2)}',
-                style: AppTextStyles.bodyMedium(context).copyWith(
-                  decoration: TextDecoration.lineThrough,
-                ),
+                style: AppTextStyles.bodyMedium(
+                  context,
+                ).copyWith(decoration: TextDecoration.lineThrough),
               ),
               const SizedBox(width: AppSpacing.md),
               Container(
@@ -393,8 +416,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 ),
                 child: Text(
                   '-${widget.product.discountPercentage}%',
-                  style: AppTextStyles.labelSmall(context)
-                      .copyWith(color: Colors.white),
+                  style: AppTextStyles.labelSmall(
+                    context,
+                  ).copyWith(color: Colors.white),
                 ),
               ),
             ],
@@ -412,165 +436,246 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           ),
           child: Text(
             context.l10n.productFreeShipping,
-            style: AppTextStyles.labelSmall(context)
-                .copyWith(color: AppColors.success),
+            style: AppTextStyles.labelSmall(
+              context,
+            ).copyWith(color: AppColors.success),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSizeSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(context.l10n.productSize, style: AppTextStyles.titleMedium(context)),
-        const SizedBox(height: AppSpacing.md),
-        Wrap(
-          spacing: AppSpacing.md,
-          runSpacing: AppSpacing.md,
-          children: widget.product.sizes.map((size) {
-            final isSelected = _selectedSize == size;
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedSize = size;
-                });
-              },
-              child: Container(
-                padding: AppSpacing.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                  border: Border.all(
-                    color: isSelected
-                        ? AppColors.primary
-                        : Theme.of(context).dividerColor,
-                    width:
-                        isSelected ? AppSpacing.borderThick : AppSpacing.borderThin,
-                  ),
-                  color: isSelected
-                      ? AppColors.primary.withOpacity(0.1)
-                      : Colors.transparent,
-                ),
-                child: Text(
-                  size,
-                  style: isSelected
-                      ? AppTextStyles.strong(
-                          context,
-                          AppTextStyles.bodyMedium(context)
-                              .copyWith(color: AppColors.primary),
-                        )
-                      : AppTextStyles.bodyMedium(context),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
+  Future<_VariantSelection?> _showVariantPickerSheet() async {
+    String? selectedSize = _selectedSize;
+    String? selectedColor = _selectedColor;
+    int quantity = _quantity;
 
-  Widget _buildColorSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(context.l10n.productColor, style: AppTextStyles.titleMedium(context)),
-        const SizedBox(height: AppSpacing.md),
-        Wrap(
-          spacing: AppSpacing.md,
-          runSpacing: AppSpacing.md,
-          children: widget.product.colors.map((color) {
-            final isSelected = _selectedColor == color;
-            final colorMap = {
-              'Black': AppColors.chipBlack,
-              'White': AppColors.chipWhite,
-              'Red': AppColors.chipRed,
-              'Blue': AppColors.chipBlue,
-              'Green': AppColors.chipGreen,
-              'Yellow': AppColors.chipYellow,
-              'Gray': AppColors.chipGray,
-              'Navy': AppColors.chipNavy,
-              'Brown': AppColors.chipBrown,
-            };
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedColor = color;
-                });
-                _resetImageCarousel();
-              },
-              child: Stack(
-                alignment: Alignment.center,
+    return showModalBottomSheet<_VariantSelection>(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusLg),
+        ),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final availableStock = selectedSize != null && selectedColor != null
+                ? widget.product.stockFor(selectedSize!, selectedColor!)
+                : null;
+            final quantityItems = List<int>.generate(
+              AppConstants.checkoutMaxQuantity,
+              (index) => index + 1,
+            );
+            final canSubmit =
+                selectedSize != null && selectedColor != null && quantity >= 1;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: AppSpacing.lg,
+                right: AppSpacing.lg,
+                top: AppSpacing.lg,
+                bottom:
+                    MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: AppSpacing.buttonMd,
-                    height: AppSpacing.buttonMd,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: colorMap[color] ?? AppColors.neutral500,
-                      border: isSelected
-                          ? Border.all(
-                              color: AppColors.primary,
-                              width: AppSpacing.borderHeavy,
-                            )
-                          : null,
-                    ),
+                  Text(
+                    context.l10n.productSize,
+                    style: AppTextStyles.titleMedium(context),
                   ),
-                  if (isSelected)
-                    const Icon(
-                      Icons.check,
-                      color: AppColors.white,
-                      size: AppSpacing.iconLg,
+                  const SizedBox(height: AppSpacing.sm),
+                  DropdownButtonFormField<String>(
+                    value: selectedSize,
+                    items: widget.product.sizes
+                        .map(
+                          (size) => DropdownMenuItem<String>(
+                            value: size,
+                            child: Text(size),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      setModalState(() {
+                        selectedSize = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    context.l10n.productColor,
+                    style: AppTextStyles.titleMedium(context),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  DropdownButtonFormField<String>(
+                    value: selectedColor,
+                    items: widget.product.colors
+                        .map(
+                          (color) => DropdownMenuItem<String>(
+                            value: color,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: AppSpacing.iconSm,
+                                  height: AppSpacing.iconSm,
+                                  decoration: BoxDecoration(
+                                    color: _colorForName(color),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Theme.of(context).dividerColor,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                                Text(color),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      setModalState(() {
+                        selectedColor = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    context.l10n.productQuantity,
+                    style: AppTextStyles.titleMedium(context),
+                  ),
+                  if (availableStock != null) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      context.l10n.productAvailableStock(availableStock),
+                      style: AppTextStyles.bodySmall(
+                        context,
+                      ).copyWith(color: AppColors.accentOrange),
                     ),
+                  ],
+                  const SizedBox(height: AppSpacing.sm),
+                  DropdownButtonFormField<int>(
+                    value: quantity,
+                    items: quantityItems
+                        .map(
+                          (qty) => DropdownMenuItem<int>(
+                            value: qty,
+                            child: Text(qty.toString()),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setModalState(() {
+                        quantity = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  AppButton(
+                    label: context.l10n.productAddToCart,
+                    onPressed: canSubmit
+                        ? () {
+                            Navigator.pop(
+                              context,
+                              _VariantSelection(
+                                size: selectedSize!,
+                                color: selectedColor!,
+                                quantity: quantity,
+                              ),
+                            );
+                          }
+                        : null,
+                  ),
                 ],
               ),
             );
-          }).toList(),
-        ),
-      ],
+          },
+        );
+      },
     );
   }
 
-  Widget _buildQuantitySection() {
-    final bool hasVariantSelection =
-        _selectedSize != null && _selectedColor != null;
-    final int? availableStock = hasVariantSelection
-        ? widget.product.stockFor(_selectedSize!, _selectedColor!)
-        : null;
+  Color _colorForName(String colorName) {
+    const colorMap = <String, Color>{
+      'Black': AppColors.chipBlack,
+      'White': AppColors.chipWhite,
+      'Red': AppColors.chipRed,
+      'Blue': AppColors.chipBlue,
+      'Green': AppColors.chipGreen,
+      'Yellow': AppColors.chipYellow,
+      'Gray': AppColors.chipGray,
+      'Navy': AppColors.chipNavy,
+      'Brown': AppColors.chipBrown,
+      'Silver': AppColors.neutral500,
+    };
+    return colorMap[colorName] ?? AppColors.neutral500;
+  }
+
+  Widget _buildCommentsSection() {
+    final comments = AppData.commentsForProduct(widget.product.id);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          context.l10n.productQuantity,
-          style: AppTextStyles.titleMedium(context),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              UiText.commentsTitle,
+              style: AppTextStyles.titleMedium(context),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.productComments,
+                  arguments: {
+                    'productId': widget.product.id,
+                    'productName': widget.product.name,
+                  },
+                );
+              },
+              child: const Text(UiText.commentsViewAll),
+            ),
+          ],
         ),
-        if (availableStock != null) ...[
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            context.l10n.productAvailableStock(availableStock),
-            style: AppTextStyles.bodySmall(context)
-                .copyWith(color: AppColors.accentOrange),
-          ),
-        ],
-        const SizedBox(height: AppSpacing.md),
-        QuantityStepper(
-          value: _quantity,
-          onDecrement: _quantity > 1
-              ? () {
-                  setState(() {
-                    _quantity--;
-                  });
-                }
-              : null,
-          onIncrement: () {
-            setState(() {
-              _quantity++;
-            });
-          },
-        ),
+        const SizedBox(height: AppSpacing.sm),
+        if (comments.isEmpty)
+          Text(UiText.commentsEmpty, style: AppTextStyles.bodySmall(context))
+        else
+          ...comments
+              .take(2)
+              .map(
+                (comment) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.productComments,
+                      arguments: {
+                        'productId': widget.product.id,
+                        'productName': widget.product.name,
+                      },
+                    );
+                  },
+                  title: Text(comment.userName),
+                  subtitle: Text(
+                    comment.comment,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star, color: AppColors.accentYellow),
+                      Text(comment.rating.toString()),
+                    ],
+                  ),
+                ),
+              ),
       ],
     );
   }
@@ -675,6 +780,76 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           duration: const Duration(milliseconds: 300),
         ),
       ],
+    );
+  }
+}
+
+class _VariantSelection {
+  final String size;
+  final String color;
+  final int quantity;
+
+  const _VariantSelection({
+    required this.size,
+    required this.color,
+    required this.quantity,
+  });
+}
+
+class _ProductImageViewer extends StatefulWidget {
+  final List<String> images;
+  final int initialIndex;
+
+  const _ProductImageViewer({required this.images, required this.initialIndex});
+
+  @override
+  State<_ProductImageViewer> createState() => _ProductImageViewerState();
+}
+
+class _ProductImageViewerState extends State<_ProductImageViewer> {
+  late final PageController _controller;
+  late int _index;
+
+  @override
+  void initState() {
+    super.initState();
+    _index = widget.initialIndex;
+    _controller = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text('${_index + 1}/${widget.images.length}'),
+      ),
+      body: PageView.builder(
+        controller: _controller,
+        itemCount: widget.images.length,
+        onPageChanged: (value) {
+          setState(() {
+            _index = value;
+          });
+        },
+        itemBuilder: (context, index) {
+          return InteractiveViewer(
+            minScale: 1,
+            maxScale: 4,
+            child: Center(
+              child: AppImage(path: widget.images[index], fit: BoxFit.contain),
+            ),
+          );
+        },
+      ),
     );
   }
 }

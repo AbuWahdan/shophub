@@ -18,19 +18,33 @@ class AppImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      path,
+    final trimmedPath = path.trim();
+    final isNetwork =
+        trimmedPath.startsWith('http://') || trimmedPath.startsWith('https://');
+
+    final fallback = Image.asset(
+      AppImages.placeholder,
       fit: fit,
       width: width,
       height: height,
-      errorBuilder: (context, error, stackTrace) {
-        return Image.asset(
-          AppImages.placeholder,
-          fit: fit,
-          width: width,
-          height: height,
-        );
-      },
+    );
+
+    if (isNetwork) {
+      return Image.network(
+        trimmedPath,
+        fit: fit,
+        width: width,
+        height: height,
+        errorBuilder: (context, error, stackTrace) => fallback,
+      );
+    }
+
+    return Image.asset(
+      trimmedPath,
+      fit: fit,
+      width: width,
+      height: height,
+      errorBuilder: (context, error, stackTrace) => fallback,
     );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sinwar_shoping/src/config/app_images.dart';
+import 'package:sinwar_shoping/src/config/route.dart';
+import 'package:sinwar_shoping/src/config/ui_text.dart';
 
 import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
@@ -8,9 +10,6 @@ import '../l10n/l10n.dart';
 import '../shared/dialogs/app_dialogs.dart';
 import '../shared/widgets/app_image.dart';
 import '../themes/theme.dart';
-import 'orders_page.dart';
-import 'addresses_page.dart';
-import 'profile_settings_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -33,28 +32,27 @@ class ProfilePage extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           Text(l10n.accountUserName, style: AppTextStyles.titleLarge(context)),
           const SizedBox(height: AppSpacing.sm),
-          Text(
-            l10n.accountUserEmail,
-            style: AppTextStyles.bodySmall(context),
-          ),
+          Text(l10n.accountUserEmail, style: AppTextStyles.bodySmall(context)),
           const SizedBox(height: AppSpacing.xxl),
           _buildMenuItem(context, Icons.shopping_bag, l10n.profileOrders, () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => OrdersPage()),
-            );
+            Navigator.pushNamed(context, AppRoutes.orders);
           }),
           _buildMenuItem(context, Icons.location_on, l10n.profileAddresses, () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => AddressesPage()),
-            );
+            Navigator.pushNamed(context, AppRoutes.addresses);
           }),
           _buildMenuItem(context, Icons.settings, l10n.profileSettings, () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => ProfileSettingsPage()),
-            );
+            Navigator.pushNamed(context, AppRoutes.settings);
+          }),
+          _buildMenuItem(
+            context,
+            Icons.add_business,
+            UiText.insertProductMenu,
+            () {
+              Navigator.pushNamed(context, AppRoutes.insertProduct);
+            },
+          ),
+          _buildMenuItem(context, Icons.favorite, l10n.accountWishlist, () {
+            Navigator.pushNamed(context, AppRoutes.wishlist);
           }),
           _buildMenuItem(context, Icons.help_outline, l10n.profileHelp, () {
             _showHelpDialog(context);

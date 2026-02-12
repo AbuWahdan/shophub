@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:sinwar_shoping/src/config/app_images.dart';
+import 'package:sinwar_shoping/src/config/route.dart';
 
 import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
+import '../model/data.dart';
 import '../model/product.dart';
-import '../pages/product_details_new.dart';
 import '../shared/widgets/app_image.dart';
 
 class ProductCard extends StatefulWidget {
@@ -20,6 +20,7 @@ class ProductCard extends StatefulWidget {
 class _ProductCardState extends State<ProductCard> {
   @override
   Widget build(BuildContext context) {
+    AppData.syncFavoriteFor(widget.product);
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
@@ -28,11 +29,10 @@ class _ProductCardState extends State<ProductCard> {
       child: InkWell(
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         onTap: () {
-          Navigator.push(
+          Navigator.pushNamed(
             context,
-            MaterialPageRoute(
-              builder: (context) => ProductDetailsPage(product: widget.product),
-            ),
+            AppRoutes.productDetails,
+            arguments: {'product': widget.product},
           );
           widget.onSelected?.call(widget.product);
         },
@@ -44,15 +44,10 @@ class _ProductCardState extends State<ProductCard> {
               Expanded(
                 child: Stack(
                   children: [
-                    Center(
+                    Positioned.fill(
                       child: Hero(
                         tag: 'product_${widget.product.id}',
-                        child: AppImage(
-                          path: widget.product.images.isNotEmpty
-                              ? widget.product.images.first
-                              : AppImages.placeholder,
-                          fit: BoxFit.cover,
-                        ),
+                        child: _buildImageSlot(context),
                       ),
                     ),
                     Positioned(
@@ -69,8 +64,7 @@ class _ProductCardState extends State<ProductCard> {
                         ),
                         onPressed: () {
                           setState(() {
-                            widget.product.isFavorite =
-                                !widget.product.isFavorite;
+                            AppData.toggleFavorite(widget.product);
                           });
                         },
                       ),
@@ -86,6 +80,22 @@ class _ProductCardState extends State<ProductCard> {
                 style: AppTextStyles.bodyMedium(context),
               ),
               const SizedBox(height: AppSpacing.xs),
+              Text(
+                widget.product.description,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.bodySmall(context),
+              ),
+              if (widget.product.quantity > 0) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Qty: ${widget.product.quantity}',
+                  style: AppTextStyles.bodySmall(
+                    context,
+                  ).copyWith(color: AppColors.accentOrange),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.xs),
               Wrap(
                 spacing: AppSpacing.sm,
                 runSpacing: AppSpacing.xs,
@@ -93,14 +103,15 @@ class _ProductCardState extends State<ProductCard> {
                   if (widget.product.discountPrice != null) ...[
                     Text(
                       '\$${widget.product.finalPrice.toStringAsFixed(2)}',
-                      style: AppTextStyles.labelLarge(context)
-                          .copyWith(color: AppColors.primary),
+                      style: AppTextStyles.labelLarge(
+                        context,
+                      ).copyWith(color: AppColors.primary),
                     ),
                     Text(
                       '\$${widget.product.price.toStringAsFixed(2)}',
-                      style: AppTextStyles.bodySmall(context).copyWith(
-                        decoration: TextDecoration.lineThrough,
-                      ),
+                      style: AppTextStyles.bodySmall(
+                        context,
+                      ).copyWith(decoration: TextDecoration.lineThrough),
                     ),
                   ] else
                     Text(
@@ -114,5 +125,23 @@ class _ProductCardState extends State<ProductCard> {
         ),
       ),
     );
+  }
+
+  Widget _buildImageSlot(BuildContext context) {
+    final path = widget.product.images.isNotEmpty
+        ? widget.product.images.first.trim()
+        : '';
+    if (path.isEmpty) {
+      return Container(
+        color: Theme.of(context).colorScheme.surface,
+        alignment: Alignment.center,
+        child: Icon(
+          Icons.image_outlined,
+          size: AppSpacing.iconXl,
+          color: Theme.of(context).hintColor,
+        ),
+      );
+    }
+    return AppImage(path: path, fit: BoxFit.cover);
   }
 }

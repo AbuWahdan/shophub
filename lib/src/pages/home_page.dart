@@ -6,6 +6,9 @@ import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
 import '../model/product.dart';
+import '../model/product_api.dart';
+import '../services/product_service.dart';
+import '../shared/widgets/product_search_bar.dart';
 import '../themes/theme.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_icon.dart';
@@ -22,19 +25,30 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _searchController = TextEditingController();
+  final ProductService _productService = ProductService();
   bool _hasSearchText = false;
+  bool _isLoadingProducts = false;
   final Set<String> _selectedCategories = {'All'};
+  List<Product> _products = [];
 
   List<Product> get _filteredProducts {
     final query = _searchController.text.trim().toLowerCase();
-    return AppData.productList.where((product) {
-      final matchesSearch = query.isEmpty ||
+    return _products.where((product) {
+      final matchesSearch =
+          query.isEmpty ||
           product.name.toLowerCase().contains(query) ||
           product.category.toLowerCase().contains(query);
-      final matchesCategory = _selectedCategories.contains('All') ||
+      final matchesCategory =
+          _selectedCategories.contains('All') ||
           _selectedCategories.contains(product.category);
       return matchesSearch && matchesCategory;
     }).toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProducts();
   }
 
   @override
@@ -56,10 +70,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 model: category,
                 label: _categoryLabel(context, category.name ?? ''),
                 onSelected: (model) {
-                  if (model.name == 'All') {
-                    _showCategoryMultiSelect();
-                    return;
-                  }
                   setState(() {
                     _selectedCategories
                       ..clear()
@@ -93,7 +103,7 @@ class _MyHomePageState extends State<MyHomePage> {
             product: product,
             onSelected: (model) {
               setState(() {
-                for (var item in AppData.productList) {
+                for (var item in _products) {
                   item.isSelected = false;
                 }
                 model.isSelected = true;
@@ -106,62 +116,23 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _search() {
-    final iconColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
     return Container(
       margin: AppTheme.padding,
-      child: Container(
-        height: AppSpacing.buttonSm,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.all(Radius.circular(AppSpacing.radiusMd)),
-        ),
-        child: TextField(
-          controller: _searchController,
-          onTap: _showCategoryMultiSelect,
-          onChanged: (value) {
-            setState(() {
-              _hasSearchText = value.trim().isNotEmpty;
-            });
-          },
-          decoration: InputDecoration(
-            border: InputBorder.none,
-            hintText: context.l10n.homeSearchHint,
-            hintStyle: AppTextStyles.bodySmall(context),
-            contentPadding: AppSpacing.only(
-              left: AppSpacing.sm,
-              right: AppSpacing.sm,
-              top: AppSpacing.xs,
-            ),
-            suffixIconConstraints: const BoxConstraints(
-              minHeight: AppSpacing.buttonSm,
-              minWidth: 96,
-            ),
-            suffixIcon: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    _hasSearchText ? Icons.close : Icons.camera_alt_outlined,
-                    color: iconColor,
-                  ),
-                  onPressed: () {
-                    if (_hasSearchText) {
-                      _searchController.clear();
-                      setState(() {
-                        _hasSearchText = false;
-                      });
-                    }
-                  },
-                ),
-                IconButton(
-                  icon: Icon(Icons.search, color: iconColor),
-                  onPressed: () {},
-                ),
-              ],
-            ),
-          ),
-        ),
+      child: ProductSearchBar(
+        controller: _searchController,
+        hintText: context.l10n.homeSearchHint,
+        hasSearchText: _hasSearchText,
+        onClear: () {
+          _searchController.clear();
+          setState(() {
+            _hasSearchText = false;
+          });
+        },
+        onChanged: (value) {
+          setState(() {
+            _hasSearchText = value.trim().isNotEmpty;
+          });
+        },
       ),
     );
   }
@@ -178,6 +149,8 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
             _search(),
+            if (_isLoadingProducts)
+              const LinearProgressIndicator(minHeight: AppSpacing.borderThin),
             Padding(
               padding: AppTheme.hPadding,
               child: Align(
@@ -215,6 +188,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void _showCategoryMultiSelect() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppSpacing.radiusLg),
@@ -226,55 +200,60 @@ class _MyHomePageState extends State<MyHomePage> {
             final categories = AppData.categoryList
                 .where((category) => category.name != null)
                 .toList();
-            return Padding(
-              padding: AppSpacing.insetsLg,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    context.l10n.categoriesSelectTitle,
-                    style: AppTextStyles.titleMedium(context),
+            return SafeArea(
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.8,
+                child: Padding(
+                  padding: AppSpacing.insetsLg,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        context.l10n.categoriesSelectTitle,
+                        style: AppTextStyles.titleMedium(context),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      Expanded(
+                        child: ListView(
+                          children: categories.map((category) {
+                            final name = category.name!;
+                            final isAll = name == 'All';
+                            final isSelected = _selectedCategories.contains(
+                              name,
+                            );
+                            return CheckboxListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                _categoryLabel(context, name),
+                                style: AppTextStyles.bodyLarge(context),
+                              ),
+                              value: isSelected,
+                              onChanged: (checked) {
+                                setModalState(() {
+                                  if (isAll) {
+                                    _selectedCategories
+                                      ..clear()
+                                      ..add('All');
+                                  } else if (checked == true) {
+                                    _selectedCategories.remove('All');
+                                    _selectedCategories.add(name);
+                                  } else {
+                                    _selectedCategories.remove(name);
+                                    if (_selectedCategories.isEmpty) {
+                                      _selectedCategories.add('All');
+                                    }
+                                  }
+                                });
+                                setState(_syncCategorySelection);
+                              },
+                              controlAffinity: ListTileControlAffinity.trailing,
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: AppSpacing.lg),
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.6,
-                    child: ListView(
-                      children: categories.map((category) {
-                        final name = category.name!;
-                        final isAll = name == 'All';
-                        final isSelected = _selectedCategories.contains(name);
-                        return CheckboxListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(
-                            _categoryLabel(context, name),
-                            style: AppTextStyles.bodyLarge(context),
-                          ),
-                          value: isSelected,
-                          onChanged: (checked) {
-                            setModalState(() {
-                              if (isAll) {
-                                _selectedCategories
-                                  ..clear()
-                                  ..add('All');
-                              } else if (checked == true) {
-                                _selectedCategories.remove('All');
-                                _selectedCategories.add(name);
-                              } else {
-                                _selectedCategories.remove(name);
-                                if (_selectedCategories.isEmpty) {
-                                  _selectedCategories.add('All');
-                                }
-                              }
-                            });
-                            setState(_syncCategorySelection);
-                          },
-                          controlAffinity: ListTileControlAffinity.trailing,
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ],
+                ),
               ),
             );
           },
@@ -301,5 +280,70 @@ class _MyHomePageState extends State<MyHomePage> {
       default:
         return category;
     }
+  }
+
+  Future<void> _loadProducts() async {
+    setState(() {
+      _isLoadingProducts = true;
+    });
+
+    try {
+      final remoteItems = await _productService.getProducts();
+      if (!mounted) return;
+      setState(() {
+        _products = _mapApiProducts(remoteItems);
+      });
+    } on ProductException catch (error) {
+      if (!mounted) return;
+      debugPrint('[Home] product API error: ${error.message}');
+    } catch (_) {
+      if (!mounted) return;
+      debugPrint('[Home] failed to load products.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingProducts = false;
+        });
+      }
+    }
+  }
+
+  List<Product> _mapApiProducts(List<ApiProduct> remoteItems) {
+    if (remoteItems.isEmpty) return [];
+
+    return remoteItems
+        .where((item) => item.isActive == 1)
+        .toList()
+        .asMap()
+        .entries
+        .map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          return Product(
+            id: item.id > 0 ? item.id : index + 1,
+            name: item.itemName,
+            category: item.category.trim().isNotEmpty
+                ? item.category.trim()
+                : _resolveCategoryName(item.categoryId),
+            images: const [''],
+            price: item.itemPrice,
+            description: item.itemDesc,
+            sizes: const ['Default'],
+            colors: const ['Default'],
+            quantity: item.itemQty,
+            rating: 4,
+            reviewCount: 0,
+            soldCount: 0,
+          );
+        })
+        .toList();
+  }
+
+  String _resolveCategoryName(int categoryId) {
+    final match = AppData.categoryList.firstWhere(
+      (category) => category.id == categoryId,
+      orElse: () => AppData.categoryList.first,
+    );
+    return match.name ?? 'Category $categoryId';
   }
 }

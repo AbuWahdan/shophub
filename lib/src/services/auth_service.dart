@@ -16,10 +16,7 @@ class AuthService {
   late final StorageService _storageService;
   late final http.Client _client;
 
-  AuthService({
-    StorageService? storageService,
-    http.Client? client,
-  }) {
+  AuthService({StorageService? storageService, http.Client? client}) {
     _storageService = storageService ?? StorageService();
     _client = client ?? ApiClient(storageService: _storageService);
   }
@@ -27,131 +24,224 @@ class AuthService {
   // ========================= LOGIN =========================
 
   Future<AuthSession> login(String username, String password) async {
-    final uri = Uri.parse(_loginUrl).replace(
-      queryParameters: {
-        'username': username,
-        'password': password,
-      },
-    );
+    final usernameValue = username.trim();
+    final passwordValue = password.trim();
 
-    http.Response response;
-    try {
-      response = await _client
-          .get(uri, headers: _defaultHeaders())
-          .timeout(_timeout);
-    } on TimeoutException {
+    String? lastError;
+    TimeoutException? timeoutError;
+    bool hadNetworkError = false;
+
+    final attempts = <Future<http.Response> Function()>[
+      () => _client.get(
+        Uri.parse(_loginUrl).replace(
+          queryParameters: {
+            'username': usernameValue,
+            'password': passwordValue,
+          },
+        ),
+        headers: _defaultHeaders(),
+      ),
+      () => _client.get(
+        Uri.parse(_loginUrl).replace(
+          queryParameters: {
+            'USERNAME': usernameValue,
+            'PASSWORD': passwordValue,
+          },
+        ),
+        headers: _defaultHeaders(),
+      ),
+      () => _client.post(
+        Uri.parse(_loginUrl),
+        headers: _defaultHeaders(),
+        body: jsonEncode({
+          'username': usernameValue,
+          'password': passwordValue,
+        }),
+      ),
+      () => _client.post(
+        Uri.parse(_loginUrl),
+        headers: _defaultHeaders(),
+        body: jsonEncode({
+          'data': [
+            {'USERNAME': usernameValue, 'PASSWORD': passwordValue},
+          ],
+        }),
+      ),
+    ];
+
+    for (final attempt in attempts) {
+      http.Response response;
+      try {
+        response = await attempt().timeout(_timeout);
+      } on TimeoutException catch (error) {
+        timeoutError = error;
+        continue;
+      } catch (_) {
+        hadNetworkError = true;
+        continue;
+      }
+
+      final data = _decode(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        lastError =
+            _extractMessage(data) ??
+            'Login failed (HTTP ${response.statusCode}).';
+        continue;
+      }
+
+      final payload = _extractPayload(data);
+      final status = _extractStatus(data, payload);
+
+      if (status == 'error' || (status.isNotEmpty && status != 'success')) {
+        lastError = _extractMessage(data) ?? 'Invalid username or password.';
+        continue;
+      }
+
+      final userData = _extractUser(data, payload);
+      if (userData == null) {
+        lastError = 'Unexpected server response.';
+        continue;
+      }
+
+      final token = _extractToken(data, payload);
+      final user = User(
+        username: _readString(userData, const ['username', 'USERNAME']),
+        password: '',
+        fullname: _readString(userData, const [
+          'fullname',
+          'full_name',
+          'FULL_NAME',
+        ]),
+        email: _readString(userData, const ['email', 'EMAIL']),
+        phone: _readString(userData, const ['phone', 'PHONE']),
+        address: _readString(userData, const ['address', 'ADDRESS']),
+        role: _readString(userData, const ['role', 'ROLE']),
+        country: _readString(userData, const ['country', 'COUNTRY']),
+      );
+      final userId = _readString(userData, const ['user_id', 'USER_ID']);
+
+      await _storageService.saveAuthToken(token);
+      await _storageService.saveUser(user);
+      if (userId.isNotEmpty) {
+        await _storageService.saveUserId(userId);
+      }
+      await _storageService.setLoggedIn(true);
+
+      return AuthSession(token: token, user: user, userId: userId);
+    }
+
+    if (timeoutError != null) {
       throw AuthException('Request timed out. Please try again.');
-    } catch (_) {
+    }
+    if (hadNetworkError && lastError == null) {
       throw AuthException('Network error. Please try again.');
     }
-
-    final data = _decode(response.body);
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      final message =
-          _extractMessage(data) ?? 'Login failed (HTTP ${response.statusCode}).';
-      throw AuthException(message);
-    }
-
-    final payload = _extractPayload(data);
-    final status = _extractStatus(data, payload);
-
-    if (status == 'error') {
-      throw AuthException(_extractMessage(data) ?? 'Invalid credentials.');
-    }
-    if (status.isNotEmpty && status != 'success') {
-      throw AuthException(_extractMessage(data) ?? 'Invalid credentials.');
-    }
-
-    final token = _extractToken(data, payload);
-    final userData = _extractUser(data, payload);
-
-    if (userData == null) {
-      throw AuthException('Unexpected server response.');
-    }
-
-    final user = User(
-      username: (userData['username'] ?? '').toString(),
-      password: '',
-      fullname: (userData['fullname'] ?? '').toString(),
-      email: (userData['email'] ?? '').toString(),
-      phone: (userData['phone'] ?? '').toString(),
-      address: (userData['address'] ?? '').toString(),
-      role: (userData['role'] ?? '').toString(),
-      country: (userData['country'] ?? '').toString(),
-    );
-
-    final userId = (userData['user_id'] ?? '').toString();
-
-    if (token.isNotEmpty) {
-      await _storageService.saveAuthToken(token);
-    } else {
-      await _storageService.saveAuthToken('');
-    }
-
-    await _storageService.saveUser(user);
-
-    if (userId.isNotEmpty) {
-      await _storageService.saveUserId(userId);
-    }
-
-    await _storageService.setLoggedIn(true);
-
-    return AuthSession(
-      token: token,
-      user: user,
-      userId: userId,
-    );
+    throw AuthException(lastError ?? 'Invalid username or password.');
   }
 
   // ========================= REGISTER =========================
 
   Future<RegisterResult> register(User user) async {
-    /// 🔴 FIX: renamed from `payload` to `requestBody`
-    final requestBody = jsonEncode({
-      'users': [user.toJson()],
-    });
+    final normalizedRole = _normalizeRoleForApi(user.role);
+    final registerPayload = {
+      'username': user.username,
+      'password': user.password,
+      'fullname': user.fullname,
+      'email': user.email,
+      'phone': user.phone,
+      'address': user.address,
+      'role': normalizedRole,
+      'country': user.country,
+      'USERNAME': user.username,
+      'PASSWORD': user.password,
+      'FULL_NAME': user.fullname,
+      'EMAIL': user.email,
+      'PHONE': user.phone,
+      'ADDRESS': user.address,
+      'ROLE': normalizedRole,
+      'COUNTRY': user.country,
+    };
 
-    http.Response response;
-    try {
-      response = await _client
-          .post(
-            Uri.parse(_registerUrl),
-            headers: _defaultHeaders(),
-            body: requestBody,
-          )
-          .timeout(_timeout);
-    } on TimeoutException {
+    final requestMap = {
+      'users': [registerPayload],
+      'items': [registerPayload],
+      'data': [registerPayload],
+    };
+    final requestBody = jsonEncode(requestMap);
+
+    final registerAttempts = <Future<http.Response> Function()>[
+      () => _client.post(
+        Uri.parse(_registerUrl),
+        headers: _defaultHeaders(),
+        body: requestBody,
+      ),
+      () => _client.post(
+        Uri.parse(_registerUrl),
+        headers: _defaultHeaders(),
+        body: jsonEncode({
+          'users': [registerPayload],
+        }),
+      ),
+      () => _client.get(
+        Uri.parse(_registerUrl).replace(
+          queryParameters: {
+            'username': user.username,
+            'password': user.password,
+            'fullname': user.fullname,
+            'email': user.email,
+            'phone': user.phone,
+            'address': user.address,
+            'role': normalizedRole,
+            'country': user.country,
+          },
+        ),
+        headers: _defaultHeaders(),
+      ),
+    ];
+
+    String? lastError;
+    TimeoutException? timeoutError;
+    bool hadNetworkError = false;
+
+    for (final attempt in registerAttempts) {
+      http.Response response;
+      try {
+        response = await attempt().timeout(_timeout);
+      } on TimeoutException catch (error) {
+        timeoutError = error;
+        continue;
+      } catch (_) {
+        hadNetworkError = true;
+        continue;
+      }
+
+      final data = _decode(response.body);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        lastError =
+            _extractMessage(data) ??
+            'Registration failed (HTTP ${response.statusCode}).';
+        continue;
+      }
+
+      final payload = _extractPayload(data);
+      final status = _extractStatus(data, payload);
+      if (status == 'error' || (status.isNotEmpty && status != 'success')) {
+        lastError = _extractMessage(data) ?? 'Registration failed.';
+        continue;
+      }
+
+      final message = _extractMessage(data) ?? 'User registered successfully';
+      final userId = _extractUserId(data, payload);
+      return RegisterResult(message: message, userId: userId);
+    }
+
+    if (timeoutError != null) {
       throw AuthException('Request timed out. Please try again.');
-    } catch (_) {
+    }
+    if (hadNetworkError && lastError == null) {
       throw AuthException('Network error. Please try again.');
     }
-
-    final data = _decode(response.body);
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      final message = _extractMessage(data) ??
-          'Registration failed (HTTP ${response.statusCode}).';
-      throw AuthException(message);
-    }
-
-    final payload = _extractPayload(data);
-    final status = _extractStatus(data, payload);
-
-    if (status == 'error') {
-      throw AuthException(_extractMessage(data) ?? 'Registration failed.');
-    }
-    if (status.isNotEmpty && status != 'success') {
-      throw AuthException(_extractMessage(data) ?? 'Registration failed.');
-    }
-
-    final message = _extractMessage(data) ?? 'User registered successfully';
-    final userId = _extractUserId(data, payload);
-
-    return RegisterResult(
-      message: message,
-      userId: userId,
-    );
+    throw AuthException(lastError ?? 'Registration failed.');
   }
 
   // ========================= LOGOUT =========================
@@ -180,6 +270,11 @@ class AuthService {
 
   Map<String, dynamic>? _extractPayload(dynamic data) {
     if (data is Map<String, dynamic>) {
+      final usersData = data['data'];
+      if (usersData is List && usersData.isNotEmpty && usersData.first is Map) {
+        return Map<String, dynamic>.from(usersData.first as Map);
+      }
+
       final items = data['items'];
       if (items is List && items.isNotEmpty && items.first is Map) {
         return Map<String, dynamic>.from(items.first as Map);
@@ -204,8 +299,9 @@ class AuthService {
   }
 
   String _extractToken(dynamic data, Map<String, dynamic>? payload) {
-    final Map<String, dynamic>? map =
-        data is Map<String, dynamic> ? data : null;
+    final Map<String, dynamic>? map = data is Map<String, dynamic>
+        ? data
+        : null;
 
     final candidates = [
       map?['token'],
@@ -235,7 +331,16 @@ class AuthService {
       final items = data['items'];
       if (items is List && items.isNotEmpty && items.first is Map) {
         final first = Map<String, dynamic>.from(items.first as Map);
-        if (first.containsKey('username')) return first;
+        if (_hasAnyKey(first, const ['username', 'USERNAME'])) return first;
+
+        final nestedUser = first['user'];
+        if (nestedUser is Map<String, dynamic>) return nestedUser;
+      }
+
+      final usersData = data['data'];
+      if (usersData is List && usersData.isNotEmpty && usersData.first is Map) {
+        final first = Map<String, dynamic>.from(usersData.first as Map);
+        if (_hasAnyKey(first, const ['username', 'USERNAME'])) return first;
 
         final nestedUser = first['user'];
         if (nestedUser is Map<String, dynamic>) return nestedUser;
@@ -245,20 +350,18 @@ class AuthService {
     if (payload != null) {
       final nestedUser = payload['user'];
       if (nestedUser is Map<String, dynamic>) return nestedUser;
-      if (payload.containsKey('username')) return payload;
+      if (_hasAnyKey(payload, const ['username', 'USERNAME'])) return payload;
     }
 
     return null;
   }
 
   String _extractUserId(dynamic data, Map<String, dynamic>? payload) {
-    final Map<String, dynamic>? map =
-        data is Map<String, dynamic> ? data : null;
+    final Map<String, dynamic>? map = data is Map<String, dynamic>
+        ? data
+        : null;
 
-    final candidates = [
-      map?['user_id'],
-      payload?['user_id'],
-    ];
+    final candidates = [map?['user_id'], payload?['user_id']];
 
     for (final candidate in candidates) {
       if (candidate is String && candidate.trim().isNotEmpty) {
@@ -288,11 +391,42 @@ class AuthService {
 
       for (final candidate in candidates) {
         if (candidate is String && candidate.trim().isNotEmpty) {
+          final normalized = candidate.trim().toLowerCase();
+          if (normalized.contains('method not allowed')) {
+            return 'Invalid user';
+          }
           return candidate;
         }
       }
     }
     return null;
+  }
+
+  bool _hasAnyKey(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      if (map.containsKey(key)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String _readString(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final value = map[key];
+      if (value == null) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty) return text;
+    }
+    return '';
+  }
+
+  String _normalizeRoleForApi(String role) {
+    final value = role.trim().toLowerCase();
+    if (value == 'customer') return '2';
+    if (value == 'provider') return '1';
+    if (value.isEmpty) return '2';
+    return role;
   }
 }
 
@@ -314,10 +448,7 @@ class RegisterResult {
   final String message;
   final String userId;
 
-  const RegisterResult({
-    required this.message,
-    required this.userId,
-  });
+  const RegisterResult({required this.message, required this.userId});
 }
 
 class AuthException implements Exception {

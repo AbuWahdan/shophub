@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../config/app_images.dart';
+import '../config/route.dart';
 import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
@@ -9,9 +10,6 @@ import '../shared/dialogs/app_dialogs.dart';
 import '../shared/widgets/app_button.dart';
 import '../shared/widgets/app_image.dart';
 import '../themes/theme.dart';
-import 'addresses_page.dart';
-import 'orders_page.dart';
-import 'profile_settings_page.dart';
 
 class AccountPage extends StatelessWidget {
   const AccountPage({super.key});
@@ -35,10 +33,7 @@ class AccountPage extends StatelessWidget {
                   title: l10n.accountMyOrders,
                   subtitle: l10n.accountMyOrdersSubtitle,
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => OrdersPage()),
-                    );
+                    Navigator.pushNamed(context, AppRoutes.orders);
                   },
                 ),
                 _MenuItem(
@@ -46,11 +41,7 @@ class AccountPage extends StatelessWidget {
                   title: l10n.accountWishlist,
                   subtitle: l10n.accountWishlistSubtitle,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.accountWishlistComingSoon),
-                      ),
-                    );
+                    Navigator.pushNamed(context, AppRoutes.wishlist);
                   },
                 ),
                 _MenuItem(
@@ -59,9 +50,7 @@ class AccountPage extends StatelessWidget {
                   subtitle: l10n.accountReviewsSubtitle,
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.accountReviewsComingSoon),
-                      ),
+                      SnackBar(content: Text(l10n.accountReviewsComingSoon)),
                     );
                   },
                 ),
@@ -76,10 +65,7 @@ class AccountPage extends StatelessWidget {
                   title: l10n.accountDeliveryAddresses,
                   subtitle: l10n.accountDeliveryAddressesSubtitle,
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => AddressesPage()),
-                    );
+                    Navigator.pushNamed(context, AppRoutes.addresses);
                   },
                 ),
                 _MenuItem(
@@ -99,12 +85,7 @@ class AccountPage extends StatelessWidget {
                   title: l10n.accountSettings,
                   subtitle: l10n.accountSettingsSubtitle,
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ProfileSettingsPage(),
-                      ),
-                    );
+                    Navigator.pushNamed(context, AppRoutes.settings);
                   },
                 ),
               ],
@@ -118,7 +99,7 @@ class AccountPage extends StatelessWidget {
                   title: l10n.accountHelp,
                   subtitle: l10n.accountHelpSubtitle,
                   onTap: () {
-                    Navigator.pushNamed(context, '/help');
+                    Navigator.pushNamed(context, AppRoutes.help);
                   },
                 ),
                 _MenuItem(
@@ -126,7 +107,7 @@ class AccountPage extends StatelessWidget {
                   title: l10n.accountAbout,
                   subtitle: l10n.accountAboutSubtitle,
                   onTap: () {
-                    Navigator.pushNamed(context, '/about');
+                    Navigator.pushNamed(context, AppRoutes.about);
                   },
                 ),
               ],
@@ -154,10 +135,7 @@ class AccountPage extends StatelessWidget {
       padding: AppSpacing.insetsXxl,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.primary,
-            AppColors.primary.withOpacity(0.7),
-          ],
+          colors: [AppColors.primary, AppColors.primary.withOpacity(0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -175,20 +153,23 @@ class AccountPage extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           Text(
             l10n.accountUserName,
-            style: AppTextStyles.titleLarge(context)
-                .copyWith(color: AppColors.white),
+            style: AppTextStyles.titleLarge(
+              context,
+            ).copyWith(color: AppColors.white),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             l10n.accountUserEmail,
-            style: AppTextStyles.bodySmall(context)
-                .copyWith(color: AppColors.white.withOpacity(0.7)),
+            style: AppTextStyles.bodySmall(
+              context,
+            ).copyWith(color: AppColors.white.withOpacity(0.7)),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             l10n.accountUserPhone,
-            style: AppTextStyles.bodySmall(context)
-                .copyWith(color: AppColors.white.withOpacity(0.7)),
+            style: AppTextStyles.bodySmall(
+              context,
+            ).copyWith(color: AppColors.white.withOpacity(0.7)),
           ),
         ],
       ),
@@ -212,7 +193,9 @@ class AccountPage extends StatelessWidget {
             title,
             style: AppTextStyles.strong(
               context,
-              AppTextStyles.bodyLarge(context).copyWith(color: AppColors.primary),
+              AppTextStyles.bodyLarge(
+                context,
+              ).copyWith(color: AppColors.primary),
             ),
           ),
         ),
@@ -222,13 +205,18 @@ class AccountPage extends StatelessWidget {
             children: [
               ListTile(
                 leading: Icon(item.icon, color: AppColors.primary),
-                title: Text(item.title, style: AppTextStyles.bodyLarge(context)),
+                title: Text(
+                  item.title,
+                  style: AppTextStyles.bodyLarge(context),
+                ),
                 subtitle: Text(
                   item.subtitle,
                   style: AppTextStyles.bodySmall(context),
                 ),
-                trailing:
-                    const Icon(Icons.arrow_forward_ios, size: AppSpacing.iconSm),
+                trailing: const Icon(
+                  Icons.arrow_forward_ios,
+                  size: AppSpacing.iconSm,
+                ),
                 onTap: item.onTap,
               ),
               if (index < items.length - 1)
@@ -250,7 +238,7 @@ class AccountPage extends StatelessWidget {
       confirmLabel: l10n.commonLogout,
       cancelLabel: l10n.commonCancel,
       onConfirm: () {
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
       },
     );
   }
