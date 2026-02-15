@@ -9,17 +9,17 @@ import '../design/app_text_styles.dart';
 import '../model/cart_item.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
-import '../model/product.dart';
+import '../model/product_api.dart';
 import '../shared/dialogs/app_dialogs.dart';
 import '../shared/widgets/app_button.dart';
 import '../shared/widgets/empty_state.dart';
 import '../shared/widgets/app_image.dart';
+import '../shared/widgets/app_snackbar.dart';
 import '../shared/widgets/quantity_stepper.dart';
 import '../themes/theme.dart';
 
 class ShoppingCartPage extends StatefulWidget {
-  final Function(int)? onCartUpdated;
-  const ShoppingCartPage({super.key, this.onCartUpdated});
+  const ShoppingCartPage({super.key});
 
   @override
   _ShoppingCartPageState createState() => _ShoppingCartPageState();
@@ -36,26 +36,12 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
 
   void _initializeCart() {
     cartItems = AppData.cartItems;
-    // Use postFrame callback to avoid setState during build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _notifyCartUpdate();
-    });
-  }
-
-  void _notifyCartUpdate() {
-    if (mounted) {
-      widget.onCartUpdated?.call(cartItems.length);
-    }
   }
 
   void _removeItem(int index) {
     if (!mounted) return;
     setState(() {
       AppData.removeFromCartAt(index);
-    });
-    // Notify parent after state update completes in a separate frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _notifyCartUpdate();
     });
   }
 
@@ -69,15 +55,11 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
 
   void _openProductDetails(CartItem cartItem) {
     final product = cartItem.product;
-    final match = AppData.productList.firstWhere(
-      (item) => item.id == product.id,
-      orElse: () => product,
-    );
     Navigator.pushNamed(
       context,
       AppRoutes.productDetails,
       arguments: {
-        'product': match,
+        'product': product,
         'selectedSize': cartItem.selectedSize,
         'selectedColor': cartItem.selectedColor,
       },
@@ -109,18 +91,24 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
       cancelLabel: l10n.commonCancel,
       onConfirm: () {
         _removeItem(index);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.cartItemRemoved),
-            duration: const Duration(seconds: 2),
-          ),
+        AppSnackBar.show(
+          context,
+          message: l10n.cartItemRemoved,
+          type: AppSnackBarType.info,
         );
       },
     );
   }
 
+  Future<void> _refreshCart() async {
+    if (!mounted) return;
+    setState(() {
+      cartItems = AppData.cartItems;
+    });
+  }
+
   Widget _buildCartItemCard(int index, CartItem item) {
-    Product product = item.product;
+    ApiProduct product = item.product;
     int quantity = item.quantity;
     double itemTotal = product.finalPrice * quantity;
     bool hasDiscount = product.discountPrice != null;
@@ -293,21 +281,32 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scrollBody = cartItems.isEmpty
+        ? LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: _buildEmptyCart(),
+              ),
+            ),
+          )
+        : ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: AppTheme.padding,
+            children: [
+              _cartItems(),
+              const SizedBox(height: AppSpacing.hero),
+            ],
+          );
+
     return Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.cartTitle),
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
-      body: cartItems.isEmpty
-          ? _buildEmptyCart()
-          : ListView(
-              padding: AppTheme.padding,
-              children: [
-                _cartItems(),
-                const SizedBox(height: AppSpacing.hero),
-              ],
-            ),
+      body: RefreshIndicator(onRefresh: _refreshCart, child: scrollBody),
       bottomNavigationBar: cartItems.isEmpty
           ? null
           : SafeArea(

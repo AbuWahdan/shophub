@@ -5,7 +5,8 @@ import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
-import '../model/product.dart';
+import '../model/product_api.dart';
+import '../services/product_service.dart';
 import '../themes/theme.dart';
 import '../widgets/product_card.dart';
 
@@ -17,6 +18,9 @@ class SearchFilterPage extends StatefulWidget {
 }
 
 class _SearchFilterPageState extends State<SearchFilterPage> {
+  final ProductService _productService = ProductService();
+  bool _isLoadingProducts = false;
+  List<ApiProduct> _products = [];
   String searchQuery = '';
   String selectedCategory = 'All';
   double minPrice = 0;
@@ -26,8 +30,8 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
   int selectedRating = 0;
   SortOption sortBy = SortOption.bestSelling;
 
-  List<Product> get filteredProducts {
-    return AppData.productList.where((product) {
+  List<ApiProduct> get filteredProducts {
+    return _products.where((product) {
       final matchesSearch =
           product.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
           product.description.toLowerCase().contains(searchQuery.toLowerCase());
@@ -56,11 +60,41 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _products = AppData.products;
+    if (_products.isEmpty) {
+      _loadProducts();
+    }
+  }
+
+  Future<void> _loadProducts() async {
+    setState(() => _isLoadingProducts = true);
+    try {
+      final remoteItems = await _productService.getProducts();
+      if (!mounted) return;
+      final active = remoteItems.where((item) => item.isActive == 1).toList();
+      setState(() => _products = active);
+      AppData.setProducts(active);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _products = const []);
+      AppData.setProducts(const []);
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingProducts = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.searchFilterTitle)),
       body: Column(
         children: [
+          if (_isLoadingProducts)
+            const LinearProgressIndicator(minHeight: AppSpacing.borderThin),
           Padding(
             padding: AppTheme.padding,
             child: TextField(

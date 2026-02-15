@@ -5,12 +5,12 @@ import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../model/data.dart';
-import '../model/product.dart';
+import '../model/product_api.dart';
 import '../shared/widgets/app_image.dart';
 
 class ProductCard extends StatefulWidget {
-  final Product product;
-  final ValueChanged<Product>? onSelected;
+  final ApiProduct product;
+  final ValueChanged<ApiProduct>? onSelected;
   const ProductCard({super.key, required this.product, this.onSelected});
 
   @override
@@ -20,7 +20,9 @@ class ProductCard extends StatefulWidget {
 class _ProductCardState extends State<ProductCard> {
   @override
   Widget build(BuildContext context) {
-    AppData.syncFavoriteFor(widget.product);
+    final product = widget.product;
+    AppData.syncFavoriteFor(product);
+
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
@@ -32,9 +34,9 @@ class _ProductCardState extends State<ProductCard> {
           Navigator.pushNamed(
             context,
             AppRoutes.productDetails,
-            arguments: {'product': widget.product},
+            arguments: {'product': product},
           );
-          widget.onSelected?.call(widget.product);
+          widget.onSelected?.call(product);
         },
         child: Padding(
           padding: AppSpacing.insetsSm,
@@ -46,27 +48,36 @@ class _ProductCardState extends State<ProductCard> {
                   children: [
                     Positioned.fill(
                       child: Hero(
-                        tag: 'product_${widget.product.id}',
+                        tag: 'product_${product.id}',
                         child: _buildImageSlot(context),
                       ),
                     ),
                     Positioned(
                       top: AppSpacing.sm,
                       right: AppSpacing.sm,
-                      child: IconButton(
-                        icon: Icon(
-                          widget.product.isFavorite
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          color: widget.product.isFavorite
-                              ? AppColors.error
-                              : Theme.of(context).iconTheme.color,
-                        ),
-                        onPressed: () {
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
+                        onTap: () {
                           setState(() {
-                            AppData.toggleFavorite(widget.product);
+                            AppData.toggleFavorite(product);
                           });
                         },
+                        child: Icon(
+                          product.isFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: product.isFavorite
+                              ? AppColors.error
+                              : Theme.of(context).colorScheme.onSurface,
+                          size: AppSpacing.iconLg,
+                          shadows: const [
+                            Shadow(
+                              blurRadius: 6,
+                              color: Colors.black54,
+                              offset: Offset(0, 1),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -74,22 +85,24 @@ class _ProductCardState extends State<ProductCard> {
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                widget.product.name,
+                product.name.isNotEmpty ? product.name : 'Unnamed Product',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.bodyMedium(context),
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                widget.product.description,
+                product.description.isNotEmpty
+                    ? product.description
+                    : 'No description',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.bodySmall(context),
               ),
-              if (widget.product.quantity > 0) ...[
+              if (product.quantity > 0) ...[
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Qty: ${widget.product.quantity}',
+                  'Qty: ${product.quantity}',
                   style: AppTextStyles.bodySmall(
                     context,
                   ).copyWith(color: AppColors.accentOrange),
@@ -100,22 +113,23 @@ class _ProductCardState extends State<ProductCard> {
                 spacing: AppSpacing.sm,
                 runSpacing: AppSpacing.xs,
                 children: [
-                  if (widget.product.discountPrice != null) ...[
+                  if (product.discountPrice != null &&
+                      product.discountPrice! > 0) ...[
                     Text(
-                      '\$${widget.product.finalPrice.toStringAsFixed(2)}',
+                      '\$${product.finalPrice.toStringAsFixed(2)}',
                       style: AppTextStyles.labelLarge(
                         context,
                       ).copyWith(color: AppColors.primary),
                     ),
                     Text(
-                      '\$${widget.product.price.toStringAsFixed(2)}',
+                      '\$${product.price.toStringAsFixed(2)}',
                       style: AppTextStyles.bodySmall(
                         context,
                       ).copyWith(decoration: TextDecoration.lineThrough),
                     ),
                   ] else
                     Text(
-                      '\$${widget.product.price.toStringAsFixed(2)}',
+                      '\$${product.price.toStringAsFixed(2)}',
                       style: AppTextStyles.labelLarge(context),
                     ),
                 ],
@@ -128,20 +142,34 @@ class _ProductCardState extends State<ProductCard> {
   }
 
   Widget _buildImageSlot(BuildContext context) {
-    final path = widget.product.images.isNotEmpty
-        ? widget.product.images.first.trim()
-        : '';
-    if (path.isEmpty) {
-      return Container(
-        color: Theme.of(context).colorScheme.surface,
-        alignment: Alignment.center,
-        child: Icon(
-          Icons.image_outlined,
-          size: AppSpacing.iconXl,
-          color: Theme.of(context).hintColor,
-        ),
-      );
+    final product = widget.product;
+
+    // Handle empty images
+    if (product.images.isEmpty) {
+      return _buildPlaceholder(context);
     }
+
+    final path = product.images.first.trim();
+
+    if (path.isEmpty) {
+      return _buildPlaceholder(context);
+    }
+
     return AppImage(path: path, fit: BoxFit.cover);
+  }
+
+  Widget _buildPlaceholder(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      ),
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.image_outlined,
+        size: AppSpacing.iconXl,
+        color: Theme.of(context).hintColor,
+      ),
+    );
   }
 }

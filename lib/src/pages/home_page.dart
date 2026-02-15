@@ -5,17 +5,16 @@ import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
-import '../model/product.dart';
 import '../model/product_api.dart';
 import '../services/product_service.dart';
+import '../shared/widgets/app_snackbar.dart';
 import '../shared/widgets/product_search_bar.dart';
 import '../themes/theme.dart';
 import '../widgets/product_card.dart';
 import '../widgets/product_icon.dart';
 
 class MyHomePage extends StatefulWidget {
-  final Function(int)? onCartUpdated;
-  const MyHomePage({super.key, this.title, this.onCartUpdated});
+  const MyHomePage({super.key, this.title});
 
   final String? title;
 
@@ -29,18 +28,18 @@ class _MyHomePageState extends State<MyHomePage> {
   bool _hasSearchText = false;
   bool _isLoadingProducts = false;
   final Set<String> _selectedCategories = {'All'};
-  List<Product> _products = [];
+  List<ApiProduct> _products = [];
 
-  List<Product> get _filteredProducts {
+  List<ApiProduct> get _filteredProducts {
     final query = _searchController.text.trim().toLowerCase();
     return _products.where((product) {
       final matchesSearch =
           query.isEmpty ||
-          product.name.toLowerCase().contains(query) ||
-          product.category.toLowerCase().contains(query);
+          product.itemName.toLowerCase().contains(query) ||
+          _categoryName(product).toLowerCase().contains(query);
       final matchesCategory =
           _selectedCategories.contains('All') ||
-          _selectedCategories.contains(product.category);
+          _selectedCategories.contains(_categoryName(product));
       return matchesSearch && matchesCategory;
     }).toList();
   }
@@ -48,6 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    _products = AppData.products;
     _loadProducts();
   }
 
@@ -102,12 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
           return ProductCard(
             product: product,
             onSelected: (model) {
-              setState(() {
-                for (var item in _products) {
-                  item.isSelected = false;
-                }
-                model.isSelected = true;
-              });
+              setState(() {});
             },
           );
         },
@@ -139,38 +134,43 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: MediaQuery.of(context).size.height - AppSpacing.massive,
-      child: SingleChildScrollView(
-        physics: BouncingScrollPhysics(),
-        dragStartBehavior: DragStartBehavior.down,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            _search(),
-            if (_isLoadingProducts)
-              const LinearProgressIndicator(minHeight: AppSpacing.borderThin),
-            Padding(
-              padding: AppTheme.hPadding,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: _showCategoryMultiSelect,
-                  icon: const Icon(Icons.tune),
-                  label: Text(
-                    _selectedCategories.contains('All')
-                        ? context.l10n.categoriesAll
-                        : context.l10n.categoriesSelectedCount(
-                            _selectedCategories.length,
-                          ),
+    return RefreshIndicator(
+      onRefresh: () => _loadProducts(forceRefresh: true),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height - AppSpacing.massive,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          dragStartBehavior: DragStartBehavior.down,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              _search(),
+              if (_isLoadingProducts)
+                const LinearProgressIndicator(minHeight: AppSpacing.borderThin),
+              Padding(
+                padding: AppTheme.hPadding,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _showCategoryMultiSelect,
+                    icon: const Icon(Icons.tune),
+                    label: Text(
+                      _selectedCategories.contains('All')
+                          ? context.l10n.categoriesAll
+                          : context.l10n.categoriesSelectedCount(
+                              _selectedCategories.length,
+                            ),
+                    ),
                   ),
                 ),
               ),
-            ),
-            _categoryWidget(),
-            _productWidget(),
-          ],
+              _categoryWidget(),
+              _productWidget(),
+            ],
+          ),
         ),
       ),
     );
@@ -282,23 +282,43 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<void> _loadProducts() async {
+  Future<void> _loadProducts({bool forceRefresh = false}) async {
     setState(() {
       _isLoadingProducts = true;
     });
 
     try {
-      final remoteItems = await _productService.getProducts();
+      final remoteItems = await _productService.getProducts(
+        forceRefresh: forceRefresh,
+      );
       if (!mounted) return;
+      final activeProducts = remoteItems
+          .where((item) => item.isActive == 1)
+          .toList();
       setState(() {
-        _products = _mapApiProducts(remoteItems);
+        _products = activeProducts;
       });
+      AppData.setProducts(activeProducts);
     } on ProductException catch (error) {
       if (!mounted) return;
-      debugPrint('[Home] product API error: ${error.message}');
+      setState(() {
+        _products = AppData.products;
+      });
+      AppSnackBar.show(
+        context,
+        message: 'Failed to load products: ${error.message}',
+        type: AppSnackBarType.error,
+      );
     } catch (_) {
       if (!mounted) return;
-      debugPrint('[Home] failed to load products.');
+      setState(() {
+        _products = AppData.products;
+      });
+      AppSnackBar.show(
+        context,
+        message: 'Failed to load products',
+        type: AppSnackBarType.error,
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -308,42 +328,17 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  List<Product> _mapApiProducts(List<ApiProduct> remoteItems) {
-    if (remoteItems.isEmpty) return [];
-
-    return remoteItems
-        .where((item) => item.isActive == 1)
-        .toList()
-        .asMap()
-        .entries
-        .map((entry) {
-          final index = entry.key;
-          final item = entry.value;
-          return Product(
-            id: item.id > 0 ? item.id : index + 1,
-            name: item.itemName,
-            category: item.category.trim().isNotEmpty
-                ? item.category.trim()
-                : _resolveCategoryName(item.categoryId),
-            images: const [''],
-            price: item.itemPrice,
-            description: item.itemDesc,
-            sizes: const ['Default'],
-            colors: const ['Default'],
-            quantity: item.itemQty,
-            rating: 4,
-            reviewCount: 0,
-            soldCount: 0,
-          );
-        })
-        .toList();
-  }
-
   String _resolveCategoryName(int categoryId) {
     final match = AppData.categoryList.firstWhere(
       (category) => category.id == categoryId,
       orElse: () => AppData.categoryList.first,
     );
     return match.name ?? 'Category $categoryId';
+  }
+
+  String _categoryName(ApiProduct product) {
+    final category = product.category.trim();
+    if (category.isNotEmpty) return category;
+    return _resolveCategoryName(product.categoryId);
   }
 }

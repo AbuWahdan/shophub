@@ -1,7 +1,7 @@
-import 'product.dart';
+import 'product_api.dart';
 
 class CartItem {
-  final Product product;
+  final ApiProduct product;
   int quantity;
   String selectedSize;
   String selectedColor;

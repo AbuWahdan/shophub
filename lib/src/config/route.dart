@@ -17,7 +17,7 @@ import 'package:sinwar_shoping/src/pages/profile_settings_page.dart';
 import 'package:sinwar_shoping/src/pages/search_filter_page.dart';
 import 'package:sinwar_shoping/src/pages/splash_screen.dart';
 import 'package:sinwar_shoping/src/pages/wishlist_page.dart';
-import 'package:sinwar_shoping/src/model/product.dart';
+import 'package:sinwar_shoping/src/model/product_api.dart';
 import '../l10n/app_localizations.dart';
 
 class AppRoutes {
@@ -202,7 +202,7 @@ class AppRoutes {
         );
 
       case productDetails:
-        final product = args?['product'] as Product?;
+        final product = args?['product'] as ApiProduct?;
         final selectedSize = args?['selectedSize'] as String?;
         final selectedColor = args?['selectedColor'] as String?;
         return MaterialPageRoute(

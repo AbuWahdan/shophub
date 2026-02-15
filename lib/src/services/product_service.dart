@@ -9,15 +9,27 @@ import 'api_client.dart';
 class ProductService {
   static const String _baseUrl = 'https://oracleapex.com/ords/topg/products';
   static const String _getProductsUrl = '$_baseUrl/getproduct';
-  static const Duration _timeout = Duration(seconds: 20);
+  static const Duration _timeout = Duration(seconds: 6);
+  static const Duration _cacheTtl = Duration(minutes: 2);
+  static List<ApiProduct> _cachedProducts = <ApiProduct>[];
+  static DateTime? _lastProductsFetch;
 
   final http.Client _client;
 
   ProductService({http.Client? client}) : _client = client ?? ApiClient();
 
-  Future<List<ApiProduct>> getProducts() async {
+  Future<List<ApiProduct>> getProducts({bool forceRefresh = false}) async {
+    final now = DateTime.now();
+    if (!forceRefresh &&
+        _cachedProducts.isNotEmpty &&
+        _lastProductsFetch != null &&
+        now.difference(_lastProductsFetch!) < _cacheTtl) {
+      return _cachedProducts;
+    }
+
     final endpoints = <String>[
       _getProductsUrl,
+      '$_baseUrl/getproducts',
       '$_baseUrl/getProduct',
       '$_baseUrl/Getproduct',
       '$_baseUrl/GetProduct',
@@ -28,15 +40,16 @@ class ProductService {
 
     for (final endpoint in endpoints) {
       final uri = Uri.parse(endpoint);
-      final attempts = <Future<http.Response> Function()>[
-        () => _safePost(uri, body: const {}),
-        () => _safePost(uri, body: const {'items': []}),
-        () => _safePost(uri, body: const {'data': []}),
-        () => _safeGet(uri),
-      ];
+      final responses = await Future.wait<http.Response?>([
+        _safeGetOrNull(uri),
+        _safePostOrNull(uri, body: const {}),
+      ]);
 
-      for (final attempt in attempts) {
-        final response = await attempt();
+      for (final response in responses) {
+        if (response == null) {
+          errors.add('$endpoint -> request failed');
+          continue;
+        }
         final data = _decode(response.body);
         if (response.statusCode < 200 || response.statusCode >= 300) {
           lastError =
@@ -51,7 +64,10 @@ class ProductService {
           errors.add('$endpoint -> empty');
           continue;
         }
-        return items.map(ApiProduct.fromJson).toList();
+        final products = items.map(ApiProduct.fromJson).toList();
+        _cachedProducts = products;
+        _lastProductsFetch = now;
+        return products;
       }
     }
 
@@ -126,6 +142,7 @@ class ProductService {
           errors.add('POST $endpoint -> status error');
           continue;
         }
+        _invalidateProductsCache();
         return;
       }
 
@@ -155,6 +172,7 @@ class ProductService {
         errors.add('GET $endpoint -> status error');
         continue;
       }
+      _invalidateProductsCache();
       return;
     }
 
@@ -190,6 +208,30 @@ class ProductService {
     }
   }
 
+  Future<http.Response?> _safePostOrNull(
+    Uri uri, {
+    required Map<String, dynamic> body,
+  }) async {
+    try {
+      return await _safePost(uri, body: body);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<http.Response?> _safeGetOrNull(Uri uri) async {
+    try {
+      return await _safeGet(uri);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _invalidateProductsCache() {
+    _cachedProducts = <ApiProduct>[];
+    _lastProductsFetch = null;
+  }
+
   Map<String, String> _defaultHeaders() {
     return const {
       'Accept': 'application/json',
@@ -216,14 +258,29 @@ class ProductService {
 
     if (data is Map<String, dynamic>) {
       final candidates = [
+        data['item'],
+        data['ITEM'],
         data['items'],
+        data['Items'],
         data['ITEMS'],
+        data['product'],
+        data['PRODUCT'],
+        data['products'],
+        data['Products'],
+        data['PRODUCTS'],
         data['data'],
+        data['Data'],
         data['DATA'],
+        data['result'],
+        data['RESULT'],
         data['records'],
+        data['Records'],
         data['RECORDS'],
       ];
       for (final rawItems in candidates) {
+        if (rawItems is Map) {
+          return [Map<String, dynamic>.from(rawItems)];
+        }
         if (rawItems is List) {
           return rawItems
               .whereType<Map>()

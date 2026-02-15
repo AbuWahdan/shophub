@@ -8,6 +8,7 @@ import '../../model/user.dart';
 import '../../state/auth_state.dart';
 import '../../shared/validation/auth_validators.dart';
 import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/app_snackbar.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../themes/theme.dart';
 
@@ -200,8 +201,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   'Password strength: $_passwordStrength',
-                  style: AppTextStyles.bodySmall(context)
-                      .copyWith(color: _passwordStrengthColor),
+                  style: AppTextStyles.bodySmall(
+                    context,
+                  ).copyWith(color: _passwordStrengthColor),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 AppTextField(
@@ -278,23 +280,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             role: 'customer',
                             country: _countryController.text.trim(),
                           );
-                          final success =
-                              await context.read<AuthState>().register(user);
+                          final success = await context
+                              .read<AuthState>()
+                              .register(user);
                           if (!mounted) return;
                           if (success) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Registration successful.'),
-                              ),
+                            AppSnackBar.show(
+                              context,
+                              message: 'Registration successful.',
+                              type: AppSnackBarType.success,
                             );
-                            Navigator.of(context)
-                                .pushReplacementNamed('/login');
+                            Navigator.of(
+                              context,
+                            ).pushReplacementNamed('/login');
                             return;
                           }
-                          final message = authState.errorMessage ??
+                          final message =
+                              authState.errorMessage ??
                               'Registration failed. Please try again.';
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(message)),
+                          AppSnackBar.show(
+                            context,
+                            message: message,
+                            type: AppSnackBarType.error,
                           );
                         },
                 ),

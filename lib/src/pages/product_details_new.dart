@@ -9,13 +9,14 @@ import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
-import '../model/product.dart';
+import '../model/product_api.dart';
 import '../shared/widgets/app_button.dart';
 import '../shared/widgets/app_image.dart';
+import '../shared/widgets/app_snackbar.dart';
 import '../themes/theme.dart';
 
 class ProductDetailsPage extends StatefulWidget {
-  final Product product;
+  final ApiProduct product;
   final String? initialSize;
   final String? initialColor;
 
@@ -186,15 +187,12 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                             color: selection.color,
                           );
                           if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                context.l10n.productAddedToCart(
-                                  widget.product.name,
-                                ),
-                              ),
-                              duration: const Duration(seconds: 2),
+                          AppSnackBar.show(
+                            context,
+                            message: context.l10n.productAddedToCart(
+                              widget.product.name,
                             ),
+                            type: AppSnackBarType.success,
                           );
                         },
                       ),

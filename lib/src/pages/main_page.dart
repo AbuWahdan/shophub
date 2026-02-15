@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sinwar_shoping/src/pages/shopping_cart_page.dart';
 
+import '../model/data.dart';
 import '../widgets/BottomNavigationBar/bottom_navigation_bar.dart';
 import 'home_page.dart';
 import 'categories_page.dart';
@@ -17,25 +18,13 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int currentIndex = 0;
-  int cartItemCount = 0;
 
   late List<Widget> pages;
 
   @override
   void initState() {
     super.initState();
-    pages = [
-      MyHomePage(onCartUpdated: _updateCartCount),
-      CategoriesPage(),
-      ShoppingCartPage(onCartUpdated: _updateCartCount),
-      ProfilePage(),
-    ];
-  }
-
-  void _updateCartCount(int count) {
-    setState(() {
-      cartItemCount = count;
-    });
+    pages = [MyHomePage(), CategoriesPage(), ShoppingCartPage(), ProfilePage()];
   }
 
   void onBottomIconPressed(int index) {
@@ -59,9 +48,12 @@ class _MainPageState extends State<MainPage> {
       ),
       bottomNavigationBar: SafeArea(
         top: false,
-        child: CustomBottomNavigationBar(
-          onIconPresedCallback: onBottomIconPressed,
-          cartBadgeCount: cartItemCount,
+        child: ValueListenableBuilder<int>(
+          valueListenable: AppData.cartCountNotifier,
+          builder: (context, cartItemCount, _) => CustomBottomNavigationBar(
+            onIconPresedCallback: onBottomIconPressed,
+            cartBadgeCount: cartItemCount,
+          ),
         ),
       ),
     );

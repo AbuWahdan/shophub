@@ -316,7 +316,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       ),
     );
 
-    AppData.cartItems.clear();
+    AppData.clearCart();
     if (!mounted) return;
     Navigator.pushReplacementNamed(context, AppRoutes.orders);
   }

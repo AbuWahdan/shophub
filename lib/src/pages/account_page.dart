@@ -9,6 +9,7 @@ import '../l10n/l10n.dart';
 import '../shared/dialogs/app_dialogs.dart';
 import '../shared/widgets/app_button.dart';
 import '../shared/widgets/app_image.dart';
+import '../shared/widgets/app_snackbar.dart';
 import '../themes/theme.dart';
 
 class AccountPage extends StatelessWidget {
@@ -49,8 +50,10 @@ class AccountPage extends StatelessWidget {
                   title: l10n.accountReviews,
                   subtitle: l10n.accountReviewsSubtitle,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.accountReviewsComingSoon)),
+                    AppSnackBar.show(
+                      context,
+                      message: l10n.accountReviewsComingSoon,
+                      type: AppSnackBarType.info,
                     );
                   },
                 ),
@@ -73,10 +76,10 @@ class AccountPage extends StatelessWidget {
                   title: l10n.accountPaymentMethods,
                   subtitle: l10n.accountPaymentMethodsSubtitle,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(l10n.accountPaymentMethodsComingSoon),
-                      ),
+                    AppSnackBar.show(
+                      context,
+                      message: l10n.accountPaymentMethodsComingSoon,
+                      type: AppSnackBarType.info,
                     );
                   },
                 ),

@@ -7,6 +7,7 @@ import '../../l10n/l10n.dart';
 import '../../state/auth_state.dart';
 import '../../shared/validation/auth_validators.dart';
 import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/app_snackbar.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../themes/theme.dart';
 
@@ -44,11 +45,15 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: AppSpacing.xxl),
-                Text(l10n.loginWelcomeBack,
-                    style: AppTextStyles.headlineLarge(context)),
+                Text(
+                  l10n.loginWelcomeBack,
+                  style: AppTextStyles.headlineLarge(context),
+                ),
                 const SizedBox(height: AppSpacing.sm),
-                Text(l10n.loginSubtitle,
-                    style: AppTextStyles.bodyMedium(context)),
+                Text(
+                  l10n.loginSubtitle,
+                  style: AppTextStyles.bodyMedium(context),
+                ),
                 const SizedBox(height: AppSpacing.xxxl),
                 AppTextField(
                   controller: _usernameController,
@@ -116,24 +121,26 @@ class _LoginScreenState extends State<LoginScreen> {
                             return;
                           }
                           final success = await context.read<AuthState>().login(
-                                _usernameController.text.trim(),
-                                _passwordController.text.trim(),
-                              );
+                            _usernameController.text.trim(),
+                            _passwordController.text.trim(),
+                          );
                           if (!mounted) return;
                           if (success) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Login successful.'),
-                              ),
+                            AppSnackBar.show(
+                              context,
+                              message: 'Login successful.',
+                              type: AppSnackBarType.success,
                             );
-                            Navigator.of(context)
-                                .pushReplacementNamed('/main');
+                            Navigator.of(context).pushReplacementNamed('/main');
                             return;
                           }
-                          final message = authState.errorMessage ??
+                          final message =
+                              authState.errorMessage ??
                               'Invalid credentials. Please try again.';
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(message)),
+                          AppSnackBar.show(
+                            context,
+                            message: message,
+                            type: AppSnackBarType.error,
                           );
                         },
                 ),

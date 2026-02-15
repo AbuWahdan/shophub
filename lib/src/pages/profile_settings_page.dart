@@ -6,6 +6,7 @@ import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../shared/dialogs/app_dialogs.dart';
 import '../shared/widgets/app_button.dart';
+import '../shared/widgets/app_snackbar.dart';
 import '../shared/widgets/section_header.dart';
 import '../state/app_settings.dart';
 import '../themes/theme.dart';
@@ -53,8 +54,10 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                     });
                     await AppSettings.setThemeMode(value);
                     if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.settingsThemeUpdated)),
+                    AppSnackBar.show(
+                      context,
+                      message: l10n.settingsThemeUpdated,
+                      type: AppSnackBarType.success,
                     );
                   },
                   items: [
@@ -187,8 +190,10 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 confirmLabel: l10n.commonDelete,
                 cancelLabel: l10n.commonCancel,
                 onConfirm: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.settingsAccountDeleted)),
+                  AppSnackBar.show(
+                    context,
+                    message: l10n.settingsAccountDeleted,
+                    type: AppSnackBarType.info,
                   );
                 },
               );
@@ -226,7 +231,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
       subtitle: subtitle != null
           ? Text(subtitle, style: AppTextStyles.bodySmall(context))
           : null,
-      trailing: trailing ??
+      trailing:
+          trailing ??
           const Icon(Icons.arrow_forward_ios, size: AppSpacing.iconSm),
       onTap: onTap,
     );
@@ -236,22 +242,16 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     final l10n = context.l10n;
     return ListTile(
       leading: Icon(Icons.language, color: AppColors.primary),
-      title: Text(l10n.settingsLanguage, style: AppTextStyles.bodyLarge(context)),
+      title: Text(
+        l10n.settingsLanguage,
+        style: AppTextStyles.bodyLarge(context),
+      ),
       trailing: DropdownButton<String>(
         value: _selectedLanguage,
         items: [
-          DropdownMenuItem(
-            value: 'system',
-            child: Text(l10n.languageSystem),
-          ),
-          DropdownMenuItem(
-            value: 'en',
-            child: Text(l10n.languageEnglish),
-          ),
-          DropdownMenuItem(
-            value: 'ar',
-            child: Text(l10n.languageArabic),
-          ),
+          DropdownMenuItem(value: 'system', child: Text(l10n.languageSystem)),
+          DropdownMenuItem(value: 'en', child: Text(l10n.languageEnglish)),
+          DropdownMenuItem(value: 'ar', child: Text(l10n.languageArabic)),
         ],
         onChanged: (value) async {
           if (value == null) return;
@@ -260,8 +260,10 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
           });
           await AppSettings.setLocale(value == 'system' ? null : Locale(value));
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.settingsLanguageUpdated)),
+          AppSnackBar.show(
+            context,
+            message: l10n.settingsLanguageUpdated,
+            type: AppSnackBarType.success,
           );
         },
       ),

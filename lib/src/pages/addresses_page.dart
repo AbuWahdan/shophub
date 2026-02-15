@@ -8,6 +8,7 @@ import '../model/address.dart';
 import '../model/data.dart';
 import '../shared/dialogs/app_dialogs.dart';
 import '../shared/widgets/app_button.dart';
+import '../shared/widgets/app_snackbar.dart';
 import '../shared/widgets/app_text_field.dart';
 import '../themes/theme.dart';
 
@@ -97,17 +98,15 @@ class _AddressesPageState extends State<AddressesPage> {
                     ),
                     child: Text(
                       context.l10n.addressesDefault,
-                      style: AppTextStyles.labelSmall(context)
-                          .copyWith(color: AppColors.primary),
+                      style: AppTextStyles.labelSmall(
+                        context,
+                      ).copyWith(color: AppColors.primary),
                     ),
                   ),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            Text(
-              address.phone,
-              style: AppTextStyles.bodySmall(context),
-            ),
+            Text(address.phone, style: AppTextStyles.bodySmall(context)),
             const SizedBox(height: AppSpacing.lg),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -125,9 +124,7 @@ class _AddressesPageState extends State<AddressesPage> {
                 const SizedBox(width: AppSpacing.sm),
                 TextButton(
                   onPressed: () => _deleteAddress(index),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                  ),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
                   child: Text(context.l10n.commonDelete),
                 ),
               ],
@@ -159,9 +156,11 @@ class _AddressesPageState extends State<AddressesPage> {
         setState(() {
           addresses.removeAt(index);
         });
-        ScaffoldMessenger.of(
+        AppSnackBar.show(
           context,
-        ).showSnackBar(SnackBar(content: Text(l10n.addressesDeleted)));
+          message: l10n.addressesDeleted,
+          type: AppSnackBarType.success,
+        );
       },
     );
   }
@@ -184,10 +183,10 @@ class _AddressesPageState extends State<AddressesPage> {
             }
           });
           Navigator.pop(context);
-          ScaffoldMessenger.of(
+          AppSnackBar.show(
             context,
-          ).showSnackBar(
-            SnackBar(content: Text(context.l10n.addressesSaved)),
+            message: context.l10n.addressesSaved,
+            type: AppSnackBarType.success,
           );
         },
       ),
@@ -247,7 +246,9 @@ class _AddressFormDialogState extends State<AddressFormDialog> {
     final l10n = context.l10n;
     return AlertDialog(
       title: Text(
-        widget.address == null ? l10n.addressesAddTitle : l10n.addressesEditTitle,
+        widget.address == null
+            ? l10n.addressesAddTitle
+            : l10n.addressesEditTitle,
       ),
       content: SingleChildScrollView(
         child: Column(
@@ -318,9 +319,11 @@ class _AddressFormDialogState extends State<AddressFormDialog> {
         phoneController.text.isEmpty ||
         streetController.text.isEmpty ||
         cityController.text.isEmpty) {
-      ScaffoldMessenger.of(
+      AppSnackBar.show(
         context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.addressesFillAll)));
+        message: context.l10n.addressesFillAll,
+        type: AppSnackBarType.warning,
+      );
       return;
     }
 

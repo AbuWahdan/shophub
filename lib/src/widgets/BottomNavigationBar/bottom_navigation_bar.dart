@@ -105,6 +105,7 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
                   shape: BoxShape.circle,
                 ),
                 child: Stack(
+                  clipBehavior: Clip.none,
                   children: [
                     Opacity(
                       opacity: isEnable ? _yController.value : 1,
@@ -118,10 +119,16 @@ class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
                     // Cart badge
                     if (index == 2 && widget.cartBadgeCount > 0)
                       Positioned(
-                        right: 0,
-                        top: 0,
+                        right: -6,
+                        top: -6,
                         child: Container(
-                          width: AppSpacing.xl,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.xs,
+                            vertical: 2,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: AppSpacing.xl,
+                          ),
                           height: AppSpacing.xl,
                           decoration: BoxDecoration(
                             color: AppColors.error,

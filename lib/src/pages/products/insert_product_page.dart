@@ -10,6 +10,7 @@ import '../../model/data.dart';
 import '../../model/product_api.dart';
 import '../../services/product_service.dart';
 import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/app_snackbar.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../state/auth_state.dart';
 import '../../themes/theme.dart';
@@ -277,14 +278,18 @@ class _InsertProductPageState extends State<InsertProductPage> {
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_selectedCategory?.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a category.')),
+      AppSnackBar.show(
+        context,
+        message: 'Please select a category.',
+        type: AppSnackBarType.warning,
       );
       return;
     }
     if (_images.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add product images.')),
+      AppSnackBar.show(
+        context,
+        message: 'Please add product images.',
+        type: AppSnackBarType.warning,
       );
       return;
     }
@@ -292,8 +297,10 @@ class _InsertProductPageState extends State<InsertProductPage> {
     final authState = context.read<AuthState>();
     final createdBy = _resolveCreatedBy(authState.userId, authState.user);
     if (createdBy.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Account details are not available.')),
+      AppSnackBar.show(
+        context,
+        message: 'Account details are not available.',
+        type: AppSnackBarType.error,
       );
       return;
     }
@@ -316,8 +323,10 @@ class _InsertProductPageState extends State<InsertProductPage> {
     try {
       await _productService.insertProduct(request);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Product inserted successfully.')),
+      AppSnackBar.show(
+        context,
+        message: 'Product inserted successfully.',
+        type: AppSnackBarType.success,
       );
       _formKey.currentState?.reset();
       _nameController.clear();
@@ -332,13 +341,17 @@ class _InsertProductPageState extends State<InsertProductPage> {
       });
     } on ProductException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
+      AppSnackBar.show(
         context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+        message: error.message,
+        type: AppSnackBarType.error,
+      );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to insert product.')),
+      AppSnackBar.show(
+        context,
+        message: 'Failed to insert product.',
+        type: AppSnackBarType.error,
       );
     } finally {
       if (mounted) {
