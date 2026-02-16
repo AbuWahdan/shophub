@@ -356,6 +356,12 @@ abstract class AppLocalizations {
   /// **'My Orders'**
   String get accountMyOrders;
 
+  /// No description provided for @accountMyProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'My Products'**
+  String get accountMyProducts;
+
   /// No description provided for @accountMyOrdersSubtitle.
   ///
   /// In en, this message translates to:
@@ -1220,6 +1226,12 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get profileSettings;
 
+  /// No description provided for @insertProductMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert Product'**
+  String get insertProductMenu;
+
   /// No description provided for @profileHelp.
   ///
   /// In en, this message translates to:
@@ -1333,6 +1345,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Proceed to Checkout'**
   String get cartCheckout;
+
+  /// No description provided for @myProductsEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t created any products yet'**
+  String get myProductsEmptyMessage;
+
+  /// No description provided for @stockIn.
+  ///
+  /// In en, this message translates to:
+  /// **'In Stock'**
+  String get stockIn;
+
+  /// No description provided for @stockOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of Stock'**
+  String get stockOut;
+
+  /// No description provided for @productsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load products: {error}'**
+  String productsLoadFailed(Object error);
+
+  /// No description provided for @productsLoadFailedGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load products'**
+  String get productsLoadFailedGeneric;
 
   /// No description provided for @productTotalPrice.
   ///

@@ -487,7 +487,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   DropdownButtonFormField<String>(
-                    value: selectedSize,
+                    initialValue: selectedSize,
                     items: widget.product.sizes
                         .map(
                           (size) => DropdownMenuItem<String>(
@@ -509,7 +509,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   DropdownButtonFormField<String>(
-                    value: selectedColor,
+                    initialValue: selectedColor,
                     items: widget.product.colors
                         .map(
                           (color) => DropdownMenuItem<String>(
@@ -556,7 +556,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   ],
                   const SizedBox(height: AppSpacing.sm),
                   DropdownButtonFormField<int>(
-                    value: quantity,
+                    initialValue: quantity,
                     items: quantityItems
                         .map(
                           (qty) => DropdownMenuItem<int>(

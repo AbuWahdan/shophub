@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
+import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
+import '../model/category.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';
 import '../services/product_service.dart';
 import '../shared/widgets/app_snackbar.dart';
+import '../shared/widgets/empty_state.dart';
 import '../shared/widgets/product_search_bar.dart';
 import '../themes/theme.dart';
 import '../widgets/product_card.dart';
@@ -15,25 +19,27 @@ class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
 
   @override
-  _CategoriesPageState createState() => _CategoriesPageState();
+  State<CategoriesPage> createState() => _CategoriesPageState();
 }
 
 class _CategoriesPageState extends State<CategoriesPage> {
   final TextEditingController _searchController = TextEditingController();
   final ProductService _productService = ProductService();
+
   bool _hasSearchText = false;
   bool _isLoadingProducts = false;
-  String searchQuery = '';
+  String _searchQuery = '';
   String _selectedCategory = 'All';
   List<ApiProduct> _products = [];
+  List<Categories> _categoryModels = [];
 
-  List<ApiProduct> get filteredProducts {
+  List<ApiProduct> get _filteredProducts {
     return _products.where((product) {
       final matchesSearch =
-          product.itemName.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          product.itemName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           _categoryName(
             product,
-          ).toLowerCase().contains(searchQuery.toLowerCase());
+          ).toLowerCase().contains(_searchQuery.toLowerCase());
       final matchesCategory =
           _selectedCategory == 'All' ||
           _selectedCategory == _categoryName(product);
@@ -45,6 +51,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
   void initState() {
     super.initState();
     _products = AppData.products;
+    _categoryModels = _cloneCategories();
+    _syncCategorySelection('All');
     _loadProducts();
   }
 
@@ -54,14 +62,34 @@ class _CategoriesPageState extends State<CategoriesPage> {
     super.dispose();
   }
 
+  List<Categories> _cloneCategories() {
+    return AppData.categoryList
+        .map(
+          (category) => Categories(
+            id: category.id,
+            name: category.name,
+            image: category.image,
+            isSelected: false,
+          ),
+        )
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingProducts) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
+    }
+
     return RefreshIndicator(
       onRefresh: () => _loadProducts(forceRefresh: true),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: AppTheme.padding,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ProductSearchBar(
               controller: _searchController,
@@ -70,51 +98,32 @@ class _CategoriesPageState extends State<CategoriesPage> {
               onClear: () {
                 _searchController.clear();
                 setState(() {
-                  searchQuery = '';
+                  _searchQuery = '';
                   _hasSearchText = false;
                 });
               },
               onChanged: (value) {
                 setState(() {
-                  searchQuery = value;
+                  _searchQuery = value;
                   _hasSearchText = value.trim().isNotEmpty;
                 });
               },
             ),
-            if (_isLoadingProducts)
-              const LinearProgressIndicator(minHeight: AppSpacing.borderThin),
             const SizedBox(height: AppSpacing.lg),
-            DropdownButtonFormField<String>(
-              value: _selectedCategory,
-              decoration: InputDecoration(
-                labelText: context.l10n.categoriesSelectTitle,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _showAllCategoriesPicker,
+                icon: const Icon(Icons.grid_view),
+                label: Text(context.l10n.categoriesAll),
               ),
-              items: AppData.categoryList
-                  .where((item) => item.name != null)
-                  .map(
-                    (item) => DropdownMenuItem<String>(
-                      value: item.name!,
-                      child: Text(_categoryLabel(context, item.name!)),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                if (value == null) return;
-                setState(() {
-                  _selectedCategory = value;
-                  _syncCategorySelection(value);
-                });
-              },
             ),
             const SizedBox(height: AppSpacing.lg),
             SizedBox(
               height: AppSpacing.imageMd,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                children: AppData.categoryList
+                children: _categoryModels
                     .map(
                       (category) => ProductIcon(
                         model: category,
@@ -132,24 +141,90 @@ class _CategoriesPageState extends State<CategoriesPage> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.75,
-                mainAxisSpacing: AppSpacing.lg,
-                crossAxisSpacing: AppSpacing.lg,
+            if (_filteredProducts.isEmpty)
+              SizedBox(
+                height: AppTheme.fullHeight(context) * 0.45,
+                child: EmptyState(
+                  icon: Icons.category_outlined,
+                  title: context.l10n.searchFilterNoResults,
+                  message: context.l10n.searchFilterHint,
+                ),
+              )
+            else
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.75,
+                  mainAxisSpacing: AppSpacing.lg,
+                  crossAxisSpacing: AppSpacing.lg,
+                ),
+                itemCount: _filteredProducts.length,
+                itemBuilder: (context, index) {
+                  final product = _filteredProducts[index];
+                  return ProductCard(product: product, onSelected: (model) {});
+                },
               ),
-              itemCount: filteredProducts.length,
-              itemBuilder: (context, index) {
-                final product = filteredProducts[index];
-                return ProductCard(product: product, onSelected: (model) {});
-              },
-            ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showAllCategoriesPicker() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusLg),
+        ),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: AppSpacing.insetsLg,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.categoriesAll,
+                  style: AppTextStyles.titleMedium(context),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: _categoryModels
+                        .where((item) => item.name != null)
+                        .map((item) {
+                          final categoryName = item.name!;
+                          return ListTile(
+                            title: Text(_categoryLabel(context, categoryName)),
+                            trailing: _selectedCategory == categoryName
+                                ? const Icon(
+                                    Icons.check,
+                                    color: AppColors.primary,
+                                  )
+                                : null,
+                            onTap: () {
+                              setState(() {
+                                _selectedCategory = categoryName;
+                                _syncCategorySelection(categoryName);
+                              });
+                              Navigator.pop(context);
+                            },
+                          );
+                        })
+                        .toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -174,9 +249,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 
   void _syncCategorySelection(String selectedCategory) {
-    for (var item in AppData.categoryList) {
-      final name = item.name ?? '';
-      item.isSelected = name == selectedCategory;
+    for (var item in _categoryModels) {
+      item.isSelected = item.name == selectedCategory;
     }
   }
 
@@ -199,7 +273,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
       setState(() => _products = AppData.products);
       AppSnackBar.show(
         context,
-        message: 'Failed to load products: ${error.message}',
+        message: context.l10n.productsLoadFailed(error.message),
         type: AppSnackBarType.error,
       );
     } catch (_) {
@@ -207,7 +281,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
       setState(() => _products = AppData.products);
       AppSnackBar.show(
         context,
-        message: 'Failed to load products',
+        message: context.l10n.productsLoadFailedGeneric,
         type: AppSnackBarType.error,
       );
     } finally {

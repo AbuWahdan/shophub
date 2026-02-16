@@ -142,6 +142,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get accountMyOrders => 'طلباتي';
 
   @override
+  String get accountMyProducts => 'منتجاتي';
+
+  @override
   String get accountMyOrdersSubtitle => 'عرض وتتبع طلباتك';
 
   @override
@@ -593,6 +596,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get profileSettings => 'الإعدادات';
 
   @override
+  String get insertProductMenu => 'إضافة منتج';
+
+  @override
   String get profileHelp => 'المساعدة والدعم';
 
   @override
@@ -651,6 +657,23 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cartCheckout => 'المتابعة للدفع';
+
+  @override
+  String get myProductsEmptyMessage => 'لم تقم بإضافة أي منتجات بعد';
+
+  @override
+  String get stockIn => 'متوفر';
+
+  @override
+  String get stockOut => 'غير متوفر';
+
+  @override
+  String productsLoadFailed(Object error) {
+    return 'فشل تحميل المنتجات: $error';
+  }
+
+  @override
+  String get productsLoadFailedGeneric => 'فشل تحميل المنتجات';
 
   @override
   String get productTotalPrice => 'السعر الإجمالي';

@@ -8,6 +8,7 @@ import 'package:sinwar_shoping/src/pages/categories_page.dart';
 import 'package:sinwar_shoping/src/pages/checkout_page.dart';
 import 'package:sinwar_shoping/src/pages/info_page.dart';
 import 'package:sinwar_shoping/src/pages/main_page.dart';
+import 'package:sinwar_shoping/src/pages/my_products_page.dart';
 import 'package:sinwar_shoping/src/pages/onboarding_screen.dart';
 import 'package:sinwar_shoping/src/pages/orders_page.dart';
 import 'package:sinwar_shoping/src/pages/products/insert_product_page.dart';
@@ -46,6 +47,7 @@ class AppRoutes {
   static const String serviceDetails = '/service-details';
   static const String categoryList = '/category-list';
   static const String insertProduct = '/products/insert';
+  static const String myProducts = '/products/my';
   // ... add other route constants
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -188,6 +190,12 @@ class AppRoutes {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const InsertProductPage(),
+        );
+
+      case myProducts:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const MyProductsPage(),
         );
 
       case productComments:

@@ -42,6 +42,7 @@
   "accountTitle": "Account",
   "accountShoppingSection": "Shopping",
   "accountMyOrders": "My Orders",
+  "accountMyProducts": "My Products",
   "accountMyOrdersSubtitle": "View and track your orders",
   "accountWishlist": "Wishlist",
   "accountWishlistSubtitle": "Your saved items",
@@ -231,6 +232,7 @@
   "profileOrders": "Orders",
   "profileAddresses": "Addresses",
   "profileSettings": "Settings",
+  "insertProductMenu": "Insert Product",
   "profileHelp": "Help & Support",
   "profileHelpMessage": "Contact us at support@shophub.com for any assistance.",
   "cartRemoveItemTitle": "Remove Item",
@@ -255,6 +257,16 @@
   "cartShippingFree": "Free",
   "cartTotal": "Total",
   "cartCheckout": "Proceed to Checkout",
+  "myProductsEmptyMessage": "You haven't created any products yet",
+  "stockIn": "In Stock",
+  "stockOut": "Out of Stock",
+  "productsLoadFailed": "Failed to load products: {error}",
+  "@productsLoadFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "productsLoadFailedGeneric": "Failed to load products",
   "productTotalPrice": "Total Price",
   "productAddToCart": "Add to Cart",
   "productSelectSizeQuantity": "Please select a size and quantity.",

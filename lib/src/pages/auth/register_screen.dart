@@ -271,14 +271,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             return;
                           }
                           final user = User(
+                            userId: 0,
                             username: _usernameController.text.trim(),
-                            password: _passwordController.text.trim(),
+                            passwordHash: _passwordController.text.trim(),
                             fullname: _nameController.text.trim(),
                             email: _emailController.text.trim(),
                             phone: _phoneController.text.trim(),
                             address: _addressController.text.trim(),
                             role: 'customer',
                             country: _countryController.text.trim(),
+                            createdAt: '',
+                            updatedAt: '',
+                            isActive: 1,
                           );
                           final success = await context
                               .read<AuthState>()

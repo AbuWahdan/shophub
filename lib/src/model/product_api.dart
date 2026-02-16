@@ -8,6 +8,8 @@ class ApiProduct {
   final int categoryId;
   final String category;
   final String createdBy;
+  final String itemOwner;
+  final int createdByUserId;
   final int isActive;
   final double? discountPrice;
   final List<String> images;
@@ -31,6 +33,8 @@ class ApiProduct {
     required this.categoryId,
     required this.category,
     required this.createdBy,
+    this.itemOwner = '',
+    this.createdByUserId = 0,
     required this.isActive,
     this.discountPrice,
     List<String>? images,
@@ -45,7 +49,6 @@ class ApiProduct {
     this.isSelected = false,
   }) : images = images ?? (itemImgUrl.isEmpty ? [] : [itemImgUrl]);
 
-  // Getters for ProductCard compatibility
   String get name => itemName;
   String get description => itemDesc;
   double get price => itemPrice;
@@ -74,30 +77,75 @@ class ApiProduct {
     if (sizeIndex == -1 || colorIndex == -1) return itemQty;
     return ((id + sizeIndex * 3 + colorIndex * 5) % 9) + 1;
   }
-factory ApiProduct.fromJson(Map<String, dynamic> json) {
-  final imgUrl = _asString(json, const ['item_img_url', 'ITEM_IMG_URL']);
-  
-  return ApiProduct(
-    id: _asInt(_pick(json, const ['id', 'ID'])),
-    itemName: _asString(json, const ['item_name', 'ITEM_NAME']),
-    itemDesc: _asString(json, const ['item_desc', 'ITEM_DESC']),
-    itemPrice: _asDouble(_pick(json, const ['item_price', 'ITEM_PRICE'])),
-    itemQty: _asInt(_pick(json, const ['item_qty', 'ITEM_QTY'])),
-    itemImgUrl: imgUrl,
-    categoryId: _asInt(_pick(json, const ['category_id', 'CAT_ID', 'CATEGORY_ID', 'item_cat', 'ITEM_CAT'])),
-    category: _asString(json, const ['category', 'CATEGORY', 'item_cat', 'ITEM_CAT']),
-    createdBy: _asString(json, const ['created_by', 'CREATED_BY', 'creatd_by', 'CREATD_BY', 'item_owner', 'ITEM_OWNER']),
-    isActive: _asInt(_pick(json, const ['is_active', 'IS_ACTIVE'])),
-    discountPrice: _asNullableDouble(
-      _pick(json, const ['item_old_price', 'ITEM_OLD_PRICE', 'discount_price', 'DISCOUNT_PRICE']),
-    ),
-    images: imgUrl.isEmpty ? [] : [imgUrl],
-    rating: _asDouble(_pick(json, const ['rating', 'RATING']), fallback: 4.0),
-    reviewCount: _asInt(_pick(json, const ['reviews', 'REVIEWS', 'review_count', 'REVIEW_COUNT'])),
-    sizes: const ['Default'],
-    colors: const ['Default'],
-  );
-}
+
+  factory ApiProduct.fromJson(Map<String, dynamic> json) {
+    final imgUrl = _asString(json, const ['item_img_url', 'ITEM_IMG_URL']);
+
+    return ApiProduct(
+      id: _asInt(_pick(json, const ['id', 'ID'])),
+      itemName: _asString(json, const ['item_name', 'ITEM_NAME']),
+      itemDesc: _asString(json, const ['item_desc', 'ITEM_DESC']),
+      itemPrice: _asDouble(_pick(json, const ['item_price', 'ITEM_PRICE'])),
+      itemQty: _asInt(_pick(json, const ['item_qty', 'ITEM_QTY'])),
+      itemImgUrl: imgUrl,
+      categoryId: _asInt(
+        _pick(json, const [
+          'category_id',
+          'CAT_ID',
+          'CATEGORY_ID',
+          'item_cat',
+          'ITEM_CAT',
+        ]),
+      ),
+      category: _asString(json, const [
+        'category',
+        'CATEGORY',
+        'item_cat',
+        'ITEM_CAT',
+      ]),
+      createdBy: _asString(json, const [
+        'created_by',
+        'CREATED_BY',
+        'creatd_by',
+        'CREATD_BY',
+        'item_owner',
+        'ITEM_OWNER',
+      ]),
+      itemOwner: _asString(json, const ['item_owner', 'ITEM_OWNER']),
+      createdByUserId: _asInt(
+        _pick(json, const [
+          'created_by_user_id',
+          'CREATED_BY_USER_ID',
+          'user_id',
+          'USER_ID',
+          'owner_id',
+          'OWNER_ID',
+        ]),
+      ),
+      isActive: _asInt(_pick(json, const ['is_active', 'IS_ACTIVE'])),
+      discountPrice: _asNullableDouble(
+        _pick(json, const [
+          'item_old_price',
+          'ITEM_OLD_PRICE',
+          'discount_price',
+          'DISCOUNT_PRICE',
+        ]),
+      ),
+      images: imgUrl.isEmpty ? [] : [imgUrl],
+      rating: _asDouble(_pick(json, const ['rating', 'RATING']), fallback: 4.0),
+      reviewCount: _asInt(
+        _pick(json, const [
+          'reviews',
+          'REVIEWS',
+          'review_count',
+          'REVIEW_COUNT',
+        ]),
+      ),
+      sizes: const ['Default'],
+      colors: const ['Default'],
+    );
+  }
+
   static dynamic _pick(Map<String, dynamic> json, List<String> keys) {
     for (final key in keys) {
       if (json.containsKey(key)) return json[key];
@@ -126,7 +174,6 @@ factory ApiProduct.fromJson(Map<String, dynamic> json) {
     return int.tryParse((value ?? '').toString()) ?? 0;
   }
 }
-
 class CreateProductRequest {
   final String itemName;
   final String itemDesc;
@@ -134,7 +181,7 @@ class CreateProductRequest {
   final int itemQty;
   final String itemImgUrl;
   final int categoryId;
-  final String createdBy;
+  final int itemOwner;
   final int isActive;
 
   const CreateProductRequest({
@@ -144,20 +191,54 @@ class CreateProductRequest {
     required this.itemQty,
     required this.itemImgUrl,
     required this.categoryId,
-    required this.createdBy,
+    required this.itemOwner,
     required this.isActive,
   });
 
   Map<String, dynamic> toJson() {
     return {
+      // Product fields - try both cases
       'item_name': itemName,
+      'ITEM_NAME': itemName,
       'item_desc': itemDesc,
+      'ITEM_DESC': itemDesc,
       'item_price': itemPrice,
+      'ITEM_PRICE': itemPrice,
       'item_qty': itemQty,
+      'ITEM_QTY': itemQty,
       'item_img_url': itemImgUrl,
+      'ITEM_IMG_URL': itemImgUrl,
+      
+      // Category - try all variations
       'category_id': categoryId,
-      'created_by': createdBy,
+      'CATEGORY_ID': categoryId,
+      'CAT_ID': categoryId,
+      'cat_id': categoryId,
+      
+      // Active status
       'is_active': isActive,
+      'IS_ACTIVE': isActive,
+      
+      // OWNER/USER ID - try EVERY possible variation
+      // As integer
+      'item_owner': itemOwner,
+      'ITEM_OWNER': itemOwner,
+      'user_id': itemOwner,
+      'USER_ID': itemOwner,
+      'owner_id': itemOwner,
+      'OWNER_ID': itemOwner,
+      'created_by': itemOwner,
+      'CREATED_BY': itemOwner,
+      'created_by_user_id': itemOwner,
+      'CREATED_BY_USER_ID': itemOwner,
+      'creator_id': itemOwner,
+      'CREATOR_ID': itemOwner,
+      
+      // As string
+      'item_owner_str': itemOwner.toString(),
+      'ITEM_OWNER_STR': itemOwner.toString(),
+      'user_id_str': itemOwner.toString(),
+      'USER_ID_STR': itemOwner.toString(),
     };
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../config/route.dart';
 import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
@@ -9,6 +11,7 @@ import '../shared/widgets/app_button.dart';
 import '../shared/widgets/app_snackbar.dart';
 import '../shared/widgets/section_header.dart';
 import '../state/app_settings.dart';
+import '../state/auth_state.dart';
 import '../themes/theme.dart';
 
 class ProfileSettingsPage extends StatefulWidget {
@@ -19,8 +22,8 @@ class ProfileSettingsPage extends StatefulWidget {
 }
 
 class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
-  ThemeMode _themeMode = ThemeMode.system;
-  String _selectedLanguage = 'system';
+  ThemeMode _themeMode = ThemeMode.light;
+  String _selectedLanguage = 'en';
   bool _emailNotificationsEnabled = true;
   bool _pushNotificationsEnabled = true;
 
@@ -28,7 +31,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
   void initState() {
     super.initState();
     _themeMode = AppSettings.themeMode.value;
-    _selectedLanguage = AppSettings.locale.value?.languageCode ?? 'system';
+    _selectedLanguage = AppSettings.locale.value?.languageCode ?? 'en';
   }
 
   @override
@@ -45,35 +48,16 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
               _buildSettingItem(
                 icon: Icons.dark_mode,
                 title: l10n.settingsTheme,
-                trailing: DropdownButton<ThemeMode>(
-                  value: _themeMode,
-                  onChanged: (value) async {
-                    if (value == null) return;
+                subtitle: '${l10n.themeLight} / ${l10n.themeDark}',
+                trailing: Switch(
+                  value: _themeMode == ThemeMode.dark,
+                  onChanged: (enabled) async {
+                    final mode = enabled ? ThemeMode.dark : ThemeMode.light;
                     setState(() {
-                      _themeMode = value;
+                      _themeMode = mode;
                     });
-                    await AppSettings.setThemeMode(value);
-                    if (!mounted) return;
-                    AppSnackBar.show(
-                      context,
-                      message: l10n.settingsThemeUpdated,
-                      type: AppSnackBarType.success,
-                    );
+                    await AppSettings.setThemeMode(mode);
                   },
-                  items: [
-                    DropdownMenuItem(
-                      value: ThemeMode.system,
-                      child: Text(l10n.themeSystem),
-                    ),
-                    DropdownMenuItem(
-                      value: ThemeMode.light,
-                      child: Text(l10n.themeLight),
-                    ),
-                    DropdownMenuItem(
-                      value: ThemeMode.dark,
-                      child: Text(l10n.themeDark),
-                    ),
-                  ],
                 ),
               ),
             ],
@@ -124,7 +108,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 icon: Icons.info,
                 title: l10n.settingsAboutApp,
                 onTap: () {
-                  Navigator.pushNamed(context, '/about');
+                  Navigator.pushNamed(context, AppRoutes.about);
                 },
               ),
               const Divider(),
@@ -132,7 +116,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 icon: Icons.privacy_tip,
                 title: l10n.settingsPrivacyPolicy,
                 onTap: () {
-                  Navigator.pushNamed(context, '/privacy');
+                  Navigator.pushNamed(context, AppRoutes.privacy);
                 },
               ),
               const Divider(),
@@ -140,7 +124,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 icon: Icons.description,
                 title: l10n.settingsTerms,
                 onTap: () {
-                  Navigator.pushNamed(context, '/terms');
+                  Navigator.pushNamed(context, AppRoutes.terms);
                 },
               ),
               const Divider(),
@@ -148,7 +132,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 icon: Icons.help,
                 title: l10n.settingsHelp,
                 onTap: () {
-                  Navigator.pushNamed(context, '/help');
+                  Navigator.pushNamed(context, AppRoutes.help);
                 },
               ),
               const Divider(),
@@ -156,7 +140,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 icon: Icons.article_outlined,
                 title: MaterialLocalizations.of(context).licensesPageTitle,
                 onTap: () {
-                  Navigator.pushNamed(context, '/licenses');
+                  Navigator.pushNamed(context, AppRoutes.licenses);
                 },
               ),
             ],
@@ -173,7 +157,14 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 confirmLabel: l10n.commonLogout,
                 cancelLabel: l10n.commonCancel,
                 onConfirm: () {
-                  Navigator.pushReplacementNamed(context, '/login');
+                  context.read<AuthState>().logout().then((_) {
+                    if (!context.mounted) return;
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      AppRoutes.login,
+                      (route) => false,
+                    );
+                  });
                 },
               );
             },
@@ -246,25 +237,18 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
         l10n.settingsLanguage,
         style: AppTextStyles.bodyLarge(context),
       ),
-      trailing: DropdownButton<String>(
-        value: _selectedLanguage,
-        items: [
-          DropdownMenuItem(value: 'system', child: Text(l10n.languageSystem)),
-          DropdownMenuItem(value: 'en', child: Text(l10n.languageEnglish)),
-          DropdownMenuItem(value: 'ar', child: Text(l10n.languageArabic)),
-        ],
-        onChanged: (value) async {
-          if (value == null) return;
+      subtitle: Text(
+        '${l10n.languageEnglish} / ${l10n.languageArabic}',
+        style: AppTextStyles.bodySmall(context),
+      ),
+      trailing: Switch(
+        value: _selectedLanguage == 'ar',
+        onChanged: (isArabic) async {
+          final languageCode = isArabic ? 'ar' : 'en';
           setState(() {
-            _selectedLanguage = value;
+            _selectedLanguage = languageCode;
           });
-          await AppSettings.setLocale(value == 'system' ? null : Locale(value));
-          if (!mounted) return;
-          AppSnackBar.show(
-            context,
-            message: l10n.settingsLanguageUpdated,
-            type: AppSnackBarType.success,
-          );
+          await AppSettings.setLocale(Locale(languageCode));
         },
       ),
     );

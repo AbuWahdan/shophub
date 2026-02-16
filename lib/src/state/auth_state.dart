@@ -16,18 +16,18 @@ class AuthState extends ChangeNotifier {
   bool _isLoggedIn = false;
   String? _errorMessage;
   User? _user;
-  String _userId = '';
+  int _userId = 0;
 
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _isLoggedIn;
   String? get errorMessage => _errorMessage;
   User? get user => _user;
-  String get userId => _userId;
+  int get userId => _userId;
 
   Future<void> initialize() async {
     _isLoggedIn = await _storageService.isLoggedIn();
     _user = await _storageService.getUser();
-    _userId = await _storageService.getUserId() ?? '';
+    _userId = await _storageService.getUserId() ?? _user?.userId ?? 0;
     notifyListeners();
   }
 
@@ -44,12 +44,12 @@ class AuthState extends ChangeNotifier {
     } on AuthException catch (error) {
       _errorMessage = error.message;
       _isLoggedIn = false;
-      _userId = '';
+      _userId = 0;
       return false;
     } catch (_) {
       _errorMessage = 'Something went wrong. Try again.';
       _isLoggedIn = false;
-      _userId = '';
+      _userId = 0;
       return false;
     } finally {
       _setLoading(false);
@@ -80,7 +80,7 @@ class AuthState extends ChangeNotifier {
     await _authService.logout();
     _isLoggedIn = false;
     _user = null;
-    _userId = '';
+    _userId = 0;
     _errorMessage = null;
     notifyListeners();
   }

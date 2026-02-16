@@ -89,12 +89,19 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingProducts) {
+      return Scaffold(
+        appBar: AppBar(title: Text(context.l10n.searchFilterTitle)),
+        body: const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.searchFilterTitle)),
       body: Column(
         children: [
-          if (_isLoadingProducts)
-            const LinearProgressIndicator(minHeight: AppSpacing.borderThin),
           Padding(
             padding: AppTheme.padding,
             child: TextField(
@@ -449,10 +456,4 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
   }
 }
 
-enum SortOption {
-  bestSelling,
-  priceLowHigh,
-  priceHighLow,
-  bestRating,
-  newest,
-}
+enum SortOption { bestSelling, priceLowHigh, priceHighLow, bestRating, newest }

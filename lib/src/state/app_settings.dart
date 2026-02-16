@@ -7,10 +7,12 @@ class AppSettings {
   static const String _themeKey = 'theme_mode';
   static const String _localeKey = 'app_locale';
 
-  static final ValueNotifier<ThemeMode> themeMode =
-      ValueNotifier<ThemeMode>(ThemeMode.system);
-  static final ValueNotifier<Locale?> locale =
-      ValueNotifier<Locale?>(null);
+  static final ValueNotifier<ThemeMode> themeMode = ValueNotifier<ThemeMode>(
+    ThemeMode.light,
+  );
+  static final ValueNotifier<Locale?> locale = ValueNotifier<Locale?>(
+    const Locale('en'),
+  );
 
   static Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -27,19 +29,15 @@ class AppSettings {
   }
 
   static Future<void> setLocale(Locale? newLocale) async {
-    locale.value = newLocale;
+    locale.value = newLocale ?? const Locale('en');
     final prefs = await SharedPreferences.getInstance();
-    if (newLocale == null) {
-      await prefs.remove(_localeKey);
-    } else {
-      await prefs.setString(_localeKey, newLocale.languageCode);
-    }
+    await prefs.setString(_localeKey, locale.value!.languageCode);
   }
 
   static ThemeMode _parseThemeMode(String? value) {
     if (value == 'light') return ThemeMode.light;
     if (value == 'dark') return ThemeMode.dark;
-    return ThemeMode.system;
+    return ThemeMode.light;
   }
 
   static String _serializeThemeMode(ThemeMode mode) {
@@ -49,12 +47,12 @@ class AppSettings {
       case ThemeMode.dark:
         return 'dark';
       case ThemeMode.system:
-        return 'system';
+        return 'light';
     }
   }
 
   static Locale? _parseLocale(String? value) {
-    if (value == null || value.isEmpty) return null;
-    return Locale(value);
+    if (value == 'ar') return const Locale('ar');
+    return const Locale('en');
   }
 }

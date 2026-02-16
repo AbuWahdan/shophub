@@ -143,6 +143,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountMyOrders => 'My Orders';
 
   @override
+  String get accountMyProducts => 'My Products';
+
+  @override
   String get accountMyOrdersSubtitle => 'View and track your orders';
 
   @override
@@ -599,6 +602,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileSettings => 'Settings';
 
   @override
+  String get insertProductMenu => 'Insert Product';
+
+  @override
   String get profileHelp => 'Help & Support';
 
   @override
@@ -657,6 +663,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cartCheckout => 'Proceed to Checkout';
+
+  @override
+  String get myProductsEmptyMessage => 'You haven\'t created any products yet';
+
+  @override
+  String get stockIn => 'In Stock';
+
+  @override
+  String get stockOut => 'Out of Stock';
+
+  @override
+  String productsLoadFailed(Object error) {
+    return 'Failed to load products: $error';
+  }
+
+  @override
+  String get productsLoadFailedGeneric => 'Failed to load products';
 
   @override
   String get productTotalPrice => 'Total Price';

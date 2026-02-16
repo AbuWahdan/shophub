@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/route.dart';
 import '../../design/app_spacing.dart';
 import '../../model/category.dart';
 import '../../model/data.dart';
@@ -38,6 +40,14 @@ class _InsertProductPageState extends State<InsertProductPage> {
   Categories? _selectedCategory;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusManager.instance.primaryFocus?.unfocus();
+    });
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _descController.dispose();
@@ -50,7 +60,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
   Widget build(BuildContext context) {
     final authState = context.watch<AuthState>();
     final authUser = authState.user;
-    final createdByPreview = _resolveCreatedBy(authState.userId, authUser);
+    final ownerIdPreview = _resolveCreatorUserId(authState.userId, authUser);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Insert Product')),
@@ -189,7 +199,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
                   ),
                 const SizedBox(height: AppSpacing.lg),
                 DropdownButtonFormField<Categories>(
-                  value: _selectedCategory,
+                  initialValue: _selectedCategory,
                   decoration: const InputDecoration(
                     labelText: 'Category',
                     hintText: 'Select a category',
@@ -216,7 +226,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  'Created by: $createdByPreview',
+                  'Owner ID: $ownerIdPreview',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -295,8 +305,8 @@ class _InsertProductPageState extends State<InsertProductPage> {
     }
 
     final authState = context.read<AuthState>();
-    final createdBy = _resolveCreatedBy(authState.userId, authState.user);
-    if (createdBy.isEmpty) {
+    final itemOwner = _resolveCreatorUserId(authState.userId, authState.user);
+    if (itemOwner <= 0) {
       AppSnackBar.show(
         context,
         message: 'Account details are not available.',
@@ -312,9 +322,25 @@ class _InsertProductPageState extends State<InsertProductPage> {
       itemQty: int.parse(_qtyController.text.trim()),
       itemImgUrl: _images[_defaultImageIndex].path,
       categoryId: _selectedCategory!.id!,
-      createdBy: createdBy,
+      itemOwner: itemOwner,
       isActive: _isActive ? 1 : 0,
     );
+
+    if (kDebugMode) {
+      debugPrint('=== Product Insertion Debug ===');
+      debugPrint('User ID: $itemOwner');
+      debugPrint('User ID Type: ${itemOwner.runtimeType}');
+      debugPrint('Is Logged In: ${authState.isLoggedIn}');
+      debugPrint('Auth User Object: ${authState.user}');
+      debugPrint('Item Name: "${_nameController.text}"');
+      debugPrint('Item Desc: "${_descController.text}"');
+      debugPrint('Item Price: "${_priceController.text}"');
+      debugPrint('Item Qty: "${_qtyController.text}"');
+      debugPrint('Category ID: ${_selectedCategory?.id}');
+      debugPrint('Default Image Path: "${_images[_defaultImageIndex].path}"');
+      debugPrint('Request JSON: ${request.toJson()}');
+      debugPrint('===============================');
+    }
 
     setState(() {
       _isSubmitting = true;
@@ -325,20 +351,14 @@ class _InsertProductPageState extends State<InsertProductPage> {
       if (!mounted) return;
       AppSnackBar.show(
         context,
-        message: 'Product inserted successfully.',
+        message: 'Product added successfully!',
         type: AppSnackBarType.success,
       );
-      _formKey.currentState?.reset();
-      _nameController.clear();
-      _descController.clear();
-      _priceController.clear();
-      _qtyController.clear();
-      setState(() {
-        _isActive = true;
-        _images = [];
-        _defaultImageIndex = 0;
-        _selectedCategory = null;
-      });
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.main,
+        (route) => false,
+      );
     } on ProductException catch (error) {
       if (!mounted) return;
       AppSnackBar.show(
@@ -408,16 +428,11 @@ class _InsertProductPageState extends State<InsertProductPage> {
     });
   }
 
-  String _resolveCreatedBy(String userId, dynamic user) {
-    final id = userId.trim();
-    if (id.isNotEmpty) return id;
-    if (user == null) return '';
-    final username = (user.username ?? '').toString().trim();
-    if (username.isNotEmpty) return username;
-    final fullName = (user.fullname ?? '').toString().trim();
-    if (fullName.isNotEmpty) return fullName;
-    final email = (user.email ?? '').toString().trim();
-    if (email.isNotEmpty) return email;
-    return '';
+  int _resolveCreatorUserId(int userId, dynamic user) {
+    if (user != null) {
+      final userModelId = user.userId;
+      if (userModelId is int && userModelId > 0) return userModelId;
+    }
+    return userId > 0 ? userId : 0;
   }
 }

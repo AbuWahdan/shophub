@@ -105,8 +105,14 @@ class AuthService {
 
       final token = _extractToken(data, payload);
       final user = User(
+        userId: _readInt(userData, const ['user_id', 'USER_ID']),
         username: _readString(userData, const ['username', 'USERNAME']),
-        password: '',
+        passwordHash: _readString(userData, const [
+          'password_hash',
+          'PASSWORD_HASH',
+          'password',
+          'PASSWORD',
+        ]),
         fullname: _readString(userData, const [
           'fullname',
           'full_name',
@@ -117,12 +123,24 @@ class AuthService {
         address: _readString(userData, const ['address', 'ADDRESS']),
         role: _readString(userData, const ['role', 'ROLE']),
         country: _readString(userData, const ['country', 'COUNTRY']),
+        createdAt: _readString(userData, const [
+          'created_at',
+          'CREATED_AT',
+          'createdAt',
+        ]),
+        updatedAt: _readString(userData, const [
+          'updated_at',
+          'UPDATED_AT',
+          'updatedAt',
+        ]),
+        isActive: _readInt(userData, const ['is_active', 'IS_ACTIVE']),
       );
-      final userId = _readString(userData, const ['user_id', 'USER_ID']);
+      final extractedUserId = int.tryParse(_extractUserId(data, payload)) ?? 0;
+      final userId = user.userId > 0 ? user.userId : extractedUserId;
 
       await _storageService.saveAuthToken(token);
       await _storageService.saveUser(user);
-      if (userId.isNotEmpty) {
+      if (userId > 0) {
         await _storageService.saveUserId(userId);
       }
       await _storageService.setLoggedIn(true);
@@ -145,7 +163,7 @@ class AuthService {
     final normalizedRole = _normalizeRoleForApi(user.role);
     final registerPayload = {
       'username': user.username,
-      'password': user.password,
+      'password': user.passwordHash,
       'fullname': user.fullname,
       'email': user.email,
       'phone': user.phone,
@@ -153,7 +171,7 @@ class AuthService {
       'role': normalizedRole,
       'country': user.country,
       'USERNAME': user.username,
-      'PASSWORD': user.password,
+      'PASSWORD': user.passwordHash,
       'FULL_NAME': user.fullname,
       'EMAIL': user.email,
       'PHONE': user.phone,
@@ -186,7 +204,7 @@ class AuthService {
         Uri.parse(_registerUrl).replace(
           queryParameters: {
             'username': user.username,
-            'password': user.password,
+            'password': user.passwordHash,
             'fullname': user.fullname,
             'email': user.email,
             'phone': user.phone,
@@ -361,7 +379,12 @@ class AuthService {
         ? data
         : null;
 
-    final candidates = [map?['user_id'], payload?['user_id']];
+    final candidates = [
+      map?['user_id'],
+      map?['USER_ID'],
+      payload?['user_id'],
+      payload?['USER_ID'],
+    ];
 
     for (final candidate in candidates) {
       if (candidate is String && candidate.trim().isNotEmpty) {
@@ -421,6 +444,17 @@ class AuthService {
     return '';
   }
 
+  int _readInt(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final value = map[key];
+      if (value is num) return value.toInt();
+      if (value == null) continue;
+      final parsed = int.tryParse(value.toString().trim());
+      if (parsed != null) return parsed;
+    }
+    return 0;
+  }
+
   String _normalizeRoleForApi(String role) {
     final value = role.trim().toLowerCase();
     if (value == 'customer') return '2';
@@ -435,7 +469,7 @@ class AuthService {
 class AuthSession {
   final String token;
   final User user;
-  final String userId;
+  final int userId;
 
   const AuthSession({
     required this.token,

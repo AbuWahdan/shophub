@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../model/product_api.dart';
@@ -8,7 +9,7 @@ import 'api_client.dart';
 
 class ProductService {
   static const String _baseUrl = 'https://oracleapex.com/ords/topg/products';
-  static const String _getProductsUrl = '$_baseUrl/getproduct';
+  static const String _getProductsUrl = '$_baseUrl/getproducts';
   static const Duration _timeout = Duration(seconds: 6);
   static const Duration _cacheTtl = Duration(minutes: 2);
   static List<ApiProduct> _cachedProducts = <ApiProduct>[];
@@ -18,9 +19,52 @@ class ProductService {
 
   ProductService({http.Client? client}) : _client = client ?? ApiClient();
 
-  Future<List<ApiProduct>> getProducts({bool forceRefresh = false}) async {
+  Future<List<ApiProduct>> getMyProducts({
+    required int currentUserId,
+    required String currentUsername,
+    bool forceRefresh = false,
+  }) async {
+    final normalizedUsername = currentUsername.trim().toLowerCase();
+    final normalizedUserId = currentUserId > 0 ? currentUserId : 0;
+    if (normalizedUsername.isEmpty && normalizedUserId == 0) {
+      return <ApiProduct>[];
+    }
+
+    try {
+      final products = await getProducts(forceRefresh: forceRefresh);
+      debugPrint('MyProducts total from API: ${products.length}');
+      final filtered = products.where((product) {
+        final ownerId = int.tryParse(product.itemOwner.trim()) ?? 0;
+        final matchesOwnerId =
+            normalizedUserId > 0 && ownerId == normalizedUserId;
+        final matchesCreatedByUserId =
+            normalizedUserId > 0 && product.createdByUserId == normalizedUserId;
+        final matchesUsername =
+            normalizedUsername.isNotEmpty &&
+            product.createdBy.trim().toLowerCase() == normalizedUsername;
+        return matchesOwnerId || matchesCreatedByUserId || matchesUsername;
+      }).toList();
+      debugPrint(
+        'MyProducts filtered for userId=$normalizedUserId username=$normalizedUsername => ${filtered.length}',
+      );
+      return filtered;
+    } on ProductException {
+      rethrow;
+    } catch (error) {
+      throw ProductException('Error loading my products: $error');
+    }
+  }
+
+  Future<List<ApiProduct>> getProducts({
+    bool forceRefresh = false,
+    String? createdBy,
+  }) async {
+    final normalizedCreatedBy = createdBy?.trim();
+    final hasCreatedByFilter =
+        normalizedCreatedBy != null && normalizedCreatedBy.isNotEmpty;
     final now = DateTime.now();
-    if (!forceRefresh &&
+    if (!hasCreatedByFilter &&
+        !forceRefresh &&
         _cachedProducts.isNotEmpty &&
         _lastProductsFetch != null &&
         now.difference(_lastProductsFetch!) < _cacheTtl) {
@@ -29,8 +73,10 @@ class ProductService {
 
     final endpoints = <String>[
       _getProductsUrl,
-      '$_baseUrl/getproducts',
+      '$_baseUrl/getProducts',
+      '$_baseUrl/getproduct',
       '$_baseUrl/getProduct',
+      '$_baseUrl/Getproducts',
       '$_baseUrl/Getproduct',
       '$_baseUrl/GetProduct',
     ];
@@ -40,9 +86,37 @@ class ProductService {
 
     for (final endpoint in endpoints) {
       final uri = Uri.parse(endpoint);
+      final getRequests = <Future<http.Response?>>[_safeGetOrNull(uri)];
+      if (hasCreatedByFilter) {
+        getRequests.add(
+          _safeGetOrNull(
+            uri.replace(
+              queryParameters: {
+                ...uri.queryParameters,
+                'created_by': normalizedCreatedBy,
+              },
+            ),
+          ),
+        );
+        getRequests.add(
+          _safeGetOrNull(
+            uri.replace(
+              queryParameters: {
+                ...uri.queryParameters,
+                'CREATED_BY': normalizedCreatedBy,
+              },
+            ),
+          ),
+        );
+      }
       final responses = await Future.wait<http.Response?>([
-        _safeGetOrNull(uri),
-        _safePostOrNull(uri, body: const {}),
+        ...getRequests,
+        _safePostOrNull(
+          uri,
+          body: hasCreatedByFilter
+              ? {'created_by': normalizedCreatedBy}
+              : const <String, dynamic>{},
+        ),
       ]);
 
       for (final response in responses) {
@@ -64,9 +138,26 @@ class ProductService {
           errors.add('$endpoint -> empty');
           continue;
         }
-        final products = items.map(ApiProduct.fromJson).toList();
-        _cachedProducts = products;
-        _lastProductsFetch = now;
+        var products = items.map(ApiProduct.fromJson).toList();
+        if (hasCreatedByFilter) {
+          final name = normalizedCreatedBy.toLowerCase().trim();
+          products = products
+              .where(
+                (product) => product.createdBy.toLowerCase().trim() == name,
+              )
+              .toList();
+        }
+        if (hasCreatedByFilter) {
+          return products;
+        }
+        if (products.isEmpty) {
+          errors.add('$endpoint -> empty');
+          continue;
+        }
+        if (!hasCreatedByFilter) {
+          _cachedProducts = products;
+          _lastProductsFetch = now;
+        }
         return products;
       }
     }
@@ -78,16 +169,6 @@ class ProductService {
 
   Future<void> insertProduct(CreateProductRequest request) async {
     final payload = request.toJson();
-    final payloadUpper = <String, dynamic>{
-      'ITEM_NAME': payload['item_name'],
-      'ITEM_DESC': payload['item_desc'],
-      'ITEM_PRICE': payload['item_price'],
-      'ITEM_QTY': payload['item_qty'],
-      'ITEM_IMG_URL': payload['item_img_url'],
-      'CATEGORY_ID': payload['category_id'],
-      'CREATED_BY': payload['created_by'],
-      'IS_ACTIVE': payload['is_active'],
-    };
     final endpoints = <String>[
       '$_baseUrl/insertproduct',
       '$_baseUrl/lnsertproduct',
@@ -109,23 +190,31 @@ class ProductService {
       {
         'products': [payload],
       },
-      {
-        'items': [payloadUpper],
-      },
-      {
-        'data': [payloadUpper],
-      },
       payload,
-      payloadUpper,
     ];
 
     String? lastError;
     final errors = <String>[];
+
+    if (kDebugMode) {
+      debugPrint('=== Product Insertion Debug ===');
+      debugPrint('payload: $payload');
+      debugPrint('===============================');
+    }
+
     for (final endpoint in endpoints) {
       final endpointUri = Uri.parse(endpoint);
       for (final body in payloadVariants) {
+        if (kDebugMode) {
+          debugPrint('[InsertProduct] POST $endpointUri');
+          debugPrint('[InsertProduct] body: $body');
+        }
         final response = await _safePost(endpointUri, body: body);
         final data = _decode(response.body);
+        if (kDebugMode) {
+          debugPrint('[InsertProduct] status: ${response.statusCode}');
+          debugPrint('[InsertProduct] response: ${response.body}');
+        }
         if (response.statusCode < 200 || response.statusCode >= 300) {
           lastError =
               _extractMessage(data) ??
@@ -155,6 +244,11 @@ class ProductService {
         ),
       );
       final getData = _decode(getResponse.body);
+      if (kDebugMode) {
+        debugPrint('[InsertProduct] GET $endpointUri');
+        debugPrint('[InsertProduct] GET status: ${getResponse.statusCode}');
+        debugPrint('[InsertProduct] GET response: ${getResponse.body}');
+      }
       if (getResponse.statusCode < 200 || getResponse.statusCode >= 300) {
         lastError =
             _extractMessage(getData) ??
@@ -300,7 +394,7 @@ class ProductService {
         if (candidate is String && candidate.trim().isNotEmpty) {
           final normalized = candidate.trim().toLowerCase();
           if (normalized.contains('not found')) {
-            return 'Unable to insert product. Please verify API endpoint.';
+            return 'Requested endpoint was not found. Please verify API endpoint.';
           }
           return candidate;
         }

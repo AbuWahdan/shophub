@@ -42,6 +42,7 @@
   "accountTitle": "الحساب",
   "accountShoppingSection": "التسوق",
   "accountMyOrders": "طلباتي",
+  "accountMyProducts": "منتجاتي",
   "accountMyOrdersSubtitle": "عرض وتتبع طلباتك",
   "accountWishlist": "قائمة الرغبات",
   "accountWishlistSubtitle": "المنتجات المحفوظة",
@@ -231,6 +232,7 @@
   "profileOrders": "الطلبات",
   "profileAddresses": "العناوين",
   "profileSettings": "الإعدادات",
+  "insertProductMenu": "إضافة منتج",
   "profileHelp": "المساعدة والدعم",
   "profileHelpMessage": "تواصل معنا عبر support@shophub.com لأي مساعدة.",
   "cartRemoveItemTitle": "إزالة المنتج",
@@ -255,6 +257,16 @@
   "cartShippingFree": "مجاني",
   "cartTotal": "الإجمالي",
   "cartCheckout": "المتابعة للدفع",
+  "myProductsEmptyMessage": "لم تقم بإضافة أي منتجات بعد",
+  "stockIn": "متوفر",
+  "stockOut": "غير متوفر",
+  "productsLoadFailed": "فشل تحميل المنتجات: {error}",
+  "@productsLoadFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "productsLoadFailedGeneric": "فشل تحميل المنتجات",
   "productTotalPrice": "السعر الإجمالي",
   "productAddToCart": "أضف إلى السلة",
   "productSelectSizeQuantity": "يرجى اختيار المقاس والكمية.",

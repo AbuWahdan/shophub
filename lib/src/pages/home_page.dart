@@ -1,13 +1,14 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
-import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
+import '../model/category.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';
 import '../services/product_service.dart';
 import '../shared/widgets/app_snackbar.dart';
+import '../shared/widgets/empty_state.dart';
 import '../shared/widgets/product_search_bar.dart';
 import '../themes/theme.dart';
 import '../widgets/product_card.dart';
@@ -19,18 +20,67 @@ class MyHomePage extends StatefulWidget {
   final String? title;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _searchController = TextEditingController();
   final ProductService _productService = ProductService();
+  late final PageController _pageController;
+
   bool _hasSearchText = false;
   bool _isLoadingProducts = false;
-  final Set<String> _selectedCategories = {'All'};
+  int _selectedCategoryIndex = 0;
   List<ApiProduct> _products = [];
+  List<Categories> _categoryModels = [];
 
-  List<ApiProduct> get _filteredProducts {
+  List<String> get _categories => _categoryModels
+      .where((category) => category.name != null)
+      .map((category) => category.name!)
+      .toList();
+
+  String get _currentCategory {
+    if (_categories.isEmpty) return 'All';
+    if (_selectedCategoryIndex < 0 ||
+        _selectedCategoryIndex >= _categories.length) {
+      return 'All';
+    }
+    return _categories[_selectedCategoryIndex];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _products = AppData.products;
+    _categoryModels = _cloneCategories();
+    final allIndex = _categories.indexOf('All');
+    _selectedCategoryIndex = allIndex >= 0 ? allIndex : 0;
+    _syncCategorySelection(_currentCategory);
+    _pageController = PageController(initialPage: _selectedCategoryIndex);
+    _loadProducts();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  List<Categories> _cloneCategories() {
+    return AppData.categoryList
+        .map(
+          (category) => Categories(
+            id: category.id,
+            name: category.name,
+            image: category.image,
+            isSelected: false,
+          ),
+        )
+        .toList();
+  }
+
+  List<ApiProduct> _productsForCategory(String category) {
     final query = _searchController.text.trim().toLowerCase();
     return _products.where((product) {
       final matchesSearch =
@@ -38,23 +88,9 @@ class _MyHomePageState extends State<MyHomePage> {
           product.itemName.toLowerCase().contains(query) ||
           _categoryName(product).toLowerCase().contains(query);
       final matchesCategory =
-          _selectedCategories.contains('All') ||
-          _selectedCategories.contains(_categoryName(product));
+          category == 'All' || _categoryName(product) == category;
       return matchesSearch && matchesCategory;
     }).toList();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _products = AppData.products;
-    _loadProducts();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 
   Widget _categoryWidget() {
@@ -64,48 +100,17 @@ class _MyHomePageState extends State<MyHomePage> {
       height: AppSpacing.imageMd,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        children: AppData.categoryList
+        children: _categoryModels
             .map(
               (category) => ProductIcon(
                 model: category,
                 label: _categoryLabel(context, category.name ?? ''),
                 onSelected: (model) {
-                  setState(() {
-                    _selectedCategories
-                      ..clear()
-                      ..add(model.name ?? 'All');
-                    _syncCategorySelection();
-                  });
+                  _setSelectedCategory(model.name ?? 'All');
                 },
               ),
             )
             .toList(),
-      ),
-    );
-  }
-
-  Widget _productWidget() {
-    return Container(
-      margin: AppSpacing.vertical(AppSpacing.sm),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.75,
-          mainAxisSpacing: AppSpacing.lg,
-          crossAxisSpacing: AppSpacing.lg,
-        ),
-        itemCount: _filteredProducts.length,
-        itemBuilder: (context, index) {
-          final product = _filteredProducts[index];
-          return ProductCard(
-            product: product,
-            onSelected: (model) {
-              setState(() {});
-            },
-          );
-        },
       ),
     );
   }
@@ -132,134 +137,96 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildCategoryPage(String category) {
+    final categoryProducts = _productsForCategory(category);
     return RefreshIndicator(
       onRefresh: () => _loadProducts(forceRefresh: true),
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height - AppSpacing.massive,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          dragStartBehavior: DragStartBehavior.down,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: <Widget>[
-              _search(),
-              if (_isLoadingProducts)
-                const LinearProgressIndicator(minHeight: AppSpacing.borderThin),
-              Padding(
-                padding: AppTheme.hPadding,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    onPressed: _showCategoryMultiSelect,
-                    icon: const Icon(Icons.tune),
-                    label: Text(
-                      _selectedCategories.contains('All')
-                          ? context.l10n.categoriesAll
-                          : context.l10n.categoriesSelectedCount(
-                              _selectedCategories.length,
-                            ),
-                    ),
-                  ),
-                ),
-              ),
-              _categoryWidget(),
-              _productWidget(),
-            ],
-          ),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
         ),
+        slivers: [
+          if (categoryProducts.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: EmptyState(
+                icon: Icons.inventory_2_outlined,
+                title: context.l10n.searchFilterNoResults,
+                message: context.l10n.searchFilterHint,
+              ),
+            )
+          else
+            SliverPadding(
+              padding: AppTheme.hPadding,
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.75,
+                  mainAxisSpacing: AppSpacing.lg,
+                  crossAxisSpacing: AppSpacing.lg,
+                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final product = categoryProducts[index];
+                  return ProductCard(product: product, onSelected: (model) {});
+                }, childCount: categoryProducts.length),
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  void _syncCategorySelection() {
-    for (var item in AppData.categoryList) {
-      final name = item.name ?? '';
-      item.isSelected = _selectedCategories.contains('All')
-          ? name == 'All'
-          : _selectedCategories.contains(name);
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoadingProducts) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
     }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        _search(),
+        _categoryWidget(),
+        Expanded(
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: _categories.length,
+            physics: const BouncingScrollPhysics(),
+            onPageChanged: (index) {
+              setState(() {
+                _selectedCategoryIndex = index;
+                _syncCategorySelection(_currentCategory);
+              });
+            },
+            itemBuilder: (context, index) {
+              return _buildCategoryPage(_categories[index]);
+            },
+          ),
+        ),
+      ],
+    );
   }
 
-  void _showCategoryMultiSelect() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusLg),
-        ),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final categories = AppData.categoryList
-                .where((category) => category.name != null)
-                .toList();
-            return SafeArea(
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height * 0.8,
-                child: Padding(
-                  padding: AppSpacing.insetsLg,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.l10n.categoriesSelectTitle,
-                        style: AppTextStyles.titleMedium(context),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      Expanded(
-                        child: ListView(
-                          children: categories.map((category) {
-                            final name = category.name!;
-                            final isAll = name == 'All';
-                            final isSelected = _selectedCategories.contains(
-                              name,
-                            );
-                            return CheckboxListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(
-                                _categoryLabel(context, name),
-                                style: AppTextStyles.bodyLarge(context),
-                              ),
-                              value: isSelected,
-                              onChanged: (checked) {
-                                setModalState(() {
-                                  if (isAll) {
-                                    _selectedCategories
-                                      ..clear()
-                                      ..add('All');
-                                  } else if (checked == true) {
-                                    _selectedCategories.remove('All');
-                                    _selectedCategories.add(name);
-                                  } else {
-                                    _selectedCategories.remove(name);
-                                    if (_selectedCategories.isEmpty) {
-                                      _selectedCategories.add('All');
-                                    }
-                                  }
-                                });
-                                setState(_syncCategorySelection);
-                              },
-                              controlAffinity: ListTileControlAffinity.trailing,
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
+  void _setSelectedCategory(String name) {
+    final index = _categories.indexOf(name);
+    if (index < 0) return;
+    setState(() {
+      _selectedCategoryIndex = index;
+      _syncCategorySelection(name);
+    });
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOutCubic,
     );
+  }
+
+  void _syncCategorySelection(String selectedCategory) {
+    for (var item in _categoryModels) {
+      item.isSelected = item.name == selectedCategory;
+    }
   }
 
   String _categoryLabel(BuildContext context, String category) {
@@ -306,7 +273,7 @@ class _MyHomePageState extends State<MyHomePage> {
       });
       AppSnackBar.show(
         context,
-        message: 'Failed to load products: ${error.message}',
+        message: context.l10n.productsLoadFailed(error.message),
         type: AppSnackBarType.error,
       );
     } catch (_) {
@@ -316,7 +283,7 @@ class _MyHomePageState extends State<MyHomePage> {
       });
       AppSnackBar.show(
         context,
-        message: 'Failed to load products',
+        message: context.l10n.productsLoadFailedGeneric,
         type: AppSnackBarType.error,
       );
     } finally {
