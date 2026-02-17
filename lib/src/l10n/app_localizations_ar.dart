@@ -599,6 +599,84 @@ class AppLocalizationsAr extends AppLocalizations {
   String get insertProductMenu => 'إضافة منتج';
 
   @override
+  String get productEditTitle => 'تعديل المنتج';
+
+  @override
+  String get productItemName => 'اسم المنتج';
+
+  @override
+  String get productItemNameHint => 'أدخل اسم المنتج';
+
+  @override
+  String get productDescriptionLabel => 'وصف المنتج';
+
+  @override
+  String get productDescriptionHint => 'أدخل وصف المنتج';
+
+  @override
+  String get productPriceLabel => 'سعر المنتج';
+
+  @override
+  String get productPriceHint => 'أدخل سعر المنتج';
+
+  @override
+  String get productQuantityLabel => 'كمية المنتج';
+
+  @override
+  String get productQuantityHint => 'أدخل كمية المنتج';
+
+  @override
+  String get productImageUrlLabel => 'رابط الصورة';
+
+  @override
+  String get productImageUrlHint => 'أدخل رابط الصورة';
+
+  @override
+  String get productCategory => 'الفئة';
+
+  @override
+  String get productCategoryHint => 'اختر فئة';
+
+  @override
+  String get productUsername => 'اسم المستخدم';
+
+  @override
+  String get productIsActive => 'نشط';
+
+  @override
+  String get productInsertAction => 'إضافة المنتج';
+
+  @override
+  String get productUpdateAction => 'تحديث المنتج';
+
+  @override
+  String get productInsertSuccess => 'تمت إضافة المنتج بنجاح!';
+
+  @override
+  String get productInsertFailed => 'فشل في إضافة المنتج.';
+
+  @override
+  String get productUpdateSuccess => 'تم تحديث المنتج بنجاح!';
+
+  @override
+  String get productUpdateFailed => 'فشل في تحديث المنتج.';
+
+  @override
+  String get productSelectCategoryValidation => 'يرجى اختيار فئة.';
+
+  @override
+  String get productAddImageValidation => 'يرجى إضافة صورة واحدة على الأقل.';
+
+  @override
+  String get productAccountUnavailable => 'تفاصيل الحساب غير متوفرة.';
+
+  @override
+  String get productRequiredField => 'حقل مطلوب';
+
+  @override
+  String get productInvalidValue => 'أدخل قيمة صحيحة';
+
+  @override
   String get profileHelp => 'المساعدة والدعم';
 
   @override
@@ -674,6 +752,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get productsLoadFailedGeneric => 'فشل تحميل المنتجات';
+
+  @override
+  String get noProductsInCategory => 'لا توجد منتجات في هذه الفئة';
+
+  @override
+  String get selectCategory => 'اختر فئة';
+
+  @override
+  String get errorLoadingProducts => 'خطأ في تحميل المنتجات';
+
+  @override
+  String get retry => 'إعادة المحاولة';
 
   @override
   String get productTotalPrice => 'السعر الإجمالي';

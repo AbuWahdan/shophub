@@ -605,6 +605,84 @@ class AppLocalizationsEn extends AppLocalizations {
   String get insertProductMenu => 'Insert Product';
 
   @override
+  String get productEditTitle => 'Edit Product';
+
+  @override
+  String get productItemName => 'Item Name';
+
+  @override
+  String get productItemNameHint => 'Enter item name';
+
+  @override
+  String get productDescriptionLabel => 'Item Description';
+
+  @override
+  String get productDescriptionHint => 'Enter item description';
+
+  @override
+  String get productPriceLabel => 'Item Price';
+
+  @override
+  String get productPriceHint => 'Enter item price';
+
+  @override
+  String get productQuantityLabel => 'Item Quantity';
+
+  @override
+  String get productQuantityHint => 'Enter item quantity';
+
+  @override
+  String get productImageUrlLabel => 'Image URL';
+
+  @override
+  String get productImageUrlHint => 'Enter image URL';
+
+  @override
+  String get productCategory => 'Category';
+
+  @override
+  String get productCategoryHint => 'Select a category';
+
+  @override
+  String get productUsername => 'Username';
+
+  @override
+  String get productIsActive => 'Is Active';
+
+  @override
+  String get productInsertAction => 'Insert Product';
+
+  @override
+  String get productUpdateAction => 'Update Product';
+
+  @override
+  String get productInsertSuccess => 'Product added successfully!';
+
+  @override
+  String get productInsertFailed => 'Failed to insert product.';
+
+  @override
+  String get productUpdateSuccess => 'Product updated successfully!';
+
+  @override
+  String get productUpdateFailed => 'Failed to update product.';
+
+  @override
+  String get productSelectCategoryValidation => 'Please select a category.';
+
+  @override
+  String get productAddImageValidation => 'Please add at least one image.';
+
+  @override
+  String get productAccountUnavailable => 'Account details are not available.';
+
+  @override
+  String get productRequiredField => 'Required field';
+
+  @override
+  String get productInvalidValue => 'Enter a valid value';
+
+  @override
   String get profileHelp => 'Help & Support';
 
   @override
@@ -680,6 +758,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get productsLoadFailedGeneric => 'Failed to load products';
+
+  @override
+  String get noProductsInCategory => 'No products in this category';
+
+  @override
+  String get selectCategory => 'Select a category';
+
+  @override
+  String get errorLoadingProducts => 'Error loading products';
+
+  @override
+  String get retry => 'Retry';
 
   @override
   String get productTotalPrice => 'Total Price';

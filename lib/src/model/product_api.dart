@@ -174,6 +174,7 @@ class ApiProduct {
     return int.tryParse((value ?? '').toString()) ?? 0;
   }
 }
+
 class CreateProductRequest {
   final String itemName;
   final String itemDesc;
@@ -208,17 +209,17 @@ class CreateProductRequest {
       'ITEM_QTY': itemQty,
       'item_img_url': itemImgUrl,
       'ITEM_IMG_URL': itemImgUrl,
-      
+
       // Category - try all variations
       'category_id': categoryId,
       'CATEGORY_ID': categoryId,
       'CAT_ID': categoryId,
       'cat_id': categoryId,
-      
+
       // Active status
       'is_active': isActive,
       'IS_ACTIVE': isActive,
-      
+
       // OWNER/USER ID - try EVERY possible variation
       // As integer
       'item_owner': itemOwner,
@@ -233,12 +234,56 @@ class CreateProductRequest {
       'CREATED_BY_USER_ID': itemOwner,
       'creator_id': itemOwner,
       'CREATOR_ID': itemOwner,
-      
+
       // As string
       'item_owner_str': itemOwner.toString(),
       'ITEM_OWNER_STR': itemOwner.toString(),
       'user_id_str': itemOwner.toString(),
       'USER_ID_STR': itemOwner.toString(),
+    };
+  }
+}
+
+class UpdateProductRequest {
+  final int id;
+  final String itemName;
+  final String itemDesc;
+  final double itemPrice;
+  final int itemQty;
+  final String itemImgUrl;
+  final int categoryId;
+  final int isActive;
+
+  const UpdateProductRequest({
+    required this.id,
+    required this.itemName,
+    required this.itemDesc,
+    required this.itemPrice,
+    required this.itemQty,
+    required this.itemImgUrl,
+    required this.categoryId,
+    required this.isActive,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'ID': id,
+      'item_name': itemName,
+      'ITEM_NAME': itemName,
+      'item_desc': itemDesc,
+      'ITEM_DESC': itemDesc,
+      'item_price': itemPrice,
+      'ITEM_PRICE': itemPrice,
+      'item_qty': itemQty,
+      'ITEM_QTY': itemQty,
+      'item_img_url': itemImgUrl,
+      'ITEM_IMG_URL': itemImgUrl,
+      'category_id': categoryId,
+      'CATEGORY_ID': categoryId,
+      'CAT_ID': categoryId,
+      'is_active': isActive,
+      'IS_ACTIVE': isActive,
     };
   }
 }

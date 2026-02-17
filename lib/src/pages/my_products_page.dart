@@ -7,6 +7,7 @@ import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/product_api.dart';
+import 'products/edit_product_page.dart';
 import '../services/product_service.dart';
 import '../shared/widgets/empty_state.dart';
 import '../state/auth_state.dart';
@@ -131,7 +132,21 @@ class _MyProductsPageState extends State<MyProductsPage> {
                           ),
                       itemCount: _products.length,
                       itemBuilder: (context, index) {
-                        return _MyProductCard(product: _products[index]);
+                        return _MyProductCard(
+                          product: _products[index],
+                          onTap: () async {
+                            final updated = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    EditProductPage(product: _products[index]),
+                              ),
+                            );
+                            if (updated == true && context.mounted) {
+                              _loadProducts(forceRefresh: true);
+                            }
+                          },
+                        );
                       },
                     ),
             ),
@@ -140,9 +155,10 @@ class _MyProductsPageState extends State<MyProductsPage> {
 }
 
 class _MyProductCard extends StatelessWidget {
-  const _MyProductCard({required this.product});
+  const _MyProductCard({required this.product, required this.onTap});
 
   final ApiProduct product;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -153,13 +169,7 @@ class _MyProductCard extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        onTap: () {
-          Navigator.pushNamed(
-            context,
-            AppRoutes.productDetails,
-            arguments: {'product': product},
-          );
-        },
+        onTap: onTap,
         child: Padding(
           padding: AppSpacing.insetsSm,
           child: Column(

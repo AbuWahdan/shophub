@@ -1232,6 +1232,162 @@ abstract class AppLocalizations {
   /// **'Insert Product'**
   String get insertProductMenu;
 
+  /// No description provided for @productEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Product'**
+  String get productEditTitle;
+
+  /// No description provided for @productItemName.
+  ///
+  /// In en, this message translates to:
+  /// **'Item Name'**
+  String get productItemName;
+
+  /// No description provided for @productItemNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter item name'**
+  String get productItemNameHint;
+
+  /// No description provided for @productDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Item Description'**
+  String get productDescriptionLabel;
+
+  /// No description provided for @productDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter item description'**
+  String get productDescriptionHint;
+
+  /// No description provided for @productPriceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Item Price'**
+  String get productPriceLabel;
+
+  /// No description provided for @productPriceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter item price'**
+  String get productPriceHint;
+
+  /// No description provided for @productQuantityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Item Quantity'**
+  String get productQuantityLabel;
+
+  /// No description provided for @productQuantityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter item quantity'**
+  String get productQuantityHint;
+
+  /// No description provided for @productImageUrlLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Image URL'**
+  String get productImageUrlLabel;
+
+  /// No description provided for @productImageUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter image URL'**
+  String get productImageUrlHint;
+
+  /// No description provided for @productCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get productCategory;
+
+  /// No description provided for @productCategoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a category'**
+  String get productCategoryHint;
+
+  /// No description provided for @productUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get productUsername;
+
+  /// No description provided for @productIsActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Is Active'**
+  String get productIsActive;
+
+  /// No description provided for @productInsertAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert Product'**
+  String get productInsertAction;
+
+  /// No description provided for @productUpdateAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Product'**
+  String get productUpdateAction;
+
+  /// No description provided for @productInsertSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Product added successfully!'**
+  String get productInsertSuccess;
+
+  /// No description provided for @productInsertFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to insert product.'**
+  String get productInsertFailed;
+
+  /// No description provided for @productUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Product updated successfully!'**
+  String get productUpdateSuccess;
+
+  /// No description provided for @productUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update product.'**
+  String get productUpdateFailed;
+
+  /// No description provided for @productSelectCategoryValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a category.'**
+  String get productSelectCategoryValidation;
+
+  /// No description provided for @productAddImageValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Please add at least one image.'**
+  String get productAddImageValidation;
+
+  /// No description provided for @productAccountUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Account details are not available.'**
+  String get productAccountUnavailable;
+
+  /// No description provided for @productRequiredField.
+  ///
+  /// In en, this message translates to:
+  /// **'Required field'**
+  String get productRequiredField;
+
+  /// No description provided for @productInvalidValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid value'**
+  String get productInvalidValue;
+
   /// No description provided for @profileHelp.
   ///
   /// In en, this message translates to:
@@ -1375,6 +1531,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to load products'**
   String get productsLoadFailedGeneric;
+
+  /// No description provided for @noProductsInCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'No products in this category'**
+  String get noProductsInCategory;
+
+  /// No description provided for @selectCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a category'**
+  String get selectCategory;
+
+  /// No description provided for @errorLoadingProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading products'**
+  String get errorLoadingProducts;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
 
   /// No description provided for @productTotalPrice.
   ///

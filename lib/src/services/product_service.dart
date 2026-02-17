@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import '../../data/categories_data.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -58,12 +59,15 @@ class ProductService {
   Future<List<ApiProduct>> getProducts({
     bool forceRefresh = false,
     String? createdBy,
+    int? categoryId,
   }) async {
     final normalizedCreatedBy = createdBy?.trim();
     final hasCreatedByFilter =
         normalizedCreatedBy != null && normalizedCreatedBy.isNotEmpty;
+    final hasCategoryFilter = categoryId != null;
     final now = DateTime.now();
     if (!hasCreatedByFilter &&
+        !hasCategoryFilter &&
         !forceRefresh &&
         _cachedProducts.isNotEmpty &&
         _lastProductsFetch != null &&
@@ -83,16 +87,23 @@ class ProductService {
 
     String? lastError;
     final errors = <String>[];
+    var hasRecoverableEmpty = false;
 
     for (final endpoint in endpoints) {
       final uri = Uri.parse(endpoint);
-      final getRequests = <Future<http.Response?>>[_safeGetOrNull(uri)];
+      final queryBase = {
+        ...uri.queryParameters,
+        if (hasCategoryFilter) 'CAT_ID': categoryId.toString(),
+      };
+      final getRequests = <Future<http.Response?>>[
+        _safeGetOrNull(uri.replace(queryParameters: queryBase)),
+      ];
       if (hasCreatedByFilter) {
         getRequests.add(
           _safeGetOrNull(
             uri.replace(
               queryParameters: {
-                ...uri.queryParameters,
+                ...queryBase,
                 'created_by': normalizedCreatedBy,
               },
             ),
@@ -102,7 +113,7 @@ class ProductService {
           _safeGetOrNull(
             uri.replace(
               queryParameters: {
-                ...uri.queryParameters,
+                ...queryBase,
                 'CREATED_BY': normalizedCreatedBy,
               },
             ),
@@ -114,8 +125,11 @@ class ProductService {
         _safePostOrNull(
           uri,
           body: hasCreatedByFilter
-              ? {'created_by': normalizedCreatedBy}
-              : const <String, dynamic>{},
+              ? {
+                  'created_by': normalizedCreatedBy,
+                  if (hasCategoryFilter) 'CAT_ID': categoryId,
+                }
+              : {if (hasCategoryFilter) 'CAT_ID': categoryId},
         ),
       ]);
 
@@ -125,6 +139,10 @@ class ProductService {
           continue;
         }
         final data = _decode(response.body);
+        if (response.statusCode == 404 || response.statusCode == 405) {
+          hasRecoverableEmpty = true;
+          return <ApiProduct>[];
+        }
         if (response.statusCode < 200 || response.statusCode >= 300) {
           lastError =
               _extractMessage(data) ??
@@ -135,8 +153,8 @@ class ProductService {
 
         final items = _extractItems(data);
         if (items.isEmpty) {
-          errors.add('$endpoint -> empty');
-          continue;
+          hasRecoverableEmpty = true;
+          return <ApiProduct>[];
         }
         var products = items.map(ApiProduct.fromJson).toList();
         if (hasCreatedByFilter) {
@@ -154,7 +172,7 @@ class ProductService {
           errors.add('$endpoint -> empty');
           continue;
         }
-        if (!hasCreatedByFilter) {
+        if (!hasCreatedByFilter && !hasCategoryFilter) {
           _cachedProducts = products;
           _lastProductsFetch = now;
         }
@@ -162,9 +180,31 @@ class ProductService {
       }
     }
 
+    if (hasRecoverableEmpty) {
+      return <ApiProduct>[];
+    }
+
     throw ProductException(
       '${lastError ?? 'Fetching products failed.'} (${errors.take(3).join(' | ')})',
     );
+  }
+
+  Future<List<ApiProduct>> getProductsByCategory(
+    int categoryId, {
+    bool forceRefresh = false,
+  }) async {
+    final category = CategoriesData.getCategoryById(categoryId);
+    if (category != null && category.isMainCategory) {
+      final categoryIds = <int>{
+        category.id,
+        ...category.children.map((child) => child.id),
+      };
+      final allProducts = await getProducts(forceRefresh: forceRefresh);
+      return allProducts
+          .where((product) => categoryIds.contains(product.categoryId))
+          .toList();
+    }
+    return getProducts(forceRefresh: forceRefresh, categoryId: categoryId);
   }
 
   Future<void> insertProduct(CreateProductRequest request) async {
@@ -272,6 +312,90 @@ class ProductService {
 
     throw ProductException(
       '${lastError ?? 'Inserting product failed.'} (${errors.take(3).join(' | ')})',
+    );
+  }
+
+  Future<void> updateProduct(UpdateProductRequest request) async {
+    final payload = request.toJson();
+    final endpoints = <String>[
+      '$_baseUrl/updateproduct',
+      '$_baseUrl/UpdateProduct',
+      '$_baseUrl/updateProduct',
+      '$_baseUrl/editproduct',
+      '$_baseUrl/EditProduct',
+    ];
+
+    final payloadVariants = <Map<String, dynamic>>[
+      {
+        'items': [payload],
+      },
+      {
+        'data': [payload],
+      },
+      {'product': payload},
+      payload,
+    ];
+
+    String? lastError;
+    final errors = <String>[];
+
+    for (final endpoint in endpoints) {
+      final endpointUri = Uri.parse(endpoint);
+      for (final body in payloadVariants) {
+        final response = await _safePost(endpointUri, body: body);
+        final data = _decode(response.body);
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          lastError =
+              _extractMessage(data) ??
+              'Updating product failed (HTTP ${response.statusCode}).';
+          errors.add('POST $endpoint -> HTTP ${response.statusCode}');
+          continue;
+        }
+
+        final status = (data is Map<String, dynamic> ? data['status'] : null)
+            ?.toString()
+            .toLowerCase();
+        if (status == 'error') {
+          lastError = _extractMessage(data) ?? 'Updating product failed.';
+          errors.add('POST $endpoint -> status error');
+          continue;
+        }
+        _invalidateProductsCache();
+        return;
+      }
+
+      final getResponse = await _safeGet(
+        endpointUri.replace(
+          queryParameters: {
+            for (final entry in payload.entries)
+              entry.key: entry.value.toString(),
+          },
+        ),
+      );
+      final getData = _decode(getResponse.body);
+      if (getResponse.statusCode < 200 || getResponse.statusCode >= 300) {
+        lastError =
+            _extractMessage(getData) ??
+            'Updating product failed (HTTP ${getResponse.statusCode}).';
+        errors.add('GET $endpoint -> HTTP ${getResponse.statusCode}');
+        continue;
+      }
+
+      final getStatus =
+          (getData is Map<String, dynamic> ? getData['status'] : null)
+              ?.toString()
+              .toLowerCase();
+      if (getStatus == 'error') {
+        lastError = _extractMessage(getData) ?? 'Updating product failed.';
+        errors.add('GET $endpoint -> status error');
+        continue;
+      }
+      _invalidateProductsCache();
+      return;
+    }
+
+    throw ProductException(
+      '${lastError ?? 'Updating product failed.'} (${errors.take(3).join(' | ')})',
     );
   }
 

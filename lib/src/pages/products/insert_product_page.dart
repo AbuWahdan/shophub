@@ -5,10 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
+import '../../../data/categories_data.dart';
 import '../../config/route.dart';
 import '../../design/app_spacing.dart';
-import '../../model/category.dart';
-import '../../model/data.dart';
+import '../../l10n/l10n.dart';
 import '../../model/product_api.dart';
 import '../../services/product_service.dart';
 import '../../shared/widgets/app_button.dart';
@@ -37,7 +37,8 @@ class _InsertProductPageState extends State<InsertProductPage> {
   bool _isActive = true;
   List<XFile> _images = [];
   int _defaultImageIndex = 0;
-  Categories? _selectedCategory;
+  int? _expandedCategoryId;
+  int? _selectedSubCategoryId;
 
   @override
   void initState() {
@@ -58,12 +59,16 @@ class _InsertProductPageState extends State<InsertProductPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final authState = context.watch<AuthState>();
     final authUser = authState.user;
-    final ownerIdPreview = _resolveCreatorUserId(authState.userId, authUser);
+    final username = authUser?.username.trim();
+    final usernamePreview = (username == null || username.isEmpty)
+        ? 'Guest'
+        : username;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Insert Product')),
+      appBar: AppBar(title: Text(l10n.insertProductMenu)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: AppTheme.padding,
@@ -74,24 +79,24 @@ class _InsertProductPageState extends State<InsertProductPage> {
               children: [
                 AppTextField(
                   controller: _nameController,
-                  label: 'Item Name',
-                  hintText: 'Enter item name',
+                  label: l10n.productItemName,
+                  hintText: l10n.productItemNameHint,
                   validator: _requiredValidator,
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 AppTextField(
                   controller: _descController,
-                  label: 'Item Description',
-                  hintText: 'Enter item description',
+                  label: l10n.productDescriptionLabel,
+                  hintText: l10n.productDescriptionHint,
                   validator: _requiredValidator,
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 AppTextField(
                   controller: _priceController,
-                  label: 'Item Price',
-                  hintText: 'Enter item price',
+                  label: l10n.productPriceLabel,
+                  hintText: l10n.productPriceHint,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
@@ -101,8 +106,8 @@ class _InsertProductPageState extends State<InsertProductPage> {
                 const SizedBox(height: AppSpacing.lg),
                 AppTextField(
                   controller: _qtyController,
-                  label: 'Item Quantity',
-                  hintText: 'Enter item quantity',
+                  label: l10n.productQuantityLabel,
+                  hintText: l10n.productQuantityHint,
                   keyboardType: TextInputType.number,
                   validator: _positiveIntValidator,
                   textInputAction: TextInputAction.next,
@@ -122,8 +127,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
                     ),
                   ],
                 ),
-                if (_images.isEmpty)
-                  const Text('Please add at least one image.'),
+                if (_images.isEmpty) Text(l10n.productAddImageValidation),
                 if (_images.isNotEmpty)
                   SizedBox(
                     height: 92,
@@ -198,41 +202,101 @@ class _InsertProductPageState extends State<InsertProductPage> {
                     ),
                   ),
                 const SizedBox(height: AppSpacing.lg),
-                DropdownButtonFormField<Categories>(
-                  initialValue: _selectedCategory,
-                  decoration: const InputDecoration(
-                    labelText: 'Category',
-                    hintText: 'Select a category',
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Theme.of(context).dividerColor),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                   ),
-                  items: AppData.categoryList
-                      .where(
-                        (category) =>
-                            category.name != null && category.name != 'All',
-                      )
-                      .map(
-                        (category) => DropdownMenuItem<Categories>(
-                          value: category,
-                          child: Text(category.name!),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: _isSubmitting
-                      ? null
-                      : (value) {
-                          setState(() {
-                            _selectedCategory = value;
-                          });
+                  child: Column(
+                    children: [
+                      ListTile(
+                        title: Text(l10n.productCategory),
+                        subtitle: _selectedSubCategoryId == null
+                            ? null
+                            : Text(
+                                CategoriesData.getCategoryById(
+                                      _selectedSubCategoryId!,
+                                    )?.name ??
+                                    '',
+                              ),
+                        trailing: const Icon(Icons.arrow_drop_down),
+                      ),
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: CategoriesData.getMainCategories().length,
+                        itemBuilder: (context, index) {
+                          final mainCategory =
+                              CategoriesData.getMainCategories()[index];
+                          final isExpanded =
+                              _expandedCategoryId == mainCategory.id;
+                          return Column(
+                            children: [
+                              ListTile(
+                                title: Text(mainCategory.name),
+                                trailing: Icon(
+                                  isExpanded
+                                      ? Icons.expand_less
+                                      : Icons.expand_more,
+                                ),
+                                onTap: _isSubmitting
+                                    ? null
+                                    : () {
+                                        setState(() {
+                                          if (_expandedCategoryId ==
+                                              mainCategory.id) {
+                                            _expandedCategoryId = null;
+                                          } else {
+                                            _expandedCategoryId =
+                                                mainCategory.id;
+                                          }
+                                        });
+                                      },
+                              ),
+                              if (isExpanded)
+                                ...mainCategory.children.map((child) {
+                                  final isSelected =
+                                      _selectedSubCategoryId == child.id;
+                                  return ListTile(
+                                    contentPadding: const EdgeInsets.only(
+                                      left: 32,
+                                      right: 16,
+                                    ),
+                                    title: Text(child.name),
+                                    trailing: isSelected
+                                        ? const Icon(
+                                            Icons.check_circle,
+                                            color: Colors.green,
+                                          )
+                                        : null,
+                                    tileColor: isSelected
+                                        ? Colors.green.withValues(alpha: 0.1)
+                                        : null,
+                                    onTap: _isSubmitting
+                                        ? null
+                                        : () {
+                                            setState(() {
+                                              _selectedSubCategoryId = child.id;
+                                            });
+                                          },
+                                  );
+                                }),
+                            ],
+                          );
                         },
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  'Owner ID: $ownerIdPreview',
+                  '${l10n.productUsername}: $usernamePreview',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Is Active'),
+                  title: Text(l10n.productIsActive),
                   value: _isActive,
                   onChanged: _isSubmitting
                       ? null
@@ -244,7 +308,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 AppButton(
-                  label: 'Insert Product',
+                  label: l10n.productInsertAction,
                   leading: _isSubmitting
                       ? const SizedBox(
                           width: 18,
@@ -264,33 +328,33 @@ class _InsertProductPageState extends State<InsertProductPage> {
 
   String? _requiredValidator(String? value) {
     if ((value ?? '').trim().isEmpty) {
-      return 'Required field';
+      return context.l10n.productRequiredField;
     }
     return null;
   }
 
   String? _positiveDoubleValidator(String? value) {
     final text = (value ?? '').trim();
-    if (text.isEmpty) return 'Required field';
+    if (text.isEmpty) return context.l10n.productRequiredField;
     final parsed = double.tryParse(text);
-    if (parsed == null || parsed <= 0) return 'Enter a valid value';
+    if (parsed == null || parsed <= 0) return context.l10n.productInvalidValue;
     return null;
   }
 
   String? _positiveIntValidator(String? value) {
     final text = (value ?? '').trim();
-    if (text.isEmpty) return 'Required field';
+    if (text.isEmpty) return context.l10n.productRequiredField;
     final parsed = int.tryParse(text);
-    if (parsed == null || parsed < 0) return 'Enter a valid value';
+    if (parsed == null || parsed < 0) return context.l10n.productInvalidValue;
     return null;
   }
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    if (_selectedCategory?.id == null) {
+    if (_selectedSubCategoryId == null) {
       AppSnackBar.show(
         context,
-        message: 'Please select a category.',
+        message: context.l10n.productSelectCategoryValidation,
         type: AppSnackBarType.warning,
       );
       return;
@@ -298,7 +362,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
     if (_images.isEmpty) {
       AppSnackBar.show(
         context,
-        message: 'Please add product images.',
+        message: context.l10n.productAddImageValidation,
         type: AppSnackBarType.warning,
       );
       return;
@@ -309,7 +373,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
     if (itemOwner <= 0) {
       AppSnackBar.show(
         context,
-        message: 'Account details are not available.',
+        message: context.l10n.productAccountUnavailable,
         type: AppSnackBarType.error,
       );
       return;
@@ -321,7 +385,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
       itemPrice: double.parse(_priceController.text.trim()),
       itemQty: int.parse(_qtyController.text.trim()),
       itemImgUrl: _images[_defaultImageIndex].path,
-      categoryId: _selectedCategory!.id!,
+      categoryId: _selectedSubCategoryId!,
       itemOwner: itemOwner,
       isActive: _isActive ? 1 : 0,
     );
@@ -336,7 +400,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
       debugPrint('Item Desc: "${_descController.text}"');
       debugPrint('Item Price: "${_priceController.text}"');
       debugPrint('Item Qty: "${_qtyController.text}"');
-      debugPrint('Category ID: ${_selectedCategory?.id}');
+      debugPrint('Category ID: $_selectedSubCategoryId');
       debugPrint('Default Image Path: "${_images[_defaultImageIndex].path}"');
       debugPrint('Request JSON: ${request.toJson()}');
       debugPrint('===============================');
@@ -351,7 +415,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
       if (!mounted) return;
       AppSnackBar.show(
         context,
-        message: 'Product added successfully!',
+        message: context.l10n.productInsertSuccess,
         type: AppSnackBarType.success,
       );
       Navigator.pushNamedAndRemoveUntil(
@@ -370,7 +434,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
       if (!mounted) return;
       AppSnackBar.show(
         context,
-        message: 'Failed to insert product.',
+        message: context.l10n.productInsertFailed,
         type: AppSnackBarType.error,
       );
     } finally {

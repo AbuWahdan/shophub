@@ -1,19 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../design/app_colors.dart';
+import '../../data/categories_data.dart';
+import '../../models/category.dart';
 import '../design/app_spacing.dart';
-import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
-import '../model/category.dart';
-import '../model/data.dart';
 import '../model/product_api.dart';
 import '../services/product_service.dart';
-import '../shared/widgets/app_snackbar.dart';
-import '../shared/widgets/empty_state.dart';
-import '../shared/widgets/product_search_bar.dart';
 import '../themes/theme.dart';
 import '../widgets/product_card.dart';
-import '../widgets/product_icon.dart';
 
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
@@ -23,287 +17,190 @@ class CategoriesPage extends StatefulWidget {
 }
 
 class _CategoriesPageState extends State<CategoriesPage> {
-  final TextEditingController _searchController = TextEditingController();
   final ProductService _productService = ProductService();
 
-  bool _hasSearchText = false;
-  bool _isLoadingProducts = false;
-  String _searchQuery = '';
-  String _selectedCategory = 'All';
+  int? _selectedMainCategoryId;
+  int? _selectedCategoryId;
+  bool _isLoading = false;
   List<ApiProduct> _products = [];
-  List<Categories> _categoryModels = [];
-
-  List<ApiProduct> get _filteredProducts {
-    return _products.where((product) {
-      final matchesSearch =
-          product.itemName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          _categoryName(
-            product,
-          ).toLowerCase().contains(_searchQuery.toLowerCase());
-      final matchesCategory =
-          _selectedCategory == 'All' ||
-          _selectedCategory == _categoryName(product);
-      return matchesSearch && matchesCategory;
-    }).toList();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _products = AppData.products;
-    _categoryModels = _cloneCategories();
-    _syncCategorySelection('All');
-    _loadProducts();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  List<Categories> _cloneCategories() {
-    return AppData.categoryList
-        .map(
-          (category) => Categories(
-            id: category.id,
-            name: category.name,
-            image: category.image,
-            isSelected: false,
-          ),
-        )
-        .toList();
-  }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoadingProducts) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
-    }
+    final l10n = context.l10n;
+    final mainCategories = CategoriesData.getMainCategories();
+    final subcategories = _selectedMainCategoryId == null
+        ? <Category>[]
+        : CategoriesData.getSubcategories(_selectedMainCategoryId!);
 
-    return RefreshIndicator(
-      onRefresh: () => _loadProducts(forceRefresh: true),
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: AppTheme.padding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ProductSearchBar(
-              controller: _searchController,
-              hintText: context.l10n.categoriesSearchHint,
-              hasSearchText: _hasSearchText,
-              onClear: () {
-                _searchController.clear();
-                setState(() {
-                  _searchQuery = '';
-                  _hasSearchText = false;
-                });
-              },
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                  _hasSearchText = value.trim().isNotEmpty;
-                });
-              },
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: _showAllCategoriesPicker,
-                icon: const Icon(Icons.grid_view),
-                label: Text(context.l10n.categoriesAll),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            SizedBox(
-              height: AppSpacing.imageMd,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: _categoryModels
-                    .map(
-                      (category) => ProductIcon(
-                        model: category,
-                        label: _categoryLabel(context, category.name ?? ''),
-                        onSelected: (model) {
-                          final selected = model.name ?? 'All';
-                          setState(() {
-                            _selectedCategory = selected;
-                            _syncCategorySelection(selected);
-                          });
-                        },
+    return Column(
+      children: [
+        SizedBox(
+          height: 120,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: AppTheme.padding,
+            itemCount: mainCategories.length,
+            separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.md),
+            itemBuilder: (context, index) {
+              final category = mainCategories[index];
+              final selected = _selectedMainCategoryId == category.id;
+              return GestureDetector(
+                onTap: () =>
+                    _loadProducts(category.id, mainCategoryId: category.id),
+                child: Container(
+                  width: 110,
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
                       ),
-                    )
-                    .toList(),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            if (_filteredProducts.isEmpty)
-              SizedBox(
-                height: AppTheme.fullHeight(context) * 0.45,
-                child: EmptyState(
-                  icon: Icons.category_outlined,
-                  title: context.l10n.searchFilterNoResults,
-                  message: context.l10n.searchFilterHint,
-                ),
-              )
-            else
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.75,
-                  mainAxisSpacing: AppSpacing.lg,
-                  crossAxisSpacing: AppSpacing.lg,
-                ),
-                itemCount: _filteredProducts.length,
-                itemBuilder: (context, index) {
-                  final product = _filteredProducts[index];
-                  return ProductCard(product: product, onSelected: (model) {});
-                },
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAllCategoriesPicker() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusLg),
-        ),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: AppSpacing.insetsLg,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.categoriesAll,
-                  style: AppTextStyles.titleMedium(context),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Flexible(
-                  child: ListView(
-                    shrinkWrap: true,
-                    children: _categoryModels
-                        .where((item) => item.name != null)
-                        .map((item) {
-                          final categoryName = item.name!;
-                          return ListTile(
-                            title: Text(_categoryLabel(context, categoryName)),
-                            trailing: _selectedCategory == categoryName
-                                ? const Icon(
-                                    Icons.check,
-                                    color: AppColors.primary,
-                                  )
-                                : null,
-                            onTap: () {
-                              setState(() {
-                                _selectedCategory = categoryName;
-                                _syncCategorySelection(categoryName);
-                              });
-                              Navigator.pop(context);
-                            },
-                          );
-                        })
-                        .toList(),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _getCategoryIcon(category.id),
+                        size: 36,
+                        color: selected
+                            ? Colors.white
+                            : Theme.of(context).iconTheme.color,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Padding(
+                        padding: AppSpacing.insetsXs,
+                        child: Text(
+                          category.name,
+                          maxLines: 2,
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: selected
+                                ? Colors.white
+                                : Theme.of(context).textTheme.bodyMedium?.color,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              );
+            },
+          ),
+        ),
+        if (_selectedMainCategoryId != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            height: 40,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: AppTheme.hPadding,
+              itemCount: subcategories.length,
+              separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+              itemBuilder: (context, index) {
+                final sub = subcategories[index];
+                return ActionChip(
+                  label: Text(sub.name),
+                  onPressed: () => _loadProducts(
+                    sub.id,
+                    mainCategoryId: _selectedMainCategoryId,
+                  ),
+                );
+              },
             ),
           ),
-        );
-      },
+        ],
+        const SizedBox(height: AppSpacing.sm),
+        Expanded(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _selectedCategoryId == null
+              ? Center(child: Text(l10n.selectCategory))
+              : _products.isEmpty
+              ? Center(child: Text(l10n.noProductsInCategory))
+              : GridView.builder(
+                  padding: AppTheme.padding,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.75,
+                    crossAxisSpacing: AppSpacing.lg,
+                    mainAxisSpacing: AppSpacing.lg,
+                  ),
+                  itemCount: _products.length,
+                  itemBuilder: (context, index) {
+                    return ProductCard(product: _products[index]);
+                  },
+                ),
+        ),
+      ],
     );
   }
 
-  String _categoryLabel(BuildContext context, String category) {
-    final l10n = context.l10n;
-    switch (category) {
-      case 'All':
-        return l10n.categoryAll;
-      case 'Sneakers':
-        return l10n.categorySneakers;
-      case 'Jackets':
-        return l10n.categoryJackets;
-      case 'Watches':
-        return l10n.categoryWatches;
-      case 'Electronics':
-        return l10n.categoryElectronics;
-      case 'Clothing':
-        return l10n.categoryClothing;
-      default:
-        return category;
-    }
-  }
-
-  void _syncCategorySelection(String selectedCategory) {
-    for (var item in _categoryModels) {
-      item.isSelected = item.name == selectedCategory;
-    }
-  }
-
-  Future<void> _loadProducts({bool forceRefresh = false}) async {
+  Future<void> _loadProducts(int categoryId, {int? mainCategoryId}) async {
     setState(() {
-      _isLoadingProducts = true;
+      _isLoading = true;
+      _selectedCategoryId = categoryId;
+      _selectedMainCategoryId = mainCategoryId ?? _selectedMainCategoryId;
     });
 
     try {
-      final remoteItems = await _productService.getProducts(
-        forceRefresh: forceRefresh,
-      );
+      final products = await _productService.getProductsByCategory(categoryId);
       if (!mounted) return;
       setState(() {
-        _products = remoteItems.where((item) => item.isActive == 1).toList();
+        _products = products.where((item) => item.isActive == 1).toList();
+        _isLoading = false;
       });
-      AppData.setProducts(_products);
-    } on ProductException catch (error) {
-      if (!mounted) return;
-      setState(() => _products = AppData.products);
-      AppSnackBar.show(
-        context,
-        message: context.l10n.productsLoadFailed(error.message),
-        type: AppSnackBarType.error,
-      );
     } catch (_) {
       if (!mounted) return;
-      setState(() => _products = AppData.products);
-      AppSnackBar.show(
-        context,
-        message: context.l10n.productsLoadFailedGeneric,
-        type: AppSnackBarType.error,
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingProducts = false;
-        });
-      }
+      setState(() {
+        _products = [];
+        _isLoading = false;
+      });
     }
   }
 
-  String _resolveCategoryName(int categoryId) {
-    final match = AppData.categoryList.firstWhere(
-      (category) => category.id == categoryId,
-      orElse: () => AppData.categoryList.first,
-    );
-    return match.name ?? 'Category $categoryId';
-  }
-
-  String _categoryName(ApiProduct product) {
-    final category = product.category.trim();
-    if (category.isNotEmpty) return category;
-    return _resolveCategoryName(product.categoryId);
+  IconData _getCategoryIcon(int categoryId) {
+    switch (categoryId) {
+      case 1:
+        return Icons.devices;
+      case 2:
+        return Icons.computer;
+      case 3:
+        return Icons.phone_android;
+      case 4:
+        return Icons.home;
+      case 5:
+        return Icons.checkroom;
+      case 6:
+        return Icons.shopping_bag;
+      case 7:
+        return Icons.sports_soccer;
+      case 8:
+        return Icons.spa;
+      case 9:
+        return Icons.toys;
+      case 10:
+        return Icons.book;
+      case 11:
+        return Icons.directions_car;
+      case 12:
+        return Icons.fitness_center;
+      case 13:
+        return Icons.diamond;
+      case 14:
+        return Icons.pets;
+      case 15:
+        return Icons.music_note;
+      default:
+        return Icons.category;
+    }
   }
 }
