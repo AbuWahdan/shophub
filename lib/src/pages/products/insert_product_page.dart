@@ -35,7 +35,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
   final ImagePicker _imagePicker = ImagePicker();
   bool _isSubmitting = false;
   bool _isActive = true;
-  List<XFile> _images = [];
+  final List<XFile> _images = [];
   int _defaultImageIndex = 0;
   int? _expandedCategoryId;
   int? _selectedSubCategoryId;
@@ -134,7 +134,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: _images.length,
-                      separatorBuilder: (_, __) =>
+                      separatorBuilder: (_, _) =>
                           const SizedBox(width: AppSpacing.sm),
                       itemBuilder: (context, index) {
                         final isDefault = index == _defaultImageIndex;
@@ -187,6 +187,9 @@ class _InsertProductPageState extends State<InsertProductPage> {
                                           _images.removeAt(index);
                                           if (_images.isEmpty) {
                                             _defaultImageIndex = 0;
+                                          } else if (index <
+                                              _defaultImageIndex) {
+                                            _defaultImageIndex -= 1;
                                           } else if (_defaultImageIndex >=
                                               _images.length) {
                                             _defaultImageIndex =
@@ -379,12 +382,24 @@ class _InsertProductPageState extends State<InsertProductPage> {
       return;
     }
 
+    final orderedImagePaths = _orderedImagePathsForSubmit();
+    if (orderedImagePaths.isEmpty) {
+      AppSnackBar.show(
+        context,
+        message: context.l10n.productAddImageValidation,
+        type: AppSnackBarType.warning,
+      );
+      return;
+    }
+    final imagesCsv = orderedImagePaths.join(',');
+
     final request = CreateProductRequest(
       itemName: _nameController.text.trim(),
       itemDesc: _descController.text.trim(),
       itemPrice: double.parse(_priceController.text.trim()),
       itemQty: int.parse(_qtyController.text.trim()),
-      itemImgUrl: _images[_defaultImageIndex].path,
+      itemImgUrl: orderedImagePaths.first,
+      imagesCsv: imagesCsv,
       categoryId: _selectedSubCategoryId!,
       itemOwner: itemOwner,
       isActive: _isActive ? 1 : 0,
@@ -401,7 +416,8 @@ class _InsertProductPageState extends State<InsertProductPage> {
       debugPrint('Item Price: "${_priceController.text}"');
       debugPrint('Item Qty: "${_qtyController.text}"');
       debugPrint('Category ID: $_selectedSubCategoryId');
-      debugPrint('Default Image Path: "${_images[_defaultImageIndex].path}"');
+      debugPrint('Default Image Path: "${orderedImagePaths.first}"');
+      debugPrint('Images CSV: "$imagesCsv"');
       debugPrint('Request JSON: ${request.toJson()}');
       debugPrint('===============================');
     }
@@ -498,5 +514,18 @@ class _InsertProductPageState extends State<InsertProductPage> {
       if (userModelId is int && userModelId > 0) return userModelId;
     }
     return userId > 0 ? userId : 0;
+  }
+
+  List<String> _orderedImagePathsForSubmit() {
+    final paths = _images.map((image) => image.path.trim()).toList();
+    if (paths.isEmpty) return const [];
+    if (paths.length == 1) return [paths.first];
+    final safeDefaultIndex = _defaultImageIndex.clamp(0, paths.length - 1);
+    final ordered = <String>[paths[safeDefaultIndex]];
+    for (var i = 0; i < paths.length; i++) {
+      if (i == safeDefaultIndex) continue;
+      ordered.add(paths[i]);
+    }
+    return ordered.where((path) => path.isNotEmpty).toList();
   }
 }

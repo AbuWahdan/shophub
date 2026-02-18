@@ -79,7 +79,14 @@ class ApiProduct {
   }
 
   factory ApiProduct.fromJson(Map<String, dynamic> json) {
-    final imgUrl = _asString(json, const ['item_img_url', 'ITEM_IMG_URL']);
+    final rawImageValue = _asString(json, const [
+      'item_img_url',
+      'ITEM_IMG_URL',
+      'images',
+      'IMAGES',
+    ]);
+    final imageList = _parseImageList(rawImageValue);
+    final primaryImage = imageList.isNotEmpty ? imageList.first : '';
 
     return ApiProduct(
       id: _asInt(_pick(json, const ['id', 'ID'])),
@@ -87,7 +94,7 @@ class ApiProduct {
       itemDesc: _asString(json, const ['item_desc', 'ITEM_DESC']),
       itemPrice: _asDouble(_pick(json, const ['item_price', 'ITEM_PRICE'])),
       itemQty: _asInt(_pick(json, const ['item_qty', 'ITEM_QTY'])),
-      itemImgUrl: imgUrl,
+      itemImgUrl: primaryImage,
       categoryId: _asInt(
         _pick(json, const [
           'category_id',
@@ -131,7 +138,7 @@ class ApiProduct {
           'DISCOUNT_PRICE',
         ]),
       ),
-      images: imgUrl.isEmpty ? [] : [imgUrl],
+      images: imageList,
       rating: _asDouble(_pick(json, const ['rating', 'RATING']), fallback: 4.0),
       reviewCount: _asInt(
         _pick(json, const [
@@ -173,6 +180,133 @@ class ApiProduct {
     if (value is num) return value.toInt();
     return int.tryParse((value ?? '').toString()) ?? 0;
   }
+
+  static List<String> _parseImageList(String value) {
+    if (value.trim().isEmpty) return const [];
+    return value
+        .split(',')
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList();
+  }
+}
+
+class ApiProductDetails {
+  final int itemId;
+  final int detId;
+  final String itemName;
+  final String itemDesc;
+  final double itemPrice;
+  final String itemImgUrl;
+  final int imageId;
+  final String category;
+  final int catId;
+  final int isActive;
+  final String itemOwner;
+  final int reviews;
+  final double rating;
+  final int itemSize;
+  final String color;
+  final String brand;
+
+  const ApiProductDetails({
+    required this.itemId,
+    required this.detId,
+    required this.itemName,
+    required this.itemDesc,
+    required this.itemPrice,
+    required this.itemImgUrl,
+    required this.imageId,
+    required this.category,
+    required this.catId,
+    required this.isActive,
+    required this.itemOwner,
+    required this.reviews,
+    required this.rating,
+    required this.itemSize,
+    required this.color,
+    required this.brand,
+  });
+
+  factory ApiProductDetails.fromJson(Map<String, dynamic> json) {
+    return ApiProductDetails(
+      itemId: _asInt(_pick(json, const ['ITEM_ID', 'item_id', 'ID', 'id'])),
+      detId: _asInt(_pick(json, const ['DET_ID', 'det_id'])),
+      itemName: _asString(json, const ['ITEM_NAME', 'item_name']),
+      itemDesc: _asString(json, const ['ITEM_DESC', 'item_desc']),
+      itemPrice: _asDouble(_pick(json, const ['ITEM_PRICE', 'item_price'])),
+      itemImgUrl: _asString(json, const ['ITEM_IMG_URL', 'item_img_url']),
+      imageId: _asInt(_pick(json, const ['IMAGE_ID', 'image_id'])),
+      category: _asString(json, const ['CATEGORY', 'category']),
+      catId: _asInt(_pick(json, const ['CAT_ID', 'cat_id', 'CATEGORY_ID'])),
+      isActive: _asInt(_pick(json, const ['IS_ACTIVE', 'is_active'])),
+      itemOwner: _asString(json, const ['ITEM_OWNER', 'item_owner']),
+      reviews: _asInt(_pick(json, const ['REVIEWS', 'reviews'])),
+      rating: _asDouble(_pick(json, const ['RATING', 'rating'])),
+      itemSize: _asInt(_pick(json, const ['ITEM_SIZE', 'item_size'])),
+      color: _asString(json, const ['COLOR', 'color']),
+      brand: _asString(json, const ['BRAND', 'brand']),
+    );
+  }
+
+  static dynamic _pick(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      if (json.containsKey(key)) return json[key];
+    }
+    return null;
+  }
+
+  static String _asString(Map<String, dynamic> json, List<String> keys) {
+    final value = _pick(json, keys);
+    return (value ?? '').toString();
+  }
+
+  static double _asDouble(dynamic value, {double fallback = 0.0}) {
+    if (value is num) return value.toDouble();
+    return double.tryParse((value ?? '').toString()) ?? fallback;
+  }
+
+  static int _asInt(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse((value ?? '').toString()) ?? 0;
+  }
+}
+
+class ApiItemImage {
+  final int imageId;
+  final String imagePath;
+  final int isDefault;
+
+  const ApiItemImage({
+    required this.imageId,
+    required this.imagePath,
+    required this.isDefault,
+  });
+
+  factory ApiItemImage.fromJson(Map<String, dynamic> json) {
+    return ApiItemImage(
+      imageId: _asInt(_pick(json, const ['IMAGE_ID', 'image_id', 'id', 'ID'])),
+      imagePath: _asString(json, const ['IMAGE_PATH', 'image_path', 'path']),
+      isDefault: _asInt(_pick(json, const ['IS_DEFAULT', 'is_default'])),
+    );
+  }
+
+  static dynamic _pick(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      if (json.containsKey(key)) return json[key];
+    }
+    return null;
+  }
+
+  static String _asString(Map<String, dynamic> json, List<String> keys) {
+    final value = _pick(json, keys);
+    return (value ?? '').toString();
+  }
+
+  static int _asInt(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse((value ?? '').toString()) ?? 0;
+  }
 }
 
 class CreateProductRequest {
@@ -181,6 +315,7 @@ class CreateProductRequest {
   final double itemPrice;
   final int itemQty;
   final String itemImgUrl;
+  final String? imagesCsv;
   final int categoryId;
   final int itemOwner;
   final int isActive;
@@ -191,12 +326,14 @@ class CreateProductRequest {
     required this.itemPrice,
     required this.itemQty,
     required this.itemImgUrl,
+    this.imagesCsv,
     required this.categoryId,
     required this.itemOwner,
     required this.isActive,
   });
 
   Map<String, dynamic> toJson() {
+    final normalizedImages = _normalizeImagesCsv(imagesCsv ?? itemImgUrl);
     return {
       // Product fields - try both cases
       'item_name': itemName,
@@ -209,6 +346,8 @@ class CreateProductRequest {
       'ITEM_QTY': itemQty,
       'item_img_url': itemImgUrl,
       'ITEM_IMG_URL': itemImgUrl,
+      'images': normalizedImages,
+      'IMAGES': normalizedImages,
 
       // Category - try all variations
       'category_id': categoryId,
@@ -241,6 +380,14 @@ class CreateProductRequest {
       'user_id_str': itemOwner.toString(),
       'USER_ID_STR': itemOwner.toString(),
     };
+  }
+
+  String _normalizeImagesCsv(String raw) {
+    return raw
+        .split(',')
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .join(',');
   }
 }
 

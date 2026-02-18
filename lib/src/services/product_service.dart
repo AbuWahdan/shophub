@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import '../../data/categories_data.dart';
-import 'package:flutter/foundation.dart';
+import '../../models/category.dart';
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:http/http.dart' as http;
 
 import '../model/product_api.dart';
@@ -193,7 +194,8 @@ class ProductService {
     int categoryId, {
     bool forceRefresh = false,
   }) async {
-    final category = CategoriesData.getCategoryById(categoryId);
+    var category = CategoriesData.getCategoryById(categoryId);
+    category ??= await loadCategoryById(categoryId);
     if (category != null && category.isMainCategory) {
       final categoryIds = <int>{
         category.id,
@@ -205,6 +207,39 @@ class ProductService {
           .toList();
     }
     return getProducts(forceRefresh: forceRefresh, categoryId: categoryId);
+  }
+
+  Future<Category?> loadCategoryById(int id) async {
+    final uri = Uri.parse(
+      '$_baseUrl/loadCategory',
+    ).replace(queryParameters: {'id': id.toString()});
+    final response = await _safeGet(uri);
+    final data = _decode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ProductException(
+        _extractMessage(data) ??
+            'Fetching category failed (HTTP ${response.statusCode}).',
+      );
+    }
+    if (data is! Map<String, dynamic>) {
+      throw ProductException('Unexpected category response format.');
+    }
+
+    final status = (data['status'] ?? '').toString().toLowerCase();
+    final raw = data['data'];
+    if (status != 'success' || raw is! List || raw.isEmpty) {
+      throw ProductException(_extractMessage(data) ?? 'Category not found.');
+    }
+
+    final first = raw.first;
+    if (first is! Map) {
+      throw ProductException('Unexpected category payload.');
+    }
+    final mapped = Map<String, dynamic>.from(first);
+    final level = _asInt(mapped['LEVEL']);
+    final category = Category.fromJson(mapped);
+    CategoriesData.upsertCategoryFromApi(level: level, category: category);
+    return category;
   }
 
   Future<void> insertProduct(CreateProductRequest request) async {
@@ -318,6 +353,9 @@ class ProductService {
   Future<void> updateProduct(UpdateProductRequest request) async {
     final payload = request.toJson();
     final endpoints = <String>[
+      '$_baseUrl/UpdateItem',
+      '$_baseUrl/updateitem',
+      '$_baseUrl/updateItem',
       '$_baseUrl/updateproduct',
       '$_baseUrl/UpdateProduct',
       '$_baseUrl/updateProduct',
@@ -397,6 +435,73 @@ class ProductService {
     throw ProductException(
       '${lastError ?? 'Updating product failed.'} (${errors.take(3).join(' | ')})',
     );
+  }
+
+  Future<ApiProductDetails> getItemDetails({required int itemId}) async {
+    final uri = Uri.parse(
+      '$_baseUrl/GetItemDetails',
+    ).replace(queryParameters: {'item_id': itemId.toString()});
+    final response = await _safeGet(uri);
+    final data = _decode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ProductException(
+        _extractMessage(data) ??
+            'Fetching item details failed (HTTP ${response.statusCode}).',
+      );
+    }
+    if (data is! Map<String, dynamic>) {
+      throw ProductException('Unexpected item details response format.');
+    }
+
+    final status = (data['status'] ?? '').toString().toLowerCase();
+    final rawDetails = data['data'];
+    if (status != 'success' || rawDetails is! List || rawDetails.isEmpty) {
+      throw ProductException(
+        _extractMessage(data) ?? 'No item details found for this product.',
+      );
+    }
+    final first = rawDetails.first;
+    if (first is! Map) {
+      throw ProductException('Unexpected item details payload.');
+    }
+    return ApiProductDetails.fromJson(Map<String, dynamic>.from(first));
+  }
+
+  Future<List<ApiItemImage>> loadItemImages({required int itemId}) async {
+    final uri = Uri.parse(
+      '$_baseUrl/LoadImageByItemID',
+    ).replace(queryParameters: {'id': itemId.toString()});
+    final response = await _safeGet(uri);
+    final data = _decode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ProductException(
+        _extractMessage(data) ??
+            'Fetching item images failed (HTTP ${response.statusCode}).',
+      );
+    }
+
+    if (data is! List) {
+      throw ProductException('Unexpected item images response format.');
+    }
+
+    final images = data
+        .whereType<Map>()
+        .map((item) => ApiItemImage.fromJson(Map<String, dynamic>.from(item)))
+        .where((item) => item.imagePath.trim().isNotEmpty)
+        .toList();
+    if (images.isEmpty) return const [];
+
+    final defaultIndex = images.indexWhere((item) => item.isDefault == 1);
+    if (defaultIndex <= 0) {
+      return images;
+    }
+
+    final ordered = <ApiItemImage>[images[defaultIndex]];
+    for (var i = 0; i < images.length; i++) {
+      if (i == defaultIndex) continue;
+      ordered.add(images[i]);
+    }
+    return ordered;
   }
 
   Future<http.Response> _safePost(
@@ -525,6 +630,11 @@ class ProductService {
       }
     }
     return null;
+  }
+
+  int _asInt(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse((value ?? '').toString()) ?? 0;
   }
 }
 

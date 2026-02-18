@@ -10,6 +10,7 @@ import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';
+import '../services/product_service.dart';
 import '../shared/widgets/app_button.dart';
 import '../shared/widgets/app_image.dart';
 import '../shared/widgets/app_snackbar.dart';
@@ -32,12 +33,16 @@ class ProductDetailsPage extends StatefulWidget {
 }
 
 class _ProductDetailsPageState extends State<ProductDetailsPage> {
+  final ProductService _productService = ProductService();
   late PageController _imageController;
   int _currentImageIndex = 0;
   String? _selectedSize;
   String? _selectedColor;
   int _quantity = 1;
   bool _isExpanded = false;
+  bool _isLoadingItemImages = false;
+  String? _itemImagesError;
+  List<ApiItemImage> _itemImages = const [];
 
   @override
   void initState() {
@@ -50,6 +55,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         widget.initialColor ??
         (widget.product.colors.isNotEmpty ? widget.product.colors.first : null);
     AppData.syncFavoriteFor(widget.product);
+    _loadItemImages();
   }
 
   @override
@@ -58,8 +64,44 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     super.dispose();
   }
 
-  List<String> get _displayImages =>
-      widget.product.imagesForColor(_selectedColor);
+  List<String> get _displayImages {
+    if (_itemImages.isNotEmpty) {
+      return _itemImages.map((image) => image.imagePath).toList();
+    }
+    return widget.product.imagesForColor(_selectedColor);
+  }
+
+  Future<void> _loadItemImages() async {
+    setState(() {
+      _isLoadingItemImages = true;
+      _itemImagesError = null;
+    });
+    try {
+      final images = await _productService.loadItemImages(
+        itemId: widget.product.id,
+      );
+      if (!mounted) return;
+      setState(() {
+        _itemImages = images;
+      });
+    } on ProductException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _itemImagesError = error.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _itemImagesError = 'Failed to load item images.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingItemImages = false;
+        });
+      }
+    }
+  }
 
   void _resetImageCarousel() {
     if (_currentImageIndex != 0) {
@@ -142,7 +184,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   color: Theme.of(context).colorScheme.surface,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.neutral300.withOpacity(0.6),
+                      color: AppColors.neutral300.withValues(alpha: 0.6),
                       blurRadius: AppSpacing.jumbo,
                       offset: const Offset(0, -2),
                     ),
@@ -172,8 +214,11 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       child: AppButton(
                         label: context.l10n.productAddToCart,
                         onPressed: () async {
+                          final addedMessage = context.l10n.productAddedToCart(
+                            widget.product.name,
+                          );
                           final selection = await _showVariantPickerSheet();
-                          if (!mounted || selection == null) return;
+                          if (!context.mounted || selection == null) return;
                           setState(() {
                             _selectedSize = selection.size;
                             _selectedColor = selection.color;
@@ -186,12 +231,10 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                             size: selection.size,
                             color: selection.color,
                           );
-                          if (!mounted) return;
+                          if (!context.mounted) return;
                           AppSnackBar.show(
                             context,
-                            message: context.l10n.productAddedToCart(
-                              widget.product.name,
-                            ),
+                            message: addedMessage,
                             type: AppSnackBarType.success,
                           );
                         },
@@ -255,7 +298,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                           ? AppColors.primary
                           : Theme.of(
                               context,
-                            ).colorScheme.surface.withOpacity(0.6),
+                            ).colorScheme.surface.withValues(alpha: 0.6),
                     ),
                   ),
                 ),
@@ -272,7 +315,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 padding: AppSpacing.horizontal(AppSpacing.lg),
                 scrollDirection: Axis.horizontal,
                 itemCount: images.length,
-                separatorBuilder: (_, __) =>
+                separatorBuilder: (_, _) =>
                     const SizedBox(width: AppSpacing.sm),
                 itemBuilder: (context, index) {
                   final isActive = _currentImageIndex == index;
@@ -314,6 +357,25 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   );
                 },
               ),
+            ),
+          ),
+        if (_isLoadingItemImages)
+          const Padding(
+            padding: EdgeInsets.only(bottom: AppSpacing.md),
+            child: SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        if (_itemImagesError != null && _itemImagesError!.trim().isNotEmpty)
+          Padding(
+            padding: AppSpacing.horizontal(AppSpacing.lg),
+            child: Text(
+              _itemImagesError!,
+              style: AppTextStyles.bodySmall(
+                context,
+              ).copyWith(color: AppColors.error),
             ),
           ),
       ],

@@ -173,4 +173,52 @@ class CategoriesData {
     }
     return flatList;
   }
+
+  static void upsertCategoryFromApi({
+    required int level,
+    required Category category,
+  }) {
+    if (category.id <= 0 || category.name.trim().isEmpty) return;
+
+    if (level == 1) {
+      final mainIndex = allCategories.indexWhere(
+        (cat) => cat.id == category.id,
+      );
+      if (mainIndex >= 0) {
+        allCategories[mainIndex] = Category(
+          id: category.id,
+          name: category.name,
+          children: allCategories[mainIndex].children,
+        );
+        return;
+      }
+      allCategories.add(
+        Category(id: category.id, name: category.name, children: const []),
+      );
+      return;
+    }
+
+    final parentId = category.parentId;
+    if (parentId == null || parentId <= 0) return;
+    final parentIndex = allCategories.indexWhere((cat) => cat.id == parentId);
+    if (parentIndex < 0) return;
+    final parent = allCategories[parentIndex];
+    final children = [...parent.children];
+    final childIndex = children.indexWhere((child) => child.id == category.id);
+    final normalizedChild = Category(
+      id: category.id,
+      name: category.name,
+      parentId: parentId,
+    );
+    if (childIndex >= 0) {
+      children[childIndex] = normalizedChild;
+    } else {
+      children.add(normalizedChild);
+    }
+    allCategories[parentIndex] = Category(
+      id: parent.id,
+      name: parent.name,
+      children: children,
+    );
+  }
 }

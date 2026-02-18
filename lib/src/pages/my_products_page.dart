@@ -23,6 +23,7 @@ class MyProductsPage extends StatefulWidget {
 class _MyProductsPageState extends State<MyProductsPage> {
   final ProductService _productService = ProductService();
   bool _isLoading = false;
+  int? _loadingDetailsItemId;
   List<ApiProduct> _products = [];
 
   @override
@@ -82,6 +83,63 @@ class _MyProductsPageState extends State<MyProductsPage> {
     }
   }
 
+  Future<void> _openEditProduct(ApiProduct product) async {
+    setState(() {
+      _loadingDetailsItemId = product.id;
+    });
+    try {
+      final details = await _productService.getItemDetails(itemId: product.id);
+      var itemImages = <ApiItemImage>[];
+      try {
+        itemImages = await _productService.loadItemImages(itemId: product.id);
+      } on ProductException catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(context.l10n.productsLoadFailed(error.message)),
+            ),
+          );
+        }
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.productsLoadFailedGeneric)),
+          );
+        }
+      }
+      if (!mounted) return;
+      final updated = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EditProductPage(
+            product: product,
+            details: details,
+            itemImages: itemImages,
+          ),
+        ),
+      );
+      if (updated == true && context.mounted) {
+        _loadProducts(forceRefresh: true);
+      }
+    } on ProductException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.productsLoadFailed(error.message))),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.productsLoadFailedGeneric)),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingDetailsItemId = null;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -134,18 +192,9 @@ class _MyProductsPageState extends State<MyProductsPage> {
                       itemBuilder: (context, index) {
                         return _MyProductCard(
                           product: _products[index],
-                          onTap: () async {
-                            final updated = await Navigator.push<bool>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    EditProductPage(product: _products[index]),
-                              ),
-                            );
-                            if (updated == true && context.mounted) {
-                              _loadProducts(forceRefresh: true);
-                            }
-                          },
+                          isLoading:
+                              _loadingDetailsItemId == _products[index].id,
+                          onTap: () => _openEditProduct(_products[index]),
                         );
                       },
                     ),
@@ -155,10 +204,15 @@ class _MyProductsPageState extends State<MyProductsPage> {
 }
 
 class _MyProductCard extends StatelessWidget {
-  const _MyProductCard({required this.product, required this.onTap});
+  const _MyProductCard({
+    required this.product,
+    required this.onTap,
+    required this.isLoading,
+  });
 
   final ApiProduct product;
   final VoidCallback onTap;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +223,7 @@ class _MyProductCard extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        onTap: onTap,
+        onTap: isLoading ? null : onTap,
         child: Padding(
           padding: AppSpacing.insetsSm,
           child: Column(
@@ -205,12 +259,19 @@ class _MyProductCard extends StatelessWidget {
                 style: AppTextStyles.labelLarge(context),
               ),
               const SizedBox(height: AppSpacing.xs),
-              Text(
-                inStock ? context.l10n.stockIn : context.l10n.stockOut,
-                style: AppTextStyles.bodySmall(context).copyWith(
-                  color: inStock ? AppColors.success : AppColors.error,
+              if (isLoading)
+                const SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                Text(
+                  inStock ? context.l10n.stockIn : context.l10n.stockOut,
+                  style: AppTextStyles.bodySmall(context).copyWith(
+                    color: inStock ? AppColors.success : AppColors.error,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
