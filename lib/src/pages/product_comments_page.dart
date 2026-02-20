@@ -40,7 +40,7 @@ class ProductCommentsPage extends StatelessWidget {
                 final comment = comments[index];
                 return _CommentCard(comment: comment);
               },
-              separatorBuilder: (_, __) =>
+              separatorBuilder: (_, _) =>
                   const SizedBox(height: AppSpacing.lg),
               itemCount: comments.length,
             ),
@@ -108,7 +108,7 @@ class _CommentCard extends StatelessWidget {
                     ),
                   );
                 },
-                separatorBuilder: (_, __) =>
+                separatorBuilder: (_, _) =>
                     const SizedBox(width: AppSpacing.sm),
                 itemCount: comment.imageUrls.length,
               ),

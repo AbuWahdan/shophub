@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../config/app_constants.dart';
 import '../config/route.dart';
@@ -10,6 +11,8 @@ import '../model/cart_item.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';
+import '../services/product_service.dart';
+import '../state/auth_state.dart';
 import '../shared/dialogs/app_dialogs.dart';
 import '../shared/widgets/app_button.dart';
 import '../shared/widgets/empty_state.dart';
@@ -26,12 +29,18 @@ class ShoppingCartPage extends StatefulWidget {
 }
 
 class _ShoppingCartPageState extends State<ShoppingCartPage> {
+  final ProductService _productService = ProductService();
   late List<CartItem> cartItems;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
     _initializeCart();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadCartFromApi();
+    });
   }
 
   void _initializeCart() {
@@ -42,6 +51,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     if (!mounted) return;
     setState(() {
       AppData.removeFromCartAt(index);
+      cartItems = AppData.cartItems;
     });
   }
 
@@ -62,6 +72,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
         'product': product,
         'selectedSize': cartItem.selectedSize,
         'selectedColor': cartItem.selectedColor,
+        'selectedDetId': cartItem.selectedDetId,
       },
     );
   }
@@ -101,10 +112,61 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   }
 
   Future<void> _refreshCart() async {
+    await _loadCartFromApi();
+  }
+
+  Future<void> _loadCartFromApi() async {
     if (!mounted) return;
+    final username = context.read<AuthState>().user?.username.trim() ?? '';
+    if (username.isEmpty) {
+      setState(() {
+        _errorMessage = null;
+        _isLoading = false;
+        AppData.setCartItems(const []);
+        cartItems = AppData.cartItems;
+      });
+      return;
+    }
+
     setState(() {
-      cartItems = AppData.cartItems;
+      _isLoading = true;
+      _errorMessage = null;
     });
+
+    try {
+      final apiItems = await _productService.getItemCart(username: username);
+      if (!mounted) return;
+      final mapped = apiItems
+          .map(
+            (item) => CartItem(
+              product: item.toProduct(),
+              quantity: item.itemQty > 0 ? item.itemQty : 1,
+              selectedSize: item.itemSize.trim().isEmpty
+                  ? 'Default'
+                  : item.itemSize,
+              selectedColor: item.color.trim().isEmpty ? 'Default' : item.color,
+              selectedDetId: item.itemDetId,
+            ),
+          )
+          .toList();
+      setState(() {
+        AppData.setCartItems(mapped);
+        cartItems = AppData.cartItems;
+        _isLoading = false;
+      });
+    } on ProductException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = error.message;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Failed to load cart items.';
+        _isLoading = false;
+      });
+    }
   }
 
   Widget _buildCartItemCard(int index, CartItem item) {
@@ -115,6 +177,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     final selectedSize = item.selectedSize;
     final selectedColor = item.selectedColor;
     final availableStock = product.stockFor(selectedSize, selectedColor);
+    final imagePath = product.images.isNotEmpty ? product.images.first : '';
 
     return Card(
       shape: RoundedRectangleBorder(
@@ -139,7 +202,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                       borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                       color: Theme.of(context).colorScheme.surface,
                     ),
-                    child: AppImage(path: product.images[0], fit: BoxFit.cover),
+                    child: AppImage(path: imagePath, fit: BoxFit.cover),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   // Product Info
@@ -268,8 +331,34 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   }
 
   Widget _cartItems() {
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.only(top: AppSpacing.xl),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_errorMessage != null && _errorMessage!.trim().isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: AppSpacing.iconXl),
+            const SizedBox(height: AppSpacing.md),
+            Text(_errorMessage!, textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.md),
+            AppButton(
+              label: context.l10n.retry,
+              onPressed: _loadCartFromApi,
+              fullWidth: false,
+            ),
+          ],
+        ),
+      );
+    }
+
     if (cartItems.isEmpty) {
-      return SizedBox.expand(child: _buildEmptyCart());
+      return _buildEmptyCart();
     }
 
     return Column(
@@ -281,24 +370,28 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
 
   @override
   Widget build(BuildContext context) {
-    final scrollBody = cartItems.isEmpty
-        ? LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: _buildEmptyCart(),
-              ),
-            ),
-          )
-        : ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
+    final showSummary =
+        !_isLoading &&
+        (_errorMessage == null || _errorMessage!.trim().isEmpty) &&
+        cartItems.isNotEmpty;
+
+    final scrollBody = LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Padding(
             padding: AppTheme.padding,
-            children: [
-              _cartItems(),
-              const SizedBox(height: AppSpacing.hero),
-            ],
-          );
+            child: Column(
+              children: [
+                _cartItems(),
+                if (showSummary) const SizedBox(height: AppSpacing.hero),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -307,9 +400,8 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
         automaticallyImplyLeading: false,
       ),
       body: RefreshIndicator(onRefresh: _refreshCart, child: scrollBody),
-      bottomNavigationBar: cartItems.isEmpty
-          ? null
-          : SafeArea(
+      bottomNavigationBar: showSummary
+          ? SafeArea(
               child: Container(
                 padding: AppTheme.padding,
                 decoration: BoxDecoration(
@@ -368,7 +460,8 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                   ],
                 ),
               ),
-            ),
+            )
+          : null,
     );
   }
 

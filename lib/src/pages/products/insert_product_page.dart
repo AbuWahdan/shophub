@@ -28,21 +28,22 @@ class _InsertProductPageState extends State<InsertProductPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
-  final _priceController = TextEditingController();
-  final _qtyController = TextEditingController();
 
   final ProductService _productService = ProductService();
   final ImagePicker _imagePicker = ImagePicker();
   bool _isSubmitting = false;
+  bool _submitLocked = false;
   bool _isActive = true;
   final List<XFile> _images = [];
   int _defaultImageIndex = 0;
   int? _expandedCategoryId;
   int? _selectedSubCategoryId;
+  final List<_VariantFormEntry> _variantEntries = <_VariantFormEntry>[];
 
   @override
   void initState() {
     super.initState();
+    _variantEntries.add(_VariantFormEntry());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusManager.instance.primaryFocus?.unfocus();
     });
@@ -52,8 +53,9 @@ class _InsertProductPageState extends State<InsertProductPage> {
   void dispose() {
     _nameController.dispose();
     _descController.dispose();
-    _priceController.dispose();
-    _qtyController.dispose();
+    for (final entry in _variantEntries) {
+      entry.dispose();
+    }
     super.dispose();
   }
 
@@ -93,25 +95,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                AppTextField(
-                  controller: _priceController,
-                  label: l10n.productPriceLabel,
-                  hintText: l10n.productPriceHint,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  validator: _positiveDoubleValidator,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                AppTextField(
-                  controller: _qtyController,
-                  label: l10n.productQuantityLabel,
-                  hintText: l10n.productQuantityHint,
-                  keyboardType: TextInputType.number,
-                  validator: _positiveIntValidator,
-                  textInputAction: TextInputAction.next,
-                ),
+                _buildVariantsSection(),
                 const SizedBox(height: AppSpacing.lg),
                 Row(
                   children: [
@@ -344,15 +328,8 @@ class _InsertProductPageState extends State<InsertProductPage> {
     return null;
   }
 
-  String? _positiveIntValidator(String? value) {
-    final text = (value ?? '').trim();
-    if (text.isEmpty) return context.l10n.productRequiredField;
-    final parsed = int.tryParse(text);
-    if (parsed == null || parsed < 0) return context.l10n.productInvalidValue;
-    return null;
-  }
-
   Future<void> _submit() async {
+    if (_submitLocked || _isSubmitting) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_selectedSubCategoryId == null) {
       AppSnackBar.show(
@@ -372,8 +349,8 @@ class _InsertProductPageState extends State<InsertProductPage> {
     }
 
     final authState = context.read<AuthState>();
-    final itemOwner = _resolveCreatorUserId(authState.userId, authState.user);
-    if (itemOwner <= 0) {
+    final createdBy = authState.user?.username.trim() ?? '';
+    if (createdBy.isEmpty) {
       AppSnackBar.show(
         context,
         message: context.l10n.productAccountUnavailable,
@@ -391,42 +368,54 @@ class _InsertProductPageState extends State<InsertProductPage> {
       );
       return;
     }
-    final imagesCsv = orderedImagePaths.join(',');
-
-    final request = CreateProductRequest(
-      itemName: _nameController.text.trim(),
-      itemDesc: _descController.text.trim(),
-      itemPrice: double.parse(_priceController.text.trim()),
-      itemQty: int.parse(_qtyController.text.trim()),
-      itemImgUrl: orderedImagePaths.first,
-      imagesCsv: imagesCsv,
-      categoryId: _selectedSubCategoryId!,
-      itemOwner: itemOwner,
-      isActive: _isActive ? 1 : 0,
-    );
-
-    if (kDebugMode) {
-      debugPrint('=== Product Insertion Debug ===');
-      debugPrint('User ID: $itemOwner');
-      debugPrint('User ID Type: ${itemOwner.runtimeType}');
-      debugPrint('Is Logged In: ${authState.isLoggedIn}');
-      debugPrint('Auth User Object: ${authState.user}');
-      debugPrint('Item Name: "${_nameController.text}"');
-      debugPrint('Item Desc: "${_descController.text}"');
-      debugPrint('Item Price: "${_priceController.text}"');
-      debugPrint('Item Qty: "${_qtyController.text}"');
-      debugPrint('Category ID: $_selectedSubCategoryId');
-      debugPrint('Default Image Path: "${orderedImagePaths.first}"');
-      debugPrint('Images CSV: "$imagesCsv"');
-      debugPrint('Request JSON: ${request.toJson()}');
-      debugPrint('===============================');
+    final details = _buildVariantDetails();
+    if (details.isEmpty) {
+      AppSnackBar.show(
+        context,
+        message: 'Please add at least one valid product variant.',
+        type: AppSnackBarType.warning,
+      );
+      return;
     }
 
+    _submitLocked = true;
     setState(() {
       _isSubmitting = true;
     });
 
     try {
+      final imagesCsv = orderedImagePaths.isEmpty
+          ? null
+          : orderedImagePaths.join(',');
+      final request = CreateProductRequest(
+        itemName: _nameController.text.trim(),
+        itemDesc: _descController.text.trim(),
+        itemPrice: details.first.itemPrice,
+        itemQty: details.first.itemQty,
+        itemImgUrl: imagesCsv,
+        imagesCsv: imagesCsv,
+        details: details,
+        categoryId: _selectedSubCategoryId!,
+        createdBy: createdBy,
+        isActive: _isActive ? 1 : 0,
+      );
+      final requestBody = {
+        'items': [request.toJson()],
+      };
+      if (kDebugMode) {
+        debugPrint('=== Product Insertion Debug ===');
+        debugPrint('created_by: $createdBy');
+        debugPrint('Is Logged In: ${authState.isLoggedIn}');
+        debugPrint('Auth User Object: ${authState.user}');
+        debugPrint('Item Name: "${_nameController.text}"');
+        debugPrint('Item Desc: "${_descController.text}"');
+        debugPrint('Variants count: ${details.length}');
+        debugPrint('Category ID: $_selectedSubCategoryId');
+        debugPrint('item_img_url: ${request.itemImgUrl}');
+        debugPrint('Request body: $requestBody');
+        _debugLogInsertPayloadTypes(requestBody);
+        debugPrint('===============================');
+      }
       await _productService.insertProduct(request);
       if (!mounted) return;
       AppSnackBar.show(
@@ -454,6 +443,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
         type: AppSnackBarType.error,
       );
     } finally {
+      _submitLocked = false;
       if (mounted) {
         setState(() {
           _isSubmitting = false;
@@ -508,14 +498,6 @@ class _InsertProductPageState extends State<InsertProductPage> {
     });
   }
 
-  int _resolveCreatorUserId(int userId, dynamic user) {
-    if (user != null) {
-      final userModelId = user.userId;
-      if (userModelId is int && userModelId > 0) return userModelId;
-    }
-    return userId > 0 ? userId : 0;
-  }
-
   List<String> _orderedImagePathsForSubmit() {
     final paths = _images.map((image) => image.path.trim()).toList();
     if (paths.isEmpty) return const [];
@@ -527,5 +509,268 @@ class _InsertProductPageState extends State<InsertProductPage> {
       ordered.add(paths[i]);
     }
     return ordered.where((path) => path.isNotEmpty).toList();
+  }
+
+  Widget _buildVariantsSection() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).dividerColor),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+      ),
+      padding: AppSpacing.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Variants',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              IconButton(
+                onPressed: _isSubmitting ? null : _addVariantEntry,
+                icon: const Icon(Icons.add_circle_outline),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          if (_variantEntries.isEmpty)
+            const Text('Please add at least one variant.')
+          else
+            ..._variantEntries.asMap().entries.map((entry) {
+              final index = entry.key;
+              final variant = entry.value;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: _buildVariantCard(index, variant),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVariantCard(int index, _VariantFormEntry variant) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).dividerColor),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+      ),
+      padding: AppSpacing.all(AppSpacing.md),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Variant ${index + 1}',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              IconButton(
+                onPressed: _isSubmitting
+                    ? null
+                    : () => _removeVariantEntry(index),
+                icon: const Icon(Icons.remove_circle_outline),
+              ),
+            ],
+          ),
+          AppTextField(
+            controller: variant.brandController,
+            label: 'Brand',
+            hintText: 'Enter brand',
+            validator: _requiredValidator,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          AppTextField(
+            controller: variant.colorController,
+            label: context.l10n.productColor,
+            hintText: 'Enter color',
+            validator: _requiredValidator,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          AppTextField(
+            controller: variant.sizeController,
+            label: context.l10n.productSize,
+            hintText: 'Enter item size',
+            validator: _requiredValidator,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          AppTextField(
+            controller: variant.priceController,
+            label: context.l10n.productPriceLabel,
+            hintText: context.l10n.productPriceHint,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            validator: _positiveDoubleValidator,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          AppTextField(
+            controller: variant.qtyController,
+            label: context.l10n.productQuantityLabel,
+            hintText: context.l10n.productQuantityHint,
+            keyboardType: TextInputType.number,
+            validator: _positiveIntOrEmptyDefaultValidator,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          AppTextField(
+            controller: variant.discountController,
+            label: 'Discount (%)',
+            hintText: 'Optional, defaults to 0',
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            validator: _nonNegativeDoubleOrEmptyValidator,
+            textInputAction: TextInputAction.done,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _addVariantEntry() {
+    setState(() {
+      _variantEntries.add(_VariantFormEntry());
+    });
+  }
+
+  void _removeVariantEntry(int index) {
+    if (_variantEntries.length == 1) return;
+    setState(() {
+      final removed = _variantEntries.removeAt(index);
+      removed.dispose();
+    });
+  }
+
+  List<CreateProductDetail> _buildVariantDetails() {
+    if (_variantEntries.isEmpty) return const [];
+    final details = <CreateProductDetail>[];
+    for (final variant in _variantEntries) {
+      final brand = variant.brandController.text.trim();
+      final color = variant.colorController.text.trim();
+      final size = variant.sizeController.text.trim();
+      final priceText = variant.priceController.text.trim();
+      final qtyText = variant.qtyController.text.trim();
+      final discountText = variant.discountController.text.trim();
+      final price = double.tryParse(priceText);
+      final qty = qtyText.isEmpty ? 1 : int.tryParse(qtyText);
+      final double discount = discountText.isEmpty
+          ? 0.0
+          : (double.tryParse(discountText) ?? 0.0);
+      if (brand.isEmpty ||
+          color.isEmpty ||
+          size.isEmpty ||
+          price == null ||
+          price <= 0 ||
+          qty == null ||
+          qty < 1) {
+        return const [];
+      }
+      details.add(
+        CreateProductDetail(
+          brand: brand,
+          color: color,
+          itemSize: size,
+          discount: discount < 0 ? 0.0 : discount,
+          itemPrice: price,
+          itemQty: qty,
+        ),
+      );
+    }
+    return details;
+  }
+
+  String? _nonNegativeDoubleOrEmptyValidator(String? value) {
+    final text = (value ?? '').trim();
+    if (text.isEmpty) return null;
+    final parsed = double.tryParse(text);
+    if (parsed == null || parsed < 0) return context.l10n.productInvalidValue;
+    return null;
+  }
+
+  String? _positiveIntOrEmptyDefaultValidator(String? value) {
+    final text = (value ?? '').trim();
+    if (text.isEmpty) return null;
+    final parsed = int.tryParse(text);
+    if (parsed == null || parsed < 1) return context.l10n.productInvalidValue;
+    return null;
+  }
+
+  void _debugLogInsertPayloadTypes(Map<String, dynamic> requestBody) {
+    if (!kDebugMode) return;
+    final items = requestBody['items'];
+    if (items is! List || items.isEmpty || items.first is! Map) {
+      debugPrint('[InsertProduct][Types] Invalid items payload.');
+      return;
+    }
+    final product = Map<String, dynamic>.from(items.first as Map);
+    debugPrint(
+      '[InsertProduct][Types] item_name: ${product['item_name']?.runtimeType}',
+    );
+    debugPrint(
+      '[InsertProduct][Types] item_desc: ${product['item_desc']?.runtimeType}',
+    );
+    debugPrint(
+      '[InsertProduct][Types] item_price: ${product['item_price']?.runtimeType}',
+    );
+    debugPrint(
+      '[InsertProduct][Types] item_qty: ${product['item_qty']?.runtimeType}',
+    );
+    debugPrint(
+      '[InsertProduct][Types] item_img_url: ${product['item_img_url']?.runtimeType}',
+    );
+    debugPrint(
+      '[InsertProduct][Types] category_id: ${product['category_id']?.runtimeType}',
+    );
+    debugPrint(
+      '[InsertProduct][Types] created_by: ${product['created_by']?.runtimeType}',
+    );
+    debugPrint(
+      '[InsertProduct][Types] is_active: ${product['is_active']?.runtimeType}',
+    );
+    final details = product['details'];
+    if (details is List && details.isNotEmpty && details.first is Map) {
+      final firstDetail = Map<String, dynamic>.from(details.first as Map);
+      debugPrint(
+        '[InsertProduct][Types] details.brand: ${firstDetail['brand']?.runtimeType}',
+      );
+      debugPrint(
+        '[InsertProduct][Types] details.color: ${firstDetail['color']?.runtimeType}',
+      );
+      debugPrint(
+        '[InsertProduct][Types] details.item_size: ${firstDetail['item_size']?.runtimeType}',
+      );
+      debugPrint(
+        '[InsertProduct][Types] details.discount: ${firstDetail['discount']?.runtimeType}',
+      );
+      debugPrint(
+        '[InsertProduct][Types] details.item_price: ${firstDetail['item_price']?.runtimeType}',
+      );
+      debugPrint(
+        '[InsertProduct][Types] details.item_qty: ${firstDetail['item_qty']?.runtimeType}',
+      );
+    }
+  }
+}
+
+class _VariantFormEntry {
+  final TextEditingController brandController = TextEditingController();
+  final TextEditingController colorController = TextEditingController();
+  final TextEditingController sizeController = TextEditingController();
+  final TextEditingController discountController = TextEditingController();
+  final TextEditingController priceController = TextEditingController();
+  final TextEditingController qtyController = TextEditingController();
+
+  void dispose() {
+    brandController.dispose();
+    colorController.dispose();
+    sizeController.dispose();
+    discountController.dispose();
+    priceController.dispose();
+    qtyController.dispose();
   }
 }

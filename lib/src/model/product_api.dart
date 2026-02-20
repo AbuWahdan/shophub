@@ -1,5 +1,6 @@
 class ApiProduct {
   final int id;
+  final int detId;
   final String itemName;
   final String itemDesc;
   final double itemPrice;
@@ -13,6 +14,7 @@ class ApiProduct {
   final int isActive;
   final double? discountPrice;
   final List<String> images;
+  final List<ApiProductVariant> details;
   final List<String> sizes;
   final List<String> colors;
   final Map<String, List<String>>? imagesByColor;
@@ -25,6 +27,7 @@ class ApiProduct {
 
   ApiProduct({
     required this.id,
+    this.detId = 0,
     required this.itemName,
     required this.itemDesc,
     required this.itemPrice,
@@ -38,6 +41,7 @@ class ApiProduct {
     required this.isActive,
     this.discountPrice,
     List<String>? images,
+    this.details = const [],
     this.sizes = const ['Default'],
     this.colors = const ['Default'],
     this.imagesByColor,
@@ -79,6 +83,36 @@ class ApiProduct {
   }
 
   factory ApiProduct.fromJson(Map<String, dynamic> json) {
+    final variants = _parseVariants(json);
+    final topLevelDetId = _asInt(_pick(json, const ['DET_ID', 'det_id']));
+    final selectedVariant = variants.firstWhere(
+      (variant) => variant.detId == topLevelDetId,
+      orElse: () => variants.isNotEmpty
+          ? variants.first
+          : const ApiProductVariant(
+              detId: 0,
+              brand: '',
+              color: '',
+              itemSize: '',
+              discount: 0,
+              itemPrice: 0,
+              itemQty: 0,
+            ),
+    );
+    final parsedPrice = _asDouble(
+      _pick(json, const ['item_price', 'ITEM_PRICE']),
+    );
+    final parsedQty = _asInt(_pick(json, const ['item_qty', 'ITEM_QTY']));
+    final variantSizes = variants
+        .map((variant) => variant.itemSize.trim())
+        .where((size) => size.isNotEmpty)
+        .toSet()
+        .toList();
+    final variantColors = variants
+        .map((variant) => variant.color.trim())
+        .where((color) => color.isNotEmpty)
+        .toSet()
+        .toList();
     final rawImageValue = _asString(json, const [
       'item_img_url',
       'ITEM_IMG_URL',
@@ -90,10 +124,11 @@ class ApiProduct {
 
     return ApiProduct(
       id: _asInt(_pick(json, const ['id', 'ID'])),
+      detId: topLevelDetId > 0 ? topLevelDetId : selectedVariant.detId,
       itemName: _asString(json, const ['item_name', 'ITEM_NAME']),
       itemDesc: _asString(json, const ['item_desc', 'ITEM_DESC']),
-      itemPrice: _asDouble(_pick(json, const ['item_price', 'ITEM_PRICE'])),
-      itemQty: _asInt(_pick(json, const ['item_qty', 'ITEM_QTY'])),
+      itemPrice: parsedPrice > 0 ? parsedPrice : selectedVariant.itemPrice,
+      itemQty: parsedQty > 0 ? parsedQty : selectedVariant.itemQty,
       itemImgUrl: primaryImage,
       categoryId: _asInt(
         _pick(json, const [
@@ -139,6 +174,7 @@ class ApiProduct {
         ]),
       ),
       images: imageList,
+      details: variants,
       rating: _asDouble(_pick(json, const ['rating', 'RATING']), fallback: 4.0),
       reviewCount: _asInt(
         _pick(json, const [
@@ -148,9 +184,32 @@ class ApiProduct {
           'REVIEW_COUNT',
         ]),
       ),
-      sizes: const ['Default'],
-      colors: const ['Default'],
+      sizes: variantSizes.isNotEmpty ? variantSizes : const ['Default'],
+      colors: variantColors.isNotEmpty ? variantColors : const ['Default'],
     );
+  }
+
+  ApiProductVariant? variantFor({required String size, required String color}) {
+    if (details.isEmpty) return null;
+    for (final detail in details) {
+      if (detail.itemSize == size && detail.color == color) {
+        return detail;
+      }
+    }
+    return null;
+  }
+
+  int resolveDetId({
+    required String size,
+    required String color,
+    int fallback = 0,
+  }) {
+    final detail = variantFor(size: size, color: color);
+    if (detail != null && detail.detId > 0) {
+      return detail.detId;
+    }
+    if (detId > 0) return detId;
+    return fallback;
   }
 
   static dynamic _pick(Map<String, dynamic> json, List<String> keys) {
@@ -188,6 +247,137 @@ class ApiProduct {
         .map((part) => part.trim())
         .where((part) => part.isNotEmpty)
         .toList();
+  }
+
+  static List<ApiProductVariant> _parseVariants(Map<String, dynamic> json) {
+    final candidates = <dynamic>[
+      _pick(json, const ['details', 'DETAILS']),
+      _pick(json, const ['variants', 'VARIANTS']),
+    ];
+
+    for (final raw in candidates) {
+      if (raw is List) {
+        return raw
+            .whereType<Map>()
+            .map(
+              (item) =>
+                  ApiProductVariant.fromJson(Map<String, dynamic>.from(item)),
+            )
+            .toList();
+      }
+    }
+
+    final detId = _asInt(_pick(json, const ['DET_ID', 'det_id']));
+    final color = _asString(json, const ['COLOR', 'color']);
+    final brand = _asString(json, const ['BRAND', 'brand']);
+    final itemSize = _asString(json, const ['ITEM_SIZE', 'item_size']);
+    final itemPrice = _asDouble(
+      _pick(json, const ['ITEM_PRICE', 'item_price']),
+    );
+    final itemQty = _asInt(_pick(json, const ['ITEM_QTY', 'item_qty']));
+    final discount = _asDouble(_pick(json, const ['DISCOUNT', 'discount']));
+    if (detId == 0 &&
+        color.trim().isEmpty &&
+        brand.trim().isEmpty &&
+        itemSize.trim().isEmpty &&
+        itemPrice <= 0 &&
+        itemQty <= 0 &&
+        discount <= 0) {
+      return const [];
+    }
+    return [
+      ApiProductVariant(
+        detId: detId,
+        brand: brand,
+        color: color,
+        itemSize: itemSize,
+        discount: discount,
+        itemPrice: itemPrice,
+        itemQty: itemQty,
+      ),
+    ];
+  }
+}
+
+class ApiProductVariant {
+  final int detId;
+  final String brand;
+  final String color;
+  final String itemSize;
+  final double discount;
+  final double itemPrice;
+  final int itemQty;
+
+  const ApiProductVariant({
+    required this.detId,
+    required this.brand,
+    required this.color,
+    required this.itemSize,
+    required this.discount,
+    required this.itemPrice,
+    required this.itemQty,
+  });
+
+  factory ApiProductVariant.fromJson(Map<String, dynamic> json) {
+    return ApiProductVariant(
+      detId: _asInt(_pick(json, const ['DET_ID', 'det_id', 'item_det_id'])),
+      brand: _asString(json, const ['BRAND', 'brand']),
+      color: _asString(json, const ['COLOR', 'color']),
+      itemSize: _asString(json, const ['ITEM_SIZE', 'item_size']),
+      discount: _asDouble(_pick(json, const ['DISCOUNT', 'discount'])),
+      itemPrice: _asDouble(_pick(json, const ['ITEM_PRICE', 'item_price'])),
+      itemQty: _asInt(_pick(json, const ['ITEM_QTY', 'item_qty'])),
+    );
+  }
+
+  static dynamic _pick(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      if (json.containsKey(key)) return json[key];
+    }
+    return null;
+  }
+
+  static String _asString(Map<String, dynamic> json, List<String> keys) {
+    final value = _pick(json, keys);
+    return (value ?? '').toString().trim();
+  }
+
+  static double _asDouble(dynamic value, {double fallback = 0.0}) {
+    if (value is num) return value.toDouble();
+    return double.tryParse((value ?? '').toString()) ?? fallback;
+  }
+
+  static int _asInt(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse((value ?? '').toString()) ?? 0;
+  }
+}
+
+class GetProductsRequest {
+  final String? createdBy;
+  final int? categoryId;
+  final int? detId;
+
+  const GetProductsRequest({this.createdBy, this.categoryId, this.detId});
+
+  Map<String, String> toQueryParameters() {
+    final normalizedCreatedBy = createdBy?.trim();
+    return {
+      if (categoryId != null) 'CAT_ID': categoryId.toString(),
+      if (detId != null) 'DET_ID': detId.toString(),
+      if (normalizedCreatedBy != null && normalizedCreatedBy.isNotEmpty)
+        'created_by': normalizedCreatedBy,
+    };
+  }
+
+  Map<String, dynamic> toBody() {
+    final normalizedCreatedBy = createdBy?.trim();
+    return {
+      if (categoryId != null) 'CAT_ID': categoryId,
+      if (detId != null) 'DET_ID': detId,
+      if (normalizedCreatedBy != null && normalizedCreatedBy.isNotEmpty)
+        'created_by': normalizedCreatedBy,
+    };
   }
 }
 
@@ -314,10 +504,11 @@ class CreateProductRequest {
   final String itemDesc;
   final double itemPrice;
   final int itemQty;
-  final String itemImgUrl;
+  final String? itemImgUrl;
   final String? imagesCsv;
+  final List<CreateProductDetail> details;
   final int categoryId;
-  final int itemOwner;
+  final String createdBy;
   final int isActive;
 
   const CreateProductRequest({
@@ -325,60 +516,26 @@ class CreateProductRequest {
     required this.itemDesc,
     required this.itemPrice,
     required this.itemQty,
-    required this.itemImgUrl,
+    this.itemImgUrl,
     this.imagesCsv,
+    required this.details,
     required this.categoryId,
-    required this.itemOwner,
+    required this.createdBy,
     required this.isActive,
   });
 
   Map<String, dynamic> toJson() {
-    final normalizedImages = _normalizeImagesCsv(imagesCsv ?? itemImgUrl);
+    final normalizedImages = _normalizeImagesCsv(imagesCsv ?? itemImgUrl ?? '');
     return {
-      // Product fields - try both cases
       'item_name': itemName,
-      'ITEM_NAME': itemName,
       'item_desc': itemDesc,
-      'ITEM_DESC': itemDesc,
       'item_price': itemPrice,
-      'ITEM_PRICE': itemPrice,
       'item_qty': itemQty,
-      'ITEM_QTY': itemQty,
-      'item_img_url': itemImgUrl,
-      'ITEM_IMG_URL': itemImgUrl,
-      'images': normalizedImages,
-      'IMAGES': normalizedImages,
-
-      // Category - try all variations
+      'item_img_url': normalizedImages.isEmpty ? itemImgUrl : normalizedImages,
+      'details': details.map((detail) => detail.toJson()).toList(),
       'category_id': categoryId,
-      'CATEGORY_ID': categoryId,
-      'CAT_ID': categoryId,
-      'cat_id': categoryId,
-
-      // Active status
+      'created_by': createdBy,
       'is_active': isActive,
-      'IS_ACTIVE': isActive,
-
-      // OWNER/USER ID - try EVERY possible variation
-      // As integer
-      'item_owner': itemOwner,
-      'ITEM_OWNER': itemOwner,
-      'user_id': itemOwner,
-      'USER_ID': itemOwner,
-      'owner_id': itemOwner,
-      'OWNER_ID': itemOwner,
-      'created_by': itemOwner,
-      'CREATED_BY': itemOwner,
-      'created_by_user_id': itemOwner,
-      'CREATED_BY_USER_ID': itemOwner,
-      'creator_id': itemOwner,
-      'CREATOR_ID': itemOwner,
-
-      // As string
-      'item_owner_str': itemOwner.toString(),
-      'ITEM_OWNER_STR': itemOwner.toString(),
-      'user_id_str': itemOwner.toString(),
-      'USER_ID_STR': itemOwner.toString(),
     };
   }
 
@@ -388,6 +545,35 @@ class CreateProductRequest {
         .map((part) => part.trim())
         .where((part) => part.isNotEmpty)
         .join(',');
+  }
+}
+
+class CreateProductDetail {
+  final String brand;
+  final String color;
+  final String itemSize;
+  final double discount;
+  final double itemPrice;
+  final int itemQty;
+
+  const CreateProductDetail({
+    required this.brand,
+    required this.color,
+    required this.itemSize,
+    required this.discount,
+    required this.itemPrice,
+    required this.itemQty,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'brand': brand,
+      'color': color,
+      'item_size': itemSize,
+      'discount': discount,
+      'item_price': itemPrice,
+      'item_qty': itemQty,
+    };
   }
 }
 

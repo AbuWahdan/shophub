@@ -91,7 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
             scrollDirection: Axis.horizontal,
             padding: AppTheme.hPadding,
             itemCount: mainCategories.length + 1,
-            separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
             itemBuilder: (context, index) {
               if (index == 0) {
                 return FilterChip(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../config/app_constants.dart';
 import '../config/route.dart';
@@ -10,22 +11,26 @@ import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';
+import '../model/cart_api.dart';
 import '../services/product_service.dart';
 import '../shared/widgets/app_button.dart';
 import '../shared/widgets/app_image.dart';
 import '../shared/widgets/app_snackbar.dart';
+import '../state/auth_state.dart';
 import '../themes/theme.dart';
 
 class ProductDetailsPage extends StatefulWidget {
   final ApiProduct product;
   final String? initialSize;
   final String? initialColor;
+  final int? initialDetId;
 
   const ProductDetailsPage({
     super.key,
     required this.product,
     this.initialSize,
     this.initialColor,
+    this.initialDetId,
   });
 
   @override
@@ -38,11 +43,44 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   int _currentImageIndex = 0;
   String? _selectedSize;
   String? _selectedColor;
+  int _selectedDetId = 0;
   int _quantity = 1;
   bool _isExpanded = false;
   bool _isLoadingItemImages = false;
   String? _itemImagesError;
   List<ApiItemImage> _itemImages = const [];
+  bool _isAddingToCart = false;
+  List<ApiProductVariant> get _variants => widget.product.details;
+  ApiProductVariant? get _selectedVariant {
+    if (_variants.isEmpty) return null;
+    for (final variant in _variants) {
+      if (variant.detId == _selectedDetId && _selectedDetId > 0) {
+        return variant;
+      }
+    }
+    for (final variant in _variants) {
+      if (variant.itemSize == _selectedSize &&
+          variant.color == _selectedColor) {
+        return variant;
+      }
+    }
+    return _variants.first;
+  }
+
+  double get _selectedBasePrice =>
+      _selectedVariant?.itemPrice ?? widget.product.price;
+  double get _selectedDiscountPercent =>
+      _selectedVariant?.discount ??
+      widget.product.discountPercentage.toDouble();
+  double get _selectedFinalPrice {
+    final discount = _selectedDiscountPercent;
+    if (discount <= 0) return _selectedBasePrice;
+    final discounted = _selectedBasePrice * (1 - (discount / 100));
+    return discounted < 0 ? 0 : discounted;
+  }
+
+  int get _selectedAvailableQty =>
+      _selectedVariant?.itemQty ?? widget.product.itemQty;
 
   @override
   void initState() {
@@ -54,6 +92,20 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     _selectedColor =
         widget.initialColor ??
         (widget.product.colors.isNotEmpty ? widget.product.colors.first : null);
+    if (_variants.isNotEmpty) {
+      final firstVariant = _variants.first;
+      _selectedSize = firstVariant.itemSize;
+      _selectedColor = firstVariant.color;
+      _selectedDetId = firstVariant.detId;
+    } else {
+      final selectedSize = _selectedSize ?? '';
+      final selectedColor = _selectedColor ?? '';
+      _selectedDetId = widget.product.resolveDetId(
+        size: selectedSize,
+        color: selectedColor,
+        fallback: widget.initialDetId ?? widget.product.detId,
+      );
+    }
     AppData.syncFavoriteFor(widget.product);
     _loadItemImages();
   }
@@ -134,6 +186,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       _buildRatingSection(),
                       const SizedBox(height: AppSpacing.xxl),
                       _buildPriceSection(),
+                      const SizedBox(height: AppSpacing.lg),
+                      _buildVariantsSection(),
                       const SizedBox(height: AppSpacing.xxl),
                       _buildCommentsSection(),
                       const SizedBox(height: AppSpacing.xxl),
@@ -202,7 +256,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                             style: AppTextStyles.bodySmall(context),
                           ),
                           Text(
-                            '\$${(widget.product.finalPrice * _quantity).toStringAsFixed(2)}',
+                            '\$${(_selectedFinalPrice * _quantity).toStringAsFixed(2)}',
                             style: AppTextStyles.titleLarge(context),
                           ),
                         ],
@@ -213,31 +267,16 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       flex: 2,
                       child: AppButton(
                         label: context.l10n.productAddToCart,
-                        onPressed: () async {
-                          final addedMessage = context.l10n.productAddedToCart(
-                            widget.product.name,
-                          );
-                          final selection = await _showVariantPickerSheet();
-                          if (!context.mounted || selection == null) return;
-                          setState(() {
-                            _selectedSize = selection.size;
-                            _selectedColor = selection.color;
-                            _quantity = selection.quantity;
-                          });
-                          _resetImageCarousel();
-                          AppData.addToCart(
-                            product: widget.product,
-                            quantity: selection.quantity,
-                            size: selection.size,
-                            color: selection.color,
-                          );
-                          if (!context.mounted) return;
-                          AppSnackBar.show(
-                            context,
-                            message: addedMessage,
-                            type: AppSnackBarType.success,
-                          );
-                        },
+                        leading: _isAddingToCart
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : null,
+                        onPressed: _isAddingToCart ? null : _onAddToCartPressed,
                       ),
                     ),
                   ],
@@ -445,21 +484,23 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   }
 
   Widget _buildPriceSection() {
+    final discount = _selectedDiscountPercent;
+    final hasDiscount = discount > 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Text(
-              '\$${widget.product.finalPrice.toStringAsFixed(2)}',
+              '\$${_selectedFinalPrice.toStringAsFixed(2)}',
               style: AppTextStyles.headlineLarge(
                 context,
               ).copyWith(color: AppColors.primary),
             ),
             const SizedBox(width: AppSpacing.md),
-            if (widget.product.discountPrice != null) ...[
+            if (hasDiscount) ...[
               Text(
-                '\$${widget.product.price.toStringAsFixed(2)}',
+                '\$${_selectedBasePrice.toStringAsFixed(2)}',
                 style: AppTextStyles.bodyMedium(
                   context,
                 ).copyWith(decoration: TextDecoration.lineThrough),
@@ -475,7 +516,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                 ),
                 child: Text(
-                  '-${widget.product.discountPercentage}%',
+                  '-${discount.toStringAsFixed(discount == discount.roundToDouble() ? 0 : 1)}%',
                   style: AppTextStyles.labelSmall(
                     context,
                   ).copyWith(color: Colors.white),
@@ -483,6 +524,13 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               ),
             ],
           ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          context.l10n.productAvailableStock(_selectedAvailableQty),
+          style: AppTextStyles.bodySmall(
+            context,
+          ).copyWith(color: AppColors.accentOrange),
         ),
         const SizedBox(height: AppSpacing.md),
         Container(
@@ -505,174 +553,130 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     );
   }
 
-  Future<_VariantSelection?> _showVariantPickerSheet() async {
-    String? selectedSize = _selectedSize;
-    String? selectedColor = _selectedColor;
-    int quantity = _quantity;
-
-    return showModalBottomSheet<_VariantSelection>(
-      context: context,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusLg),
-        ),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final availableStock = selectedSize != null && selectedColor != null
-                ? widget.product.stockFor(selectedSize!, selectedColor!)
-                : null;
-            final quantityItems = List<int>.generate(
-              AppConstants.checkoutMaxQuantity,
-              (index) => index + 1,
-            );
-            final canSubmit =
-                selectedSize != null && selectedColor != null && quantity >= 1;
-
-            return Padding(
-              padding: EdgeInsets.only(
-                left: AppSpacing.lg,
-                right: AppSpacing.lg,
-                top: AppSpacing.lg,
-                bottom:
-                    MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.l10n.productSize,
-                    style: AppTextStyles.titleMedium(context),
+  Widget _buildVariantsSection() {
+    if (_variants.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Variants', style: AppTextStyles.titleMedium(context)),
+        const SizedBox(height: AppSpacing.sm),
+        ..._variants.map((variant) {
+          final isSelected =
+              _selectedDetId > 0 && variant.detId == _selectedDetId;
+          final basePrice = variant.itemPrice;
+          final discount = variant.discount;
+          final finalPrice = discount > 0
+              ? (basePrice * (1 - (discount / 100)))
+              : basePrice;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              onTap: () => _selectVariant(variant),
+              child: Container(
+                padding: AppSpacing.insetsMd,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.primary
+                        : Theme.of(context).dividerColor,
+                    width: isSelected
+                        ? AppSpacing.borderThick
+                        : AppSpacing.borderThin,
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedSize,
-                    items: widget.product.sizes
-                        .map(
-                          (size) => DropdownMenuItem<String>(
-                            value: size,
-                            child: Text(size),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${variant.brand} | ${variant.color} | ${variant.itemSize}',
+                            style: AppTextStyles.labelLarge(context),
                           ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      setModalState(() {
-                        selectedSize = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    context.l10n.productColor,
-                    style: AppTextStyles.titleMedium(context),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedColor,
-                    items: widget.product.colors
-                        .map(
-                          (color) => DropdownMenuItem<String>(
-                            value: color,
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: AppSpacing.iconSm,
-                                  height: AppSpacing.iconSm,
-                                  decoration: BoxDecoration(
-                                    color: _colorForName(color),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Theme.of(context).dividerColor,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.sm),
-                                Text(color),
-                              ],
-                            ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'Price: \$${finalPrice.toStringAsFixed(2)}'
+                            '${discount > 0 ? ' (Discount ${discount.toStringAsFixed(discount == discount.roundToDouble() ? 0 : 1)}%)' : ''}',
+                            style: AppTextStyles.bodySmall(context),
                           ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      setModalState(() {
-                        selectedColor = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    context.l10n.productQuantity,
-                    style: AppTextStyles.titleMedium(context),
-                  ),
-                  if (availableStock != null) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      context.l10n.productAvailableStock(availableStock),
-                      style: AppTextStyles.bodySmall(
-                        context,
-                      ).copyWith(color: AppColors.accentOrange),
-                    ),
-                  ],
-                  const SizedBox(height: AppSpacing.sm),
-                  DropdownButtonFormField<int>(
-                    initialValue: quantity,
-                    items: quantityItems
-                        .map(
-                          (qty) => DropdownMenuItem<int>(
-                            value: qty,
-                            child: Text(qty.toString()),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setModalState(() {
-                        quantity = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  AppButton(
-                    label: context.l10n.productAddToCart,
-                    onPressed: canSubmit
-                        ? () {
-                            Navigator.pop(
+                          Text(
+                            context.l10n.productAvailableStock(variant.itemQty),
+                            style: AppTextStyles.bodySmall(
                               context,
-                              _VariantSelection(
-                                size: selectedSize!,
-                                color: selectedColor!,
-                                quantity: quantity,
-                              ),
-                            );
-                          }
-                        : null,
-                  ),
-                ],
+                            ).copyWith(color: AppColors.accentOrange),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isSelected)
+                      const Icon(Icons.check_circle, color: AppColors.primary),
+                  ],
+                ),
               ),
-            );
-          },
-        );
-      },
+            ),
+          );
+        }),
+        const SizedBox(height: AppSpacing.xs),
+        Row(
+          children: [
+            Text(
+              context.l10n.productQuantity,
+              style: AppTextStyles.titleSmall(context),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            IconButton(
+              onPressed: _quantity > 1
+                  ? () => _changeQuantity(_quantity - 1)
+                  : null,
+              icon: const Icon(Icons.remove_circle_outline),
+            ),
+            Text(
+              _quantity.toString(),
+              style: AppTextStyles.labelLarge(context),
+            ),
+            IconButton(
+              onPressed:
+                  _quantity < AppConstants.checkoutMaxQuantity &&
+                      _quantity < _selectedAvailableQty
+                  ? () => _changeQuantity(_quantity + 1)
+                  : null,
+              icon: const Icon(Icons.add_circle_outline),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
-  Color _colorForName(String colorName) {
-    const colorMap = <String, Color>{
-      'Black': AppColors.chipBlack,
-      'White': AppColors.chipWhite,
-      'Red': AppColors.chipRed,
-      'Blue': AppColors.chipBlue,
-      'Green': AppColors.chipGreen,
-      'Yellow': AppColors.chipYellow,
-      'Gray': AppColors.chipGray,
-      'Navy': AppColors.chipNavy,
-      'Brown': AppColors.chipBrown,
-      'Silver': AppColors.neutral500,
-    };
-    return colorMap[colorName] ?? AppColors.neutral500;
+  void _selectVariant(ApiProductVariant variant) {
+    setState(() {
+      _selectedDetId = variant.detId;
+      _selectedSize = variant.itemSize;
+      _selectedColor = variant.color;
+      if (variant.itemQty > 0 && _quantity > variant.itemQty) {
+        _quantity = variant.itemQty;
+      }
+      if (_quantity < 1) {
+        _quantity = 1;
+      }
+    });
+    _resetImageCarousel();
+  }
+
+  void _changeQuantity(int nextValue) {
+    if (nextValue < 1) return;
+    final maxAllowed = _selectedAvailableQty > 0
+        ? _selectedAvailableQty
+        : AppConstants.checkoutMaxQuantity;
+    if (nextValue > maxAllowed) return;
+    setState(() {
+      _quantity = nextValue;
+    });
   }
 
   Widget _buildCommentsSection() {
@@ -842,18 +846,98 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       ],
     );
   }
-}
 
-class _VariantSelection {
-  final String size;
-  final String color;
-  final int quantity;
+  Future<void> _onAddToCartPressed() async {
+    final authState = context.read<AuthState>();
+    final username = authState.user?.username.trim() ?? '';
+    if (username.isEmpty) {
+      AppSnackBar.show(
+        context,
+        message: context.l10n.productAccountUnavailable,
+        type: AppSnackBarType.error,
+      );
+      return;
+    }
+    if (_selectedAvailableQty <= 0) {
+      AppSnackBar.show(
+        context,
+        message: 'Selected variant is out of stock.',
+        type: AppSnackBarType.warning,
+      );
+      return;
+    }
 
-  const _VariantSelection({
-    required this.size,
-    required this.color,
-    required this.quantity,
-  });
+    final activeVariant = _selectedVariant;
+    final itemDetId = (activeVariant?.detId ?? _selectedDetId) > 0
+        ? (activeVariant?.detId ?? _selectedDetId)
+        : widget.product.resolveDetId(
+            size: _selectedSize ?? '',
+            color: _selectedColor ?? '',
+            fallback: widget.product.detId,
+          );
+    if (itemDetId <= 0) {
+      AppSnackBar.show(
+        context,
+        message: 'Unable to determine selected product variant.',
+        type: AppSnackBarType.error,
+      );
+      return;
+    }
+
+    setState(() {
+      _isAddingToCart = true;
+      _selectedSize = activeVariant?.itemSize ?? _selectedSize;
+      _selectedColor = activeVariant?.color ?? _selectedColor;
+      _selectedDetId = itemDetId;
+    });
+
+    try {
+      final qty = _quantity <= 0 ? 1 : _quantity;
+      await _productService.addItemToCart(
+        AddItemToCartRequest(
+          itemId: widget.product.id,
+          itemDetId: itemDetId,
+          username: username,
+          itemQty: qty,
+        ),
+      );
+
+      if (!mounted) return;
+      _resetImageCarousel();
+      AppData.addToCart(
+        product: widget.product,
+        quantity: qty,
+        size: _selectedSize ?? 'Default',
+        color: _selectedColor ?? 'Default',
+        detId: itemDetId,
+      );
+      AppSnackBar.show(
+        context,
+        message: context.l10n.productAddedToCart(widget.product.name),
+        type: AppSnackBarType.success,
+      );
+    } on ProductException catch (error) {
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        message: error.message,
+        type: AppSnackBarType.error,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        message: 'Failed to add item to cart.',
+        type: AppSnackBarType.error,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAddingToCart = false;
+        });
+      }
+    }
+  }
 }
 
 class _ProductImageViewer extends StatefulWidget {

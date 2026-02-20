@@ -36,6 +36,13 @@ class AppData {
   static final List<CartItem> cartItems = <CartItem>[];
   static final ValueNotifier<int> cartCountNotifier = ValueNotifier<int>(0);
 
+  static void setCartItems(List<CartItem> items) {
+    cartItems
+      ..clear()
+      ..addAll(items);
+    _notifyCartCountChanged();
+  }
+
   static final Set<int> _wishlistIds = <int>{};
   static final Map<int, ApiProduct> _wishlistProducts = <int, ApiProduct>{};
 
@@ -275,10 +282,12 @@ class AppData {
     required int quantity,
     required String size,
     required String color,
+    int detId = 0,
   }) {
     final existingIndex = cartItems.indexWhere(
       (item) =>
           item.product.id == product.id &&
+          item.selectedDetId == detId &&
           item.selectedSize == size &&
           item.selectedColor == color,
     );
@@ -295,6 +304,7 @@ class AppData {
         quantity: quantity,
         selectedSize: size,
         selectedColor: color,
+        selectedDetId: detId,
       ),
     );
     _notifyCartCountChanged();

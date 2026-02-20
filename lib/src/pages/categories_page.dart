@@ -40,7 +40,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
             scrollDirection: Axis.horizontal,
             padding: AppTheme.padding,
             itemCount: mainCategories.length,
-            separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.md),
+            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
             itemBuilder: (context, index) {
               final category = mainCategories[index];
               final selected = _selectedMainCategoryId == category.id;
@@ -104,7 +104,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
               scrollDirection: Axis.horizontal,
               padding: AppTheme.hPadding,
               itemCount: subcategories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+              separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
               itemBuilder: (context, index) {
                 final sub = subcategories[index];
                 return ActionChip(

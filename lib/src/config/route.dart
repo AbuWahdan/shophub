@@ -213,12 +213,14 @@ class AppRoutes {
         final product = args?['product'] as ApiProduct?;
         final selectedSize = args?['selectedSize'] as String?;
         final selectedColor = args?['selectedColor'] as String?;
+        final selectedDetId = args?['selectedDetId'] as int?;
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => ProductDetailsPage(
             product: product!,
             initialSize: selectedSize,
             initialColor: selectedColor,
+            initialDetId: selectedDetId,
           ),
         );
 
