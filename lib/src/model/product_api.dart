@@ -387,6 +387,8 @@ class ApiProductDetails {
   final String itemName;
   final String itemDesc;
   final double itemPrice;
+  final int itemQty;
+  final double discount;
   final String itemImgUrl;
   final int imageId;
   final String category;
@@ -405,6 +407,8 @@ class ApiProductDetails {
     required this.itemName,
     required this.itemDesc,
     required this.itemPrice,
+    required this.itemQty,
+    required this.discount,
     required this.itemImgUrl,
     required this.imageId,
     required this.category,
@@ -425,6 +429,8 @@ class ApiProductDetails {
       itemName: _asString(json, const ['ITEM_NAME', 'item_name']),
       itemDesc: _asString(json, const ['ITEM_DESC', 'item_desc']),
       itemPrice: _asDouble(_pick(json, const ['ITEM_PRICE', 'item_price'])),
+      itemQty: _asInt(_pick(json, const ['ITEM_QTY', 'item_qty'])),
+      discount: _asDouble(_pick(json, const ['DISCOUNT', 'discount'])),
       itemImgUrl: _asString(json, const ['ITEM_IMG_URL', 'item_img_url']),
       imageId: _asInt(_pick(json, const ['IMAGE_ID', 'image_id'])),
       category: _asString(json, const ['CATEGORY', 'category']),
@@ -549,14 +555,16 @@ class CreateProductRequest {
 }
 
 class CreateProductDetail {
+  final int? detId;
   final String brand;
   final String color;
-  final String itemSize;
+  final int itemSize;
   final double discount;
   final double itemPrice;
   final int itemQty;
 
   const CreateProductDetail({
+    this.detId,
     required this.brand,
     required this.color,
     required this.itemSize,
@@ -567,6 +575,9 @@ class CreateProductDetail {
 
   Map<String, dynamic> toJson() {
     return {
+      if (detId != null) 'det_id': detId,
+      if (detId != null) 'DET_ID': detId,
+      if (detId != null) 'item_det_id': detId,
       'brand': brand,
       'color': color,
       'item_size': itemSize,
@@ -579,29 +590,42 @@ class CreateProductDetail {
 
 class UpdateProductRequest {
   final int id;
+  final int? detId;
   final String itemName;
   final String itemDesc;
   final double itemPrice;
   final int itemQty;
-  final String itemImgUrl;
+  final String? itemImgUrl;
+  final String? imagesCsv;
+  final List<CreateProductDetail> details;
   final int categoryId;
   final int isActive;
 
   const UpdateProductRequest({
     required this.id,
+    this.detId,
     required this.itemName,
     required this.itemDesc,
     required this.itemPrice,
     required this.itemQty,
-    required this.itemImgUrl,
+    this.itemImgUrl,
+    this.imagesCsv,
+    this.details = const [],
     required this.categoryId,
     required this.isActive,
   });
 
   Map<String, dynamic> toJson() {
+    final normalizedImages = _normalizeImagesCsv(imagesCsv ?? itemImgUrl ?? '');
     return {
       'id': id,
       'ID': id,
+      'item_id': id,
+      'ITEM_ID': id,
+      if (detId != null) 'det_id': detId,
+      if (detId != null) 'DET_ID': detId,
+      if (detId != null) 'item_det_id': detId,
+      if (detId != null) 'ITEM_DET_ID': detId,
       'item_name': itemName,
       'ITEM_NAME': itemName,
       'item_desc': itemDesc,
@@ -610,13 +634,23 @@ class UpdateProductRequest {
       'ITEM_PRICE': itemPrice,
       'item_qty': itemQty,
       'ITEM_QTY': itemQty,
-      'item_img_url': itemImgUrl,
-      'ITEM_IMG_URL': itemImgUrl,
+      'item_img_url': normalizedImages.isEmpty ? itemImgUrl : normalizedImages,
+      'ITEM_IMG_URL': normalizedImages.isEmpty ? itemImgUrl : normalizedImages,
+      if (details.isNotEmpty)
+        'details': details.map((detail) => detail.toJson()).toList(),
       'category_id': categoryId,
       'CATEGORY_ID': categoryId,
       'CAT_ID': categoryId,
       'is_active': isActive,
       'IS_ACTIVE': isActive,
     };
+  }
+
+  String _normalizeImagesCsv(String raw) {
+    return raw
+        .split(',')
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .join(',');
   }
 }

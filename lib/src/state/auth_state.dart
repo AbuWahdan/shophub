@@ -13,22 +13,42 @@ class AuthState extends ChangeNotifier {
   final StorageService _storageService;
 
   bool _isLoading = false;
+  bool _isInitializing = false;
+  bool _isInitialized = false;
+  Future<void>? _initializationFuture;
   bool _isLoggedIn = false;
   String? _errorMessage;
   User? _user;
   int _userId = 0;
 
   bool get isLoading => _isLoading;
+  bool get isInitializing => _isInitializing;
+  bool get isInitialized => _isInitialized;
   bool get isLoggedIn => _isLoggedIn;
   String? get errorMessage => _errorMessage;
   User? get user => _user;
   int get userId => _userId;
 
   Future<void> initialize() async {
-    _isLoggedIn = await _storageService.isLoggedIn();
-    _user = await _storageService.getUser();
-    _userId = await _storageService.getUserId() ?? _user?.userId ?? 0;
+    if (_initializationFuture != null) {
+      return _initializationFuture;
+    }
+    _isInitializing = true;
     notifyListeners();
+    _initializationFuture = () async {
+      _isLoggedIn = await _storageService.isLoggedIn();
+      _user = await _storageService.getUser();
+      _userId = await _storageService.getUserId() ?? _user?.userId ?? 0;
+      _isInitialized = true;
+      _isInitializing = false;
+      notifyListeners();
+    }();
+    return _initializationFuture;
+  }
+
+  Future<void> ensureInitialized() async {
+    if (_isInitialized && !_isInitializing) return;
+    await initialize();
   }
 
   Future<bool> login(String username, String password) async {

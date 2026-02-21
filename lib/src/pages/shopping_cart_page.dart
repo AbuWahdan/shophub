@@ -11,6 +11,7 @@ import '../model/cart_item.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';
+import '../pages/main_page.dart';
 import '../services/product_service.dart';
 import '../state/auth_state.dart';
 import '../shared/dialogs/app_dialogs.dart';
@@ -25,7 +26,7 @@ class ShoppingCartPage extends StatefulWidget {
   const ShoppingCartPage({super.key});
 
   @override
-  _ShoppingCartPageState createState() => _ShoppingCartPageState();
+  State<ShoppingCartPage> createState() => _ShoppingCartPageState();
 }
 
 class _ShoppingCartPageState extends State<ShoppingCartPage> {
@@ -322,7 +323,19 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
       action: AppButton(
         label: context.l10n.cartStartShopping,
         onPressed: () {
-          Navigator.of(context).popUntil((route) => route.isFirst);
+          final switched = MainPage.switchToTab(
+            context,
+            AppConstants.homeTabIndex,
+          );
+          if (switched) {
+            return;
+          }
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.main,
+            (route) => false,
+            arguments: {'initialTabIndex': AppConstants.homeTabIndex},
+          );
         },
         leading: const Icon(Icons.shopping_bag),
         fullWidth: false,

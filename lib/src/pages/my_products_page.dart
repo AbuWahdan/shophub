@@ -88,24 +88,18 @@ class _MyProductsPageState extends State<MyProductsPage> {
       _loadingDetailsItemId = product.id;
     });
     try {
-      final details = await _productService.getItemDetails(itemId: product.id);
+      final detailsRows = await _productService.getItemDetailsRows(
+        itemId: product.id,
+      );
+      if (detailsRows.isEmpty) {
+        throw ProductException('No item details found for this product.');
+      }
+      final details = detailsRows.first;
       var itemImages = <ApiItemImage>[];
       try {
         itemImages = await _productService.loadItemImages(itemId: product.id);
-      } on ProductException catch (error) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.l10n.productsLoadFailed(error.message)),
-            ),
-          );
-        }
       } catch (_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.productsLoadFailedGeneric)),
-          );
-        }
+        // Keep opening edit page even if image payload is malformed.
       }
       if (!mounted) return;
       final updated = await Navigator.push<bool>(
@@ -114,6 +108,7 @@ class _MyProductsPageState extends State<MyProductsPage> {
           builder: (_) => EditProductPage(
             product: product,
             details: details,
+            detailsRows: detailsRows,
             itemImages: itemImages,
           ),
         ),

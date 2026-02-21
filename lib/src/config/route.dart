@@ -84,9 +84,10 @@ class AppRoutes {
         );
 
       case main:
+        final initialTabIndex = args?['initialTabIndex'] as int?;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const MainPage(),
+          builder: (_) => MainPage(initialTabIndex: initialTabIndex),
         );
 
       case categories:

@@ -330,90 +330,98 @@ class ProductService {
     return false;
   }
 
-  Future<void> updateProduct(UpdateProductRequest request) async {
-    final payload = request.toJson();
-    final endpoints = <String>[
-      '$_baseUrl/UpdateItem',
-      '$_baseUrl/updateitem',
-      '$_baseUrl/updateItem',
-      '$_baseUrl/updateproduct',
-      '$_baseUrl/UpdateProduct',
-      '$_baseUrl/updateProduct',
-      '$_baseUrl/editproduct',
-      '$_baseUrl/EditProduct',
-    ];
+  bool _isConfirmedUpdateSuccess(dynamic data, String rawBody) {
+    final raw = rawBody.toLowerCase().trim();
+    if (raw.contains('ora-') || raw.contains('pl/sql')) return false;
 
-    final payloadVariants = <Map<String, dynamic>>[
-      {
-        'items': [payload],
-      },
-      {
-        'data': [payload],
-      },
-      {'product': payload},
-      payload,
-    ];
-
-    String? lastError;
-    final errors = <String>[];
-
-    for (final endpoint in endpoints) {
-      final endpointUri = Uri.parse(endpoint);
-      for (final body in payloadVariants) {
-        final response = await _safePost(endpointUri, body: body);
-        final data = _decode(response.body);
-        if (response.statusCode < 200 || response.statusCode >= 300) {
-          lastError =
-              _extractMessage(data) ??
-              'Updating product failed (HTTP ${response.statusCode}).';
-          errors.add('POST $endpoint -> HTTP ${response.statusCode}');
-          continue;
-        }
-
-        final status = (data is Map<String, dynamic> ? data['status'] : null)
-            ?.toString()
-            .toLowerCase();
-        if (status == 'error') {
-          lastError = _extractMessage(data) ?? 'Updating product failed.';
-          errors.add('POST $endpoint -> status error');
-          continue;
-        }
-        _invalidateProductsCache();
-        return;
+    if (data is Map<String, dynamic>) {
+      final error = (data['error'] ?? '').toString().trim();
+      if (error.isNotEmpty) return false;
+      final status = (data['status'] ?? '').toString().toLowerCase().trim();
+      final result = (data['result'] ?? '').toString().toLowerCase().trim();
+      if (status == 'error' || status == 'failed' || status == 'fail') {
+        return false;
       }
-
-      final getResponse = await _safeGet(
-        endpointUri.replace(
-          queryParameters: {
-            for (final entry in payload.entries)
-              entry.key: entry.value.toString(),
-          },
-        ),
-      );
-      final getData = _decode(getResponse.body);
-      if (getResponse.statusCode < 200 || getResponse.statusCode >= 300) {
-        lastError =
-            _extractMessage(getData) ??
-            'Updating product failed (HTTP ${getResponse.statusCode}).';
-        errors.add('GET $endpoint -> HTTP ${getResponse.statusCode}');
-        continue;
+      if (result == 'error' || result == 'failed' || result == 'fail') {
+        return false;
       }
-
-      final getStatus =
-          (getData is Map<String, dynamic> ? getData['status'] : null)
-              ?.toString()
-              .toLowerCase();
-      if (getStatus == 'error') {
-        lastError = _extractMessage(getData) ?? 'Updating product failed.';
-        errors.add('GET $endpoint -> status error');
-        continue;
-      }
-      _invalidateProductsCache();
-      return;
+      return true;
     }
 
-    throw ProductException(
-      '${lastError ?? 'Updating product failed.'} (${errors.take(3).join(' | ')})',
+    return true;
+  }
+
+  void _debugLogUpdatePayloadTypes(Map<String, dynamic> payload) {
+    if (!kDebugMode) return;
+    debugPrint(
+      '[UpdateProduct][Types] item_qty: ${payload['item_qty']} (${payload['item_qty']?.runtimeType})',
+    );
+    debugPrint(
+      '[UpdateProduct][Types] is_active: ${payload['is_active']} (${payload['is_active']?.runtimeType})',
+    );
+    final details = payload['details'];
+    if (details is List && details.isNotEmpty && details.first is Map) {
+      final firstDetail = Map<String, dynamic>.from(details.first as Map);
+      debugPrint(
+        '[UpdateProduct][Types] details.item_price: ${firstDetail['item_price']} (${firstDetail['item_price']?.runtimeType})',
+      );
+      debugPrint(
+        '[UpdateProduct][Types] details.discount: ${firstDetail['discount']} (${firstDetail['discount']?.runtimeType})',
+      );
+      debugPrint(
+        '[UpdateProduct][Types] details.item_qty: ${firstDetail['item_qty']} (${firstDetail['item_qty']?.runtimeType})',
+      );
+    }
+  }
+
+  Future<UpdateProductResult> updateProduct(
+    UpdateProductRequest request,
+  ) async {
+    final payload = request.toJson();
+    final endpointUri = Uri.parse('$_baseUrl/UpdateItem');
+    final body = <String, dynamic>{
+      'items': [payload],
+    };
+
+    if (kDebugMode) {
+      debugPrint('=== Product Update Debug ===');
+      debugPrint('[UpdateProduct] endpoint: $endpointUri');
+      debugPrint('payload: $payload');
+      debugPrint('body: $body');
+      _debugLogUpdatePayloadTypes(payload);
+      debugPrint('============================');
+    }
+
+    final response = await _safePost(endpointUri, body: body);
+    final data = _decode(response.body);
+    debugPrint('[UpdateProduct] status: ${response.statusCode}');
+    debugPrint('[UpdateProduct] response: ${response.body}');
+    final updateRawLower = response.body.toLowerCase();
+    if (updateRawLower.contains('ora-') || updateRawLower.contains('pl/sql')) {
+      throw ProductException(response.body);
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ProductException(
+        _extractMessage(data) ??
+            'Updating product failed (HTTP ${response.statusCode}).',
+      );
+    }
+    if (kDebugMode) {
+      debugPrint(
+        '[UpdateProduct] raw body before success check: ${response.body}',
+      );
+    }
+    if (!_isConfirmedUpdateSuccess(data, response.body)) {
+      throw ProductException(
+        _extractMessage(data) ??
+            'Update response was not confirmed by backend.',
+      );
+    }
+    _invalidateProductsCache();
+    return UpdateProductResult(
+      statusCode: response.statusCode,
+      rawBody: response.body,
+      data: data,
     );
   }
 
@@ -470,11 +478,29 @@ class ProductService {
   }
 
   Future<ApiProductDetails> getItemDetails({required int itemId}) async {
+    final rows = await getItemDetailsRows(itemId: itemId);
+    if (rows.isEmpty) {
+      throw ProductException('No item details found for this product.');
+    }
+    return rows.first;
+  }
+
+  Future<List<ApiProductDetails>> getItemDetailsRows({
+    required int itemId,
+  }) async {
     final uri = Uri.parse(
       '$_baseUrl/GetItemDetails',
     ).replace(queryParameters: {'item_id': itemId.toString()});
+    debugPrint('[GetItemDetails] GET $uri');
     final response = await _safeGet(uri);
     final data = _decode(response.body);
+    debugPrint('[GetItemDetails] status: ${response.statusCode}');
+    debugPrint('[GetItemDetails] response: ${response.body}');
+    final detailsRawLower = response.body.toLowerCase();
+    if (detailsRawLower.contains('ora-') ||
+        detailsRawLower.contains('pl/sql')) {
+      throw ProductException(response.body);
+    }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ProductException(
         _extractMessage(data) ??
@@ -496,7 +522,12 @@ class ProductService {
     if (first is! Map) {
       throw ProductException('Unexpected item details payload.');
     }
-    return ApiProductDetails.fromJson(Map<String, dynamic>.from(first));
+    return rawDetails
+        .whereType<Map>()
+        .map(
+          (row) => ApiProductDetails.fromJson(Map<String, dynamic>.from(row)),
+        )
+        .toList();
   }
 
   Future<List<ApiItemImage>> loadItemImages({required int itemId}) async {
@@ -512,15 +543,18 @@ class ProductService {
       );
     }
 
-    if (data is! List) {
-      throw ProductException('Unexpected item images response format.');
+    final rawImages = _extractImageRows(data);
+    final images = <ApiItemImage>[];
+    for (final item in rawImages) {
+      try {
+        final parsed = ApiItemImage.fromJson(item);
+        if (parsed.imagePath.trim().isNotEmpty) {
+          images.add(parsed);
+        }
+      } catch (_) {
+        // Ignore malformed image rows and continue loading the product.
+      }
     }
-
-    final images = data
-        .whereType<Map>()
-        .map((item) => ApiItemImage.fromJson(Map<String, dynamic>.from(item)))
-        .where((item) => item.imagePath.trim().isNotEmpty)
-        .toList();
     if (images.isEmpty) return const [];
 
     final defaultIndex = images.indexWhere((item) => item.isDefault == 1);
@@ -534,6 +568,33 @@ class ProductService {
       ordered.add(images[i]);
     }
     return ordered;
+  }
+
+  List<Map<String, dynamic>> _extractImageRows(dynamic data) {
+    if (data == null) return const [];
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+    }
+    if (data is Map<String, dynamic>) {
+      final candidates = [
+        data['data'],
+        data['items'],
+        data['images'],
+        data['result'],
+      ];
+      for (final candidate in candidates) {
+        if (candidate is List) {
+          return candidate
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
+        }
+      }
+    }
+    return const [];
   }
 
   Future<http.Response> _safePost(
@@ -787,4 +848,16 @@ class ProductException implements Exception {
 
   @override
   String toString() => message;
+}
+
+class UpdateProductResult {
+  final int statusCode;
+  final String rawBody;
+  final dynamic data;
+
+  const UpdateProductResult({
+    required this.statusCode,
+    required this.rawBody,
+    required this.data,
+  });
 }

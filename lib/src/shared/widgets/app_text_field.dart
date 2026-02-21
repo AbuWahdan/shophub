@@ -13,6 +13,7 @@ class AppTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
   final TextInputAction? textInputAction;
+  final bool showRequiredAsterisk;
 
   const AppTextField({
     super.key,
@@ -25,6 +26,7 @@ class AppTextField extends StatelessWidget {
     this.suffixIcon,
     this.validator,
     this.textInputAction,
+    this.showRequiredAsterisk = false,
   });
 
   @override
@@ -37,7 +39,23 @@ class AppTextField extends StatelessWidget {
       textInputAction: textInputAction,
       style: AppTextStyles.bodyLarge(context),
       decoration: InputDecoration(
-        labelText: label,
+        label: showRequiredAsterisk
+            ? RichText(
+                text: TextSpan(
+                  text: label,
+                  style: AppTextStyles.bodySmall(
+                    context,
+                  ).copyWith(color: Theme.of(context).hintColor),
+                  children: const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ],
+                ),
+              )
+            : null,
+        labelText: showRequiredAsterisk ? null : label,
         hintText: hintText,
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sinwar_shoping/src/pages/shopping_cart_page.dart';
 
+import '../config/app_constants.dart';
 import '../model/data.dart';
 import '../widgets/BottomNavigationBar/bottom_navigation_bar.dart';
 import 'home_page.dart';
@@ -8,28 +9,52 @@ import 'categories_page.dart';
 import 'profile_page.dart';
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key, this.title});
+  const MainPage({super.key, this.title, this.initialTabIndex});
 
   final String? title;
+  final int? initialTabIndex;
+
+  static bool switchToTab(BuildContext context, int index) {
+    final state = context.findAncestorStateOfType<_MainPageState>();
+    if (state == null) return false;
+    state.switchToTab(index);
+    return true;
+  }
 
   @override
-  _MainPageState createState() => _MainPageState();
+  State<MainPage> createState() => _MainPageState();
 }
 
 class _MainPageState extends State<MainPage> {
-  int currentIndex = 0;
+  late int currentIndex;
 
   late List<Widget> pages;
 
   @override
   void initState() {
     super.initState();
+    currentIndex = _normalizeTabIndex(widget.initialTabIndex);
     pages = [MyHomePage(), CategoriesPage(), ShoppingCartPage(), ProfilePage()];
   }
 
+  int _normalizeTabIndex(int? index) {
+    final candidate = index ?? AppConstants.homeTabIndex;
+    if (candidate < AppConstants.homeTabIndex ||
+        candidate > AppConstants.accountTabIndex) {
+      return AppConstants.homeTabIndex;
+    }
+    return candidate;
+  }
+
   void onBottomIconPressed(int index) {
+    switchToTab(index);
+  }
+
+  void switchToTab(int index) {
+    final safeIndex = _normalizeTabIndex(index);
+    if (safeIndex == currentIndex) return;
     setState(() {
-      currentIndex = index;
+      currentIndex = safeIndex;
     });
   }
 

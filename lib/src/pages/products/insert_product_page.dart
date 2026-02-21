@@ -84,6 +84,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
                   label: l10n.productItemName,
                   hintText: l10n.productItemNameHint,
                   validator: _requiredValidator,
+                  showRequiredAsterisk: true,
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: AppSpacing.lg),
@@ -197,7 +198,18 @@ class _InsertProductPageState extends State<InsertProductPage> {
                   child: Column(
                     children: [
                       ListTile(
-                        title: Text(l10n.productCategory),
+                        title: RichText(
+                          text: TextSpan(
+                            text: l10n.productCategory,
+                            style: Theme.of(context).textTheme.titleMedium,
+                            children: const [
+                              TextSpan(
+                                text: ' *',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ],
+                          ),
+                        ),
                         subtitle: _selectedSubCategoryId == null
                             ? null
                             : Text(
@@ -410,6 +422,9 @@ class _InsertProductPageState extends State<InsertProductPage> {
         debugPrint('Item Name: "${_nameController.text}"');
         debugPrint('Item Desc: "${_descController.text}"');
         debugPrint('Variants count: ${details.length}');
+        debugPrint(
+          'Variant item_size values before API call: ${details.map((d) => d.itemSize).toList()}',
+        );
         debugPrint('Category ID: $_selectedSubCategoryId');
         debugPrint('item_img_url: ${request.itemImgUrl}');
         debugPrint('Request body: $requestBody');
@@ -581,7 +596,6 @@ class _InsertProductPageState extends State<InsertProductPage> {
             controller: variant.brandController,
             label: 'Brand',
             hintText: 'Enter brand',
-            validator: _requiredValidator,
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -589,7 +603,6 @@ class _InsertProductPageState extends State<InsertProductPage> {
             controller: variant.colorController,
             label: context.l10n.productColor,
             hintText: 'Enter color',
-            validator: _requiredValidator,
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -597,7 +610,6 @@ class _InsertProductPageState extends State<InsertProductPage> {
             controller: variant.sizeController,
             label: context.l10n.productSize,
             hintText: 'Enter item size',
-            validator: _requiredValidator,
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -607,6 +619,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
             hintText: context.l10n.productPriceHint,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             validator: _positiveDoubleValidator,
+            showRequiredAsterisk: true,
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -616,6 +629,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
             hintText: context.l10n.productQuantityHint,
             keyboardType: TextInputType.number,
             validator: _positiveIntOrEmptyDefaultValidator,
+            showRequiredAsterisk: true,
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -649,10 +663,12 @@ class _InsertProductPageState extends State<InsertProductPage> {
   List<CreateProductDetail> _buildVariantDetails() {
     if (_variantEntries.isEmpty) return const [];
     final details = <CreateProductDetail>[];
-    for (final variant in _variantEntries) {
+    for (var i = 0; i < _variantEntries.length; i++) {
+      final variant = _variantEntries[i];
       final brand = variant.brandController.text.trim();
       final color = variant.colorController.text.trim();
       final size = variant.sizeController.text.trim();
+      final parsedSize = int.tryParse(size) ?? 0;
       final priceText = variant.priceController.text.trim();
       final qtyText = variant.qtyController.text.trim();
       final discountText = variant.discountController.text.trim();
@@ -661,24 +677,28 @@ class _InsertProductPageState extends State<InsertProductPage> {
       final double discount = discountText.isEmpty
           ? 0.0
           : (double.tryParse(discountText) ?? 0.0);
-      if (brand.isEmpty ||
-          color.isEmpty ||
-          size.isEmpty ||
-          price == null ||
-          price <= 0 ||
-          qty == null ||
-          qty < 1) {
+      if (price == null || price <= 0 || qty == null || qty < 1) {
         return const [];
+      }
+      if (kDebugMode) {
+        debugPrint(
+          '[InsertProduct][Variant:$i] sizeRaw="$size" sizeParsed=$parsedSize priceRaw="$priceText" qtyRaw="$qtyText"',
+        );
       }
       details.add(
         CreateProductDetail(
-          brand: brand,
-          color: color,
-          itemSize: size,
+          brand: brand.isEmpty ? 'N/A' : brand,
+          color: color.isEmpty ? 'N/A' : color,
+          itemSize: parsedSize,
           discount: discount < 0 ? 0.0 : discount,
           itemPrice: price,
           itemQty: qty,
         ),
+      );
+    }
+    if (kDebugMode) {
+      debugPrint(
+        '[InsertProduct] variant entries/controllers count: ${_variantEntries.length}',
       );
     }
     return details;
@@ -694,7 +714,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
 
   String? _positiveIntOrEmptyDefaultValidator(String? value) {
     final text = (value ?? '').trim();
-    if (text.isEmpty) return null;
+    if (text.isEmpty) return context.l10n.productRequiredField;
     final parsed = int.tryParse(text);
     if (parsed == null || parsed < 1) return context.l10n.productInvalidValue;
     return null;
