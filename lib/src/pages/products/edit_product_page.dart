@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../data/categories_data.dart';
 import '../../../models/category.dart';
+import '../../config/size_options.dart';
 import '../../design/app_spacing.dart';
 import '../../l10n/l10n.dart';
 import '../../model/product_api.dart';
@@ -45,6 +46,7 @@ class _EditProductPageState extends State<EditProductPage> {
   final List<_EditableVariantFormEntry> _retiredVariantEntries =
       <_EditableVariantFormEntry>[];
   final List<String> _imagePaths = <String>[];
+  final List<ApiItemImage> _originalApiImages = <ApiItemImage>[];
   final ImagePicker _imagePicker = ImagePicker();
 
   bool _isSubmitting = false;
@@ -277,7 +279,7 @@ class _EditProductPageState extends State<EditProductPage> {
             detId: _detId > 0 ? _detId : null,
             brand: widget.details.brand,
             color: widget.details.color,
-            itemSize: widget.details.itemSize.toString(),
+            itemSize: widget.details.itemSize,
             discount: widget.details.discount,
             itemPrice: widget.details.itemPrice,
             itemQty: widget.details.itemQty,
@@ -299,6 +301,12 @@ class _EditProductPageState extends State<EditProductPage> {
   }
 
   void _initializeImages() {
+    _originalApiImages
+      ..clear()
+      ..addAll(
+        widget.itemImages
+            .where((image) => image.imageId > 0 && image.imagePath.trim().isNotEmpty),
+      );
     final fromItemImages = widget.itemImages
         .map((image) => image.imagePath.trim())
         .where((path) => path.isNotEmpty)
@@ -485,11 +493,14 @@ class _EditProductPageState extends State<EditProductPage> {
       return;
     }
     _safeSetState(() {
-      _imagePaths.add(value);
-      _imageUrlController.clear();
-      if (_imagePaths.length == 1) {
+      if (_imagePaths.isEmpty) {
+        _imagePaths.add(value);
         _defaultImageIndex = 0;
+      } else {
+        final index = _defaultImageIndex.clamp(0, _imagePaths.length - 1);
+        _imagePaths[index] = value;
       }
+      _imageUrlController.clear();
     });
     debugPrint('[EditProduct][Image] Added from text input: $value');
   }
@@ -601,12 +612,87 @@ class _EditProductPageState extends State<EditProductPage> {
               textInputAction: TextInputAction.next,
             ),
             const SizedBox(height: AppSpacing.sm),
-            AppTextField(
-              controller: variant.sizeController,
-              label: context.l10n.productSize,
-              hintText: 'Enter item size',
-              validator: _requiredValidator,
-              textInputAction: TextInputAction.next,
+            DropdownButtonFormField<int>(
+              initialValue: variant.selectedSizeGroupId,
+              decoration: const InputDecoration(
+                labelText: 'Size Group',
+                hintText: 'Optional',
+              ),
+              items: sizeGroups
+                  .map(
+                    (group) => DropdownMenuItem<int>(
+                      value: group.id,
+                      child: Text(group.name),
+                    ),
+                  )
+                  .toList(),
+              onChanged: _isSubmitting
+                  ? null
+                  : (value) {
+                      _runGuarded(
+                        step: 'variant-size-group',
+                        fn: () {
+                          _safeSetState(() {
+                            variant.selectedSizeGroupId = value;
+                            variant.unknownSizeId = null;
+                            final options =
+                                sizeOptions[value] ?? const <SizeOption>[];
+                            if (value == null ||
+                                options.every(
+                                  (option) =>
+                                      option.id != variant.selectedSizeId,
+                                )) {
+                              variant.selectedSizeId = null;
+                            }
+                            if (kDebugMode) {
+                              debugPrint(
+                                '[EditProduct][SizeSelection] variant=${variant.detId ?? index} group=${variant.selectedSizeGroupId ?? 0} sizeId=${variant.selectedSizeId ?? 0}',
+                              );
+                            }
+                          });
+                        },
+                      );
+                    },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            DropdownButtonFormField<int>(
+              initialValue: variant.selectedSizeId,
+              decoration: InputDecoration(
+                labelText: context.l10n.productSize,
+                hintText: variant.unknownSizeId != null
+                    ? 'Unknown size (ID: ${variant.unknownSizeId})'
+                    : (variant.selectedSizeGroupId == null
+                          ? 'Select group first'
+                          : 'Select size (optional)'),
+              ),
+              items:
+                  (sizeOptions[variant.selectedSizeGroupId] ??
+                          const <SizeOption>[])
+                      .map(
+                        (option) => DropdownMenuItem<int>(
+                          value: option.id,
+                          child: Text(option.name),
+                        ),
+                      )
+                      .toList(),
+              onChanged: _isSubmitting || variant.selectedSizeGroupId == null
+                  ? null
+                  : (value) {
+                      _runGuarded(
+                        step: 'variant-size',
+                        fn: () {
+                          _safeSetState(() {
+                            variant.selectedSizeId = value;
+                            variant.unknownSizeId = null;
+                            if (kDebugMode) {
+                              debugPrint(
+                                '[EditProduct][SizeSelection] variant=${variant.detId ?? index} group=${variant.selectedSizeGroupId ?? 0} sizeId=${variant.selectedSizeId ?? 0}',
+                              );
+                            }
+                          });
+                        },
+                      );
+                    },
             ),
             const SizedBox(height: AppSpacing.sm),
             AppTextField(
@@ -704,8 +790,7 @@ class _EditProductPageState extends State<EditProductPage> {
         final variant = _variantEntries[i];
         final color = variant.colorController.text.trim();
         final brand = variant.brandController.text.trim();
-        final size = variant.sizeController.text.trim();
-        final parsedSize = int.tryParse(size) ?? 0;
+        final parsedSize = variant.selectedSizeId ?? 0;
         final price = double.tryParse(variant.priceController.text.trim());
         final qty = int.tryParse(variant.qtyController.text.trim()) ?? 0;
         final discountText = variant.discountController.text.trim();
@@ -714,7 +799,7 @@ class _EditProductPageState extends State<EditProductPage> {
             : (double.tryParse(discountText) ?? 0.0);
         if (kDebugMode) {
           debugPrint(
-            '[EditProduct][Variant:$i] detId=${variant.detId} sizeRaw="$size" sizeParsed=$parsedSize color="$color" brand="$brand" price=${variant.priceController.text} qty=${variant.qtyController.text}',
+            '[EditProduct][Variant:$i] detId=${variant.detId} sizeGroup=${variant.selectedSizeGroupId ?? 0} sizeId=$parsedSize color="$color" brand="$brand" price=${variant.priceController.text} qty=${variant.qtyController.text}',
           );
         }
         if (variant.detId == null || variant.detId! <= 0) {
@@ -722,7 +807,6 @@ class _EditProductPageState extends State<EditProductPage> {
         }
         if (color.isEmpty ||
             brand.isEmpty ||
-            size.isEmpty ||
             price == null ||
             price <= 0 ||
             qty < 0) {
@@ -798,11 +882,16 @@ class _EditProductPageState extends State<EditProductPage> {
 
     var step = 'build-request';
     try {
+      _logVariantControllerValues();
       final normalizedQty = _totalVariantQty;
       final normalizedActive = normalizedQty <= 0 ? 0 : (_isActive ? 1 : 0);
       final normalizedPrice = details.first.itemPrice;
-      final imagesCsv = imagePaths.join(',');
+      step = 'api-update-images';
+      await _syncItemImagesWithApi(imagePaths);
+      final refreshedImages = await _reloadItemImagesFromApi();
+      _verifyBackendUpdatedImages(refreshedImages, imagePaths);
 
+      step = 'build-request';
       final request = UpdateProductRequest(
         id: _itemId,
         detId: _detId > 0 ? _detId : null,
@@ -810,8 +899,6 @@ class _EditProductPageState extends State<EditProductPage> {
         itemDesc: _descController.text.trim(),
         itemPrice: normalizedPrice,
         itemQty: normalizedQty,
-        itemImgUrl: imagesCsv,
-        imagesCsv: imagesCsv,
         details: details,
         categoryId: _selectedCategory!.id,
         isActive: normalizedActive,
@@ -836,7 +923,9 @@ class _EditProductPageState extends State<EditProductPage> {
       }
       step = 'reload-details';
       final reloadedRows = await _reloadDetailsRowsFromApi();
-      _verifyBackendUpdatedImage(reloadedRows, imagesCsv);
+      if (reloadedRows.isEmpty) {
+        throw ProductException('No item details found after update.');
+      }
       if (!mounted) return;
       AppSnackBar.show(
         context,
@@ -846,25 +935,19 @@ class _EditProductPageState extends State<EditProductPage> {
       Navigator.pop(context, true);
     } on ProductException catch (error, stackTrace) {
       if (!mounted) return;
+      debugPrint('[EditProduct][UpdateItem][Error][$step] ${error.message}');
       AppSnackBar.show(
         context,
-        message: '[$step] ${error.message}',
+        message: error.message,
         type: AppSnackBarType.error,
       );
-      if (_containsOra(error.message)) {
-        AppSnackBar.show(
-          context,
-          message: error.message,
-          type: AppSnackBarType.error,
-        );
-      } else {
-        _showCrashSnackbar(step, error, stackTrace);
-      }
+      _showCrashSnackbar(step, error, stackTrace);
     } catch (error, stackTrace) {
       if (!mounted) return;
+      debugPrint('[EditProduct][UpdateItem][Error][$step] $error');
       AppSnackBar.show(
         context,
-        message: '[$step] ${error.toString()}',
+        message: error.toString(),
         type: AppSnackBarType.error,
       );
       _showCrashSnackbar(step, error, stackTrace);
@@ -995,9 +1078,12 @@ class _EditProductPageState extends State<EditProductPage> {
       debugPrint('[EditProduct][ImagePicker] Picked path: ${image.path}');
       if (!mounted) return;
       _safeSetState(() {
-        _imagePaths.add(image.path);
-        if (_imagePaths.length == 1) {
+        if (_imagePaths.isEmpty) {
+          _imagePaths.add(image.path);
           _defaultImageIndex = 0;
+        } else {
+          final index = _defaultImageIndex.clamp(0, _imagePaths.length - 1);
+          _imagePaths[index] = image.path;
         }
       });
     } catch (error, stackTrace) {
@@ -1047,36 +1133,95 @@ class _EditProductPageState extends State<EditProductPage> {
     }
   }
 
-  void _verifyBackendUpdatedImage(
-    List<ApiProductDetails> rows,
-    String sentImagesCsv,
-  ) {
-    if (!mounted || rows.isEmpty) return;
-    final backendImageCsv = rows.first.itemImgUrl.trim();
-    final normalizedSent = _normalizeCsv(sentImagesCsv);
-    final normalizedBackend = _normalizeCsv(backendImageCsv);
-    if (normalizedSent.isEmpty) return;
-    if (normalizedBackend != normalizedSent) {
-      AppSnackBar.show(
-        context,
-        message:
-            'Image was sent to backend but ITEM_IMG_URL was not updated in database — possible backend issue',
-        type: AppSnackBarType.error,
+  void _logVariantControllerValues() {
+    if (!kDebugMode) return;
+    for (var i = 0; i < _variantEntries.length; i++) {
+      final variant = _variantEntries[i];
+      debugPrint(
+        '[EditProduct][Controller:$i] detId=${variant.detId} brand="${variant.brandController.text}" color="${variant.colorController.text}" sizeGroup=${variant.selectedSizeGroupId ?? 0} sizeId=${variant.selectedSizeId ?? 0} price="${variant.priceController.text}" qty="${variant.qtyController.text}" discount="${variant.discountController.text}"',
       );
     }
   }
 
-  String _normalizeCsv(String raw) {
-    return raw
-        .split(',')
-        .map((part) => part.trim())
-        .where((part) => part.isNotEmpty)
-        .join(',');
+  Future<void> _syncItemImagesWithApi(List<String> orderedPaths) async {
+    final normalizedPaths = orderedPaths
+        .map((path) => path.trim())
+        .where((path) => path.isNotEmpty)
+        .toList();
+    if (normalizedPaths.isEmpty || _originalApiImages.isEmpty) return;
+
+    final updatesCount = normalizedPaths.length < _originalApiImages.length
+        ? normalizedPaths.length
+        : _originalApiImages.length;
+    for (var index = 0; index < updatesCount; index++) {
+      final current = _originalApiImages[index];
+      final newPath = normalizedPaths[index];
+      if (current.imageId <= 0 || newPath == current.imagePath.trim()) {
+        continue;
+      }
+      await _productService.updateItemImage(
+        imageId: current.imageId,
+        imagePath: newPath,
+      );
+    }
   }
 
-  bool _containsOra(String value) {
-    final lower = value.toLowerCase();
-    return lower.contains('ora-') || lower.contains('pl/sql');
+  Future<List<ApiItemImage>> _reloadItemImagesFromApi() async {
+    final images = await _productService.getItemImages(itemId: _itemId);
+    if (!mounted) return images;
+    _safeSetState(() {
+      _imagePaths
+        ..clear()
+        ..addAll(
+          images
+              .map((image) => image.imagePath.trim())
+              .where((path) => path.isNotEmpty),
+        );
+      _originalApiImages
+        ..clear()
+        ..addAll(
+          images
+              .where(
+                (image) => image.imageId > 0 && image.imagePath.trim().isNotEmpty,
+              )
+              .toList(),
+        );
+      final defaultIndex = images.indexWhere((image) => image.isDefault == 1);
+      if (defaultIndex >= 0 && defaultIndex < _imagePaths.length) {
+        _defaultImageIndex = defaultIndex;
+      } else if (_imagePaths.isNotEmpty && _defaultImageIndex >= _imagePaths.length) {
+        _defaultImageIndex = _imagePaths.length - 1;
+      }
+    });
+    return images;
+  }
+
+  void _verifyBackendUpdatedImages(
+    List<ApiItemImage> images,
+    List<String> expectedPaths,
+  ) {
+    if (!mounted || expectedPaths.isEmpty) return;
+    final backendPaths = images
+        .map((image) => image.imagePath.trim())
+        .where((path) => path.isNotEmpty)
+        .toList();
+    final expected = expectedPaths
+        .map((path) => path.trim())
+        .where((path) => path.isNotEmpty)
+        .toList();
+    final compareLength = expected.length < backendPaths.length
+        ? expected.length
+        : backendPaths.length;
+    for (var i = 0; i < compareLength; i++) {
+      if (expected[i] != backendPaths[i]) {
+        AppSnackBar.show(
+          context,
+          message: 'Image update was not confirmed by backend.',
+          type: AppSnackBarType.error,
+        );
+        return;
+      }
+    }
   }
 
   String _firstStackLine(StackTrace stackTrace) {
@@ -1125,14 +1270,24 @@ class _EditableVariantFormEntry {
     this.detId,
     String color = '',
     String brand = '',
-    String itemSize = '',
+    int itemSize = 0,
     double discount = 0,
     double itemPrice = 0,
     int itemQty = 0,
   }) {
     colorController.text = color;
     brandController.text = brand;
-    sizeController.text = itemSize;
+    final normalizedSizeId = itemSize > 0 ? itemSize : 0;
+    selectedSizeGroupId = normalizedSizeId > 0
+        ? findSizeGroupIdBySizeId(normalizedSizeId)
+        : null;
+    if (normalizedSizeId > 0 && selectedSizeGroupId == null) {
+      unknownSizeId = normalizedSizeId;
+      selectedSizeId = null;
+    } else {
+      unknownSizeId = null;
+      selectedSizeId = normalizedSizeId > 0 ? normalizedSizeId : null;
+    }
     discountController.text = discount == 0 ? '' : discount.toString();
     priceController.text = itemPrice == 0 ? '' : itemPrice.toString();
     qtyController.text = itemQty.toString();
@@ -1143,7 +1298,7 @@ class _EditableVariantFormEntry {
       detId: variant.detId,
       color: variant.color,
       brand: variant.brand,
-      itemSize: variant.itemSize,
+      itemSize: int.tryParse(variant.itemSize) ?? 0,
       discount: variant.discount,
       itemPrice: variant.itemPrice,
       itemQty: variant.itemQty,
@@ -1155,7 +1310,7 @@ class _EditableVariantFormEntry {
       detId: row.detId,
       color: row.color,
       brand: row.brand,
-      itemSize: row.itemSize.toString(),
+      itemSize: row.itemSize,
       discount: row.discount,
       itemPrice: row.itemPrice,
       itemQty: row.itemQty,
@@ -1165,15 +1320,16 @@ class _EditableVariantFormEntry {
   final int? detId;
   final TextEditingController colorController = TextEditingController();
   final TextEditingController brandController = TextEditingController();
-  final TextEditingController sizeController = TextEditingController();
   final TextEditingController discountController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
   final TextEditingController qtyController = TextEditingController();
+  int? selectedSizeGroupId;
+  int? selectedSizeId;
+  int? unknownSizeId;
 
   void dispose() {
     colorController.dispose();
     brandController.dispose();
-    sizeController.dispose();
     discountController.dispose();
     priceController.dispose();
     qtyController.dispose();

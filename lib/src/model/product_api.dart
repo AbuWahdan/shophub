@@ -508,8 +508,6 @@ class ApiItemImage {
 class CreateProductRequest {
   final String itemName;
   final String itemDesc;
-  final double itemPrice;
-  final int itemQty;
   final String? itemImgUrl;
   final String? imagesCsv;
   final List<CreateProductDetail> details;
@@ -520,8 +518,6 @@ class CreateProductRequest {
   const CreateProductRequest({
     required this.itemName,
     required this.itemDesc,
-    required this.itemPrice,
-    required this.itemQty,
     this.itemImgUrl,
     this.imagesCsv,
     required this.details,
@@ -535,8 +531,6 @@ class CreateProductRequest {
     return {
       'item_name': itemName,
       'item_desc': itemDesc,
-      'item_price': itemPrice,
-      'item_qty': itemQty,
       'item_img_url': normalizedImages.isEmpty ? itemImgUrl : normalizedImages,
       'details': details.map((detail) => detail.toJson()).toList(),
       'category_id': categoryId,
@@ -579,11 +573,17 @@ class CreateProductDetail {
       if (detId != null) 'DET_ID': detId,
       if (detId != null) 'item_det_id': detId,
       'brand': brand,
+      'BRAND': brand,
       'color': color,
+      'COLOR': color,
       'item_size': itemSize,
+      'ITEM_SIZE': itemSize,
       'discount': discount,
+      'DISCOUNT': discount,
       'item_price': itemPrice,
+      'ITEM_PRICE': itemPrice,
       'item_qty': itemQty,
+      'ITEM_QTY': itemQty,
     };
   }
 }
@@ -617,6 +617,7 @@ class UpdateProductRequest {
 
   Map<String, dynamic> toJson() {
     final normalizedImages = _normalizeImagesCsv(imagesCsv ?? itemImgUrl ?? '');
+    final hasImages = normalizedImages.isNotEmpty;
     return {
       'id': id,
       'ID': id,
@@ -634,8 +635,8 @@ class UpdateProductRequest {
       'ITEM_PRICE': itemPrice,
       'item_qty': itemQty,
       'ITEM_QTY': itemQty,
-      'item_img_url': normalizedImages.isEmpty ? itemImgUrl : normalizedImages,
-      'ITEM_IMG_URL': normalizedImages.isEmpty ? itemImgUrl : normalizedImages,
+      if (hasImages) 'item_img_url': normalizedImages,
+      if (hasImages) 'ITEM_IMG_URL': normalizedImages,
       if (details.isNotEmpty)
         'details': details.map((detail) => detail.toJson()).toList(),
       'category_id': categoryId,

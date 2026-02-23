@@ -269,6 +269,9 @@ class ProductService {
       if (kDebugMode) {
         debugPrint('[InsertProduct] POST $endpointUri');
         debugPrint('[InsertProduct] body: $body');
+        debugPrint(
+          '[InsertProduct] body(json): ${jsonEncode(body)}',
+        );
       }
       final response = await _safePost(endpointUri, body: body);
       final data = _decode(response.body);
@@ -295,6 +298,14 @@ class ProductService {
             'Inserting product failed due to backend error response.';
         errors.add('POST $endpoint -> explicit backend error');
         continue;
+      }
+      final insertedItemId = _extractInsertedItemId(data);
+      if (insertedItemId > 0) {
+        _logInsertedItemSize(itemId: insertedItemId);
+      } else if (kDebugMode) {
+        debugPrint(
+          '[InsertProduct] Could not resolve inserted item id from response, skipping GetItemDetails size verification.',
+        );
       }
       _invalidateProductsCache();
       return;
@@ -328,27 +339,6 @@ class ProductService {
     }
 
     return false;
-  }
-
-  bool _isConfirmedUpdateSuccess(dynamic data, String rawBody) {
-    final raw = rawBody.toLowerCase().trim();
-    if (raw.contains('ora-') || raw.contains('pl/sql')) return false;
-
-    if (data is Map<String, dynamic>) {
-      final error = (data['error'] ?? '').toString().trim();
-      if (error.isNotEmpty) return false;
-      final status = (data['status'] ?? '').toString().toLowerCase().trim();
-      final result = (data['result'] ?? '').toString().toLowerCase().trim();
-      if (status == 'error' || status == 'failed' || status == 'fail') {
-        return false;
-      }
-      if (result == 'error' || result == 'failed' || result == 'fail') {
-        return false;
-      }
-      return true;
-    }
-
-    return true;
   }
 
   void _debugLogUpdatePayloadTypes(Map<String, dynamic> payload) {
@@ -388,6 +378,7 @@ class ProductService {
       debugPrint('[UpdateProduct] endpoint: $endpointUri');
       debugPrint('payload: $payload');
       debugPrint('body: $body');
+      debugPrint('[UpdateProduct] body(json): ${jsonEncode(body)}');
       _debugLogUpdatePayloadTypes(payload);
       debugPrint('============================');
     }
@@ -402,19 +393,10 @@ class ProductService {
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ProductException(
-        _extractMessage(data) ??
-            'Updating product failed (HTTP ${response.statusCode}).',
-      );
-    }
-    if (kDebugMode) {
-      debugPrint(
-        '[UpdateProduct] raw body before success check: ${response.body}',
-      );
-    }
-    if (!_isConfirmedUpdateSuccess(data, response.body)) {
-      throw ProductException(
-        _extractMessage(data) ??
-            'Update response was not confirmed by backend.',
+        response.body.trim().isNotEmpty
+            ? response.body
+            : (_extractMessage(data) ??
+                  'Updating product failed (HTTP ${response.statusCode}).'),
       );
     }
     _invalidateProductsCache();
@@ -449,7 +431,7 @@ class ProductService {
   }
 
   Future<void> addItemToCart(AddItemToCartRequest request) async {
-    final endpoint = Uri.parse('$_baseUrl/AddItemTocart');
+    final endpoint = Uri.parse('$_baseUrl/AddItemToCart');
     final payload = request.toJson();
     if (kDebugMode) {
       debugPrint('[AddItemToCart] POST $endpoint');
@@ -530,9 +512,9 @@ class ProductService {
         .toList();
   }
 
-  Future<List<ApiItemImage>> loadItemImages({required int itemId}) async {
+  Future<List<ApiItemImage>> getItemImages({required int itemId}) async {
     final uri = Uri.parse(
-      '$_baseUrl/LoadImageByItemID',
+      '$_baseUrl/GetItemImages',
     ).replace(queryParameters: {'id': itemId.toString()});
     final response = await _safeGet(uri);
     final data = _decode(response.body);
@@ -568,6 +550,40 @@ class ProductService {
       ordered.add(images[i]);
     }
     return ordered;
+  }
+
+  Future<List<ApiItemImage>> loadItemImages({required int itemId}) {
+    return getItemImages(itemId: itemId);
+  }
+
+  Future<void> updateItemImage({
+    required int imageId,
+    required String imagePath,
+  }) async {
+    final normalizedPath = imagePath.trim();
+    if (imageId <= 0 || normalizedPath.isEmpty) {
+      throw ProductException('Invalid image update payload.');
+    }
+    final endpoint = Uri.parse('$_baseUrl/UpdateItemImage');
+    final body = <String, dynamic>{
+      'items': [
+        {'image_id': imageId, 'image_path': normalizedPath},
+      ],
+    };
+    final response = await _safePost(endpoint, body: body);
+    final data = _decode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ProductException(
+        _extractMessage(data) ??
+            'Updating item image failed (HTTP ${response.statusCode}).',
+      );
+    }
+    final status = (data is Map<String, dynamic> ? data['status'] : null)
+        ?.toString()
+        .toLowerCase();
+    if (status == 'error') {
+      throw ProductException(_extractMessage(data) ?? 'Updating image failed.');
+    }
   }
 
   List<Map<String, dynamic>> _extractImageRows(dynamic data) {
@@ -723,6 +739,41 @@ class ProductService {
       }
     }
     return null;
+  }
+
+  int _extractInsertedItemId(dynamic data) {
+    if (data is Map<String, dynamic>) {
+      final direct = _asInt(data['item_id'] ?? data['ITEM_ID']);
+      if (direct > 0) return direct;
+      final items = data['items'];
+      if (items is List && items.isNotEmpty && items.first is Map) {
+        final first = Map<String, dynamic>.from(items.first as Map);
+        final fromItems = _asInt(first['item_id'] ?? first['ITEM_ID']);
+        if (fromItems > 0) return fromItems;
+      }
+      final rows = data['data'];
+      if (rows is List && rows.isNotEmpty && rows.first is Map) {
+        final first = Map<String, dynamic>.from(rows.first as Map);
+        final fromData = _asInt(first['item_id'] ?? first['ITEM_ID']);
+        if (fromData > 0) return fromData;
+      }
+    }
+    return 0;
+  }
+
+  Future<void> _logInsertedItemSize({required int itemId}) async {
+    if (!kDebugMode) return;
+    try {
+      final rows = await getItemDetailsRows(itemId: itemId);
+      final itemSizes = rows.map((row) => row.itemSize).toList();
+      debugPrint(
+        '[InsertProduct] GetItemDetails item_id=$itemId ITEM_SIZE values after insert: $itemSizes',
+      );
+    } catch (error) {
+      debugPrint(
+        '[InsertProduct] Failed to load GetItemDetails after insert for item_id=$itemId: $error',
+      );
+    }
   }
 
   int _asInt(dynamic value) {

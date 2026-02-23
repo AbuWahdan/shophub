@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -11,7 +12,7 @@ class AuthService {
   static const String _baseUrl = 'https://oracleapex.com/ords/topg/users';
   static const String _loginUrl = '$_baseUrl/login';
   static const String _registerUrl = '$_baseUrl/register';
-  static const Duration _timeout = Duration(seconds: 20);
+  static const Duration _timeout = Duration(seconds: 30);
 
   late final StorageService _storageService;
   late final http.Client _client;
@@ -28,8 +29,6 @@ class AuthService {
     final passwordValue = password.trim();
 
     String? lastError;
-    TimeoutException? timeoutError;
-    bool hadNetworkError = false;
 
     final attempts = <Future<http.Response> Function()>[
       () => _client.get(
@@ -69,92 +68,118 @@ class AuthService {
       ),
     ];
 
-    for (final attempt in attempts) {
-      http.Response response;
-      try {
-        response = await attempt().timeout(_timeout);
-      } on TimeoutException catch (error) {
-        timeoutError = error;
-        continue;
-      } catch (_) {
-        hadNetworkError = true;
-        continue;
+    for (var requestRound = 0; requestRound < 2; requestRound++) {
+      var hadTimeoutError = false;
+      var hadNetworkError = false;
+      var hadServerError = false;
+
+      for (final attempt in attempts) {
+        http.Response response;
+        try {
+          response = await attempt().timeout(_timeout);
+        } on TimeoutException {
+          hadTimeoutError = true;
+          continue;
+        } on SocketException {
+          hadNetworkError = true;
+          continue;
+        } catch (_) {
+          hadNetworkError = true;
+          continue;
+        }
+
+        final data = _decode(response.body);
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          hadServerError = true;
+          lastError = _extractMessage(data);
+          continue;
+        }
+
+        final payload = _extractPayload(data);
+        final status = _extractStatus(data, payload);
+
+        if (status == 'error' || (status.isNotEmpty && status != 'success')) {
+          hadServerError = true;
+          lastError = _extractMessage(data);
+          continue;
+        }
+
+        final userData = _extractUser(data, payload);
+        if (userData == null) {
+          hadServerError = true;
+          lastError = 'Unexpected server response.';
+          continue;
+        }
+
+        final token = _extractToken(data, payload);
+        final user = User(
+          userId: _readInt(userData, const ['user_id', 'USER_ID']),
+          username: _readString(userData, const ['username', 'USERNAME']),
+          passwordHash: _readString(userData, const [
+            'password_hash',
+            'PASSWORD_HASH',
+            'password',
+            'PASSWORD',
+          ]),
+          fullname: _readString(userData, const [
+            'fullname',
+            'full_name',
+            'FULL_NAME',
+          ]),
+          email: _readString(userData, const ['email', 'EMAIL']),
+          phone: _readString(userData, const ['phone', 'PHONE']),
+          address: _readString(userData, const ['address', 'ADDRESS']),
+          role: _readString(userData, const ['role', 'ROLE']),
+          country: _readString(userData, const ['country', 'COUNTRY']),
+          createdAt: _readString(userData, const [
+            'created_at',
+            'CREATED_AT',
+            'createdAt',
+          ]),
+          updatedAt: _readString(userData, const [
+            'updated_at',
+            'UPDATED_AT',
+            'updatedAt',
+          ]),
+          isActive: _readInt(userData, const ['is_active', 'IS_ACTIVE']),
+        );
+        final extractedUserId =
+            int.tryParse(_extractUserId(data, payload)) ?? 0;
+        final userId = user.userId > 0 ? user.userId : extractedUserId;
+
+        await _storageService.saveAuthToken(token);
+        await _storageService.saveUser(user);
+        if (userId > 0) {
+          await _storageService.saveUserId(userId);
+        }
+        await _storageService.setLoggedIn(true);
+
+        return AuthSession(token: token, user: user, userId: userId);
       }
 
-      final data = _decode(response.body);
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        lastError =
-            _extractMessage(data) ??
-            'Login failed (HTTP ${response.statusCode}).';
+      if (requestRound == 0 && (hadTimeoutError || hadNetworkError)) {
         continue;
       }
-
-      final payload = _extractPayload(data);
-      final status = _extractStatus(data, payload);
-
-      if (status == 'error' || (status.isNotEmpty && status != 'success')) {
-        lastError = _extractMessage(data) ?? 'Invalid username or password.';
-        continue;
+      if (hadTimeoutError) {
+        throw AuthException('Request timed out. Please try again.');
       }
-
-      final userData = _extractUser(data, payload);
-      if (userData == null) {
-        lastError = 'Unexpected server response.';
-        continue;
+      if (hadNetworkError) {
+        throw AuthException('Network error. Please try again.');
       }
-
-      final token = _extractToken(data, payload);
-      final user = User(
-        userId: _readInt(userData, const ['user_id', 'USER_ID']),
-        username: _readString(userData, const ['username', 'USERNAME']),
-        passwordHash: _readString(userData, const [
-          'password_hash',
-          'PASSWORD_HASH',
-          'password',
-          'PASSWORD',
-        ]),
-        fullname: _readString(userData, const [
-          'fullname',
-          'full_name',
-          'FULL_NAME',
-        ]),
-        email: _readString(userData, const ['email', 'EMAIL']),
-        phone: _readString(userData, const ['phone', 'PHONE']),
-        address: _readString(userData, const ['address', 'ADDRESS']),
-        role: _readString(userData, const ['role', 'ROLE']),
-        country: _readString(userData, const ['country', 'COUNTRY']),
-        createdAt: _readString(userData, const [
-          'created_at',
-          'CREATED_AT',
-          'createdAt',
-        ]),
-        updatedAt: _readString(userData, const [
-          'updated_at',
-          'UPDATED_AT',
-          'updatedAt',
-        ]),
-        isActive: _readInt(userData, const ['is_active', 'IS_ACTIVE']),
-      );
-      final extractedUserId = int.tryParse(_extractUserId(data, payload)) ?? 0;
-      final userId = user.userId > 0 ? user.userId : extractedUserId;
-
-      await _storageService.saveAuthToken(token);
-      await _storageService.saveUser(user);
-      if (userId > 0) {
-        await _storageService.saveUserId(userId);
+      if (hadServerError) {
+        throw AuthException(
+          lastError?.trim().isNotEmpty == true
+              ? lastError!
+              : 'Login failed, please check your credentials.',
+        );
       }
-      await _storageService.setLoggedIn(true);
-
-      return AuthSession(token: token, user: user, userId: userId);
     }
 
-    if (timeoutError != null) {
-      throw AuthException('Request timed out. Please try again.');
-    }
-    if (hadNetworkError && lastError == null) {
-      throw AuthException('Network error. Please try again.');
-    }
-    throw AuthException(lastError ?? 'Invalid username or password.');
+    throw AuthException(
+      lastError?.trim().isNotEmpty == true
+          ? lastError!
+          : 'Login failed, please check your credentials.',
+    );
   }
 
   // ========================= REGISTER =========================

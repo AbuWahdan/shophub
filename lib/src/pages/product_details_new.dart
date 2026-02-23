@@ -98,7 +98,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       _itemImagesError = null;
     });
     try {
-      final images = await _productService.loadItemImages(
+      final images = await _productService.getItemImages(
         itemId: widget.product.id,
       );
       if (!mounted) return;

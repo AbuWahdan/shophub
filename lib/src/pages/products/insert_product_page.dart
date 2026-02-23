@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/categories_data.dart';
+import '../../config/size_options.dart';
 import '../../config/route.dart';
 import '../../design/app_spacing.dart';
 import '../../l10n/l10n.dart';
@@ -402,8 +403,6 @@ class _InsertProductPageState extends State<InsertProductPage> {
       final request = CreateProductRequest(
         itemName: _nameController.text.trim(),
         itemDesc: _descController.text.trim(),
-        itemPrice: details.first.itemPrice,
-        itemQty: details.first.itemQty,
         itemImgUrl: imagesCsv,
         imagesCsv: imagesCsv,
         details: details,
@@ -606,11 +605,72 @@ class _InsertProductPageState extends State<InsertProductPage> {
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: AppSpacing.sm),
-          AppTextField(
-            controller: variant.sizeController,
-            label: context.l10n.productSize,
-            hintText: 'Enter item size',
-            textInputAction: TextInputAction.next,
+          DropdownButtonFormField<int>(
+            initialValue: variant.selectedSizeGroupId,
+            decoration: const InputDecoration(
+              labelText: 'Size Group',
+              hintText: 'Optional',
+            ),
+            items: sizeGroups
+                .map(
+                  (group) => DropdownMenuItem<int>(
+                    value: group.id,
+                    child: Text(group.name),
+                  ),
+                )
+                .toList(),
+            onChanged: _isSubmitting
+                ? null
+                : (value) {
+                    setState(() {
+                      variant.selectedSizeGroupId = value;
+                      final options =
+                          sizeOptions[value] ?? const <SizeOption>[];
+                      if (value == null ||
+                          options.every(
+                            (option) => option.id != variant.selectedSizeId,
+                          )) {
+                        variant.selectedSizeId = null;
+                      }
+                      if (kDebugMode) {
+                        debugPrint(
+                          '[InsertProduct][SizeSelection] variant=${index + 1} group=${variant.selectedSizeGroupId ?? 0} sizeId=${variant.selectedSizeId ?? 0}',
+                        );
+                      }
+                    });
+                  },
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          DropdownButtonFormField<int>(
+            initialValue: variant.selectedSizeId,
+            decoration: InputDecoration(
+              labelText: context.l10n.productSize,
+              hintText: variant.selectedSizeGroupId == null
+                  ? 'Select group first'
+                  : 'Select size (optional)',
+            ),
+            items:
+                (sizeOptions[variant.selectedSizeGroupId] ??
+                        const <SizeOption>[])
+                .map(
+                  (option) => DropdownMenuItem<int>(
+                    value: option.id,
+                    child: Text(option.name),
+                  ),
+                )
+                .toList(),
+            onChanged: _isSubmitting || variant.selectedSizeGroupId == null
+                ? null
+                : (value) {
+                    setState(() {
+                      variant.selectedSizeId = value;
+                      if (kDebugMode) {
+                        debugPrint(
+                          '[InsertProduct][SizeSelection] variant=${index + 1} group=${variant.selectedSizeGroupId ?? 0} sizeId=${variant.selectedSizeId ?? 0}',
+                        );
+                      }
+                    });
+                  },
           ),
           const SizedBox(height: AppSpacing.sm),
           AppTextField(
@@ -667,8 +727,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
       final variant = _variantEntries[i];
       final brand = variant.brandController.text.trim();
       final color = variant.colorController.text.trim();
-      final size = variant.sizeController.text.trim();
-      final parsedSize = int.tryParse(size) ?? 0;
+      final parsedSize = variant.selectedSizeId ?? 0;
       final priceText = variant.priceController.text.trim();
       final qtyText = variant.qtyController.text.trim();
       final discountText = variant.discountController.text.trim();
@@ -682,7 +741,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
       }
       if (kDebugMode) {
         debugPrint(
-          '[InsertProduct][Variant:$i] sizeRaw="$size" sizeParsed=$parsedSize priceRaw="$priceText" qtyRaw="$qtyText"',
+          '[InsertProduct][Variant:$i] sizeGroup=${variant.selectedSizeGroupId ?? 0} sizeId=$parsedSize priceRaw="$priceText" qtyRaw="$qtyText"',
         );
       }
       details.add(
@@ -735,12 +794,6 @@ class _InsertProductPageState extends State<InsertProductPage> {
       '[InsertProduct][Types] item_desc: ${product['item_desc']?.runtimeType}',
     );
     debugPrint(
-      '[InsertProduct][Types] item_price: ${product['item_price']?.runtimeType}',
-    );
-    debugPrint(
-      '[InsertProduct][Types] item_qty: ${product['item_qty']?.runtimeType}',
-    );
-    debugPrint(
       '[InsertProduct][Types] item_img_url: ${product['item_img_url']?.runtimeType}',
     );
     debugPrint(
@@ -780,15 +833,15 @@ class _InsertProductPageState extends State<InsertProductPage> {
 class _VariantFormEntry {
   final TextEditingController brandController = TextEditingController();
   final TextEditingController colorController = TextEditingController();
-  final TextEditingController sizeController = TextEditingController();
   final TextEditingController discountController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
   final TextEditingController qtyController = TextEditingController();
+  int? selectedSizeGroupId;
+  int? selectedSizeId;
 
   void dispose() {
     brandController.dispose();
     colorController.dispose();
-    sizeController.dispose();
     discountController.dispose();
     priceController.dispose();
     qtyController.dispose();

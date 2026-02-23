@@ -97,7 +97,7 @@ class _MyProductsPageState extends State<MyProductsPage> {
       final details = detailsRows.first;
       var itemImages = <ApiItemImage>[];
       try {
-        itemImages = await _productService.loadItemImages(itemId: product.id);
+        itemImages = await _productService.getItemImages(itemId: product.id);
       } catch (_) {
         // Keep opening edit page even if image payload is malformed.
       }
