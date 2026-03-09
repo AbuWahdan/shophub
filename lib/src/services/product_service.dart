@@ -6,6 +6,8 @@ import '../../models/category.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:http/http.dart' as http;
 
+import '../config/size_options.dart';
+import '../model/api_order.dart';
 import '../model/cart_api.dart';
 import '../model/product_api.dart';
 import 'api_client.dart';
@@ -367,8 +369,25 @@ class ProductService {
   Future<UpdateProductResult> updateProduct(
     UpdateProductRequest request,
   ) async {
-    final payload = request.toJson();
+    var payload = request.toJson();
     final endpointUri = Uri.parse('$_baseUrl/UpdateItem');
+    
+    // Override item_size with resolved string labels in details
+    if (payload['details'] is List) {
+      payload['details'] = (payload['details'] as List).map((detail) {
+        if (detail is Map<String, dynamic>) {
+          final detailMap = Map<String, dynamic>.from(detail);
+          final sizeLabel = _resolveSizeLabel(detail['item_size'] is int ? detail['item_size'] : 0);
+          if (sizeLabel.isNotEmpty) {
+            detailMap['item_size'] = sizeLabel;
+            detailMap['ITEM_SIZE'] = sizeLabel;
+          }
+          return detailMap;
+        }
+        return detail;
+      }).toList();
+    }
+    
     final body = <String, dynamic>{
       'items': [payload],
     };
@@ -405,6 +424,69 @@ class ProductService {
       rawBody: response.body,
       data: data,
     );
+  }
+
+  String _resolveSizeLabel(int sizeId) {
+    if (sizeId <= 0) return '';
+    final option = findSizeOptionById(sizeId);
+    return option?.name ?? sizeId.toString();
+  }
+
+  Future<void> insertProductDetails({
+    required int itemId,
+    required List<CreateProductDetail> details,
+  }) async {
+    if (itemId <= 0 || details.isEmpty) {
+      throw ProductException('Invalid product details payload.');
+    }
+    final endpoint = Uri.parse('$_baseUrl/InsertProductDetails');
+    final body = <String, dynamic>{
+      'items': details
+          .map(
+            (detail) {
+              final detailMap = {
+                'item_id': itemId,
+                'ITEM_ID': itemId,
+                ...detail.toJson(),
+              };
+              // Override item_size with resolved string label
+              final sizeLabel = _resolveSizeLabel(detail.itemSize);
+              if (sizeLabel.isNotEmpty) {
+                detailMap['item_size'] = sizeLabel;
+                detailMap['ITEM_SIZE'] = sizeLabel;
+              }
+              return detailMap;
+            },
+          )
+          .toList(),
+    };
+    if (kDebugMode) {
+      debugPrint('[InsertProductDetails] POST $endpoint');
+      debugPrint('[InsertProductDetails] body: $body');
+      debugPrint(
+        '[InsertProductDetails] body(json): ${jsonEncode(body)}',
+      );
+    }
+    final response = await _safePost(endpoint, body: body);
+    final data = _decode(response.body);
+    if (kDebugMode) {
+      debugPrint('[InsertProductDetails] status: ${response.statusCode}');
+      debugPrint('[InsertProductDetails] response: ${response.body}');
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ProductException(
+        _extractMessage(data) ??
+            'Inserting product details failed (HTTP ${response.statusCode}).',
+      );
+    }
+    final status = (data is Map<String, dynamic> ? data['status'] : null)
+        ?.toString()
+        .toLowerCase();
+    if (status == 'error' || status == 'failed' || status == 'fail') {
+      throw ProductException(
+        _extractMessage(data) ?? 'Inserting product details failed.',
+      );
+    }
   }
 
   Future<List<ApiCartItem>> getItemCart({required String username}) async {
@@ -564,10 +646,15 @@ class ProductService {
     if (imageId <= 0 || normalizedPath.isEmpty) {
       throw ProductException('Invalid image update payload.');
     }
-    final endpoint = Uri.parse('$_baseUrl/UpdateItemImage');
+    final endpoint = Uri.parse('$_baseUrl/UpdateItemImages');
     final body = <String, dynamic>{
       'items': [
-        {'image_id': imageId, 'image_path': normalizedPath},
+        {
+          'image_id': imageId,
+          'IMAGE_ID': imageId,
+          'image_path': normalizedPath,
+          'IMAGE_PATH': normalizedPath,
+        },
       ],
     };
     final response = await _safePost(endpoint, body: body);
@@ -890,6 +977,56 @@ class ProductService {
     }
 
     return result;
+  }
+
+  Future<List<ApiOrder>> getOrders({required String username}) async {
+    final normalizedUsername = username.trim();
+    if (normalizedUsername.isEmpty) {
+      throw ProductException('Username is required to fetch orders.');
+    }
+
+    final uri = Uri.parse(
+      '$_baseUrl/GetOrders',
+    ).replace(queryParameters: {'l_USERNAME': normalizedUsername});
+
+    if (kDebugMode) {
+      debugPrint('[GetOrders] GET $uri');
+    }
+
+    try {
+      final response = await _safeGet(uri);
+
+      if (kDebugMode) {
+        debugPrint('[GetOrders] status: ${response.statusCode}');
+        debugPrint('[GetOrders] response: ${response.body}');
+      }
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ProductException(
+          'Failed to fetch orders (HTTP ${response.statusCode}).',
+        );
+      }
+
+      final data = _decode(response.body);
+
+      if (data is! Map<String, dynamic>) {
+        throw ProductException('Invalid orders response format.');
+      }
+
+      final apiResponse = ApiOrderResponse.fromJson(data);
+
+      if (apiResponse.status != 'success') {
+        throw ProductException(
+          'Failed to fetch orders: ${apiResponse.status}',
+        );
+      }
+
+      return apiResponse.data;
+    } on ProductException {
+      rethrow;
+    } catch (error) {
+      throw ProductException('Error fetching orders: $error');
+    }
   }
 }
 

@@ -18,31 +18,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentPage = 0;
 
   List<OnboardingPage> _pages(BuildContext context) => [
-        OnboardingPage(
-          title: context.l10n.onboardingWelcomeTitle,
-          subtitle: context.l10n.onboardingWelcomeSubtitle,
-          icon: Icons.shopping_bag,
-          color: AppColors.primary,
-        ),
-        OnboardingPage(
-          title: context.l10n.onboardingDeliveryTitle,
-          subtitle: context.l10n.onboardingDeliverySubtitle,
-          icon: Icons.local_shipping,
-          color: AppColors.secondary,
-        ),
-        OnboardingPage(
-          title: context.l10n.onboardingSecureTitle,
-          subtitle: context.l10n.onboardingSecureSubtitle,
-          icon: Icons.lock,
-          color: AppColors.accentOrange,
-        ),
-        OnboardingPage(
-          title: context.l10n.onboardingDealsTitle,
-          subtitle: context.l10n.onboardingDealsSubtitle,
-          icon: Icons.local_offer,
-          color: AppColors.primary,
-        ),
-      ];
+    OnboardingPage(
+      title: context.l10n.onboardingWelcomeTitle,
+      subtitle: context.l10n.onboardingWelcomeSubtitle,
+      icon: Icons.shopping_bag,
+      color: AppColors.primary,
+    ),
+    OnboardingPage(
+      title: context.l10n.onboardingDeliveryTitle,
+      subtitle: context.l10n.onboardingDeliverySubtitle,
+      icon: Icons.local_shipping,
+      color: AppColors.secondary,
+    ),
+    OnboardingPage(
+      title: context.l10n.onboardingSecureTitle,
+      subtitle: context.l10n.onboardingSecureSubtitle,
+      icon: Icons.lock,
+      color: AppColors.accentOrange,
+    ),
+    OnboardingPage(
+      title: context.l10n.onboardingDealsTitle,
+      subtitle: context.l10n.onboardingDealsSubtitle,
+      icon: Icons.local_offer,
+      color: AppColors.primary,
+    ),
+  ];
 
   @override
   void initState() {
@@ -95,8 +95,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               },
               child: Text(
                 context.l10n.onboardingSkip,
-                style: AppTextStyles.labelLarge(context)
-                    .copyWith(color: AppColors.primary),
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.primary,
+                ),
               ),
             ),
           ),
@@ -117,7 +118,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       height: AppSpacing.sm,
                       margin: AppSpacing.symmetric(horizontal: AppSpacing.xs),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                        borderRadius: BorderRadius.circular(
+                          AppSpacing.radiusSm,
+                        ),
                         color: _currentPage == index
                             ? AppColors.primary
                             : AppColors.neutral300,
@@ -137,7 +140,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         _currentPage == pages.length - 1
                             ? context.l10n.onboardingGetStarted
                             : context.l10n.onboardingNext,
-                        style: AppTextStyles.labelLarge(context),
+                        style: AppTextStyles.labelLarge,
                       ),
                     ),
                   ),
@@ -167,19 +170,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             height: AppSpacing.imageLg,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.white.withOpacity(0.2),
+              color: AppColors.textOnPrimary.withOpacity(0.2),
             ),
             child: Icon(
               page.icon,
               size: AppSpacing.iconXl,
-              color: AppColors.white,
+              color: AppColors.textOnPrimary,
             ),
           ),
           const SizedBox(height: AppSpacing.giant),
           Text(
             page.title,
-            style: AppTextStyles.headlineLarge(context)
-                .copyWith(color: AppColors.white),
+            style: AppTextStyles.headlineLarge.copyWith(
+              color: AppColors.textOnPrimary,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -187,8 +191,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             padding: AppSpacing.horizontal(AppSpacing.xxxl),
             child: Text(
               page.subtitle,
-              style: AppTextStyles.bodyLarge(context)
-                  .copyWith(color: AppColors.white.withOpacity(0.9)),
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: AppColors.textOnPrimary.withOpacity(0.9),
+              ),
               textAlign: TextAlign.center,
             ),
           ),

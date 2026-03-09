@@ -156,23 +156,23 @@ class AccountPage extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           Text(
             l10n.accountUserName,
-            style: AppTextStyles.titleLarge(
-              context,
-            ).copyWith(color: AppColors.white),
+            style: AppTextStyles.titleLarge.copyWith(
+              color: AppColors.textOnPrimary,
+            ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             l10n.accountUserEmail,
-            style: AppTextStyles.bodySmall(
-              context,
-            ).copyWith(color: AppColors.white.withOpacity(0.7)),
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textOnPrimary.withOpacity(0.7),
+            ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             l10n.accountUserPhone,
-            style: AppTextStyles.bodySmall(
-              context,
-            ).copyWith(color: AppColors.white.withOpacity(0.7)),
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textOnPrimary.withOpacity(0.7),
+            ),
           ),
         ],
       ),
@@ -195,10 +195,7 @@ class AccountPage extends StatelessWidget {
           child: Text(
             title,
             style: AppTextStyles.strong(
-              context,
-              AppTextStyles.bodyLarge(
-                context,
-              ).copyWith(color: AppColors.primary),
+              AppTextStyles.bodyLarge.copyWith(color: AppColors.primary),
             ),
           ),
         ),
@@ -208,14 +205,8 @@ class AccountPage extends StatelessWidget {
             children: [
               ListTile(
                 leading: Icon(item.icon, color: AppColors.primary),
-                title: Text(
-                  item.title,
-                  style: AppTextStyles.bodyLarge(context),
-                ),
-                subtitle: Text(
-                  item.subtitle,
-                  style: AppTextStyles.bodySmall(context),
-                ),
+                title: Text(item.title, style: AppTextStyles.bodyLarge),
+                subtitle: Text(item.subtitle, style: AppTextStyles.bodySmall),
                 trailing: const Icon(
                   Icons.arrow_forward_ios,
                   size: AppSpacing.iconSm,

@@ -1,7 +1,11 @@
 class AuthValidators {
   const AuthValidators._();
 
-  static String? email(String? value, {required String emptyMessage, required String invalidMessage}) {
+  static String? email(
+    String? value, {
+    required String emptyMessage,
+    required String invalidMessage,
+  }) {
     final trimmed = value?.trim() ?? '';
     if (trimmed.isEmpty) return emptyMessage;
     final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
@@ -9,7 +13,11 @@ class AuthValidators {
     return null;
   }
 
-  static String? phone(String? value, {required String emptyMessage, required String invalidMessage}) {
+  static String? phone(
+    String? value, {
+    required String emptyMessage,
+    required String invalidMessage,
+  }) {
     final trimmed = value?.trim() ?? '';
     if (trimmed.isEmpty) return emptyMessage;
     final phoneRegex = RegExp(r'^[0-9+\-\s]{7,15}$');

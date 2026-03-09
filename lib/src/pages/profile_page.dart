@@ -43,13 +43,13 @@ class ProfilePage extends StatelessWidget {
               if (isLoggedIn) ...[
                 Text(
                   user.username.isEmpty ? l10n.accountUserName : user.username,
-                  style: AppTextStyles.titleLarge(context),
+                  style: AppTextStyles.titleLarge,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   user.email.isEmpty ? l10n.accountUserEmail : user.email,
-                  style: AppTextStyles.bodySmall(context),
+                  style: AppTextStyles.bodySmall,
                   textAlign: TextAlign.center,
                 ),
               ] else ...[
@@ -125,7 +125,7 @@ class ProfilePage extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: ListTile(
         leading: Icon(icon, color: AppColors.primary),
-        title: Text(title, style: AppTextStyles.bodyLarge(context)),
+        title: Text(title, style: AppTextStyles.bodyLarge),
         trailing: const Icon(Icons.arrow_forward_ios, size: AppSpacing.iconSm),
         onTap: onTap,
       ),

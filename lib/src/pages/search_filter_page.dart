@@ -172,7 +172,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
                         const SizedBox(height: AppSpacing.lg),
                         Text(
                           context.l10n.searchFilterNoResults,
-                          style: AppTextStyles.bodyMedium(context),
+                          style: AppTextStyles.bodyMedium,
                         ),
                       ],
                     ),
@@ -207,7 +207,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
     return InkWell(
       onTap: onTap,
       child: Chip(
-        label: Text(label, style: AppTextStyles.bodySmall(context)),
+        label: Text(label, style: AppTextStyles.bodySmall),
         avatar: Icon(icon, size: AppSpacing.iconSm),
         backgroundColor: Theme.of(context).colorScheme.surface,
       ),
@@ -231,7 +231,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
             children: [
               Text(
                 context.l10n.searchFilterSelectCategory,
-                style: AppTextStyles.titleMedium(context),
+                style: AppTextStyles.titleMedium,
               ),
               const SizedBox(height: AppSpacing.lg),
               ...AppData.categoryList.map((category) {
@@ -239,7 +239,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
                 return ListTile(
                   title: Text(
                     _categoryLabel(context, categoryName),
-                    style: AppTextStyles.bodyLarge(context),
+                    style: AppTextStyles.bodyLarge,
                   ),
                   trailing: selectedCategory == categoryName
                       ? const Icon(Icons.check, color: AppColors.primary)
@@ -280,12 +280,12 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
                 children: [
                   Text(
                     context.l10n.searchFilterPriceRange,
-                    style: AppTextStyles.titleMedium(context),
+                    style: AppTextStyles.titleMedium,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
                     '\$${selectedMinPrice.toStringAsFixed(0)} - \$${selectedMaxPrice.toStringAsFixed(0)}',
-                    style: AppTextStyles.titleSmall(context),
+                    style: AppTextStyles.titleSmall,
                   ),
                   RangeSlider(
                     values: RangeValues(selectedMinPrice, selectedMaxPrice),
@@ -335,7 +335,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
             children: [
               Text(
                 context.l10n.searchFilterMinimumRating,
-                style: AppTextStyles.titleMedium(context),
+                style: AppTextStyles.titleMedium,
               ),
               const SizedBox(height: AppSpacing.lg),
               ...List.generate(5, (index) {
@@ -363,7 +363,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
               ListTile(
                 title: Text(
                   context.l10n.searchFilterAnyRating,
-                  style: AppTextStyles.bodyLarge(context),
+                  style: AppTextStyles.bodyLarge,
                 ),
                 trailing: selectedRating == 0 ? Icon(Icons.check) : null,
                 onTap: () {
@@ -397,7 +397,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
             children: [
               Text(
                 context.l10n.searchFilterSortBy,
-                style: AppTextStyles.titleMedium(context),
+                style: AppTextStyles.titleMedium,
               ),
               const SizedBox(height: AppSpacing.lg),
               ...SortOption.values.map((sort) {

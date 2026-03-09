@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../data/categories_data.dart';
 import '../../models/category.dart';
+import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
+import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/product_api.dart';
 import '../services/product_service.dart';
@@ -54,13 +56,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                         ? Theme.of(context).colorScheme.primary
                         : Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    boxShadow: const [AppShadows.subtleShadow],
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -69,8 +65,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
                         _getCategoryIcon(category.id),
                         size: 36,
                         color: selected
-                            ? Colors.white
-                            : Theme.of(context).iconTheme.color,
+                            ? AppColors.textOnPrimary
+                            : AppColors.textHint,
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Padding(
@@ -80,12 +76,10 @@ class _CategoriesPageState extends State<CategoriesPage> {
                           maxLines: 2,
                           textAlign: TextAlign.center,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                          style: AppTextStyles.labelMedium.copyWith(
                             color: selected
-                                ? Colors.white
-                                : Theme.of(context).textTheme.bodyMedium?.color,
+                                ? AppColors.textOnPrimary
+                                : AppColors.textSecondary,
                           ),
                         ),
                       ),
@@ -121,7 +115,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
         const SizedBox(height: AppSpacing.sm),
         Expanded(
           child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                )
               : _selectedCategoryId == null
               ? Center(child: Text(l10n.selectCategory))
               : _products.isEmpty

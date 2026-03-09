@@ -10,7 +10,6 @@ import '../model/data.dart';
 import '../model/product_api.dart';
 import '../model/cart_api.dart';
 import '../services/product_service.dart';
-import '../shared/widgets/app_button.dart';
 import '../shared/widgets/app_image.dart';
 import '../shared/widgets/app_snackbar.dart';
 import '../state/auth_state.dart';
@@ -202,7 +201,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             left: 0,
             right: 0,
             child: AppBar(
-              backgroundColor: Colors.transparent,
+              backgroundColor: AppColors.transparent,
               elevation: 0,
               actions: [
                 IconButton(
@@ -231,26 +230,42 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           padding: AppSpacing.insetsLg,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.neutral300.withValues(alpha: 0.6),
-                blurRadius: AppSpacing.jumbo,
-                offset: const Offset(0, -2),
-              ),
-            ],
+            boxShadow: const [AppShadows.topBarShadow],
           ),
-          child: AppButton(
-            label: context.l10n.productAddToCart,
-            leading: (_isAddingToCart || isAuthLoading)
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : null,
-            onPressed: (_isAddingToCart || isAuthLoading)
-                ? null
-                : _openAddToCartSheet,
+          child: SizedBox(
+            width: double.infinity,
+            height: AppSpacing.buttonMd,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.textOnPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                ),
+              ),
+              onPressed: (_isAddingToCart || isAuthLoading)
+                  ? null
+                  : _openAddToCartSheet,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_isAddingToCart || isAuthLoading)
+                    const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  if (_isAddingToCart || isAuthLoading)
+                    const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    context.l10n.productAddToCart,
+                    style: AppTextStyles.buttonLarge.copyWith(
+                      color: AppColors.textOnPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -380,9 +395,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             padding: AppSpacing.horizontal(AppSpacing.lg),
             child: Text(
               _itemImagesError!,
-              style: AppTextStyles.bodySmall(
-                context,
-              ).copyWith(color: AppColors.error),
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
             ),
           ),
       ],
@@ -404,12 +417,12 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       children: [
         Text(
           widget.product.name,
-          style: AppTextStyles.headlineSmall(context),
+          style: AppTextStyles.headlineSmall,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text(widget.product.category, style: AppTextStyles.bodySmall(context)),
+        Text(widget.product.category, style: AppTextStyles.bodySmall),
       ],
     );
   }
@@ -433,19 +446,16 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             ),
           ),
         ),
-        Text(
-          '${widget.product.rating}',
-          style: AppTextStyles.labelLarge(context),
-        ),
+        Text('${widget.product.rating}', style: AppTextStyles.labelLarge),
         Text(
           context.l10n.productReviews(widget.product.reviewCount),
-          style: AppTextStyles.bodySmall(context),
+          style: AppTextStyles.bodySmall,
         ),
         Text(
           context.l10n.productSold(widget.product.soldCount),
-          style: AppTextStyles.bodySmall(
-            context,
-          ).copyWith(color: AppColors.accentOrange),
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.accentOrange,
+          ),
         ),
       ],
     );
@@ -460,7 +470,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             Expanded(
               child: Text(
                 context.l10n.productDescription,
-                style: AppTextStyles.titleMedium(context),
+                style: AppTextStyles.titleMedium,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -485,11 +495,11 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             widget.product.description.length > 100
                 ? '${widget.product.description.substring(0, 100)}...'
                 : widget.product.description,
-            style: AppTextStyles.bodySmall(context),
+            style: AppTextStyles.bodySmall,
           ),
           secondChild: Text(
             widget.product.description,
-            style: AppTextStyles.bodySmall(context),
+            style: AppTextStyles.bodySmall,
           ),
           crossFadeState: _isExpanded
               ? CrossFadeState.showSecond
@@ -523,7 +533,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       enableDrag: true,
       showDragHandle: false,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
       builder: (context) {
         return _VariantBottomSheet(
@@ -698,16 +708,16 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
         children: [
           Center(
             child: Container(
-              width: 40,
-              height: 4,
+              width: AppSpacing.xxl,
+              height: AppSpacing.xs,
               decoration: BoxDecoration(
-                color: Theme.of(context).dividerColor,
-                borderRadius: BorderRadius.circular(999),
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(AppRadius.full),
               ),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          Text('Select Variant', style: AppTextStyles.titleMedium(context)),
+          Text('Select Variant', style: AppTextStyles.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           Flexible(
             child: ListView.separated(
@@ -755,7 +765,7 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
                               if (showDefaultVariant)
                                 Text(
                                   'Default Variant',
-                                  style: AppTextStyles.labelLarge(context),
+                                  style: AppTextStyles.labelLarge,
                                 ),
                               if (showColor)
                                 Padding(
@@ -764,7 +774,7 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
                                   ),
                                   child: Text(
                                     'Color: ${variant.color.trim()}',
-                                    style: AppTextStyles.bodySmall(context),
+                                    style: AppTextStyles.bodySmall,
                                   ),
                                 ),
                               if (showBrand)
@@ -774,7 +784,7 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
                                   ),
                                   child: Text(
                                     'Brand: ${variant.brand.trim()}',
-                                    style: AppTextStyles.bodySmall(context),
+                                    style: AppTextStyles.bodySmall,
                                   ),
                                 ),
                               if (showSize)
@@ -784,7 +794,7 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
                                   ),
                                   child: Text(
                                     'Size: ${variant.itemSize.trim()}',
-                                    style: AppTextStyles.bodySmall(context),
+                                    style: AppTextStyles.bodySmall,
                                   ),
                                 ),
                               const SizedBox(height: AppSpacing.xs),
@@ -794,18 +804,16 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
                                   if (variant.itemPrice > 0)
                                     Text(
                                       '\$${(hasDiscount ? discounted : variant.itemPrice).toStringAsFixed(2)}',
-                                      style: AppTextStyles.labelLarge(
-                                        context,
-                                      ).copyWith(color: AppColors.primary),
+                                      style: AppTextStyles.labelLarge.copyWith(
+                                        color: AppColors.primary,
+                                      ),
                                     ),
                                   if (hasDiscount)
                                     Text(
                                       '\$${variant.itemPrice.toStringAsFixed(2)}',
-                                      style: AppTextStyles.bodySmall(context)
-                                          .copyWith(
-                                            decoration:
-                                                TextDecoration.lineThrough,
-                                          ),
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        decoration: TextDecoration.lineThrough,
+                                      ),
                                     ),
                                 ],
                               ),
@@ -827,13 +835,13 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
-              Text('Quantity', style: AppTextStyles.titleSmall(context)),
+              Text('Quantity', style: AppTextStyles.titleSmall),
               const SizedBox(width: AppSpacing.md),
               IconButton(
                 onPressed: _qty > 1 ? () => setState(() => _qty--) : null,
                 icon: const Icon(Icons.remove_circle_outline),
               ),
-              Text(_qty.toString(), style: AppTextStyles.labelLarge(context)),
+              Text(_qty.toString(), style: AppTextStyles.labelLarge),
               IconButton(
                 onPressed: (_selected.itemQty <= 0 || _qty >= _selected.itemQty)
                     ? null
@@ -843,11 +851,27 @@ class _VariantBottomSheetState extends State<_VariantBottomSheet> {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          AppButton(
-            label: context.l10n.productAddToCart,
-            onPressed: _selected.itemQty <= 0
-                ? null
-                : () => widget.onConfirm(_selected, _qty),
+          SizedBox(
+            width: double.infinity,
+            height: AppSpacing.buttonMd,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.textOnPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                ),
+              ),
+              onPressed: _selected.itemQty <= 0
+                  ? null
+                  : () => widget.onConfirm(_selected, _qty),
+              child: Text(
+                context.l10n.productAddToCart,
+                style: AppTextStyles.buttonLarge.copyWith(
+                  color: AppColors.textOnPrimary,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -885,10 +909,10 @@ class _ProductImageViewerState extends State<_ProductImageViewer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.textPrimary,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.textPrimary,
+        foregroundColor: AppColors.textOnPrimary,
         title: Text('${_index + 1}/${widget.images.length}'),
       ),
       body: PageView.builder(

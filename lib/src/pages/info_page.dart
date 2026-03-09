@@ -8,11 +8,7 @@ class InfoPage extends StatelessWidget {
   final String title;
   final String content;
 
-  const InfoPage({
-    super.key,
-    required this.title,
-    required this.content,
-  });
+  const InfoPage({super.key, required this.title, required this.content});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +19,7 @@ class InfoPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(content, style: AppTextStyles.bodyMedium(context)),
+            Text(content, style: AppTextStyles.bodyMedium),
             const SizedBox(height: AppSpacing.xxl),
           ],
         ),

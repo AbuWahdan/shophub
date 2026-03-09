@@ -82,13 +82,13 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                 const SizedBox(height: AppSpacing.xxl),
                 Text(
                   l10n.otpEnterCode,
-                  style: AppTextStyles.headlineSmall(context),
+                  style: AppTextStyles.headlineSmall,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   l10n.otpSubtitle,
-                  style: AppTextStyles.bodyMedium(context),
+                  style: AppTextStyles.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.jumbo),
@@ -115,12 +115,14 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                         decoration: InputDecoration(
                           counterText: '',
                           border: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppSpacing.radiusLg),
+                            borderRadius: BorderRadius.circular(
+                              AppSpacing.radiusLg,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppSpacing.radiusLg),
+                            borderRadius: BorderRadius.circular(
+                              AppSpacing.radiusLg,
+                            ),
                             borderSide: const BorderSide(
                               color: AppColors.primary,
                               width: AppSpacing.borderThick,
@@ -136,7 +138,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                 if (_remainingSeconds > 0)
                   Text(
                     l10n.otpResendIn(_remainingSeconds),
-                    style: AppTextStyles.bodySmall(context),
+                    style: AppTextStyles.bodySmall,
                   )
                 else
                   TextButton(

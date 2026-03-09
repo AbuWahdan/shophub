@@ -37,10 +37,7 @@ class QuantityStepper extends StatelessWidget {
           SizedBox(
             width: AppSpacing.buttonSm,
             child: Center(
-              child: Text(
-                '$value',
-                style: AppTextStyles.titleMedium(context),
-              ),
+              child: Text('$value', style: AppTextStyles.titleMedium),
             ),
           ),
           IconButton(

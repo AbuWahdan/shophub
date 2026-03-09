@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../design/app_colors.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
 
@@ -14,6 +15,7 @@ class AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextInputAction? textInputAction;
   final bool showRequiredAsterisk;
+  final ValueChanged<String>? onChanged;
 
   const AppTextField({
     super.key,
@@ -27,43 +29,52 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.textInputAction,
     this.showRequiredAsterisk = false,
+    this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      validator: validator,
-      textInputAction: textInputAction,
-      style: AppTextStyles.bodyLarge(context),
-      decoration: InputDecoration(
-        label: showRequiredAsterisk
-            ? RichText(
-                text: TextSpan(
-                  text: label,
-                  style: AppTextStyles.bodySmall(
-                    context,
-                  ).copyWith(color: Theme.of(context).hintColor),
-                  children: const [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text.rich(
+          TextSpan(
+            text: label,
+            style: AppTextStyles.labelMedium,
+            children: showRequiredAsterisk
+                ? [
                     TextSpan(
                       text: ' *',
-                      style: TextStyle(color: Colors.red),
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: AppColors.error,
+                      ),
                     ),
-                  ],
-                ),
-              )
-            : null,
-        labelText: showRequiredAsterisk ? null : label,
-        hintText: hintText,
-        prefixIcon: prefixIcon,
-        suffixIcon: suffixIcon,
-        contentPadding: AppSpacing.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
+                  ]
+                : const [],
+          ),
         ),
-      ),
+        const SizedBox(height: AppSpacing.sm),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: obscureText,
+          validator: validator,
+          textInputAction: textInputAction,
+          onChanged: onChanged,
+          style: AppTextStyles.bodyLarge,
+          decoration: InputDecoration(
+            hintText: hintText,
+            prefixIcon: prefixIcon,
+            suffixIcon: suffixIcon,
+            filled: true,
+            fillColor: AppColors.surfaceVariant,
+            contentPadding: AppSpacing.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

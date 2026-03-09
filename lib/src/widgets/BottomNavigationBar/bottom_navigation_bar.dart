@@ -4,11 +4,11 @@ import '../../design/app_colors.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
-import 'bottom_curved_painter.dart';
 
 class CustomBottomNavigationBar extends StatefulWidget {
   final Function(int)? onIconPresedCallback;
   final int cartBadgeCount;
+
   const CustomBottomNavigationBar({
     super.key,
     this.onIconPresedCallback,
@@ -16,233 +16,121 @@ class CustomBottomNavigationBar extends StatefulWidget {
   });
 
   @override
-  _CustomBottomNavigationBarState createState() =>
+  State<CustomBottomNavigationBar> createState() =>
       _CustomBottomNavigationBarState();
 }
 
-class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar>
-    with TickerProviderStateMixin {
+class _CustomBottomNavigationBarState extends State<CustomBottomNavigationBar> {
   int _selectedIndex = 0;
-
-  late AnimationController _xController;
-  late AnimationController _yController;
-  @override
-  void initState() {
-    _xController = AnimationController(
-      vsync: this,
-      animationBehavior: AnimationBehavior.preserve,
-    );
-    _yController = AnimationController(
-      vsync: this,
-      animationBehavior: AnimationBehavior.preserve,
-    );
-
-    Listenable.merge([_xController, _yController]).addListener(() {
-      setState(() {});
-    });
-
-    super.initState();
-  }
-
-  @override
-  void didChangeDependencies() {
-    _xController.value =
-        _indexToPosition(_selectedIndex) / MediaQuery.of(context).size.width;
-    _yController.value = 1.0;
-
-    super.didChangeDependencies();
-  }
-
-  double _indexToPosition(int index) {
-    // Calculate button positions based off of their
-    // index (works with `MainAxisAlignment.spaceAround`)
-    const buttonCount = 4;
-    final appWidth = MediaQuery.of(context).size.width;
-    final buttonsWidth = _getButtonContainerWidth();
-    final startX = (appWidth - buttonsWidth) / 2;
-    final effectiveIndex = _resolveIndexForDirection(index, buttonCount);
-    return startX +
-        effectiveIndex.toDouble() * buttonsWidth / buttonCount +
-        buttonsWidth / (buttonCount * 2.0);
-  }
-
-  int _resolveIndexForDirection(int index, int buttonCount) {
-    final direction = Directionality.of(context);
-    if (direction == TextDirection.rtl) {
-      return buttonCount - 1 - index;
-    }
-    return index;
-  }
-
-  @override
-  void dispose() {
-    _xController.dispose();
-    _yController.dispose();
-    super.dispose();
-  }
-
-  Widget _icon(IconData icon, String label, bool isEnable, int index) {
-    return Expanded(
-      child: InkWell(
-        borderRadius: BorderRadius.all(Radius.circular(AppSpacing.radiusPill)),
-        onTap: () {
-          _handlePressed(index);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 500),
-          alignment: isEnable ? Alignment.topCenter : Alignment.center,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedContainer(
-                height: isEnable ? AppSpacing.jumbo : AppSpacing.xxl,
-                duration: const Duration(milliseconds: 300),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isEnable
-                      ? AppColors.accentOrange
-                      : Theme.of(context).colorScheme.surface,
-                  shape: BoxShape.circle,
-                ),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Opacity(
-                      opacity: isEnable ? _yController.value : 1,
-                      child: Icon(
-                        icon,
-                        color: isEnable
-                            ? AppColors.white
-                            : Theme.of(context).iconTheme.color,
-                      ),
-                    ),
-                    // Cart badge
-                    if (index == 2 && widget.cartBadgeCount > 0)
-                      Positioned(
-                        right: -6,
-                        top: -6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.xs,
-                            vertical: 2,
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: AppSpacing.xl,
-                          ),
-                          height: AppSpacing.xl,
-                          decoration: BoxDecoration(
-                            color: AppColors.error,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              widget.cartBadgeCount > 99
-                                  ? '99+'
-                                  : widget.cartBadgeCount.toString(),
-                              style: AppTextStyles.labelSmall(
-                                context,
-                              ).copyWith(color: AppColors.white),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                label,
-                style: AppTextStyles.labelSmall(context).copyWith(
-                  color: isEnable
-                      ? AppColors.primary
-                      : Theme.of(context).iconTheme.color,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBackground() {
-    final inCurve = ElasticOutCurve(0.38);
-    return CustomPaint(
-      painter: BackgroundCurvePainter(
-        _xController.value * MediaQuery.of(context).size.width,
-        Tween<double>(
-          begin: Curves.easeInExpo.transform(_yController.value),
-          end: inCurve.transform(_yController.value),
-        ).transform(_yController.velocity.sign * 0.5 + 0.5),
-        Theme.of(context).scaffoldBackgroundColor,
-      ),
-    );
-  }
-
-  double _getButtonContainerWidth() {
-    double width = MediaQuery.of(context).size.width;
-    if (width > AppSpacing.navMaxWidth) {
-      width = AppSpacing.navMaxWidth;
-    }
-    return width;
-  }
-
-  void _handlePressed(int index) {
-    if (_selectedIndex == index || _xController.isAnimating) return;
-    widget.onIconPresedCallback?.call(index);
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    _yController.value = 1.0;
-    _xController.animateTo(
-      _indexToPosition(index) / MediaQuery.of(context).size.width,
-      duration: const Duration(milliseconds: 620),
-    );
-    Future.delayed(const Duration(milliseconds: 500), () {
-      _yController.animateTo(1.0, duration: const Duration(milliseconds: 1200));
-    });
-    _yController.animateTo(0.0, duration: const Duration(milliseconds: 300));
-  }
 
   @override
   Widget build(BuildContext context) {
-    final appSize = MediaQuery.of(context).size;
-    final height = AppSpacing.navHeight;
     final l10n = context.l10n;
-    return SizedBox(
-      width: appSize.width,
-      height: AppSpacing.navHeight,
-      child: Stack(
-        children: [
-          Positioned(
-            left: 0,
-            bottom: 0,
-            width: appSize.width,
-            height: height - AppSpacing.sm,
-            child: _buildBackground(),
-          ),
-          Positioned(
-            left: (appSize.width - _getButtonContainerWidth()) / 2,
-            top: 0,
-            width: _getButtonContainerWidth(),
-            height: height,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: <Widget>[
-                _icon(Icons.home, l10n.navHome, _selectedIndex == 0, 0),
-                _icon(
-                  Icons.category,
-                  l10n.navCategories,
-                  _selectedIndex == 1,
-                  1,
+    final items = [
+      (Icons.home_rounded, l10n.navHome),
+      (Icons.category_rounded, l10n.navCategories),
+      (Icons.shopping_bag_rounded, l10n.navCart),
+      (Icons.person_rounded, l10n.navAccount),
+    ];
+
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        boxShadow: [AppShadows.topBarShadow],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: AppSpacing.navHeight,
+          child: Row(
+            children: List.generate(items.length, (index) {
+              final selected = _selectedIndex == index;
+              final (icon, label) = items[index];
+              return Expanded(
+                child: InkWell(
+                  onTap: () {
+                    if (_selectedIndex == index) return;
+                    setState(() => _selectedIndex = index);
+                    widget.onIconPresedCallback?.call(index);
+                  },
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Positioned(
+                        top: AppSpacing.sm,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          width: selected ? AppSpacing.xl : 0,
+                          height: AppSpacing.xs,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(AppRadius.full),
+                          ),
+                        ),
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Icon(
+                                icon,
+                                color: selected
+                                    ? AppColors.primary
+                                    : AppColors.textHint,
+                              ),
+                              if (index == 2 && widget.cartBadgeCount > 0)
+                                Positioned(
+                                  right: -8,
+                                  top: -8,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.xs,
+                                    ),
+                                    height: AppSpacing.md,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.error,
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.full,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        widget.cartBadgeCount > 99
+                                            ? '99+'
+                                            : widget.cartBadgeCount.toString(),
+                                        style: AppTextStyles.caption.copyWith(
+                                          color: AppColors.textOnPrimary,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            label,
+                            style: AppTextStyles.caption.copyWith(
+                              color: selected
+                                  ? AppColors.primary
+                                  : AppColors.textHint,
+                              fontWeight: selected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                _icon(Icons.card_travel, l10n.navCart, _selectedIndex == 2, 2),
-                _icon(Icons.person, l10n.navAccount, _selectedIndex == 3, 3),
-              ],
-            ),
+              );
+            }),
           ),
-        ],
+        ),
       ),
     );
   }

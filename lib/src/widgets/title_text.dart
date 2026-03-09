@@ -9,13 +9,12 @@ class TitleText extends StatelessWidget {
   const TitleText({
     super.key,
     required this.text,
-    this.style, required int fontSize, required Color color,
+    this.style,
+    required int fontSize,
+    required Color color,
   });
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: style ?? AppTextStyles.titleLarge(context),
-    );
+    return Text(text, style: style ?? AppTextStyles.titleLarge);
   }
 }

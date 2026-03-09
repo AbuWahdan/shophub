@@ -23,13 +23,14 @@ class _ProductCardState extends State<ProductCard> {
     final product = widget.product;
     AppData.syncFavoriteFor(product);
 
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        boxShadow: const [AppShadows.cardShadow],
       ),
-      elevation: AppSpacing.sm,
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: () {
           Navigator.pushNamed(
             context,
@@ -38,104 +39,120 @@ class _ProductCardState extends State<ProductCard> {
           );
           widget.onSelected?.call(product);
         },
-        child: Padding(
-          padding: AppSpacing.insetsSm,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Hero(
-                        tag: 'product_${product.id}',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Hero(
+                      tag: 'product_${product.id}',
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(AppRadius.lg),
+                        ),
                         child: _buildImageSlot(context),
                       ),
                     ),
+                  ),
+                  if (product.discountPercentage > 0)
                     Positioned(
                       top: AppSpacing.sm,
-                      right: AppSpacing.sm,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
-                        onTap: () {
-                          setState(() {
-                            AppData.toggleFavorite(product);
-                          });
-                        },
+                      left: AppSpacing.sm,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: AppSpacing.xs,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.saleBadge,
+                          borderRadius: BorderRadius.circular(AppRadius.full),
+                        ),
+                        child: Text(
+                          '-${product.discountPercentage}%',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.saleBadgeText,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  Positioned(
+                    top: AppSpacing.sm,
+                    right: AppSpacing.sm,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                      onTap: () {
+                        setState(() => AppData.toggleFavorite(product));
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(AppSpacing.xs),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface.withValues(alpha: 0.86),
+                          borderRadius: BorderRadius.circular(AppRadius.full),
+                        ),
                         child: Icon(
                           product.isFavorite
                               ? Icons.favorite
                               : Icons.favorite_border,
                           color: product.isFavorite
                               ? AppColors.error
-                              : Theme.of(context).colorScheme.onSurface,
-                          size: AppSpacing.iconLg,
-                          shadows: const [
-                            Shadow(
-                              blurRadius: 6,
-                              color: Colors.black54,
-                              offset: Offset(0, 1),
-                            ),
-                          ],
+                              : AppColors.textPrimary,
+                          size: AppSpacing.iconMd,
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                product.name.isNotEmpty ? product.name : 'Unnamed Product',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.bodyMedium(context),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                product.description.isNotEmpty
-                    ? product.description
-                    : 'No description',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.bodySmall(context),
-              ),
-              if (product.quantity > 0) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Qty: ${product.quantity}',
-                  style: AppTextStyles.bodySmall(
-                    context,
-                  ).copyWith(color: AppColors.accentOrange),
-                ),
-              ],
-              const SizedBox(height: AppSpacing.xs),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.xs,
-                children: [
-                  if (product.discountPrice != null &&
-                      product.discountPrice! > 0) ...[
-                    Text(
-                      '\$${product.finalPrice.toStringAsFixed(2)}',
-                      style: AppTextStyles.labelLarge(
-                        context,
-                      ).copyWith(color: AppColors.primary),
-                    ),
-                    Text(
-                      '\$${product.price.toStringAsFixed(2)}',
-                      style: AppTextStyles.bodySmall(
-                        context,
-                      ).copyWith(decoration: TextDecoration.lineThrough),
-                    ),
-                  ] else
-                    Text(
-                      '\$${product.price.toStringAsFixed(2)}',
-                      style: AppTextStyles.labelLarge(context),
-                    ),
+                  ),
                 ],
               ),
-            ],
-          ),
+            ),
+            Padding(
+              padding: AppSpacing.insetsMd,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name.isNotEmpty ? product.name : 'Unnamed Product',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.headingSmall,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        size: AppSpacing.iconSm,
+                        color: AppColors.star,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Text(
+                        '${product.rating.toStringAsFixed(1)} (${product.reviewCount})',
+                        style: AppTextStyles.caption,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        '\$${product.finalPrice.toStringAsFixed(2)}',
+                        style: AppTextStyles.priceMedium,
+                      ),
+                      if (product.discountPercentage > 0)
+                        Text(
+                          '\$${product.price.toStringAsFixed(2)}',
+                          style: AppTextStyles.priceOriginal,
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -143,32 +160,20 @@ class _ProductCardState extends State<ProductCard> {
 
   Widget _buildImageSlot(BuildContext context) {
     final product = widget.product;
-
-    // Handle empty images
-    if (product.images.isEmpty) {
-      return _buildPlaceholder(context);
+    if (product.images.isEmpty || product.images.first.trim().isEmpty) {
+      return _buildPlaceholder();
     }
-
-    final path = product.images.first.trim();
-
-    if (path.isEmpty) {
-      return _buildPlaceholder(context);
-    }
-
-    return AppImage(path: path, fit: BoxFit.cover);
+    return AppImage(path: product.images.first.trim(), fit: BoxFit.cover);
   }
 
-  Widget _buildPlaceholder(BuildContext context) {
+  Widget _buildPlaceholder() {
     return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      ),
+      color: AppColors.surfaceVariant,
       alignment: Alignment.center,
-      child: Icon(
+      child: const Icon(
         Icons.image_outlined,
         size: AppSpacing.iconXl,
-        color: Theme.of(context).hintColor,
+        color: AppColors.textHint,
       ),
     );
   }

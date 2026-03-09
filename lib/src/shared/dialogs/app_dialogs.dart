@@ -18,11 +18,8 @@ class AppDialogs {
     return showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(title, style: AppTextStyles.titleLarge(context)),
-        content: Text(
-          message,
-          style: AppTextStyles.bodyMedium(context),
-        ),
+        title: Text(title, style: AppTextStyles.titleLarge),
+        content: Text(message, style: AppTextStyles.bodyMedium),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -50,9 +47,9 @@ class AppDialogs {
     return showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(title, style: AppTextStyles.titleLarge(context)),
+        title: Text(title, style: AppTextStyles.titleLarge),
         content: SingleChildScrollView(
-          child: Text(message, style: AppTextStyles.bodyMedium(context)),
+          child: Text(message, style: AppTextStyles.bodyMedium),
         ),
         actions: [
           TextButton(
@@ -105,12 +102,12 @@ class AppDialogs {
             const SizedBox(
               width: AppSpacing.iconLg,
               height: AppSpacing.iconLg,
-              child: CircularProgressIndicator(strokeWidth: AppSpacing.borderThick),
+              child: CircularProgressIndicator(
+                strokeWidth: AppSpacing.borderThick,
+              ),
             ),
             const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Text(message, style: AppTextStyles.bodyMedium(context)),
-            ),
+            Expanded(child: Text(message, style: AppTextStyles.bodyMedium)),
           ],
         ),
       ),

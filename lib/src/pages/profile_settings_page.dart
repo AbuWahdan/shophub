@@ -218,9 +218,9 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
   }) {
     return ListTile(
       leading: Icon(icon, color: AppColors.primary),
-      title: Text(title, style: AppTextStyles.bodyLarge(context)),
+      title: Text(title, style: AppTextStyles.bodyLarge),
       subtitle: subtitle != null
-          ? Text(subtitle, style: AppTextStyles.bodySmall(context))
+          ? Text(subtitle, style: AppTextStyles.bodySmall)
           : null,
       trailing:
           trailing ??
@@ -233,13 +233,10 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     final l10n = context.l10n;
     return ListTile(
       leading: Icon(Icons.language, color: AppColors.primary),
-      title: Text(
-        l10n.settingsLanguage,
-        style: AppTextStyles.bodyLarge(context),
-      ),
+      title: Text(l10n.settingsLanguage, style: AppTextStyles.bodyLarge),
       subtitle: Text(
         '${l10n.languageEnglish} / ${l10n.languageArabic}',
-        style: AppTextStyles.bodySmall(context),
+        style: AppTextStyles.bodySmall,
       ),
       trailing: Switch(
         value: _selectedLanguage == 'ar',

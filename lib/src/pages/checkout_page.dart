@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../design/app_colors.dart';
+import '../design/app_text_styles.dart';
+
 class CheckoutPage extends StatelessWidget {
   const CheckoutPage({super.key});
 
@@ -7,10 +10,12 @@ class CheckoutPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Checkout')),
-      body: const Center(
+      body: Center(
         child: Text(
           'Coming Soon',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          style: AppTextStyles.headingMedium.copyWith(
+            color: AppColors.textSecondary,
+          ),
         ),
       ),
     );

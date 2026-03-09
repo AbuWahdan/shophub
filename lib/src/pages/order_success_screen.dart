@@ -97,13 +97,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: AppColors.primary,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.3),
-                                blurRadius: AppSpacing.jumbo,
-                                spreadRadius: AppSpacing.sm,
-                              ),
-                            ],
+                            boxShadow: const [AppShadows.buttonShadow],
                           ),
                           child: Center(
                             child: ScaleTransition(
@@ -111,7 +105,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                               child: Icon(
                                 Icons.check_circle,
                                 size: AppSpacing.hero,
-                                color: AppColors.white,
+                                color: AppColors.textOnPrimary,
                               ),
                             ),
                           ),
@@ -121,13 +115,13 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                     const SizedBox(height: AppSpacing.jumbo),
                     Text(
                       l10n.orderSuccessTitle,
-                      style: AppTextStyles.headlineLarge(context),
+                      style: AppTextStyles.headlineLarge,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     Text(
                       l10n.orderSuccessSubtitle,
-                      style: AppTextStyles.bodyMedium(context),
+                      style: AppTextStyles.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: AppSpacing.xxxl),
@@ -135,7 +129,9 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                       padding: AppSpacing.insetsXl,
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                        borderRadius: BorderRadius.circular(
+                          AppSpacing.radiusLg,
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,11 +141,11 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                             children: [
                               Text(
                                 l10n.orderSuccessOrderId,
-                                style: AppTextStyles.bodySmall(context),
+                                style: AppTextStyles.bodySmall,
                               ),
                               Text(
                                 widget.orderId,
-                                style: AppTextStyles.labelLarge(context),
+                                style: AppTextStyles.labelLarge,
                               ),
                             ],
                           ),
@@ -161,12 +157,13 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                             children: [
                               Text(
                                 l10n.orderSuccessTotalAmount,
-                                style: AppTextStyles.bodySmall(context),
+                                style: AppTextStyles.bodySmall,
                               ),
                               Text(
                                 '\$${widget.totalAmount.toStringAsFixed(2)}',
-                                style: AppTextStyles.titleMedium(context)
-                                    .copyWith(color: AppColors.primary),
+                                style: AppTextStyles.titleMedium.copyWith(
+                                  color: AppColors.primary,
+                                ),
                               ),
                             ],
                           ),
@@ -176,7 +173,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                     const SizedBox(height: AppSpacing.xxxl),
                     Text(
                       l10n.orderSuccessThanks,
-                      style: AppTextStyles.bodySmall(context),
+                      style: AppTextStyles.bodySmall,
                     ),
                   ],
                 ),

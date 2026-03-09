@@ -40,8 +40,7 @@ class ProductCommentsPage extends StatelessWidget {
                 final comment = comments[index];
                 return _CommentCard(comment: comment);
               },
-              separatorBuilder: (_, _) =>
-                  const SizedBox(height: AppSpacing.lg),
+              separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.lg),
               itemCount: comments.length,
             ),
     );
@@ -67,14 +66,11 @@ class _CommentCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  comment.userName,
-                  style: AppTextStyles.titleSmall(context),
-                ),
+                child: Text(comment.userName, style: AppTextStyles.titleSmall),
               ),
               Text(
                 DateFormat.yMMMd().format(comment.date),
-                style: AppTextStyles.bodySmall(context),
+                style: AppTextStyles.bodySmall,
               ),
             ],
           ),
@@ -90,7 +86,7 @@ class _CommentCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(comment.comment, style: AppTextStyles.bodyMedium(context)),
+          Text(comment.comment, style: AppTextStyles.bodyMedium),
           if (comment.imageUrls.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
             SizedBox(

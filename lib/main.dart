@@ -41,8 +41,8 @@ class MyApp extends StatelessWidget {
                   GlobalCupertinoLocalizations.delegate,
                 ],
                 debugShowCheckedModeBanner: false,
-                onGenerateRoute: AppRoutes.onGenerateRoute,  // Changed this
-                initialRoute: AppRoutes.splash,  // Changed this
+                onGenerateRoute: AppRoutes.onGenerateRoute, // Changed this
+                initialRoute: AppRoutes.splash, // Changed this
               );
             },
           );

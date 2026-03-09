@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sinwar_shoping/src/themes/light_color.dart';
 import 'package:sinwar_shoping/src/widgets/title_text.dart';
 
 import '../design/app_colors.dart';
@@ -60,9 +59,9 @@ class ProductIcon extends StatelessWidget {
                       if ((label ?? model.name) != null)
                         TitleText(
                           text: label ?? model.name!,
-                          style: AppTextStyles.titleSmall(context),
+                          style: AppTextStyles.titleSmall,
                           fontSize: AppSpacing.xxl.toInt(),
-                          color: LightColor.iconColor,
+                          color: AppColors.textHint,
                         ),
                     ],
                   ),

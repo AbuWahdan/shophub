@@ -99,97 +99,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
                 const SizedBox(height: AppSpacing.lg),
                 _buildVariantsSection(),
                 const SizedBox(height: AppSpacing.lg),
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Images',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add_a_photo),
-                      onPressed: _isSubmitting ? null : _showAddImageOptions,
-                    ),
-                  ],
-                ),
-                if (_images.isEmpty) Text(l10n.productAddImageValidation),
-                if (_images.isNotEmpty)
-                  SizedBox(
-                    height: 92,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _images.length,
-                      separatorBuilder: (_, _) =>
-                          const SizedBox(width: AppSpacing.sm),
-                      itemBuilder: (context, index) {
-                        final isDefault = index == _defaultImageIndex;
-                        return Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                AppSpacing.radiusSm,
-                              ),
-                              child: Image.file(
-                                File(_images[index].path),
-                                width: 92,
-                                height: 92,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            Positioned(
-                              right: 0,
-                              top: 0,
-                              child: IconButton(
-                                visualDensity: VisualDensity.compact,
-                                icon: Icon(
-                                  isDefault ? Icons.star : Icons.star_border,
-                                  color: isDefault
-                                      ? Colors.amber
-                                      : Colors.white,
-                                ),
-                                onPressed: _isSubmitting
-                                    ? null
-                                    : () {
-                                        setState(() {
-                                          _defaultImageIndex = index;
-                                        });
-                                      },
-                              ),
-                            ),
-                            Positioned(
-                              left: 0,
-                              top: 0,
-                              child: IconButton(
-                                visualDensity: VisualDensity.compact,
-                                icon: const Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                ),
-                                onPressed: _isSubmitting
-                                    ? null
-                                    : () {
-                                        setState(() {
-                                          _images.removeAt(index);
-                                          if (_images.isEmpty) {
-                                            _defaultImageIndex = 0;
-                                          } else if (index <
-                                              _defaultImageIndex) {
-                                            _defaultImageIndex -= 1;
-                                          } else if (_defaultImageIndex >=
-                                              _images.length) {
-                                            _defaultImageIndex =
-                                                _images.length - 1;
-                                          }
-                                        });
-                                      },
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
+                _buildImagesSection(),
                 const SizedBox(height: AppSpacing.lg),
                 Container(
                   decoration: BoxDecoration(
@@ -203,10 +113,12 @@ class _InsertProductPageState extends State<InsertProductPage> {
                           text: TextSpan(
                             text: l10n.productCategory,
                             style: Theme.of(context).textTheme.titleMedium,
-                            children: const [
+                            children: [
                               TextSpan(
                                 text: ' *',
-                                style: TextStyle(color: Colors.red),
+                                style: AppTextStyles.labelMedium.copyWith(
+                                  color: AppColors.error,
+                                ),
                               ),
                             ],
                           ),
@@ -266,11 +178,13 @@ class _InsertProductPageState extends State<InsertProductPage> {
                                     trailing: isSelected
                                         ? const Icon(
                                             Icons.check_circle,
-                                            color: Colors.green,
+                                            color: AppColors.success,
                                           )
                                         : null,
                                     tileColor: isSelected
-                                        ? Colors.green.withValues(alpha: 0.1)
+                                        ? AppColors.success.withValues(
+                                            alpha: 0.1,
+                                          )
                                         : null,
                                     onTap: _isSubmitting
                                         ? null
@@ -408,7 +322,6 @@ class _InsertProductPageState extends State<InsertProductPage> {
         details: details,
         categoryId: _selectedSubCategoryId!,
         createdBy: createdBy,
-        isActive: _isActive ? 1 : 0,
       );
       final requestBody = {
         'items': [request.toJson()],
@@ -512,6 +425,302 @@ class _InsertProductPageState extends State<InsertProductPage> {
     });
   }
 
+  void _removeImageAt(int index) {
+    setState(() {
+      _images.removeAt(index);
+      if (_images.isEmpty) {
+        _defaultImageIndex = 0;
+      } else if (index < _defaultImageIndex) {
+        _defaultImageIndex -= 1;
+      } else if (_defaultImageIndex >= _images.length) {
+        _defaultImageIndex = _images.length - 1;
+      }
+    });
+  }
+
+  Widget _buildImagesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Images', style: AppTextStyles.labelLarge),
+        const SizedBox(height: AppSpacing.sm),
+
+        // ── Big preview card (display only, tappable only when empty) ──
+        GestureDetector(
+          onTap: _images.isEmpty && !_isSubmitting ? _showAddImageOptions : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: double.infinity,
+            height: 200,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _images.isEmpty
+                    ? AppColors.neutral400
+                    : AppColors.primary,
+                width: 2,
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: _images.isEmpty
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(
+                        Icons.add_photo_alternate_outlined,
+                        size: 52,
+                        color: AppColors.neutral500,
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        'Tap to add product image',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: AppColors.neutral600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'JPG, PNG supported',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.neutral400,
+                        ),
+                      ),
+                    ],
+                  )
+                : Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Image.file(
+                          File(
+                            _images[
+                              _defaultImageIndex.clamp(0, _images.length - 1)
+                            ].path,
+                          ),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      // "Default" badge
+                      Positioned(
+                        bottom: 10,
+                        left: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.star, size: 12, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text(
+                                'Default',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Image count badge
+                      if (_images.length > 1)
+                        Positioned(
+                          top: 10,
+                          right: 10,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '${_images.length} photos',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
+        ),
+
+        // ── Thumbnail scroll row (only when images exist) ──
+        if (_images.isNotEmpty) ...[  
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            height: 88,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _images.length + 1, // +1 for the Add button at the end
+              separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+              itemBuilder: (context, index) {
+                // Last item = Add More button
+                if (index == _images.length) {
+                  return GestureDetector(
+                    onTap: _isSubmitting ? null : _showAddImageOptions,
+                    child: Container(
+                      width: 88,
+                      height: 88,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceVariant,
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                        border: Border.all(
+                          color: AppColors.neutral400,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_photo_alternate_outlined,
+                            color: AppColors.primary,
+                            size: 26,
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Add',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                // Regular thumbnail
+                final isDefault = index == _defaultImageIndex;
+                return Stack(
+                  children: [
+                    // Thumbnail image
+                    GestureDetector(
+                      onTap: _isSubmitting
+                          ? null
+                          : () => setState(() => _defaultImageIndex = index),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        width: 88,
+                        height: 88,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                          border: Border.all(
+                            color: isDefault
+                                ? AppColors.primary
+                                : AppColors.neutral300,
+                            width: isDefault ? 2.5 : 1,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.radiusSm - 1,
+                          ),
+                          child: Image.file(
+                            File(_images[index].path),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Star button (top-right)
+                    Positioned(
+                      top: 2,
+                      right: 2,
+                      child: GestureDetector(
+                        onTap: _isSubmitting
+                            ? null
+                            : () => setState(() => _defaultImageIndex = index),
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: isDefault
+                                ? AppColors.warning
+                                : Colors.black45,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isDefault ? Icons.star : Icons.star_border,
+                            size: 13,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Remove button (top-left)
+                    Positioned(
+                      top: 2,
+                      left: 2,
+                      child: GestureDetector(
+                        onTap: _isSubmitting
+                            ? null
+                            : () => _removeImageAt(index),
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: const BoxDecoration(
+                            color: Colors.black45,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 13,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+
+        // Validation hint
+        if (_images.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
+            child: Text(
+              context.l10n.productAddImageValidation,
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   List<String> _orderedImagePathsForSubmit() {
     final paths = _images.map((image) => image.path.trim()).toList();
     if (paths.isEmpty) return const [];
@@ -538,10 +747,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
           Row(
             children: [
               const Expanded(
-                child: Text(
-                  'Variants',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
+                child: Text('Variants', style: AppTextStyles.labelLarge),
               ),
               IconButton(
                 onPressed: _isSubmitting ? null : _addVariantEntry,
@@ -580,7 +786,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
               Expanded(
                 child: Text(
                   'Variant ${index + 1}',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: AppTextStyles.labelLarge,
                 ),
               ),
               IconButton(
@@ -652,13 +858,13 @@ class _InsertProductPageState extends State<InsertProductPage> {
             items:
                 (sizeOptions[variant.selectedSizeGroupId] ??
                         const <SizeOption>[])
-                .map(
-                  (option) => DropdownMenuItem<int>(
-                    value: option.id,
-                    child: Text(option.name),
-                  ),
-                )
-                .toList(),
+                    .map(
+                      (option) => DropdownMenuItem<int>(
+                        value: option.id,
+                        child: Text(option.name),
+                      ),
+                    )
+                    .toList(),
             onChanged: _isSubmitting || variant.selectedSizeGroupId == null
                 ? null
                 : (value) {
@@ -752,6 +958,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
           discount: discount < 0 ? 0.0 : discount,
           itemPrice: price,
           itemQty: qty,
+          isActive: 1,
         ),
       );
     }

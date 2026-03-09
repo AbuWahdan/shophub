@@ -45,15 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: AppSpacing.xxl),
-                Text(
-                  l10n.loginWelcomeBack,
-                  style: AppTextStyles.headlineLarge(context),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  l10n.loginSubtitle,
-                  style: AppTextStyles.bodyMedium(context),
-                ),
+                Text(l10n.loginSubtitle, style: AppTextStyles.bodyMedium),
                 const SizedBox(height: AppSpacing.xxxl),
                 AppTextField(
                   controller: _usernameController,
@@ -156,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Center(
                   child: Text(
                     l10n.loginNoAccount,
-                    style: AppTextStyles.bodyMedium(context),
+                    style: AppTextStyles.bodyMedium,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../design/app_colors.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
 
 enum AppSnackBarType { success, error, info, warning }
 
@@ -19,18 +21,40 @@ class AppSnackBar {
       SnackBar(
         behavior: SnackBarBehavior.floating,
         duration: duration,
-        margin: const EdgeInsets.all(12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(AppSpacing.md),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
         backgroundColor: _background(type),
-        content: Text(
-          message,
-          style: const TextStyle(
-            color: AppColors.white,
-            fontWeight: FontWeight.w600,
-          ),
+        content: Row(
+          children: [
+            Icon(_icon(type), color: AppColors.textOnPrimary),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                message,
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.textOnPrimary,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  static IconData _icon(AppSnackBarType type) {
+    switch (type) {
+      case AppSnackBarType.success:
+        return Icons.check_circle_outline;
+      case AppSnackBarType.error:
+        return Icons.error_outline;
+      case AppSnackBarType.warning:
+        return Icons.warning_amber_outlined;
+      case AppSnackBarType.info:
+        return Icons.info_outline;
+    }
   }
 
   static Color _background(AppSnackBarType type) {

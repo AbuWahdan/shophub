@@ -5,11 +5,12 @@ import 'package:sinwar_shoping/src/pages/auth/login_screen.dart';
 import 'package:sinwar_shoping/src/pages/auth/otp_screen.dart';
 import 'package:sinwar_shoping/src/pages/auth/register_screen.dart';
 import 'package:sinwar_shoping/src/pages/categories_page.dart';
-import 'package:sinwar_shoping/src/pages/checkout_page.dart';
+import 'package:sinwar_shoping/src/pages/checkout_screen.dart';
 import 'package:sinwar_shoping/src/pages/info_page.dart';
 import 'package:sinwar_shoping/src/pages/main_page.dart';
 import 'package:sinwar_shoping/src/pages/my_products_page.dart';
 import 'package:sinwar_shoping/src/pages/onboarding_screen.dart';
+import 'package:sinwar_shoping/src/pages/order_confirmation_screen.dart';
 import 'package:sinwar_shoping/src/pages/orders_page.dart';
 import 'package:sinwar_shoping/src/pages/products/insert_product_page.dart';
 import 'package:sinwar_shoping/src/pages/product_comments_page.dart';
@@ -18,6 +19,8 @@ import 'package:sinwar_shoping/src/pages/profile_settings_page.dart';
 import 'package:sinwar_shoping/src/pages/search_filter_page.dart';
 import 'package:sinwar_shoping/src/pages/splash_screen.dart';
 import 'package:sinwar_shoping/src/pages/wishlist_page.dart';
+import 'package:sinwar_shoping/src/model/cart_item.dart';
+import 'package:sinwar_shoping/src/model/data.dart';
 import 'package:sinwar_shoping/src/model/product_api.dart';
 import '../l10n/app_localizations.dart';
 
@@ -34,6 +37,7 @@ class AppRoutes {
   static const String orders = '/orders';
   static const String addresses = '/addresses';
   static const String checkout = '/checkout';
+  static const String orderConfirmation = '/order-confirmation';
   static const String wishlist = '/wishlist';
   static const String productComments = '/product-comments';
   static const String productDetails = '/product-details';
@@ -115,9 +119,25 @@ class AppRoutes {
         );
 
       case checkout:
+        final cartItems =
+            (args?['cartItems'] as List<CartItem>?) ?? AppData.cartItems;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const CheckoutPage(),
+          builder: (_) => CheckoutScreen(cartItems: cartItems),
+        );
+
+      case orderConfirmation:
+        final receipt =
+            (args?['receipt'] as Map<String, dynamic>?) ?? const {};
+        final total = (args?['total'] as num?)?.toDouble() ?? 0;
+        final onContinue = args?['onContinue'] as VoidCallback?;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => OrderConfirmationScreen(
+            receipt: receipt,
+            total: total,
+            onContinue: onContinue,
+          ),
         );
 
       case wishlist:
@@ -212,13 +232,24 @@ class AppRoutes {
 
       case productDetails:
         final product = args?['product'] as ApiProduct?;
+        if (product == null) {
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => Scaffold(
+              appBar: AppBar(title: const Text('Error')),
+              body: const Center(
+                child: Text('Product not found. Please go back and try again.'),
+              ),
+            ),
+          );
+        }
         final selectedSize = args?['selectedSize'] as String?;
         final selectedColor = args?['selectedColor'] as String?;
         final selectedDetId = args?['selectedDetId'] as int?;
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => ProductDetailsPage(
-            product: product!,
+            product: product,
             initialSize: selectedSize,
             initialColor: selectedColor,
             initialDetId: selectedDetId,

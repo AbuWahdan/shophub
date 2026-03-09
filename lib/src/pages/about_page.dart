@@ -18,17 +18,11 @@ class AboutPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(l10n.appTitle, style: AppTextStyles.headlineSmall(context)),
+            Text(l10n.appTitle, style: AppTextStyles.headlineSmall),
             const SizedBox(height: AppSpacing.xs),
-            Text(
-              l10n.appVersion,
-              style: AppTextStyles.bodySmall(context),
-            ),
+            Text(l10n.appVersion, style: AppTextStyles.bodySmall),
             const SizedBox(height: AppSpacing.lg),
-            Text(
-              l10n.appLegalese,
-              style: AppTextStyles.bodyMedium(context),
-            ),
+            Text(l10n.appLegalese, style: AppTextStyles.bodyMedium),
             const SizedBox(height: AppSpacing.xxl),
           ],
         ),

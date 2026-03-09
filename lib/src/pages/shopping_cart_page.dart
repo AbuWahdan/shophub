@@ -11,6 +11,7 @@ import '../model/cart_item.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';
+import '../pages/checkout_screen.dart';
 import '../pages/main_page.dart';
 import '../services/product_service.dart';
 import '../state/auth_state.dart';
@@ -215,7 +216,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                           product.name,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.titleMedium(context),
+                          style: AppTextStyles.titleMedium,
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         // Price Display
@@ -226,17 +227,16 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                           children: [
                             Text(
                               '\$${product.finalPrice.toStringAsFixed(2)}',
-                              style: AppTextStyles.labelLarge(
-                                context,
-                              ).copyWith(color: AppColors.primary),
+                              style: AppTextStyles.labelLarge.copyWith(
+                                color: AppColors.primary,
+                              ),
                             ),
                             if (hasDiscount)
                               Text(
                                 '\$${product.price.toStringAsFixed(2)}',
-                                style: AppTextStyles.bodySmall(context)
-                                    .copyWith(
-                                      decoration: TextDecoration.lineThrough,
-                                    ),
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  decoration: TextDecoration.lineThrough,
+                                ),
                               ),
                           ],
                         ),
@@ -249,13 +249,13 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                                 UiText.cartVariantLabel
                                     .replaceFirst('{size}', selectedSize)
                                     .replaceFirst('{color}', selectedColor),
-                                style: AppTextStyles.bodySmall(context),
+                                style: AppTextStyles.bodySmall,
                               ),
                               Text(
                                 context.l10n.cartAvailableStock(availableStock),
-                                style: AppTextStyles.bodySmall(
-                                  context,
-                                ).copyWith(color: AppColors.accentOrange),
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.accentOrange,
+                                ),
                               ),
                             ],
                           ),
@@ -280,7 +280,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                 children: [
                   Text(
                     context.l10n.cartQuantity,
-                    style: AppTextStyles.bodyMedium(context),
+                    style: AppTextStyles.bodyMedium,
                   ),
                   QuantityStepper(
                     value: quantity,
@@ -300,11 +300,11 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                 children: [
                   Text(
                     context.l10n.cartItemTotal,
-                    style: AppTextStyles.bodySmall(context),
+                    style: AppTextStyles.bodySmall,
                   ),
                   Text(
                     '\$${itemTotal.toStringAsFixed(2)}',
-                    style: AppTextStyles.labelLarge(context),
+                    style: AppTextStyles.labelLarge,
                   ),
                 ],
               ),
@@ -453,22 +453,46 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                       children: [
                         Text(
                           context.l10n.cartTotal,
-                          style: AppTextStyles.titleMedium(context),
+                          style: AppTextStyles.titleMedium,
                         ),
                         Text(
                           '\$${totalPrice.toStringAsFixed(2)}',
-                          style: AppTextStyles.titleLarge(
-                            context,
-                          ).copyWith(color: AppColors.primary),
+                          style: AppTextStyles.titleLarge.copyWith(
+                            color: AppColors.primary,
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    AppButton(
-                      label: context.l10n.cartCheckout,
-                      onPressed: () {
-                        Navigator.pushNamed(context, AppRoutes.checkout);
-                      },
+                    SizedBox(
+                      width: double.infinity,
+                      height: AppSpacing.buttonMd,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.textOnPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppSpacing.radiusLg,
+                            ),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  CheckoutScreen(cartItems: cartItems),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          context.l10n.cartCheckout,
+                          style: AppTextStyles.buttonLarge.copyWith(
+                            color: AppColors.textOnPrimary,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -490,18 +514,14 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
         Text(
           label,
           style: isHighlight
-              ? AppTextStyles.labelLarge(
-                  context,
-                ).copyWith(color: AppColors.primary)
-              : AppTextStyles.bodySmall(context),
+              ? AppTextStyles.labelLarge.copyWith(color: AppColors.primary)
+              : AppTextStyles.bodySmall,
         ),
         Text(
           value,
           style: isDiscount
-              ? AppTextStyles.labelLarge(
-                  context,
-                ).copyWith(color: AppColors.primary)
-              : AppTextStyles.bodySmall(context),
+              ? AppTextStyles.labelLarge.copyWith(color: AppColors.primary)
+              : AppTextStyles.bodySmall,
         ),
       ],
     );

@@ -246,12 +246,12 @@ class _MyProductCard extends StatelessWidget {
                 product.itemName,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.bodyMedium(context),
+                style: AppTextStyles.bodyMedium,
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 '\$${product.itemPrice.toStringAsFixed(2)}',
-                style: AppTextStyles.labelLarge(context),
+                style: AppTextStyles.labelLarge,
               ),
               const SizedBox(height: AppSpacing.xs),
               if (isLoading)
@@ -263,7 +263,7 @@ class _MyProductCard extends StatelessWidget {
               else
                 Text(
                   inStock ? context.l10n.stockIn : context.l10n.stockOut,
-                  style: AppTextStyles.bodySmall(context).copyWith(
+                  style: AppTextStyles.bodySmall.copyWith(
                     color: inStock ? AppColors.success : AppColors.error,
                   ),
                 ),

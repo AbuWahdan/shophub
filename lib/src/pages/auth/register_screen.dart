@@ -33,7 +33,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = false;
   String _passwordStrength = 'Weak';
-  Color _passwordStrengthColor = Colors.redAccent;
+  Color _passwordStrengthColor = AppColors.error;
 
   @override
   void initState() {
@@ -60,15 +60,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final value = _passwordController.text;
     final trimmed = value.trim();
     String label = 'Weak';
-    Color color = Colors.redAccent;
+    Color color = AppColors.error;
     if (trimmed.length >= 10 &&
         RegExp(r'[A-Z]').hasMatch(trimmed) &&
         RegExp(r'[0-9]').hasMatch(trimmed)) {
       label = 'Strong';
-      color = Colors.green;
+      color = AppColors.success;
     } else if (trimmed.length >= 6) {
       label = 'Medium';
-      color = Colors.orange;
+      color = AppColors.accent;
     }
     if (label != _passwordStrength) {
       setState(() {
@@ -201,9 +201,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   'Password strength: $_passwordStrength',
-                  style: AppTextStyles.bodySmall(
-                    context,
-                  ).copyWith(color: _passwordStrengthColor),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: _passwordStrengthColor,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 AppTextField(
@@ -248,7 +248,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         padding: const EdgeInsets.only(top: AppSpacing.xs),
                         child: Text(
                           l10n.registerAgreeTerms,
-                          style: AppTextStyles.bodySmall(context),
+                          style: AppTextStyles.bodySmall,
                         ),
                       ),
                     ),

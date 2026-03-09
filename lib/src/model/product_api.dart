@@ -397,7 +397,7 @@ class ApiProductDetails {
   final String itemOwner;
   final int reviews;
   final double rating;
-  final int itemSize;
+  final String itemSize;
   final String color;
   final String brand;
 
@@ -439,7 +439,7 @@ class ApiProductDetails {
       itemOwner: _asString(json, const ['ITEM_OWNER', 'item_owner']),
       reviews: _asInt(_pick(json, const ['REVIEWS', 'reviews'])),
       rating: _asDouble(_pick(json, const ['RATING', 'rating'])),
-      itemSize: _asInt(_pick(json, const ['ITEM_SIZE', 'item_size'])),
+      itemSize: _asString(json, const ['ITEM_SIZE', 'item_size']),
       color: _asString(json, const ['COLOR', 'color']),
       brand: _asString(json, const ['BRAND', 'brand']),
     );
@@ -513,7 +513,6 @@ class CreateProductRequest {
   final List<CreateProductDetail> details;
   final int categoryId;
   final String createdBy;
-  final int isActive;
 
   const CreateProductRequest({
     required this.itemName,
@@ -523,7 +522,6 @@ class CreateProductRequest {
     required this.details,
     required this.categoryId,
     required this.createdBy,
-    required this.isActive,
   });
 
   Map<String, dynamic> toJson() {
@@ -535,7 +533,6 @@ class CreateProductRequest {
       'details': details.map((detail) => detail.toJson()).toList(),
       'category_id': categoryId,
       'created_by': createdBy,
-      'is_active': isActive,
     };
   }
 
@@ -556,6 +553,7 @@ class CreateProductDetail {
   final double discount;
   final double itemPrice;
   final int itemQty;
+  final int isActive;
 
   const CreateProductDetail({
     this.detId,
@@ -565,6 +563,7 @@ class CreateProductDetail {
     required this.discount,
     required this.itemPrice,
     required this.itemQty,
+    this.isActive = 1,
   });
 
   Map<String, dynamic> toJson() {
@@ -584,6 +583,8 @@ class CreateProductDetail {
       'ITEM_PRICE': itemPrice,
       'item_qty': itemQty,
       'ITEM_QTY': itemQty,
+      'is_active': isActive,
+      'IS_ACTIVE': isActive,
     };
   }
 }
@@ -642,8 +643,6 @@ class UpdateProductRequest {
       'category_id': categoryId,
       'CATEGORY_ID': categoryId,
       'CAT_ID': categoryId,
-      'is_active': isActive,
-      'IS_ACTIVE': isActive,
     };
   }
 

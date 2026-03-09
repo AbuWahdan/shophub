@@ -70,18 +70,12 @@ class _AddressesPageState extends State<AddressesPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        address.name,
-                        style: AppTextStyles.titleSmall(context),
-                      ),
+                      Text(address.name, style: AppTextStyles.titleSmall),
                       const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        address.street,
-                        style: AppTextStyles.bodySmall(context),
-                      ),
+                      Text(address.street, style: AppTextStyles.bodySmall),
                       Text(
                         '${address.city}, ${address.state} ${address.zipCode}',
-                        style: AppTextStyles.bodySmall(context),
+                        style: AppTextStyles.bodySmall,
                       ),
                     ],
                   ),
@@ -98,15 +92,15 @@ class _AddressesPageState extends State<AddressesPage> {
                     ),
                     child: Text(
                       context.l10n.addressesDefault,
-                      style: AppTextStyles.labelSmall(
-                        context,
-                      ).copyWith(color: AppColors.primary),
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            Text(address.phone, style: AppTextStyles.bodySmall(context)),
+            Text(address.phone, style: AppTextStyles.bodySmall),
             const SizedBox(height: AppSpacing.lg),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,

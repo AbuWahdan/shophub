@@ -139,11 +139,17 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+            const Icon(
+              Icons.error_outline,
+              size: 64,
+              color: AppColors.textHint,
+            ),
             const SizedBox(height: AppSpacing.md),
             Text(
               l10n.errorLoadingProducts,
-              style: TextStyle(color: Colors.grey.shade600),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
             ElevatedButton(onPressed: _loadProducts, child: Text(l10n.retry)),
@@ -160,12 +166,14 @@ class _MyHomePageState extends State<MyHomePage> {
             Icon(
               Icons.inventory_2_outlined,
               size: 64,
-              color: Colors.grey.shade400,
+              color: AppColors.textHint,
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
               l10n.noProductsInCategory,
-              style: TextStyle(color: Colors.grey.shade600),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
         ),

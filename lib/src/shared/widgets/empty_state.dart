@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../design/app_colors.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
 
@@ -25,17 +26,31 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: AppSpacing.iconHero),
+            Container(
+              width: AppSpacing.hero,
+              height: AppSpacing.hero,
+              decoration: const BoxDecoration(
+                color: AppColors.surfaceVariant,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                size: AppSpacing.iconXl,
+                color: AppColors.primary,
+              ),
+            ),
             const SizedBox(height: AppSpacing.lg),
             Text(
               title,
-              style: AppTextStyles.titleLarge(context),
+              style: AppTextStyles.headingMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               message,
-              style: AppTextStyles.bodyMedium(context),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
             if (action != null) ...[

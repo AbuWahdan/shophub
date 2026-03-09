@@ -38,7 +38,7 @@ class ProductSearchBar extends StatelessWidget {
         decoration: InputDecoration(
           border: InputBorder.none,
           hintText: hintText,
-          hintStyle: AppTextStyles.bodySmall(context),
+          hintStyle: AppTextStyles.bodySmall,
           contentPadding: AppSpacing.only(
             left: AppSpacing.sm,
             right: AppSpacing.sm,

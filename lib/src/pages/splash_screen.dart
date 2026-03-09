@@ -37,9 +37,9 @@ class _SplashScreenState extends State<SplashScreen>
     Future.delayed(const Duration(seconds: 3), () async {
       final isLoggedIn = await StorageService().isLoggedIn();
       if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed(
-        isLoggedIn ? '/main' : '/onboarding',
-      );
+      Navigator.of(
+        context,
+      ).pushReplacementNamed(isLoggedIn ? '/main' : '/onboarding');
     });
   }
 
@@ -78,26 +78,28 @@ class _SplashScreenState extends State<SplashScreen>
                     height: AppSpacing.imageLg,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.white.withOpacity(0.2),
+                      color: AppColors.textOnPrimary.withOpacity(0.2),
                     ),
                     child: Icon(
                       Icons.shopping_bag,
                       size: AppSpacing.iconXl,
-                      color: AppColors.white,
+                      color: AppColors.textOnPrimary,
                     ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xxxl),
                 Text(
                   context.l10n.splashTitle,
-                  style: AppTextStyles.displayMedium(context)
-                      .copyWith(color: AppColors.white),
+                  style: AppTextStyles.displayMedium.copyWith(
+                    color: AppColors.textOnPrimary,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   context.l10n.splashSubtitle,
-                  style: AppTextStyles.bodyMedium(context)
-                      .copyWith(color: AppColors.white.withOpacity(0.8)),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.textOnPrimary.withOpacity(0.8),
+                  ),
                 ),
               ],
             ),
