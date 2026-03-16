@@ -589,68 +589,68 @@ class CreateProductDetail {
   }
 }
 
-class UpdateProductRequest {
-  final int id;
-  final int? detId;
-  final String itemName;
-  final String itemDesc;
+// ─── NEW: matches exact update-item API shape ──────────────────────────────
+class UpdateItemDetail {
+  final int detailId;    // "detail_id"
   final double itemPrice;
   final int itemQty;
-  final String? itemImgUrl;
-  final String? imagesCsv;
-  final List<CreateProductDetail> details;
-  final int categoryId;
+  final String brand;
+  final String color;
+  final String modifiedBy;
+  final String size;     // string label, e.g. "ll", "15 inch"
   final int isActive;
 
-  const UpdateProductRequest({
-    required this.id,
-    this.detId,
-    required this.itemName,
-    required this.itemDesc,
+  const UpdateItemDetail({
+    required this.detailId,
     required this.itemPrice,
     required this.itemQty,
-    this.itemImgUrl,
-    this.imagesCsv,
-    this.details = const [],
-    required this.categoryId,
+    required this.brand,
+    required this.color,
+    required this.modifiedBy,
+    required this.size,
     required this.isActive,
   });
 
-  Map<String, dynamic> toJson() {
-    final normalizedImages = _normalizeImagesCsv(imagesCsv ?? itemImgUrl ?? '');
-    final hasImages = normalizedImages.isNotEmpty;
-    return {
-      'id': id,
-      'ID': id,
-      'item_id': id,
-      'ITEM_ID': id,
-      if (detId != null) 'det_id': detId,
-      if (detId != null) 'DET_ID': detId,
-      if (detId != null) 'item_det_id': detId,
-      if (detId != null) 'ITEM_DET_ID': detId,
-      'item_name': itemName,
-      'ITEM_NAME': itemName,
-      'item_desc': itemDesc,
-      'ITEM_DESC': itemDesc,
-      'item_price': itemPrice,
-      'ITEM_PRICE': itemPrice,
-      'item_qty': itemQty,
-      'ITEM_QTY': itemQty,
-      if (hasImages) 'item_img_url': normalizedImages,
-      if (hasImages) 'ITEM_IMG_URL': normalizedImages,
-      if (details.isNotEmpty)
-        'details': details.map((detail) => detail.toJson()).toList(),
-      'category_id': categoryId,
-      'CATEGORY_ID': categoryId,
-      'CAT_ID': categoryId,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'detail_id': detailId,
+    'item_price': itemPrice,
+    'item_qty': itemQty,
+    'brand': brand,
+    'color': color,
+    'modified_by': modifiedBy,
+    'size': size,
+    'is_active': isActive,
+  };
+}
 
-  String _normalizeImagesCsv(String raw) {
-    return raw
-        .split(',')
-        .map((part) => part.trim())
-        .where((part) => part.isNotEmpty)
-        .join(',');
-  }
+// ─── REPLACED: old UpdateProductRequest was sending wrong keys ────────────
+class UpdateProductRequest {
+  final int id;
+  final String itemName;
+  final String itemDesc;
+  final int isActive;
+  final List<UpdateItemDetail> itemDetails;
+  final int categoryId;
+  final String? itemImgUrl;
+
+  const UpdateProductRequest({
+    required this.id,
+    required this.itemName,
+    required this.itemDesc,
+    required this.isActive,
+    required this.itemDetails,
+    required this.categoryId,
+    this.itemImgUrl,
+  });
+
+  /// Produces the exact shape the API expects inside "items"[0]
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'item_name': itemName,
+    'item_desc': itemDesc,
+    'is_active': isActive,
+    'category_id': categoryId,
+    if (itemImgUrl != null && itemImgUrl!.isNotEmpty) 'item_img_url': itemImgUrl,
+    'item_details': itemDetails.map((d) => d.toJson()).toList(),
+  };
 }

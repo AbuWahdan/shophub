@@ -110,6 +110,7 @@ class _MyProductsPageState extends State<MyProductsPage> {
             details: details,
             detailsRows: detailsRows,
             itemImages: itemImages,
+            currentUser: AutofillHints.username,
           ),
         ),
       );

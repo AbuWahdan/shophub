@@ -366,48 +366,27 @@ class ProductService {
     }
   }
 
-  Future<UpdateProductResult> updateProduct(
-    UpdateProductRequest request,
-  ) async {
-    var payload = request.toJson();
+  Future<UpdateProductResult> updateProduct(UpdateProductRequest request) async {
+    // toJson() now produces the correct shape with "item_details" / "detail_id" / "size"
+    final payload = request.toJson();
+    final body = <String, dynamic>{'items': [payload]};
     final endpointUri = Uri.parse('$_baseUrl/UpdateItem');
-    
-    // Override item_size with resolved string labels in details
-    if (payload['details'] is List) {
-      payload['details'] = (payload['details'] as List).map((detail) {
-        if (detail is Map<String, dynamic>) {
-          final detailMap = Map<String, dynamic>.from(detail);
-          final sizeLabel = _resolveSizeLabel(detail['item_size'] is int ? detail['item_size'] : 0);
-          if (sizeLabel.isNotEmpty) {
-            detailMap['item_size'] = sizeLabel;
-            detailMap['ITEM_SIZE'] = sizeLabel;
-          }
-          return detailMap;
-        }
-        return detail;
-      }).toList();
-    }
-    
-    final body = <String, dynamic>{
-      'items': [payload],
-    };
 
     if (kDebugMode) {
       debugPrint('=== Product Update Debug ===');
-      debugPrint('[UpdateProduct] endpoint: $endpointUri');
-      debugPrint('payload: $payload');
-      debugPrint('body: $body');
+      debugPrint('[UpdateProduct] endpoint : $endpointUri');
       debugPrint('[UpdateProduct] body(json): ${jsonEncode(body)}');
-      _debugLogUpdatePayloadTypes(payload);
       debugPrint('============================');
     }
 
     final response = await _safePost(endpointUri, body: body);
     final data = _decode(response.body);
-    debugPrint('[UpdateProduct] status: ${response.statusCode}');
+
+    debugPrint('[UpdateProduct] status  : ${response.statusCode}');
     debugPrint('[UpdateProduct] response: ${response.body}');
-    final updateRawLower = response.body.toLowerCase();
-    if (updateRawLower.contains('ora-') || updateRawLower.contains('pl/sql')) {
+
+    final rawLower = response.body.toLowerCase();
+    if (rawLower.contains('ora-') || rawLower.contains('pl/sql')) {
       throw ProductException(response.body);
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -415,9 +394,10 @@ class ProductService {
         response.body.trim().isNotEmpty
             ? response.body
             : (_extractMessage(data) ??
-                  'Updating product failed (HTTP ${response.statusCode}).'),
+            'Updating product failed (HTTP ${response.statusCode}).'),
       );
     }
+
     _invalidateProductsCache();
     return UpdateProductResult(
       statusCode: response.statusCode,
@@ -425,6 +405,52 @@ class ProductService {
       data: data,
     );
   }
+
+  /// Calls the delete-check endpoint for a single variant detail.
+  ///
+  /// • Returns **true**  → item has no orders; the API has already hard-deleted
+  ///   the record — remove it from the UI list.
+  /// • Returns **false** → item has existing orders; deletion was blocked —
+  ///   keep the row, just set is_active = 0 in the update payload.
+  Future<bool> deleteVariantDetail(int itemDetId) async {
+    final uri = Uri.parse('$_baseUrl/DeleteItemDetails');
+    final response = await _safePost(uri, body: {'item_det_id': itemDetId});
+
+    debugPrint('[DeleteVariant] item_det_id: $itemDetId');
+    debugPrint('[DeleteVariant] response   : ${response.body}');
+
+    try {
+      final raw = response.body.trim();
+      final data = jsonDecode(raw);
+
+      // Handle common response shapes: bare int, {"result":1}, [1]
+      if (data is int) return data == 1;
+      if (data is List && data.isNotEmpty) {
+        final first = data.first;
+        if (first is int) return first == 1;
+        if (first is Map) {
+          final v = first.values.first;
+          return _asInt(v) == 1;
+        }
+      }
+      if (data is Map) {
+        final v = data['result'] ?? data['status'] ?? data['value'] ??
+            data['RESULT'] ?? data['STATUS'] ?? data.values.first;
+        return _asInt(v) == 1;
+      }
+    } catch (_) {
+      // Bare string like "1" or "[1]"
+      final raw = response.body.trim();
+      return raw == '1' || raw == '[1]' || raw.contains('"1"');
+    }
+    return false;
+  }
+
+// Helper — keeps DRY with existing _asInt usages in the file
+//   static int _asInt(dynamic v) {
+//     if (v is num) return v.toInt();
+//     return int.tryParse((v ?? '').toString()) ?? 0;
+//   }
 
   String _resolveSizeLabel(int sizeId) {
     if (sizeId <= 0) return '';
