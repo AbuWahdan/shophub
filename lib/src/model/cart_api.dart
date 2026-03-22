@@ -5,6 +5,7 @@ class ApiCartItem {
   final int itemDetId;
   final String username;
   final int itemQty;
+  final int availableQty;
   final String itemName;
   final String itemDesc;
   final double itemPrice;
@@ -19,6 +20,7 @@ class ApiCartItem {
     required this.itemDetId,
     required this.username,
     required this.itemQty,
+    this.availableQty = 0,
     required this.itemName,
     required this.itemDesc,
     required this.itemPrice,
@@ -37,6 +39,14 @@ class ApiCartItem {
       ),
       username: _asString(json, const ['USERNAME', 'username']),
       itemQty: _asInt(_pick(json, const ['ITEM_QTY', 'item_qty', 'qty'])),
+      availableQty: _asInt(
+        _pick(json, const [
+          'AVAILABLE_QTY',
+          'available_qty',
+          'AVAILABLE_QUANTITY',
+          'available_quantity',
+        ]),
+      ),
       itemName: _asString(json, const ['ITEM_NAME', 'item_name', 'name']),
       itemDesc: _asString(json, const [
         'ITEM_DESC',
@@ -69,7 +79,7 @@ class ApiCartItem {
       itemName: itemName,
       itemDesc: itemDesc,
       itemPrice: originalPrice.isFinite ? originalPrice : finalPrice,
-      itemQty: itemQty,
+      itemQty: availableQty > 0 ? availableQty : itemQty,
       itemImgUrl: itemImgUrl,
       images: itemImgUrl.trim().isEmpty
           ? const []

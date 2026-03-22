@@ -7,6 +7,7 @@ import '../config/ui_text.dart';
 import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
+import '../model/cart_api.dart';
 import '../model/cart_item.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
@@ -35,6 +36,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   late List<CartItem> cartItems;
   bool _isLoading = false;
   String? _errorMessage;
+  final Set<int> _itemsBeingUpdated = <int>{};
 
   @override
   void initState() {
@@ -57,12 +59,92 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     });
   }
 
-  void _updateQuantity(int index, int quantity) {
+  Future<void> _updateQuantity(int index, int newQuantity) async {
     if (!mounted) return;
-    if (quantity < 1) return; // Prevent invalid quantities
+    final cartItem = cartItems[index];
+    final oldQuantity = cartItem.quantity;
+    final username = context.read<AuthState>().user?.username.trim() ?? '';
+
+    if (newQuantity < 1) {
+      _showRemoveConfirmation(index);
+      return;
+    }
+
+    if (newQuantity == oldQuantity) return;
+
+    // Optimistic update
     setState(() {
-      cartItems[index].quantity = quantity;
+      _itemsBeingUpdated.add(index);
+      cartItems[index].quantity = newQuantity;
     });
+
+    try {
+      if (newQuantity > oldQuantity) {
+        // Increment quantity
+        final addRequest = AddItemToCartRequest(
+          itemId: cartItem.selectedDetId > 0
+              ? cartItem.product.id
+              : cartItem.product.id,
+          itemDetId: cartItem.selectedDetId,
+          username: username,
+          itemQty: newQuantity - oldQuantity,
+        );
+        await _productService.addItemToCart(addRequest);
+      } else if (newQuantity < oldQuantity) {
+        // Decrement - delete and re-add with new quantity
+        // Or if we have a dedicated decrease API, use that
+        // For now, we'll mark as updated but in real implementation
+        // you might call a separate decrease API or delete and re-add
+        final qtyDifference = oldQuantity - newQuantity;
+        for (int i = 0; i < qtyDifference; i++) {
+          await _productService.deleteItemFromCart(
+            detailId: cartItem.selectedDetId,
+            modifiedBy: username,
+          );
+        }
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _itemsBeingUpdated.remove(index);
+      });
+
+      AppSnackBar.show(
+        context,
+        message:
+            'Quantity updated successfully.',
+        type: AppSnackBarType.success,
+      );
+    } on ProductException catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _itemsBeingUpdated.remove(index);
+        // Revert optimistic update
+        cartItems[index].quantity = oldQuantity;
+      });
+
+      AppSnackBar.show(
+        context,
+        message: error.message,
+        type: AppSnackBarType.error,
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _itemsBeingUpdated.remove(index);
+        // Revert optimistic update
+        cartItems[index].quantity = oldQuantity;
+      });
+
+      AppSnackBar.show(
+        context,
+        message: 'Failed to update quantity. Please try again.',
+        type: AppSnackBarType.error,
+      );
+    }
   }
 
   void _openProductDetails(CartItem cartItem) {
@@ -102,13 +184,54 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
       message: l10n.cartRemoveItemMessage,
       confirmLabel: l10n.commonRemove,
       cancelLabel: l10n.commonCancel,
-      onConfirm: () {
-        _removeItem(index);
-        AppSnackBar.show(
-          context,
-          message: l10n.cartItemRemoved,
-          type: AppSnackBarType.info,
-        );
+      onConfirm: () async {
+        final cartItem = cartItems[index];
+        final username = context.read<AuthState>().user?.username.trim() ?? '';
+
+        setState(() {
+          _itemsBeingUpdated.add(index);
+        });
+
+        try {
+          await _productService.deleteItemFromCart(
+            detailId: cartItem.selectedDetId,
+            modifiedBy: username,
+          );
+
+          if (!mounted) return;
+
+          _removeItem(index);
+
+          AppSnackBar.show(
+            context,
+            message: l10n.cartItemRemoved,
+            type: AppSnackBarType.info,
+          );
+        } on ProductException catch (error) {
+          if (!mounted) return;
+
+          setState(() {
+            _itemsBeingUpdated.remove(index);
+          });
+
+          AppSnackBar.show(
+            context,
+            message: error.message,
+            type: AppSnackBarType.error,
+          );
+        } catch (error) {
+          if (!mounted) return;
+
+          setState(() {
+            _itemsBeingUpdated.remove(index);
+          });
+
+          AppSnackBar.show(
+            context,
+            message: 'Failed to remove item. Please try again.',
+            type: AppSnackBarType.error,
+          );
+        }
       },
     );
   }
@@ -178,8 +301,8 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     bool hasDiscount = product.discountPrice != null;
     final selectedSize = item.selectedSize;
     final selectedColor = item.selectedColor;
-    final availableStock = product.stockFor(selectedSize, selectedColor);
-    final imagePath = product.images.isNotEmpty ? product.images.first : '';
+    final isUpdating = _itemsBeingUpdated.contains(index);
+    final availableStock = product.quantity;
 
     return Card(
       shape: RoundedRectangleBorder(
@@ -188,7 +311,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        onTap: () => _openProductDetails(item),
+        onTap: isUpdating ? null : () => _openProductDetails(item),
         child: Padding(
           padding: AppSpacing.insetsMd,
           child: Column(
@@ -204,7 +327,12 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                       borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                       color: Theme.of(context).colorScheme.surface,
                     ),
-                    child: AppImage(path: imagePath, fit: BoxFit.cover),
+                    child: AppImage(
+                      path: product.images.isNotEmpty
+                          ? product.images.first
+                          : '',
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   // Product Info
@@ -252,7 +380,8 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                                 style: AppTextStyles.bodySmall,
                               ),
                               Text(
-                                context.l10n.cartAvailableStock(availableStock),
+                                context.l10n
+                                    .cartAvailableStock(availableStock),
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: AppColors.accentOrange,
                                 ),
@@ -266,7 +395,8 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                   // Delete Button
                   IconButton(
                     icon: const Icon(Icons.close, size: AppSpacing.iconMd),
-                    onPressed: () => _showRemoveConfirmation(index),
+                    onPressed: isUpdating ? null : () =>
+                        _showRemoveConfirmation(index),
                     color: Theme.of(context).colorScheme.onSurface,
                     constraints: const BoxConstraints(),
                     padding: EdgeInsets.zero,
@@ -282,15 +412,25 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                     context.l10n.cartQuantity,
                     style: AppTextStyles.bodyMedium,
                   ),
-                  QuantityStepper(
-                    value: quantity,
-                    onDecrement: quantity > 1
-                        ? () => _updateQuantity(index, quantity - 1)
-                        : null,
-                    onIncrement: quantity < AppConstants.checkoutMaxQuantity
-                        ? () => _updateQuantity(index, quantity + 1)
-                        : null,
-                  ),
+                  if (isUpdating)
+                    const SizedBox(
+                      width: 50,
+                      height: 40,
+                      child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  else
+                    QuantityStepper(
+                      value: quantity,
+                      onDecrement: quantity > 1
+                          ? () => _updateQuantity(index, quantity - 1)
+                          : null,
+                      onIncrement:
+                          quantity < AppConstants.checkoutMaxQuantity
+                              ? () => _updateQuantity(index, quantity + 1)
+                              : null,
+                    ),
                 ],
               ),
               const Divider(height: AppSpacing.lg),

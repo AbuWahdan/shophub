@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class ApiOrder {
   final int orderId;
   final String orderNo;
@@ -7,7 +9,7 @@ class ApiOrder {
   final double taxAmount;
   final double discountAmount;
   final double netAmount;
-  final int status;
+  final String statusRaw; // Store raw status value
   final DateTime createdDate;
 
   ApiOrder({
@@ -19,11 +21,20 @@ class ApiOrder {
     required this.taxAmount,
     required this.discountAmount,
     required this.netAmount,
-    required this.status,
+    required this.statusRaw,
     required this.createdDate,
   });
 
   factory ApiOrder.fromJson(Map<String, dynamic> json) {
+    // Check for status field with multiple possible names
+    final statusValue = json['STATUS'] ??
+        json['status'] ??
+        json['ORDER_STATUS'] ??
+        json['order_status'] ??
+        json['ITEM_STATUS'] ??
+        json['item_status'] ??
+        '';
+
     return ApiOrder(
       orderId: json['ORDER_ID'] as int? ?? 0,
       orderNo: json['ORDER_NO'] as String? ?? '',
@@ -33,7 +44,7 @@ class ApiOrder {
       taxAmount: _parseDouble(json['TAX_AMOUNT']),
       discountAmount: _parseDouble(json['DISCOUNT_AMOUNT']),
       netAmount: _parseDouble(json['NET_AMOUNT']),
-      status: json['STATUS'] as int? ?? 0,
+      statusRaw: statusValue.toString().trim(),
       createdDate: _parseDateTime(json['CREATED_DATE']),
     );
   }
@@ -48,7 +59,7 @@ class ApiOrder {
       'TAX_AMOUNT': taxAmount,
       'DISCOUNT_AMOUNT': discountAmount,
       'NET_AMOUNT': netAmount,
-      'STATUS': status,
+      'STATUS': statusRaw,
       'CREATED_DATE': createdDate.toIso8601String(),
     };
   }
@@ -80,20 +91,53 @@ class ApiOrder {
     return 0.0;
   }
 
+  /// Maps the raw status value to a human-readable label
   String getStatusLabel() {
-    switch (status) {
-      case 1:
-        return 'Completed';
-      case 2:
-        return 'Processing';
-      case 3:
-        return 'Shipped';
-      case 4:
+    final normalized = statusRaw.trim().toLowerCase();
+
+    switch (normalized) {
+      case 'p':
+      case 'pending':
         return 'Pending';
-      case 5:
+      case 'c':
+      case 'confirmed':
+        return 'Confirmed';
+      case 'shipped':
+      case 's':
+        return 'Shipped';
+      case 'd':
+      case 'delivered':
+        return 'Delivered';
+      case 'cancelled':
+      case 'x':
         return 'Cancelled';
       default:
-        return 'Unknown';
+        return normalized.isNotEmpty ? normalized : 'Processing';
+    }
+  }
+
+  /// Returns the color associated with the status for UI display
+  Color getStatusColor() {
+    final normalized = statusRaw.trim().toLowerCase();
+
+    switch (normalized) {
+      case 'p':
+      case 'pending':
+        return const Color(0xFFFFA500); // Orange
+      case 'c':
+      case 'confirmed':
+        return const Color(0xFF2196F3); // Blue
+      case 'shipped':
+      case 's':
+        return const Color(0xFF9C27B0); // Purple
+      case 'd':
+      case 'delivered':
+        return const Color(0xFF4CAF50); // Green
+      case 'cancelled':
+      case 'x':
+        return const Color(0xFFF44336); // Red
+      default:
+        return const Color(0xFF757575); // Grey
     }
   }
 }

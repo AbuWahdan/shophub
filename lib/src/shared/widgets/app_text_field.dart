@@ -16,6 +16,9 @@ class AppTextField extends StatelessWidget {
   final TextInputAction? textInputAction;
   final bool showRequiredAsterisk;
   final ValueChanged<String>? onChanged;
+  final int maxLines;
+  final int? minLines;
+  final int? maxLength;
 
   const AppTextField({
     super.key,
@@ -30,6 +33,9 @@ class AppTextField extends StatelessWidget {
     this.textInputAction,
     this.showRequiredAsterisk = false,
     this.onChanged,
+    this.maxLines = 1,
+    this.minLines,
+    this.maxLength,
   });
 
   @override
@@ -61,6 +67,9 @@ class AppTextField extends StatelessWidget {
           validator: validator,
           textInputAction: textInputAction,
           onChanged: onChanged,
+          maxLines: maxLines,
+          minLines: minLines,
+          maxLength: maxLength,
           style: AppTextStyles.bodyLarge,
           decoration: InputDecoration(
             hintText: hintText,

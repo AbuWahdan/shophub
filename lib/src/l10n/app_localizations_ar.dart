@@ -954,4 +954,81 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get validationOtpInvalidLength => 'أدخل رمز التحقق بالكامل';
+
+  @override
+  String get forgotPasswordTitle => 'نسيت كلمة المرور';
+
+  @override
+  String get forgotPasswordSubtitle => 'أدخل تفاصيل حسابك';
+
+  @override
+  String get forgotPasswordSendOtp => 'إرسال OTP';
+
+  @override
+  String get otpSentTitle => 'تحقق من بريدك';
+
+  @override
+  String get otpSentSubtitle => 'أرسلنا رمزًا مكوّنًا من 6 أرقام إلى بريدك';
+
+  @override
+  String get otpVerificationTitle => 'أدخل رمز التحقق';
+
+  @override
+  String get otpVerificationSubtitle =>
+      'أرسلنا رمزًا مكوّنًا من 6 أرقام إلى بريدك';
+
+  @override
+  String get otpVerificationVerify => 'تحقق';
+
+  @override
+  String get otpResendQuestion => 'لم تتلق الرمز؟';
+
+  @override
+  String otpResendCountdown(Object text) {
+    return '$text';
+  }
+
+  @override
+  String get resetPasswordTitle => 'إنشاء كلمة مرور جديدة';
+
+  @override
+  String get resetPasswordSubtitle => 'أدخل كلمة المرور الجديدة أدناه';
+
+  @override
+  String get resetPasswordNewLabel => 'كلمة المرور الجديدة';
+
+  @override
+  String get resetPasswordConfirmLabel => 'تأكيد كلمة المرور';
+
+  @override
+  String get resetPasswordUpdateButton => 'تحديث كلمة المرور';
+
+  @override
+  String get passwordUpdatedTitle => 'تم تحديث كلمة المرور!';
+
+  @override
+  String get passwordUpdatedSubtitle => 'تم تغيير كلمة المرور بنجاح';
+
+  @override
+  String get passwordUpdatedBackToLogin => 'العودة إلى الدخول';
+
+  @override
+  String passwordUpdatedAutoRedirect(Object count) {
+    return 'إعادة التوجيه خلال $count ثانية...';
+  }
+
+  @override
+  String get deliveryLocationTitle => 'اختر موقع التسليم';
+
+  @override
+  String get deliveryLocationCurrent => 'استخدم الموقع الحالي';
+
+  @override
+  String get deliveryLocationSaved => 'العناوين المحفوظة';
+
+  @override
+  String get deliveryLocationConfirm => 'تأكيد الموقع';
+
+  @override
+  String get commonContinue => 'المتابعة';
 }

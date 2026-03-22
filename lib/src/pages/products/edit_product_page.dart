@@ -11,7 +11,6 @@ import '../../services/product_service.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_snackbar.dart';
 import '../../shared/widgets/app_text_field.dart';
-import '../../themes/theme.dart';
 
 class EditProductPage extends StatefulWidget {
   const EditProductPage({
@@ -20,8 +19,6 @@ class EditProductPage extends StatefulWidget {
     required this.details,
     this.detailsRows = const [],
     this.itemImages = const [],
-    /// The username of the currently-logged-in user.
-    /// Used as "modified_by" in the update payload.
     required this.currentUser,
   });
 
@@ -42,54 +39,82 @@ class _EditProductPageState extends State<EditProductPage> {
   late final TextEditingController _nameController;
   late final TextEditingController _descController;
 
-  final List<_VariantEntry> _variantEntries = <_VariantEntry>[];
-  final List<String> _imagePaths = <String>[];
+  final List<_VariantEntry> _variantEntries = [];
+  final List<String> _imagePaths = [];
   final ImagePicker _imagePicker = ImagePicker();
 
   bool _isSubmitting = false;
-  int _defaultImageIndex = 0;
-
+  final int _defaultImageIndex = 0;
   late final int _itemId;
-  late bool _isActive;
   Category? _selectedCategory;
 
-  // ── Lifecycle ────────────────────────────────────────────────────────────
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   @override
   void initState() {
     super.initState();
-    final details = widget.details;
-    _itemId = details.itemId;
-
-    _nameController = TextEditingController(text: details.itemName);
-    _descController = TextEditingController(text: details.itemDesc);
-
-    _isActive = details.isActive == 1;
-    _selectedCategory = CategoriesData.getCategoryById(details.catId);
-
+    final d = widget.details;
+    _itemId = d.itemId;
+    _nameController = TextEditingController(text: d.itemName);
+    _descController = TextEditingController(text: d.itemDesc);
+    _selectedCategory = CategoriesData.getCategoryById(d.catId);
     _initializeVariants();
     _initializeImages();
-    _syncActiveState();
   }
 
   void _initializeVariants() {
-    for (final detail in widget.detailsRows) {
-      _variantEntries.add(
-        _VariantEntry(
-          detId: detail.detId,
-          isActive: detail.isActive == 1,
-          brand: detail.brand,
-          color: detail.color,
-          // Store the original string label from the API (e.g. "ll", "15 inch")
-          sizeLabel: detail.itemSize,
-          // Also resolve to int-id so the dropdown can show the right option
-          sizeId: _findSizeIdByLabel(detail.itemSize),
-          price: detail.itemPrice,
-          qty: detail.itemQty,
-          discount: detail.discount,
-        ),
-      );
+    for (final d in widget.detailsRows) {
+      // ITEM_SIZE from the API can be:
+      //   • An integer ID  → "5" → findSizeOptionById(5)
+      //   • A SIZE_CODE    → "XL" / "EU 42" → code match
+      //   • A SIZE_NAME    → "Extra Large"  → name match
+      //   • "0" or ""      → no size, leave both dropdowns empty
+      final opt = _resolveSize(d.itemSize);
+      _variantEntries.add(_VariantEntry(
+        detId: d.detId,
+        isActive: d.isActive == 1,
+        sizeGroupId: opt?.groupId,
+        sizeId: opt?.id,
+        brand: d.brand,
+        color: d.color,
+        price: d.itemPrice,
+        qty: d.itemQty,
+        discount: d.discount,
+      ));
     }
+  }
+
+  /// Resolves a raw ITEM_SIZE string to a SizeOption using 3-step priority:
+  ///  1) Parse as int → findSizeOptionById  (API returns integer ID)
+  ///  2) Code match  (e.g. "XL", "EU 42", "32/30")
+  ///  3) Name match  (e.g. "Extra Large")
+  SizeOption? _resolveSize(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty || trimmed == '0') return null;
+
+    // Step 1: numeric → by ID
+    final asId = int.tryParse(trimmed);
+    if (asId != null && asId > 0) {
+      final byId = findSizeOptionById(asId);
+      if (byId != null) return byId;
+    }
+
+    // Step 2: by SIZE_CODE (case-insensitive)
+    final lower = trimmed.toLowerCase();
+    for (final list in sizeOptions.values) {
+      for (final opt in list) {
+        if (opt.code.toLowerCase() == lower) return opt;
+      }
+    }
+
+    // Step 3: by SIZE_NAME (case-insensitive)
+    for (final list in sizeOptions.values) {
+      for (final opt in list) {
+        if (opt.name.toLowerCase() == lower) return opt;
+      }
+    }
+
+    return null;
   }
 
   void _initializeImages() {
@@ -98,772 +123,128 @@ class _EditProductPageState extends State<EditProductPage> {
     }
   }
 
-  void _syncActiveState() {
-    if (_totalQty <= 0 && _isActive) _isActive = false;
-  }
-
   @override
   void dispose() {
     _nameController.dispose();
     _descController.dispose();
-    for (final e in _variantEntries) {
-      e.dispose();
-    }
+    for (final e in _variantEntries) e.dispose();
     super.dispose();
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  int get _totalQty => _variantEntries.fold(
+      0, (sum, e) => sum + (int.tryParse(e.qtyController.text) ?? 0));
 
-  int get _totalQty => _variantEntries.fold<int>(
-    0,
-        (sum, e) => sum + (int.tryParse(e.qtyController.text) ?? 0),
-  );
-
-  /// Returns the integer sizeId for a given label string, or 0 if not found.
-  int _findSizeIdByLabel(String label) {
-    final normalized = label.trim().toLowerCase();
-    for (final sizeList in sizeOptions.values) {
-      for (final size in sizeList) {
-        if (size.name.trim().toLowerCase() == normalized) return size.id;
-      }
-    }
-    return 0;
+  // ── Variant active toggle — local only; delete-check runs at save ─────────
+  void _toggleVariantActive(int index, bool newValue) {
+    setState(() {
+      final e = _variantEntries[index];
+      e.isActive = newValue;
+      e.pendingDeactivate = !newValue && !e.isNew;
+    });
   }
 
-  /// Returns the label string for a sizeId, falling back to [fallback].
-  String _resolveSizeLabel(int sizeId, String fallback) {
-    for (final sizeList in sizeOptions.values) {
-      for (final size in sizeList) {
-        if (size.id == sizeId) return size.name;
-      }
-    }
-    return fallback.isNotEmpty ? fallback : 'N/A';
-  }
-
-  // ── Variant active-toggle with delete-check ──────────────────────────────
-
-  /// Called when the is_active Switch on an *existing* variant is toggled.
-  ///
-  /// Toggle ON  → simply marks the variant active (no API call needed).
-  /// Toggle OFF → calls the delete-check endpoint:
-  ///   • result == true  (no orders): confirms with user, then removes from list
-  ///     (the API has already hard-deleted the record on the server).
-  ///   • result == false (has orders): soft-deactivates (is_active = 0); the
-  ///     variant stays in the list and will be included in the update payload.
-  Future<void> _toggleExistingVariantActive(int index, bool newValue) async {
-    final entry = _variantEntries[index];
-
-    // Turning ON — no server call needed.
-    if (newValue) {
-      setState(() => entry.isActive = true);
-      return;
-    }
-
-    // Turning OFF — need to ask the server if the variant can be deleted.
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Deactivate Variant'),
-        content: const Text(
-          'Do you want to deactivate this variant?\n\n'
-              'If it has no orders it will be permanently removed. '
-              'If it has existing orders it will be deactivated instead.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !mounted) return;
-
-    setState(() => entry.isCheckingDeletion = true);
-
-    try {
-      // This endpoint deletes the record if it has no orders (returns true)
-      // or blocks deletion if it does have orders (returns false).
-      final wasDeleted = await _productService.deleteVariantDetail(entry.detId!);
-
-      if (!mounted) return;
-
-      if (wasDeleted) {
-        // Hard-deleted on the server — remove from UI too.
-        setState(() {
-          entry.dispose();
-          _variantEntries.removeAt(index);
-        });
-        AppSnackBar.show(
-          context,
-          message: 'Variant removed (no orders found)',
-          type: AppSnackBarType.success,
-        );
-      } else {
-        // Has orders — keep the row but mark inactive.
-        setState(() {
-          entry.isCheckingDeletion = false;
-          entry.isActive = false;
-        });
-        AppSnackBar.show(
-          context,
-          message: 'Variant deactivated (has existing orders)',
-          type: AppSnackBarType.warning,
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => entry.isCheckingDeletion = false);
-      AppSnackBar.show(
-        context,
-        message: 'Error checking variant: $e',
-        type: AppSnackBarType.error,
-      );
-    }
-  }
-
-  // ── Build ─────────────────────────────────────────────────────────────────
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.productEditTitle), elevation: 0),
-      body: SafeArea(
-        child: _isSubmitting
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(context),
-                const SizedBox(height: AppSpacing.xl),
-                _buildBasicInfoSection(context, l10n),
-                const SizedBox(height: AppSpacing.xl),
-                _buildVariantsSection(context, l10n),
-                const SizedBox(height: AppSpacing.xl),
-                _buildImagesSection(context, l10n),
-                const SizedBox(height: AppSpacing.xl),
-                _buildSettingsSection(context, l10n),
-                const SizedBox(height: AppSpacing.xl),
-                _buildActionButtons(context, l10n),
-                const SizedBox(height: AppSpacing.lg),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Section builders ──────────────────────────────────────────────────────
-
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.2)),
-      ),
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Row(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Icon(Icons.shopping_bag_outlined,
-                color: Theme.of(context).primaryColor, size: 28),
-          ),
-          const SizedBox(width: AppSpacing.lg),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Product ID: $_itemId',
-                    style: Theme.of(context).textTheme.labelSmall),
-                const SizedBox(height: AppSpacing.xs),
-                Text('Editing product details',
-                    style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBasicInfoSection(BuildContext context, dynamic l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle(context, 'Basic Information', Icons.info_outline),
-        const SizedBox(height: AppSpacing.lg),
-        AppTextField(
-          controller: _nameController,
-          label: l10n.productItemName,
-          hintText: l10n.productItemNameHint,
-          validator: (v) => (v?.trim().isEmpty ?? true) ? 'Required' : null,
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        AppTextField(
-          controller: _descController,
-          label: l10n.productDescriptionLabel,
-          hintText: l10n.productDescriptionHint,
-          validator: (v) => (v?.trim().isEmpty ?? true) ? 'Required' : null,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildVariantsSection(BuildContext context, dynamic l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle(context, 'Variants', Icons.tune),
-        const SizedBox(height: AppSpacing.lg),
-        if (_variantEntries.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Text('No variants yet',
-                  style: Theme.of(context).textTheme.bodyMedium),
-            ),
-          )
-        else
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _variantEntries.length,
-            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.lg),
-            itemBuilder: (_, i) =>
-                _buildVariantCard(context, i, _variantEntries[i]),
-          ),
-        const SizedBox(height: AppSpacing.lg),
-        OutlinedButton.icon(
-          onPressed: _isSubmitting ? null : _addVariant,
-          icon: const Icon(Icons.add),
-          label: const Text('Add Variant'),
-          style: OutlinedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 48)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildVariantCard(
-      BuildContext context, int index, _VariantEntry entry) {
-    final allSizes = <SizeOption>[];
-    for (final sizeList in sizeOptions.values) {
-      allSizes.addAll(sizeList);
-    }
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          // Highlight inactive variants with a muted border
-          color: entry.isActive
-              ? Theme.of(context).dividerColor
-              : Theme.of(context).colorScheme.error.withOpacity(0.4),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Card header ──────────────────────────────────────────────
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Variant ${index + 1}${entry.isNew ? '  (new)' : ''}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-
-                // NEW variants → show a simple remove button (not yet in DB)
-                // EXISTING variants → show is_active toggle (no delete button)
-                if (entry.isNew)
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 20),
-                    tooltip: 'Remove new variant',
-                    onPressed: _isSubmitting
-                        ? null
-                        : () => setState(() {
-                      entry.dispose();
-                      _variantEntries.removeAt(index);
-                    }),
-                  )
-                else if (entry.isCheckingDeletion)
-                  const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else
-                // is_active toggle for existing variants
-                  Row(
-                    children: [
-                      Text(
-                        entry.isActive ? 'Active' : 'Inactive',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: entry.isActive
-                              ? Colors.green
-                              : Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                      Switch(
-                        value: entry.isActive,
-                        activeColor: Colors.green,
-                        onChanged: _isSubmitting
-                            ? null
-                            : (val) => _toggleExistingVariantActive(index, val),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-
-            // ── Fields ───────────────────────────────────────────────────
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: AppTextField(
-                    controller: entry.brandController,
-                    label: 'Brand',
-                    hintText: 'Brand name',
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: AppTextField(
-                    controller: entry.colorController,
-                    label: 'Color',
-                    hintText: 'Color',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<int>(
-                    value: entry.sizeId > 0 ? entry.sizeId : null,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'Size',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    items: allSizes
-                        .where((s) => s.id > 0)
-                        .map((s) => DropdownMenuItem(
-                      value: s.id,
-                      child: Text(s.name,
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1),
-                    ))
-                        .toList(),
-                    onChanged: _isSubmitting
-                        ? null
-                        : (val) {
-                      if (val != null && val > 0) {
-                        setState(() {
-                          entry.sizeId = val;
-                          // Keep sizeLabel in sync so fallback stays correct
-                          entry.sizeLabel =
-                              _resolveSizeLabel(val, entry.sizeLabel);
-                        });
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: AppTextField(
-                    controller: entry.priceController,
-                    label: 'Price',
-                    hintText: '0.00',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: AppTextField(
-                    controller: entry.qtyController,
-                    label: 'Quantity',
-                    hintText: '0',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: AppTextField(
-                    controller: entry.discountController,
-                    label: 'Discount %',
-                    hintText: '0',
-                    keyboardType: TextInputType.number,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildImagesSection(BuildContext context, dynamic l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle(context, 'Product Images', Icons.image_outlined),
-        const SizedBox(height: AppSpacing.lg),
-        if (_imagePaths.isEmpty)
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Text('No images yet',
-                  style: Theme.of(context).textTheme.bodyMedium),
-            ),
-          )
-        else
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-            ),
-            itemCount: _imagePaths.length,
-            itemBuilder: (_, i) => _buildImageTile(context, i),
-          ),
-        const SizedBox(height: AppSpacing.lg),
-        OutlinedButton.icon(
-          onPressed: _isSubmitting ? null : _pickImage,
-          icon: const Icon(Icons.image_outlined),
-          label: const Text('Add Image'),
-          style: OutlinedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 48)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildImageTile(BuildContext context, int index) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Theme.of(context).dividerColor),
-            image: DecorationImage(
-              image: NetworkImage(_imagePaths[index]),
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
-        Positioned(
-          top: 4,
-          right: 4,
-          child: GestureDetector(
-            onTap: _isSubmitting
-                ? null
-                : () => setState(() => _imagePaths.removeAt(index)),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.8),
-                borderRadius: BorderRadius.circular(50),
-              ),
-              padding: const EdgeInsets.all(4),
-              child: const Icon(Icons.close, size: 14, color: Colors.white),
-            ),
-          ),
-        ),
-        if (index == _defaultImageIndex)
-          Positioned(
-            bottom: 4,
-            left: 4,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                borderRadius: BorderRadius.circular(50),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              child: const Text('Default',
-                  style: TextStyle(color: Colors.white, fontSize: 10)),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildSettingsSection(BuildContext context, dynamic l10n) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle(context, 'Settings', Icons.settings),
-        const SizedBox(height: AppSpacing.lg),
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Theme.of(context).dividerColor),
-          ),
-          child: DropdownButtonFormField<Category>(
-            value: _selectedCategory,
-            decoration: InputDecoration(
-              labelText: l10n.productCategory,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-            ),
-            items: CategoriesData.getAllCategoriesFlat()
-                .map((cat) => DropdownMenuItem(
-              value: cat,
-              child: Text(
-                  cat.parentId == null ? cat.name : '  - ${cat.name}'),
-            ))
-                .toList(),
-            onChanged: _isSubmitting
-                ? null
-                : (val) => setState(() => _selectedCategory = val),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _isActive
-                  ? Theme.of(context).primaryColor.withOpacity(0.3)
-                  : Theme.of(context).dividerColor,
-            ),
-          ),
-          child: SwitchListTile(
-            shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            title: Text(
-              l10n.productIsActive,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            subtitle: _totalQty <= 0
-                ? Text(
-              'Set quantity > 0 to enable',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.error),
-            )
-                : null,
-            contentPadding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-            value: _isActive,
-            onChanged: _isSubmitting || _totalQty <= 0
-                ? null
-                : (val) => setState(() => _isActive = val),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButtons(BuildContext context, dynamic l10n) {
-    return Column(
-      children: [
-        AppButton(
-          label: l10n.productUpdateAction,
-          leading: _isSubmitting
-              ? const SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor:
-                AlwaysStoppedAnimation(Colors.white)),
-          )
-              : null,
-          onPressed: _isSubmitting ? null : _updateProduct,
-        ),
-        const SizedBox(height: AppSpacing.md),
-        OutlinedButton(
-          onPressed: _isSubmitting ? null : () => Navigator.pop(context),
-          style: OutlinedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 48)),
-          child: Text(context.l10n.commonCancel),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSectionTitle(
-      BuildContext context, String title, IconData icon) {
-    return Row(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.all(AppSpacing.sm),
-          child: Icon(icon, color: Theme.of(context).primaryColor, size: 20),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Text(
-          title,
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.bold),
-        ),
-      ],
-    );
-  }
-
-  // ── Actions ───────────────────────────────────────────────────────────────
-
-  void _addVariant() {
-    setState(() => _variantEntries.add(_VariantEntry()));
-  }
-
-  Future<void> _pickImage() async {
-    try {
-      final result =
-      await _imagePicker.pickImage(source: ImageSource.gallery);
-      if (result != null && mounted) {
-        setState(() => _imagePaths.add(result.path));
-      }
-    } catch (e) {
-      if (mounted) {
-        AppSnackBar.show(context,
-            message: 'Failed to pick image', type: AppSnackBarType.error);
-      }
-    }
-  }
-
-  // ── Core update ───────────────────────────────────────────────────────────
+  // ── Submit ────────────────────────────────────────────────────────────────
 
   Future<void> _updateProduct() async {
     if (!_formKey.currentState!.validate()) return;
-
     if (_selectedCategory == null) {
       AppSnackBar.show(context,
-          message: 'Please select a category',
-          type: AppSnackBarType.warning);
+          message: 'Please select a category', type: AppSnackBarType.warning);
       return;
     }
     if (_variantEntries.isEmpty) {
       AppSnackBar.show(context,
-          message: 'Add at least one variant',
-          type: AppSnackBarType.warning);
+          message: 'Add at least one variant', type: AppSnackBarType.warning);
       return;
     }
 
     setState(() => _isSubmitting = true);
 
     try {
-      // ── 1. Build UpdateItemDetail list for EXISTING variants ─────────────
-      //       These go in "item_details" with "detail_id" + string "size".
-      final existingDetails = <UpdateItemDetail>[];
-
-      for (final entry in _variantEntries.where((e) => !e.isNew)) {
-        final price =
-            double.tryParse(entry.priceController.text.trim()) ?? 0;
-        if (price <= 0) {
-          throw 'All variants must have a price greater than 0';
+      // ── Step 1: pending deactivations ────────────────────────────────────
+      final toHardDelete = <int>{};
+      for (final e
+      in _variantEntries.where((e) => !e.isNew && e.pendingDeactivate)) {
+        try {
+          final deleted = await _productService.deleteVariantDetail(e.detId!);
+          if (deleted) toHardDelete.add(e.detId!);
+        } catch (_) {
+          // fall through → include with is_active=0
         }
+      }
+
+      // ── Step 2: update existing variants ─────────────────────────────────
+      final existingDetails = <UpdateItemDetail>[];
+      for (final e in _variantEntries.where((e) => !e.isNew)) {
+        if (toHardDelete.contains(e.detId)) continue;
+        final price = double.tryParse(e.priceController.text.trim()) ?? 0;
+        if (price <= 0) throw 'All variants must have a price > 0';
+
+        // Derive SIZE_CODE from the selected sizeId at submit time
+        final sizeOpt =
+        e.sizeId != null ? findSizeOptionById(e.sizeId!) : null;
+        final sizeCode = sizeOpt?.code ?? '';
 
         existingDetails.add(UpdateItemDetail(
-          detailId: entry.detId!,
+          detailId: e.detId!,
           itemPrice: price,
-          itemQty: int.tryParse(entry.qtyController.text.trim()) ?? 0,
-          brand: entry.brandController.text.trim().isEmpty
+          itemQty: int.tryParse(e.qtyController.text.trim()) ?? 0,
+          brand: e.brandController.text.trim().isEmpty
               ? 'N/A'
-              : entry.brandController.text.trim(),
-          color: entry.colorController.text.trim().isEmpty
+              : e.brandController.text.trim(),
+          color: e.colorController.text.trim().isEmpty
               ? 'N/A'
-              : entry.colorController.text.trim(),
-          // "modified_by" = the currently logged-in user
+              : e.colorController.text.trim(),
           modifiedBy: widget.currentUser,
-          // Resolve sizeId → label string (fall back to original API label)
-          size: _resolveSizeLabel(entry.sizeId, entry.sizeLabel),
-          isActive: entry.isActive ? 1 : 0,
+          size: sizeCode, // SIZE_CODE string (e.g. "XL", "42")
+          isActive: e.isActive ? 1 : 0,
         ));
       }
 
-      // ── 2. Submit the update request ─────────────────────────────────────
-      //       toJson() now produces:
-      //         { "items": [{ "id":..., "item_details": [...], ... }] }
-      final request = UpdateProductRequest(
+      // product is_active = 1 if any variant is active
+      final productIsActive =
+      existingDetails.any((d) => d.isActive == 1) ? 1 : 0;
+
+      await _productService.updateProduct(UpdateProductRequest(
         id: _itemId,
         itemName: _nameController.text.trim(),
         itemDesc: _descController.text.trim(),
-        isActive: _isActive ? 1 : 0,
+        isActive: productIsActive,
         itemDetails: existingDetails,
         categoryId: _selectedCategory!.id,
         itemImgUrl: _imagePaths.isNotEmpty ? _imagePaths.first : null,
-      );
+      ));
 
-      await _productService.updateProduct(request);
-
-      // ── 3. Insert brand-new variants (those added during this edit session)
+      // ── Step 3: insert new variants ───────────────────────────────────────
       final newEntries = _variantEntries.where((e) => e.isNew).toList();
       if (newEntries.isNotEmpty) {
         final insertDetails = <CreateProductDetail>[];
-        for (final entry in newEntries) {
-          final price =
-              double.tryParse(entry.priceController.text.trim()) ?? 0;
-          if (price <= 0) {
-            throw 'New variant price must be greater than 0';
-          }
+        for (final e in newEntries) {
+          final price = double.tryParse(e.priceController.text.trim()) ?? 0;
+          if (price <= 0) throw 'New variant price must be > 0';
+
+          final sizeOpt =
+          e.sizeId != null ? findSizeOptionById(e.sizeId!) : null;
+          final sizeCode = sizeOpt?.code ?? '';
+
           insertDetails.add(CreateProductDetail(
-            brand: entry.brandController.text.trim().isEmpty
+            brand: e.brandController.text.trim().isEmpty
                 ? 'N/A'
-                : entry.brandController.text.trim(),
-            color: entry.colorController.text.trim().isEmpty
+                : e.brandController.text.trim(),
+            color: e.colorController.text.trim().isEmpty
                 ? 'N/A'
-                : entry.colorController.text.trim(),
-            itemSize: entry.sizeId,
+                : e.colorController.text.trim(),
+            itemSize: sizeCode, // String SIZE_CODE
             itemPrice: price,
-            itemQty: int.tryParse(entry.qtyController.text.trim()) ?? 0,
-            discount:
-            double.tryParse(entry.discountController.text.trim()) ?? 0,
-            isActive: entry.isActive ? 1 : 0,
+            itemQty: int.tryParse(e.qtyController.text.trim()) ?? 0,
+            discount: double.tryParse(e.discountController.text.trim()) ?? 0,
+            isActive: e.isActive ? 1 : 0,
           ));
         }
-
         await _productService.insertProductDetails(
           itemId: _itemId,
           details: insertDetails,
+          createdBy: widget.currentUser,
         );
       }
 
@@ -880,25 +261,548 @@ class _EditProductPageState extends State<EditProductPage> {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.productEditTitle, overflow: TextOverflow.ellipsis),
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: _isSubmitting
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(context),
+                const SizedBox(height: AppSpacing.xl),
+                _buildBasicInfo(context, l10n),
+                const SizedBox(height: AppSpacing.xl),
+                _buildVariants(context),
+                const SizedBox(height: AppSpacing.xl),
+                _buildImages(context),
+                const SizedBox(height: AppSpacing.xl),
+                _buildCategorySection(context, l10n),
+                // ← is_active toggle REMOVED from here
+                const SizedBox(height: AppSpacing.xl),
+                _buildActions(context, l10n),
+                const SizedBox(height: AppSpacing.lg),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border:
+        Border.all(color: Theme.of(context).primaryColor.withOpacity(0.2)),
+      ),
+      child: Row(children: [
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: Theme.of(context).primaryColor.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(Icons.shopping_bag_outlined,
+              color: Theme.of(context).primaryColor, size: 28),
+        ),
+        const SizedBox(width: AppSpacing.lg),
+        Expanded(
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Product ID: $_itemId',
+                    style: Theme.of(context).textTheme.labelSmall,
+                    overflow: TextOverflow.ellipsis),
+                const SizedBox(height: AppSpacing.xs),
+                Text('Editing product details',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    overflow: TextOverflow.ellipsis),
+              ]),
+        ),
+      ]),
+    );
+  }
+
+  Widget _buildBasicInfo(BuildContext context, dynamic l10n) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _sectionTitle(context, 'Basic Information', Icons.info_outline),
+      const SizedBox(height: AppSpacing.lg),
+      AppTextField(
+        controller: _nameController,
+        label: l10n.productItemName,
+        hintText: l10n.productItemNameHint,
+        validator: (v) => (v?.trim().isEmpty ?? true) ? 'Required' : null,
+      ),
+      const SizedBox(height: AppSpacing.lg),
+      AppTextField(
+        controller: _descController,
+        label: l10n.productDescriptionLabel,
+        hintText: l10n.productDescriptionHint,
+        validator: (v) => (v?.trim().isEmpty ?? true) ? 'Required' : null,
+      ),
+    ]);
+  }
+
+  Widget _buildVariants(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _sectionTitle(context, 'Variants', Icons.tune),
+      const SizedBox(height: AppSpacing.lg),
+      if (_variantEntries.isEmpty)
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Text('No variants yet',
+                style: Theme.of(context).textTheme.bodyMedium),
+          ),
+        )
+      else
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _variantEntries.length,
+          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.lg),
+          itemBuilder: (_, i) =>
+              _buildVariantCard(context, i, _variantEntries[i]),
+        ),
+      const SizedBox(height: AppSpacing.lg),
+      OutlinedButton.icon(
+        onPressed: _isSubmitting
+            ? null
+            : () => setState(() => _variantEntries.add(_VariantEntry())),
+        icon: const Icon(Icons.add),
+        label: const Text('Add Variant'),
+        style: OutlinedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 48)),
+      ),
+    ]);
+  }
+
+  /// Variant card — identical pattern to InsertProductPage._buildVariantCard.
+  /// Size group + size are stored directly on _VariantEntry and updated via
+  /// setState on the PARENT, exactly like the working insert page.
+  Widget _buildVariantCard(
+      BuildContext context, int index, _VariantEntry entry) {
+    // The sizes available for the currently selected group
+    final groupSizes =
+    (sizeOptions[entry.sizeGroupId] ?? <SizeOption>[]);
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: entry.isActive
+              ? Theme.of(context).dividerColor
+              : Theme.of(context).colorScheme.error.withOpacity(0.5),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // ── Header ──────────────────────────────────────────────────────
+          Row(children: [
+            Expanded(
+              child: Text(
+                'Variant ${index + 1}${entry.isNew ? ' (new)' : ''}',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 4),
+            if (entry.isNew)
+              IconButton(
+                icon: const Icon(Icons.close, size: 20),
+                tooltip: 'Remove',
+                onPressed: _isSubmitting
+                    ? null
+                    : () => setState(() {
+                  entry.dispose();
+                  _variantEntries.removeAt(index);
+                }),
+              )
+            else
+            // Active/inactive toggle for existing variants
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                Flexible(
+                  child: Text(
+                    entry.isActive ? 'Active' : 'Inactive',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: entry.isActive
+                          ? Colors.green
+                          : Theme.of(context).colorScheme.error,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Switch(
+                  value: entry.isActive,
+                  activeColor: Colors.green,
+                  onChanged: _isSubmitting
+                      ? null
+                      : (val) => _toggleVariantActive(index, val),
+                ),
+              ]),
+          ]),
+
+          if (!entry.isActive && entry.pendingDeactivate)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Text(
+                'Will be removed or deactivated on save',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.error),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // ── Brand / Color ────────────────────────────────────────────────
+          Row(children: [
+            Expanded(
+              child: AppTextField(
+                controller: entry.brandController,
+                label: 'Brand',
+                hintText: 'Brand name',
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: AppTextField(
+                controller: entry.colorController,
+                label: 'Color',
+                hintText: 'Color',
+              ),
+            ),
+          ]),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // ── Size Group dropdown ──────────────────────────────────────────
+          // Pattern copied exactly from InsertProductPage:
+          // • value comes from entry.sizeGroupId (always current, always valid)
+          // • setState on parent updates the entry and rebuilds the card
+          // • No separate StatefulWidget — no stale state issues
+          DropdownButtonFormField<int>(
+            value: entry.sizeGroupId,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: 'Size Group',
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 14),
+            ),
+            hint: const Text('Select group (optional)',
+                overflow: TextOverflow.ellipsis),
+            items: sizeGroups
+                .map((g) => DropdownMenuItem<int>(
+              value: g.id,
+              child: Text(g.name,
+                  overflow: TextOverflow.ellipsis, maxLines: 1),
+            ))
+                .toList(),
+            onChanged: _isSubmitting
+                ? null
+                : (val) {
+              setState(() {
+                entry.sizeGroupId = val;
+                // Clear size if it no longer belongs to new group
+                final options = sizeOptions[val] ?? [];
+                if (val == null ||
+                    options.every((o) => o.id != entry.sizeId)) {
+                  entry.sizeId = null;
+                }
+              });
+            },
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // ── Size dropdown (filtered by group) ────────────────────────────
+          DropdownButtonFormField<int>(
+            value: entry.sizeId,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: 'Size',
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 14),
+            ),
+            hint: Text(
+              entry.sizeGroupId == null
+                  ? 'Select a group first'
+                  : 'Select size (optional)',
+              overflow: TextOverflow.ellipsis,
+            ),
+            items: groupSizes
+                .map((s) => DropdownMenuItem<int>(
+              value: s.id,
+              child: Text(s.name,
+                  overflow: TextOverflow.ellipsis, maxLines: 1),
+            ))
+                .toList(),
+            onChanged: (_isSubmitting || entry.sizeGroupId == null)
+                ? null
+                : (val) {
+              setState(() => entry.sizeId = val);
+            },
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // ── Price / Qty / Discount ───────────────────────────────────────
+          Row(children: [
+            Expanded(
+              child: AppTextField(
+                controller: entry.priceController,
+                label: 'Price',
+                hintText: '0.00',
+                keyboardType: TextInputType.number,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: AppTextField(
+                controller: entry.qtyController,
+                label: 'Qty',
+                hintText: '0',
+                keyboardType: TextInputType.number,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: AppTextField(
+                controller: entry.discountController,
+                label: 'Disc %',
+                hintText: '0',
+                keyboardType: TextInputType.number,
+              ),
+            ),
+          ]),
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildImages(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _sectionTitle(context, 'Product Images', Icons.image_outlined),
+      const SizedBox(height: AppSpacing.lg),
+      if (_imagePaths.isEmpty)
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Text('No images yet',
+                style: Theme.of(context).textTheme.bodyMedium),
+          ),
+        )
+      else
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+          ),
+          itemCount: _imagePaths.length,
+          itemBuilder: (_, i) => _buildImageTile(context, i),
+        ),
+      const SizedBox(height: AppSpacing.lg),
+      OutlinedButton.icon(
+        onPressed: _isSubmitting ? null : _pickImage,
+        icon: const Icon(Icons.image_outlined),
+        label: const Text('Add Image'),
+        style: OutlinedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 48)),
+      ),
+    ]);
+  }
+
+  Widget _buildImageTile(BuildContext context, int index) {
+    return Stack(fit: StackFit.expand, children: [
+      ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          _imagePaths[index],
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            color: Theme.of(context).dividerColor,
+            child: const Icon(Icons.broken_image_outlined),
+          ),
+        ),
+      ),
+      Positioned(
+        top: 4,
+        right: 4,
+        child: GestureDetector(
+          onTap: _isSubmitting
+              ? null
+              : () => setState(() => _imagePaths.removeAt(index)),
+          child: Container(
+            decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.85),
+                borderRadius: BorderRadius.circular(50)),
+            padding: const EdgeInsets.all(4),
+            child: const Icon(Icons.close, size: 14, color: Colors.white),
+          ),
+        ),
+      ),
+      if (index == _defaultImageIndex)
+        Positioned(
+          bottom: 4,
+          left: 4,
+          child: Container(
+            decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                borderRadius: BorderRadius.circular(50)),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            child: const Text('Default',
+                style: TextStyle(color: Colors.white, fontSize: 10),
+                overflow: TextOverflow.ellipsis),
+          ),
+        ),
+    ]);
+  }
+
+  // is_active toggle removed — product active state is derived from variants
+  Widget _buildCategorySection(BuildContext context, dynamic l10n) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _sectionTitle(context, 'Category', Icons.category_outlined),
+      const SizedBox(height: AppSpacing.lg),
+      Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: DropdownButtonFormField<Category>(
+          value: _selectedCategory,
+          isExpanded: true,
+          decoration: InputDecoration(
+            labelText: l10n.productCategory,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+          ),
+          items: CategoriesData.getAllCategoriesFlat()
+              .map((c) => DropdownMenuItem(
+            value: c,
+            child: Text(
+              c.parentId == null ? c.name : '  - ${c.name}',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ))
+              .toList(),
+          onChanged: _isSubmitting
+              ? null
+              : (v) => setState(() => _selectedCategory = v),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _buildActions(BuildContext context, dynamic l10n) {
+    return Column(children: [
+      AppButton(
+        label: l10n.productUpdateAction,
+        leading: _isSubmitting
+            ? const SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor:
+              AlwaysStoppedAnimation<Color>(Colors.white)),
+        )
+            : null,
+        onPressed: _isSubmitting ? null : _updateProduct,
+      ),
+      const SizedBox(height: AppSpacing.md),
+      OutlinedButton(
+        onPressed: _isSubmitting ? null : () => Navigator.pop(context),
+        style: OutlinedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 48)),
+        child:
+        Text(context.l10n.commonCancel, overflow: TextOverflow.ellipsis),
+      ),
+    ]);
+  }
+
+  Widget _sectionTitle(BuildContext context, String title, IconData icon) {
+    return Row(children: [
+      Container(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: Theme.of(context).primaryColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: Theme.of(context).primaryColor, size: 20),
+      ),
+      const SizedBox(width: AppSpacing.md),
+      Expanded(
+        child: Text(title,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
+            overflow: TextOverflow.ellipsis),
+      ),
+    ]);
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final result = await _imagePicker.pickImage(source: ImageSource.gallery);
+      if (result != null && mounted) {
+        setState(() => _imagePaths.add(result.path));
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackBar.show(context,
+            message: 'Failed to pick image', type: AppSnackBarType.error);
+      }
+    }
+  }
 }
 
-// ── Variant entry (local state per card) ──────────────────────────────────────
-
+// ══════════════════════════════════════════════════════════════════════════════
+// _VariantEntry — plain Dart object (no widget state)
+// sizeGroupId / sizeId stored here and read by the parent's setState.
+// This is the same pattern as _VariantFormEntry in InsertProductPage.
+// ══════════════════════════════════════════════════════════════════════════════
 class _VariantEntry {
-  /// Null / ≤0 means this is a brand-new, unsaved variant.
   final int? detId;
-
   bool isActive;
+  bool pendingDeactivate;
 
-  /// True while the delete-check API call is in-flight.
-  bool isCheckingDeletion;
+  /// Drives the Size Group dropdown directly
+  int? sizeGroupId;
 
-  /// Original size label from the API (e.g. "ll", "15 inch").
-  /// Used as a fallback when the sizeId can't be resolved back to a label.
-  String sizeLabel;
-
-  /// Integer id used to drive the Size DropdownButtonFormField.
-  int sizeId;
+  /// Drives the Size dropdown directly
+  int? sizeId;
 
   final TextEditingController brandController;
   final TextEditingController colorController;
@@ -909,25 +813,23 @@ class _VariantEntry {
   _VariantEntry({
     this.detId,
     this.isActive = true,
-    this.sizeLabel = '',
-    int? sizeId,
+    this.sizeGroupId,
+    this.sizeId,
     String brand = '',
     String color = '',
     double price = 0,
     int qty = 0,
     double discount = 0,
-  })  : isCheckingDeletion = false,
-        sizeId = sizeId ?? 0,
+  })  : pendingDeactivate = false,
         brandController = TextEditingController(text: brand),
         colorController = TextEditingController(text: color),
         priceController =
         TextEditingController(text: price > 0 ? price.toString() : ''),
         qtyController =
         TextEditingController(text: qty > 0 ? qty.toString() : ''),
-        discountController = TextEditingController(
-            text: discount > 0 ? discount.toString() : '');
+        discountController =
+        TextEditingController(text: discount > 0 ? discount.toString() : '');
 
-  /// True when this variant has not yet been persisted to the server.
   bool get isNew => detId == null || detId! <= 0;
 
   void dispose() {

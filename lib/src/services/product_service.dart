@@ -271,9 +271,7 @@ class ProductService {
       if (kDebugMode) {
         debugPrint('[InsertProduct] POST $endpointUri');
         debugPrint('[InsertProduct] body: $body');
-        debugPrint(
-          '[InsertProduct] body(json): ${jsonEncode(body)}',
-        );
+        debugPrint('[InsertProduct] body(json): ${jsonEncode(body)}');
       }
       final response = await _safePost(endpointUri, body: body);
       final data = _decode(response.body);
@@ -366,10 +364,14 @@ class ProductService {
     }
   }
 
-  Future<UpdateProductResult> updateProduct(UpdateProductRequest request) async {
+  Future<UpdateProductResult> updateProduct(
+    UpdateProductRequest request,
+  ) async {
     // toJson() now produces the correct shape with "item_details" / "detail_id" / "size"
     final payload = request.toJson();
-    final body = <String, dynamic>{'items': [payload]};
+    final body = <String, dynamic>{
+      'items': [payload],
+    };
     final endpointUri = Uri.parse('$_baseUrl/UpdateItem');
 
     if (kDebugMode) {
@@ -394,7 +396,7 @@ class ProductService {
         response.body.trim().isNotEmpty
             ? response.body
             : (_extractMessage(data) ??
-            'Updating product failed (HTTP ${response.statusCode}).'),
+                  'Updating product failed (HTTP ${response.statusCode}).'),
       );
     }
 
@@ -434,8 +436,13 @@ class ProductService {
         }
       }
       if (data is Map) {
-        final v = data['result'] ?? data['status'] ?? data['value'] ??
-            data['RESULT'] ?? data['STATUS'] ?? data.values.first;
+        final v =
+            data['result'] ??
+            data['status'] ??
+            data['value'] ??
+            data['RESULT'] ??
+            data['STATUS'] ??
+            data.values.first;
         return _asInt(v) == 1;
       }
     } catch (_) {
@@ -446,11 +453,11 @@ class ProductService {
     return false;
   }
 
-// Helper — keeps DRY with existing _asInt usages in the file
-//   static int _asInt(dynamic v) {
-//     if (v is num) return v.toInt();
-//     return int.tryParse((v ?? '').toString()) ?? 0;
-//   }
+  // Helper — keeps DRY with existing _asInt usages in the file
+  //   static int _asInt(dynamic v) {
+  //     if (v is num) return v.toInt();
+  //     return int.tryParse((v ?? '').toString()) ?? 0;
+  //   }
 
   String _resolveSizeLabel(int sizeId) {
     if (sizeId <= 0) return '';
@@ -461,50 +468,53 @@ class ProductService {
   Future<void> insertProductDetails({
     required int itemId,
     required List<CreateProductDetail> details,
+    String createdBy = '',
   }) async {
     if (itemId <= 0 || details.isEmpty) {
       throw ProductException('Invalid product details payload.');
     }
+
     final endpoint = Uri.parse('$_baseUrl/InsertProductDetails');
+
     final body = <String, dynamic>{
-      'items': details
-          .map(
-            (detail) {
-              final detailMap = {
-                'item_id': itemId,
-                'ITEM_ID': itemId,
-                ...detail.toJson(),
-              };
-              // Override item_size with resolved string label
-              final sizeLabel = _resolveSizeLabel(detail.itemSize);
-              if (sizeLabel.isNotEmpty) {
-                detailMap['item_size'] = sizeLabel;
-                detailMap['ITEM_SIZE'] = sizeLabel;
-              }
-              return detailMap;
-            },
-          )
-          .toList(),
+      'items': details.map((detail) {
+        return <String, dynamic>{
+          'item_id': itemId,
+          if (createdBy.trim().isNotEmpty) 'created_by': createdBy.trim(),
+          // detail.toJson() already contains:
+          //   brand, color, item_size (String code), discount,
+          //   item_price, item_qty, is_active
+          ...detail.toJson(),
+        };
+      }).toList(),
     };
+
     if (kDebugMode) {
       debugPrint('[InsertProductDetails] POST $endpoint');
-      debugPrint('[InsertProductDetails] body: $body');
-      debugPrint(
-        '[InsertProductDetails] body(json): ${jsonEncode(body)}',
-      );
+      debugPrint('[InsertProductDetails] body(json): ${jsonEncode(body)}');
     }
+
     final response = await _safePost(endpoint, body: body);
     final data = _decode(response.body);
+
     if (kDebugMode) {
-      debugPrint('[InsertProductDetails] status: ${response.statusCode}');
+      debugPrint('[InsertProductDetails] status  : ${response.statusCode}');
       debugPrint('[InsertProductDetails] response: ${response.body}');
     }
+
+    // Oracle-specific error detection
+    final rawLower = response.body.toLowerCase();
+    if (rawLower.contains('ora-') || rawLower.contains('pl/sql')) {
+      throw ProductException(response.body);
+    }
+
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ProductException(
         _extractMessage(data) ??
             'Inserting product details failed (HTTP ${response.statusCode}).',
       );
     }
+
     final status = (data is Map<String, dynamic> ? data['status'] : null)
         ?.toString()
         .toLowerCase();
@@ -513,6 +523,8 @@ class ProductService {
         _extractMessage(data) ?? 'Inserting product details failed.',
       );
     }
+
+    _invalidateProductsCache();
   }
 
   Future<List<ApiCartItem>> getItemCart({required String username}) async {
@@ -565,6 +577,40 @@ class ProductService {
         _extractMessage(data) ?? 'Adding item to cart failed.',
       );
     }
+  }
+
+  Future<void> deleteItemFromCart({
+    required int detailId,
+    required String modifiedBy,
+  }) async {
+    final endpoint = Uri.parse('$_baseUrl/DeleteItemCart');
+    final payload = {
+      'detail_id': detailId,
+      'modified_by': modifiedBy,
+    };
+    if (kDebugMode) {
+      debugPrint('[DeleteItemCart] POST $endpoint');
+      debugPrint('[DeleteItemCart] body: $payload');
+    }
+    final response = await _safePost(endpoint, body: payload);
+    if (kDebugMode) {
+      debugPrint('[DeleteItemCart] status: ${response.statusCode}');
+      debugPrint('[DeleteItemCart] response: ${response.body}');
+    }
+    
+    // CRITICAL RULE: For delete operations, HTTP 200 is success regardless of body.
+    // The Oracle proc returns ORA- messages even on successful deletes.
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      // HTTP 200 = success regardless of body content
+      return;
+    }
+    
+    // Only non-200 status codes are treated as errors
+    final data = _decode(response.body);
+    throw ProductException(
+      _extractMessage(data) ??
+          'Deleting item from cart failed (HTTP ${response.statusCode}).',
+    );
   }
 
   Future<ApiProductDetails> getItemDetails({required int itemId}) async {
@@ -1042,9 +1088,7 @@ class ProductService {
       final apiResponse = ApiOrderResponse.fromJson(data);
 
       if (apiResponse.status != 'success') {
-        throw ProductException(
-          'Failed to fetch orders: ${apiResponse.status}',
-        );
+        throw ProductException('Failed to fetch orders: ${apiResponse.status}');
       }
 
       return apiResponse.data;
@@ -1053,6 +1097,142 @@ class ProductService {
     } catch (error) {
       throw ProductException('Error fetching orders: $error');
     }
+  }
+
+  // ========================= FAVORITES =========================
+
+  Future<List<ApiProduct>> getUserFavorites({required String username}) async {
+    final normalizedUsername = username.trim();
+    if (normalizedUsername.isEmpty) {
+      throw ProductException('Username is required to fetch favorites.');
+    }
+
+    final uri = Uri.parse('$_baseUrl/GetUserFavorites')
+        .replace(queryParameters: {'body': normalizedUsername});
+
+    if (kDebugMode) {
+      debugPrint('[GetUserFavorites] GET $uri');
+    }
+
+    try {
+      final response = await _safeGet(uri);
+
+      if (kDebugMode) {
+        debugPrint('[GetUserFavorites] status: ${response.statusCode}');
+        debugPrint('[GetUserFavorites] response: ${response.body}');
+      }
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw ProductException(
+          'Failed to fetch favorites (HTTP ${response.statusCode}).',
+        );
+      }
+
+      final data = _decode(response.body);
+      final items = _extractItems(data);
+      if (items.isEmpty) return const [];
+
+      // Map items to ApiProduct and set isFavorite = true
+      final products = items.map((item) {
+        final product = ApiProduct.fromJson(item);
+        product.isFavorite = true;
+        return product;
+      }).toList();
+
+      return products;
+    } on ProductException {
+      rethrow;
+    } catch (error) {
+      throw ProductException('Error fetching favorites: $error');
+    }
+  }
+
+  Future<void> toggleFavorite({
+    required int itemId,
+    required String username,
+  }) async {
+    final normalizedUsername = username.trim();
+    if (itemId <= 0 || normalizedUsername.isEmpty) {
+      throw ProductException('Invalid item or username.');
+    }
+
+    final endpoint = Uri.parse('$_baseUrl/ToggleFavoriteItem');
+    final payload = {
+      'item_id': itemId,
+      'username': normalizedUsername,
+    };
+
+    if (kDebugMode) {
+      debugPrint('[ToggleFavoriteItem] POST $endpoint');
+      debugPrint('[ToggleFavoriteItem] body: $payload');
+    }
+
+    final response = await _safePost(endpoint, body: payload);
+
+    if (kDebugMode) {
+      debugPrint('[ToggleFavoriteItem] status: ${response.statusCode}');
+      debugPrint('[ToggleFavoriteItem] response: ${response.body}');
+    }
+
+    // CRITICAL RULE: For toggle operations, HTTP 200 is success regardless of body.
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      // HTTP 200 = success regardless of body content
+      return;
+    }
+
+    // Only non-200 status codes are treated as errors
+    final data = _decode(response.body);
+    throw ProductException(
+      _extractMessage(data) ??
+          'Toggling favorite failed (HTTP ${response.statusCode}).',
+    );
+  }
+
+  // ========================= RATINGS =========================
+
+  Future<void> addItemComment({
+    required int itemId,
+    required String username,
+    required int rating,
+    required String comment,
+  }) async {
+    final normalizedUsername = username.trim();
+    if (itemId <= 0 || normalizedUsername.isEmpty || rating < 1 || rating > 5) {
+      throw ProductException('Invalid rating payload.');
+    }
+
+    final endpoint = Uri.parse('$_baseUrl/AddItemComment');
+    final payload = {
+      'item_id': itemId,
+      'username': normalizedUsername,
+      'rating': rating,
+      'comment': comment.trim(),
+    };
+
+    if (kDebugMode) {
+      debugPrint('[AddItemComment] POST $endpoint');
+      debugPrint('[AddItemComment] body: $payload');
+    }
+
+    final response = await _safePost(endpoint, body: payload);
+
+    if (kDebugMode) {
+      debugPrint('[AddItemComment] status: ${response.statusCode}');
+      debugPrint('[AddItemComment] response: ${response.body}');
+    }
+
+    // CRITICAL RULE: For comment submission, HTTP 200 is success regardless of body.
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      // HTTP 200 = success regardless of body content
+      return;
+    }
+
+    // Only non-200 status codes are treated as errors
+    final data = _decode(response.body);
+    throw ProductException(
+      _extractMessage(data) ??
+          'Adding comment failed (HTTP ${response.statusCode}).',
+    );
   }
 }
 

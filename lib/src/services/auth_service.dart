@@ -293,6 +293,233 @@ class AuthService {
     await _storageService.clearAll();
   }
 
+  // ========================= FORGOT PASSWORD =========================
+
+  Future<void> sendOtp({
+    required String username,
+    required String email,
+  }) async {
+    final usernameValue = username.trim();
+    final emailValue = email.trim();
+
+    if (usernameValue.isEmpty) {
+      throw AuthException('Username is required.');
+    }
+    if (emailValue.isEmpty) {
+      throw AuthException('Email is required.');
+    }
+
+    String? lastError;
+    TimeoutException? timeoutError;
+    bool hadNetworkError = false;
+
+    final endpoint = Uri.parse('$_baseUrl/SendOTP');
+    final payload = {
+      'username': usernameValue,
+      'email': emailValue,
+      'USERNAME': usernameValue,
+      'EMAIL': emailValue,
+    };
+
+    for (int attempt = 0; attempt < 2; attempt++) {
+      try {
+        final response = await _client
+            .post(
+              endpoint,
+              headers: _defaultHeaders(),
+              body: jsonEncode(payload),
+            )
+            .timeout(_timeout);
+
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          lastError =
+              _extractMessage(_decode(response.body)) ??
+              'Sending OTP failed (HTTP ${response.statusCode}).';
+          continue;
+        }
+
+        final data = _decode(response.body);
+        final status = (data is Map<String, dynamic> ? data['status'] : null)
+            ?.toString()
+            .toLowerCase();
+
+        if (status == 'error' ||
+            (status != null &&
+                status.isNotEmpty &&
+                status != 'success')) {
+          lastError = _extractMessage(data) ?? 'Sending OTP failed.';
+          continue;
+        }
+
+        return;
+      } on TimeoutException catch (error) {
+        timeoutError = error;
+        continue;
+      } catch (_) {
+        hadNetworkError = true;
+        continue;
+      }
+    }
+
+    if (timeoutError != null) {
+      throw AuthException('Request timed out. Please try again.');
+    }
+    if (hadNetworkError && lastError == null) {
+      throw AuthException('Network error. Please try again.');
+    }
+    throw AuthException(lastError ?? 'Failed to send OTP.');
+  }
+
+  Future<void> verifyOtp({
+    required String username,
+    required String email,
+    required String otp,
+  }) async {
+    final usernameValue = username.trim();
+    final emailValue = email.trim();
+    final otpValue = otp.trim();
+
+    if (usernameValue.isEmpty) {
+      throw AuthException('Username is required.');
+    }
+    if (emailValue.isEmpty) {
+      throw AuthException('Email is required.');
+    }
+    if (otpValue.isEmpty) {
+      throw AuthException('OTP is required.');
+    }
+
+    String? lastError;
+    TimeoutException? timeoutError;
+    bool hadNetworkError = false;
+
+    final endpoint = Uri.parse('$_baseUrl/VerifyOTP');
+    final payload = {
+      'username': usernameValue,
+      'email': emailValue,
+      'otp': otpValue,
+      'USERNAME': usernameValue,
+      'EMAIL': emailValue,
+      'OTP': otpValue,
+    };
+
+    for (int attempt = 0; attempt < 2; attempt++) {
+      try {
+        final response = await _client
+            .post(
+              endpoint,
+              headers: _defaultHeaders(),
+              body: jsonEncode(payload),
+            )
+            .timeout(_timeout);
+
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          lastError =
+              _extractMessage(_decode(response.body)) ??
+              'OTP verification failed (HTTP ${response.statusCode}).';
+          continue;
+        }
+
+        final data = _decode(response.body);
+        final status = (data is Map<String, dynamic> ? data['status'] : null)
+            ?.toString()
+            .toLowerCase();
+
+        if (status == 'error' ||
+            (status != null &&
+                status.isNotEmpty &&
+                status != 'success')) {
+          lastError = _extractMessage(data) ?? 'OTP verification failed.';
+          continue;
+        }
+
+        return;
+      } on TimeoutException catch (error) {
+        timeoutError = error;
+        continue;
+      } catch (_) {
+        hadNetworkError = true;
+        continue;
+      }
+    }
+
+    if (timeoutError != null) {
+      throw AuthException('Request timed out. Please try again.');
+    }
+    if (hadNetworkError && lastError == null) {
+      throw AuthException('Network error. Please try again.');
+    }
+    throw AuthException(lastError ?? 'OTP verification failed.');
+  }
+
+  Future<void> resetPassword({
+    required String username,
+    required String newPassword,
+  }) async {
+    final usernameValue = username.trim();
+    final passwordValue = newPassword.trim();
+
+    if (usernameValue.isEmpty) {
+      throw AuthException('Username is required.');
+    }
+    if (passwordValue.isEmpty) {
+      throw AuthException('Password is required.');
+    }
+
+    String? lastError;
+    TimeoutException? timeoutError;
+    bool hadNetworkError = false;
+
+    final endpoint = Uri.parse('$_baseUrl/ForgetPassword');
+    final payload = {
+      'username': usernameValue,
+      'password': passwordValue,
+      'USERNAME': usernameValue,
+      'PASSWORD': passwordValue,
+    };
+
+    for (int attempt = 0; attempt < 2; attempt++) {
+      try {
+        final response = await _client
+            .post(
+              endpoint,
+              headers: _defaultHeaders(),
+              body: jsonEncode(payload),
+            )
+            .timeout(_timeout);
+
+        // CRITICAL RULE: For password reset, ignore the response body entirely if HTTP 200.
+        // The Oracle proc returns error messages even on successful updates.
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          // HTTP 200 = success regardless of body content
+          return;
+        }
+
+        // Only non-200 status codes are treated as errors
+        lastError =
+            _extractMessage(_decode(response.body)) ??
+            'Password reset failed (HTTP ${response.statusCode}).';
+        continue;
+
+        return;
+      } on TimeoutException catch (error) {
+        timeoutError = error;
+        continue;
+      } catch (_) {
+        hadNetworkError = true;
+        continue;
+      }
+    }
+
+    if (timeoutError != null) {
+      throw AuthException('Request timed out. Please try again.');
+    }
+    if (hadNetworkError && lastError == null) {
+      throw AuthException('Network error. Please try again.');
+    }
+    throw AuthException(lastError ?? 'Password reset failed.');
+  }
+
   // ========================= HELPERS =========================
 
   Map<String, String> _defaultHeaders() {

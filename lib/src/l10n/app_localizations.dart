@@ -1909,6 +1909,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter the full OTP code'**
   String get validationOtpInvalidLength;
+
+  /// No description provided for @forgotPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot Password'**
+  String get forgotPasswordTitle;
+
+  /// No description provided for @forgotPasswordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your account details'**
+  String get forgotPasswordSubtitle;
+
+  /// No description provided for @forgotPasswordSendOtp.
+  ///
+  /// In en, this message translates to:
+  /// **'Send OTP'**
+  String get forgotPasswordSendOtp;
+
+  /// No description provided for @otpSentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your email'**
+  String get otpSentTitle;
+
+  /// No description provided for @otpSentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a 6-digit code to your email'**
+  String get otpSentSubtitle;
+
+  /// No description provided for @otpVerificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter verification code'**
+  String get otpVerificationTitle;
+
+  /// No description provided for @otpVerificationSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a 6-digit code to your email'**
+  String get otpVerificationSubtitle;
+
+  /// No description provided for @otpVerificationVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get otpVerificationVerify;
+
+  /// No description provided for @otpResendQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Didn\'t receive a code?'**
+  String get otpResendQuestion;
+
+  /// No description provided for @otpResendCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'{text}'**
+  String otpResendCountdown(Object text);
+
+  /// No description provided for @resetPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create new password'**
+  String get resetPasswordTitle;
+
+  /// No description provided for @resetPasswordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your new password below'**
+  String get resetPasswordSubtitle;
+
+  /// No description provided for @resetPasswordNewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New Password'**
+  String get resetPasswordNewLabel;
+
+  /// No description provided for @resetPasswordConfirmLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Password'**
+  String get resetPasswordConfirmLabel;
+
+  /// No description provided for @resetPasswordUpdateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Password'**
+  String get resetPasswordUpdateButton;
+
+  /// No description provided for @passwordUpdatedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Password Updated!'**
+  String get passwordUpdatedTitle;
+
+  /// No description provided for @passwordUpdatedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your password has been changed successfully'**
+  String get passwordUpdatedSubtitle;
+
+  /// No description provided for @passwordUpdatedBackToLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Login'**
+  String get passwordUpdatedBackToLogin;
+
+  /// No description provided for @passwordUpdatedAutoRedirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Redirecting in {count} seconds...'**
+  String passwordUpdatedAutoRedirect(Object count);
+
+  /// No description provided for @deliveryLocationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Delivery Location'**
+  String get deliveryLocationTitle;
+
+  /// No description provided for @deliveryLocationCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Current Location'**
+  String get deliveryLocationCurrent;
+
+  /// No description provided for @deliveryLocationSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved Addresses'**
+  String get deliveryLocationSaved;
+
+  /// No description provided for @deliveryLocationConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Location'**
+  String get deliveryLocationConfirm;
+
+  /// No description provided for @commonContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get commonContinue;
 }
 
 class _AppLocalizationsDelegate

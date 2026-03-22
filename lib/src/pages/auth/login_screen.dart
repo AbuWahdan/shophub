@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sinwar_shoping/src/config/route.dart';
 
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
@@ -90,8 +91,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {
-                      // Navigate to forgot password
+                    onPressed: (){
+                      Navigator.of(context).pushNamed(AppRoutes.forgotPassword);
+                      
                     },
                     child: Text(l10n.loginForgotPassword),
                   ),

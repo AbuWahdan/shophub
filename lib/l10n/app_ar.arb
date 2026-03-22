@@ -386,5 +386,41 @@
   },
   "otpResend": "إعادة إرسال الرمز",
   "otpVerify": "تحقق",
-  "validationOtpInvalidLength": "أدخل رمز التحقق بالكامل"
+  "validationOtpInvalidLength": "أدخل رمز التحقق بالكامل",
+  "forgotPasswordTitle": "نسيت كلمة المرور",
+  "forgotPasswordSubtitle": "أدخل تفاصيل حسابك",
+  "forgotPasswordSendOtp": "إرسال OTP",
+  "otpSentTitle": "تحقق من بريدك",
+  "otpSentSubtitle": "أرسلنا رمزًا مكوّنًا من 6 أرقام إلى بريدك",
+  "otpVerificationTitle": "أدخل رمز التحقق",
+  "otpVerificationSubtitle": "أرسلنا رمزًا مكوّنًا من 6 أرقام إلى بريدك",
+  "otpVerificationVerify": "تحقق",
+  "otpResendQuestion": "لم تتلق الرمز؟",
+  "otpResendCountdown": "{text}",
+  "@otpResendCountdown": {
+    "placeholders": {
+      "text": {}
+    }
+  },
+  "resetPasswordTitle": "إنشاء كلمة مرور جديدة",
+  "resetPasswordSubtitle": "أدخل كلمة المرور الجديدة أدناه",
+  "resetPasswordNewLabel": "كلمة المرور الجديدة",
+  "resetPasswordConfirmLabel": "تأكيد كلمة المرور",
+  "resetPasswordUpdateButton": "تحديث كلمة المرور",
+  "passwordUpdatedTitle": "تم تحديث كلمة المرور!",
+  "passwordUpdatedSubtitle": "تم تغيير كلمة المرور بنجاح",
+  "passwordUpdatedBackToLogin": "العودة إلى الدخول",
+  "passwordUpdatedAutoRedirect": "إعادة التوجيه خلال {count} ثانية...",
+  "@passwordUpdatedAutoRedirect": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "deliveryLocationTitle": "اختر موقع التسليم",
+  "deliveryLocationCurrent": "استخدم الموقع الحالي",
+  "deliveryLocationSaved": "العناوين المحفوظة",
+  "deliveryLocationConfirm": "تأكيد الموقع",
+  "commonContinue": "المتابعة",
+  "commonRemove": "إزالة",
+  "retry": "إعادة المحاولة"
 }

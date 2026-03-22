@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
+import '../config/route.dart';
 import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/cart_item.dart';
+import '../model/delivery_location.dart';
 import '../services/api_client.dart';
 import '../shared/widgets/app_button.dart';
 import '../shared/widgets/app_snackbar.dart';
@@ -32,6 +34,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   static const String _baseUrl = 'https://oracleapex.com/ords/topg/products';
   final http.Client _client = ApiClient();
   bool _isSubmitting = false;
+  DeliveryLocation? _selectedDeliveryLocation;
 
   double get _totalPrice {
     return widget.cartItems.fold(0, (sum, item) => sum + item.total);
@@ -46,6 +49,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       'username': username,
       'user_id': userId,
       'total': _totalPrice,
+      'delivery_address': _selectedDeliveryLocation?.label ?? '',
+      'delivery_lat': _selectedDeliveryLocation?.lat,
+      'delivery_lng': _selectedDeliveryLocation?.lng,
       'items': widget.cartItems
           .map(
             (item) => {
@@ -63,12 +69,42 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     };
   }
 
+  Future<void> _openDeliveryLocationScreen() async {
+    final location = await Navigator.pushNamed<DeliveryLocation>(
+      context,
+      AppRoutes.deliveryLocation,
+      arguments: {
+        'savedAddresses': _selectedDeliveryLocation != null
+            ? [_selectedDeliveryLocation!]
+            : []
+      },
+    );
+
+    if (location != null) {
+      setState(() => _selectedDeliveryLocation = location);
+      AppSnackBar.show(
+        context,
+        message: 'Delivery address updated',
+        type: AppSnackBarType.success,
+      );
+    }
+  }
+
   Future<void> _placeOrder() async {
     if (_isSubmitting) return;
     if (widget.cartItems.isEmpty) {
       AppSnackBar.show(
         context,
         message: 'Your cart is empty.',
+        type: AppSnackBarType.warning,
+      );
+      return;
+    }
+
+    if (_selectedDeliveryLocation == null) {
+      AppSnackBar.show(
+        context,
+        message: 'Please select a delivery address',
         type: AppSnackBarType.warning,
       );
       return;
@@ -150,6 +186,76 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                 ),
               const Divider(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.md),
+              // Delivery Address Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Delivery Address',
+                    style: AppTextStyles.titleSmall,
+                  ),
+                  GestureDetector(
+                    onTap: _openDeliveryLocationScreen,
+                    child: const Icon(Icons.edit, size: 18),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              GestureDetector(
+                onTap: _openDeliveryLocationScreen,
+                child: Container(
+                  padding: AppSpacing.insetsMd,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: _selectedDeliveryLocation != null
+                          ? AppColors.primary
+                          : Colors.grey[300]!,
+                      width: 1.5,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    color: _selectedDeliveryLocation != null
+                        ? AppColors.primary.withOpacity(0.05)
+                        : Colors.transparent,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 20,
+                        color: _selectedDeliveryLocation != null
+                            ? AppColors.primary
+                            : Colors.grey,
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _selectedDeliveryLocation?.label ??
+                                  'Select delivery address',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: _selectedDeliveryLocation != null
+                                    ? null
+                                    : Colors.grey[600],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 20,
+                        color: Colors.grey,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -170,7 +276,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : null,
-                onPressed: _isSubmitting ? null : _placeOrder,
+                onPressed: (_isSubmitting || _selectedDeliveryLocation == null)
+                    ? null
+                    : _placeOrder,
               ),
             ],
           ),

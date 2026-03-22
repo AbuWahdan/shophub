@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/src/config/route.dart';
 
 import '../design/app_colors.dart';
@@ -6,7 +7,10 @@ import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';
+import '../services/product_service.dart';
 import '../shared/widgets/app_image.dart';
+import '../shared/widgets/app_snackbar.dart';
+import '../state/auth_state.dart';
 
 class ProductCard extends StatefulWidget {
   final ApiProduct product;
@@ -18,6 +22,57 @@ class ProductCard extends StatefulWidget {
 }
 
 class _ProductCardState extends State<ProductCard> {
+  final ProductService _productService = ProductService();
+  bool _isTogglingFavorite = false;
+
+  Future<void> _handleToggleFavorite() async {
+    final auth = context.read<AuthState>();
+    final username = auth.user?.username.trim() ?? '';
+
+    if (username.isEmpty) {
+      AppSnackBar.show(
+        context,
+        message: 'Please log in to manage favorites',
+        type: AppSnackBarType.warning,
+      );
+      return;
+    }
+
+    if (_isTogglingFavorite) return;
+
+    setState(() => _isTogglingFavorite = true);
+
+    try {
+      await _productService.toggleFavorite(
+        itemId: widget.product.id,
+        username: username,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        widget.product.isFavorite = !widget.product.isFavorite;
+        _isTogglingFavorite = false;
+      });
+    } on ProductException catch (error) {
+      if (!mounted) return;
+      setState(() => _isTogglingFavorite = false);
+      AppSnackBar.show(
+        context,
+        message: error.message,
+        type: AppSnackBarType.error,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isTogglingFavorite = false);
+      AppSnackBar.show(
+        context,
+        message: 'Failed to update favorite',
+        type: AppSnackBarType.error,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
@@ -81,26 +136,29 @@ class _ProductCardState extends State<ProductCard> {
                   Positioned(
                     top: AppSpacing.sm,
                     right: AppSpacing.sm,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(AppRadius.full),
-                      onTap: () {
-                        setState(() => AppData.toggleFavorite(product));
-                      },
+                    child: GestureDetector(
+                      onTap: _isTogglingFavorite ? null : _handleToggleFavorite,
                       child: Container(
                         padding: const EdgeInsets.all(AppSpacing.xs),
                         decoration: BoxDecoration(
                           color: AppColors.surface.withValues(alpha: 0.86),
                           borderRadius: BorderRadius.circular(AppRadius.full),
                         ),
-                        child: Icon(
-                          product.isFavorite
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          color: product.isFavorite
-                              ? AppColors.error
-                              : AppColors.textPrimary,
-                          size: AppSpacing.iconMd,
-                        ),
+                        child: _isTogglingFavorite
+                            ? const SizedBox(
+                                width: AppSpacing.iconMd,
+                                height: AppSpacing.iconMd,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Icon(
+                                product.isFavorite
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color: product.isFavorite
+                                    ? AppColors.error
+                                    : AppColors.textPrimary,
+                                size: AppSpacing.iconMd,
+                              ),
                       ),
                     ),
                   ),

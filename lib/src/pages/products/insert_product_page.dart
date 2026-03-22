@@ -954,7 +954,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
         CreateProductDetail(
           brand: brand.isEmpty ? 'N/A' : brand,
           color: color.isEmpty ? 'N/A' : color,
-          itemSize: parsedSize,
+          itemSize: parsedSize.toString(),
           discount: discount < 0 ? 0.0 : discount,
           itemPrice: price,
           itemQty: qty,

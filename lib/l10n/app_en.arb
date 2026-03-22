@@ -386,5 +386,41 @@
   },
   "otpResend": "Resend Code",
   "otpVerify": "Verify",
-  "validationOtpInvalidLength": "Enter the full OTP code"
+  "validationOtpInvalidLength": "Enter the full OTP code",
+  "forgotPasswordTitle": "Forgot Password",
+  "forgotPasswordSubtitle": "Enter your account details",
+  "forgotPasswordSendOtp": "Send OTP",
+  "otpSentTitle": "Check your email",
+  "otpSentSubtitle": "We sent a 6-digit code to your email",
+  "otpVerificationTitle": "Enter verification code",
+  "otpVerificationSubtitle": "We sent a 6-digit code to your email",
+  "otpVerificationVerify": "Verify",
+  "otpResendQuestion": "Didn't receive a code?",
+  "otpResendCountdown": "{text}",
+  "@otpResendCountdown": {
+    "placeholders": {
+      "text": {}
+    }
+  },
+  "resetPasswordTitle": "Create new password",
+  "resetPasswordSubtitle": "Enter your new password below",
+  "resetPasswordNewLabel": "New Password",
+  "resetPasswordConfirmLabel": "Confirm Password",
+  "resetPasswordUpdateButton": "Update Password",
+  "passwordUpdatedTitle": "Password Updated!",
+  "passwordUpdatedSubtitle": "Your password has been changed successfully",
+  "passwordUpdatedBackToLogin": "Back to Login",
+  "passwordUpdatedAutoRedirect": "Redirecting in {count} seconds...",
+  "@passwordUpdatedAutoRedirect": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "deliveryLocationTitle": "Select Delivery Location",
+  "deliveryLocationCurrent": "Use Current Location",
+  "deliveryLocationSaved": "Saved Addresses",
+  "deliveryLocationConfirm": "Confirm Location",
+  "commonContinue": "Continue",
+  "commonRemove": "Remove",
+  "retry": "Retry"
 }

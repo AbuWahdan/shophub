@@ -961,4 +961,81 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get validationOtpInvalidLength => 'Enter the full OTP code';
+
+  @override
+  String get forgotPasswordTitle => 'Forgot Password';
+
+  @override
+  String get forgotPasswordSubtitle => 'Enter your account details';
+
+  @override
+  String get forgotPasswordSendOtp => 'Send OTP';
+
+  @override
+  String get otpSentTitle => 'Check your email';
+
+  @override
+  String get otpSentSubtitle => 'We sent a 6-digit code to your email';
+
+  @override
+  String get otpVerificationTitle => 'Enter verification code';
+
+  @override
+  String get otpVerificationSubtitle => 'We sent a 6-digit code to your email';
+
+  @override
+  String get otpVerificationVerify => 'Verify';
+
+  @override
+  String get otpResendQuestion => 'Didn\'t receive a code?';
+
+  @override
+  String otpResendCountdown(Object text) {
+    return '$text';
+  }
+
+  @override
+  String get resetPasswordTitle => 'Create new password';
+
+  @override
+  String get resetPasswordSubtitle => 'Enter your new password below';
+
+  @override
+  String get resetPasswordNewLabel => 'New Password';
+
+  @override
+  String get resetPasswordConfirmLabel => 'Confirm Password';
+
+  @override
+  String get resetPasswordUpdateButton => 'Update Password';
+
+  @override
+  String get passwordUpdatedTitle => 'Password Updated!';
+
+  @override
+  String get passwordUpdatedSubtitle =>
+      'Your password has been changed successfully';
+
+  @override
+  String get passwordUpdatedBackToLogin => 'Back to Login';
+
+  @override
+  String passwordUpdatedAutoRedirect(Object count) {
+    return 'Redirecting in $count seconds...';
+  }
+
+  @override
+  String get deliveryLocationTitle => 'Select Delivery Location';
+
+  @override
+  String get deliveryLocationCurrent => 'Use Current Location';
+
+  @override
+  String get deliveryLocationSaved => 'Saved Addresses';
+
+  @override
+  String get deliveryLocationConfirm => 'Confirm Location';
+
+  @override
+  String get commonContinue => 'Continue';
 }

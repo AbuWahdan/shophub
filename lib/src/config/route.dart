@@ -4,6 +4,11 @@ import 'package:sinwar_shoping/src/pages/addresses_page.dart';
 import 'package:sinwar_shoping/src/pages/auth/login_screen.dart';
 import 'package:sinwar_shoping/src/pages/auth/otp_screen.dart';
 import 'package:sinwar_shoping/src/pages/auth/register_screen.dart';
+import 'package:sinwar_shoping/src/pages/auth/forgot_password_email_screen.dart';
+import 'package:sinwar_shoping/src/pages/auth/otp_sent_notice_screen.dart';
+import 'package:sinwar_shoping/src/pages/auth/otp_verification_screen.dart';
+import 'package:sinwar_shoping/src/pages/auth/reset_password_screen.dart';
+import 'package:sinwar_shoping/src/pages/auth/password_updated_screen.dart';
 import 'package:sinwar_shoping/src/pages/categories_page.dart';
 import 'package:sinwar_shoping/src/pages/checkout_screen.dart';
 import 'package:sinwar_shoping/src/pages/info_page.dart';
@@ -18,10 +23,13 @@ import 'package:sinwar_shoping/src/pages/product_details_new.dart';
 import 'package:sinwar_shoping/src/pages/profile_settings_page.dart';
 import 'package:sinwar_shoping/src/pages/search_filter_page.dart';
 import 'package:sinwar_shoping/src/pages/splash_screen.dart';
+import 'package:sinwar_shoping/src/pages/delivery_location_screen.dart';
 import 'package:sinwar_shoping/src/pages/wishlist_page.dart';
+import 'package:sinwar_shoping/src/pages/rate_product_screen.dart';
 import 'package:sinwar_shoping/src/model/cart_item.dart';
 import 'package:sinwar_shoping/src/model/data.dart';
 import 'package:sinwar_shoping/src/model/product_api.dart';
+import 'package:sinwar_shoping/src/model/delivery_location.dart';
 import '../l10n/app_localizations.dart';
 
 class AppRoutes {
@@ -52,6 +60,13 @@ class AppRoutes {
   static const String categoryList = '/category-list';
   static const String insertProduct = '/products/insert';
   static const String myProducts = '/products/my';
+  static const String forgotPassword = '/forgot-password';
+  static const String otpSent = '/otp-sent';
+  static const String otpVerification = '/otp-verification';
+  static const String resetPassword = '/reset-password';
+  static const String passwordUpdated = '/password-updated';
+  static const String deliveryLocation = '/delivery-location';
+  static const String rateProduct = '/rate-product';
   // ... add other route constants
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -85,6 +100,49 @@ class AppRoutes {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const OTPVerificationScreen(),
+        );
+
+      case forgotPassword:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const ForgotPasswordEmailScreen(),
+        );
+
+      case otpSent:
+        final username = args?['username'] as String? ?? '';
+        final email = args?['email'] as String? ?? '';
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => OtpSentNoticeScreen(
+            username: username,
+            email: email,
+          ),
+        );
+
+      case otpVerification:
+        final username = args?['username'] as String? ?? '';
+        final email = args?['email'] as String? ?? '';
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => OtpVerificationScreen(
+            username: username,
+            email: email,
+          ),
+        );
+
+      case resetPassword:
+        final username = args?['username'] as String? ?? '';
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => ResetPasswordScreen(
+            username: username,
+          ),
+        );
+
+      case passwordUpdated:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const PasswordUpdatedScreen(),
         );
 
       case main:
@@ -237,7 +295,7 @@ class AppRoutes {
             settings: settings,
             builder: (_) => Scaffold(
               appBar: AppBar(title: const Text('Error')),
-              body: const Center(
+              body: Center(
                 child: Text('Product not found. Please go back and try again.'),
               ),
             ),
@@ -285,6 +343,34 @@ class AppRoutes {
       //     settings: settings,
       //     builder: (_) => CategoryListScreen(categoryName: categoryName),
       //   );
+
+      case deliveryLocation:
+        final savedAddresses =
+            (args?['savedAddresses'] as List<DeliveryLocation>?) ?? const [];
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => DeliveryLocationScreen(
+            savedAddresses: savedAddresses,
+          ),
+        );
+
+      case rateProduct:
+        final product = args?['product'] as ApiProduct?;
+        if (product == null) {
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => Scaffold(
+              appBar: AppBar(title: const Text('Error')),
+              body: const Center(
+                child: Text('Product not found. Please go back and try again.'),
+              ),
+            ),
+          );
+        }
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => RateProductScreen(product: product),
+        );
 
       default:
         return MaterialPageRoute(

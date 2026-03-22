@@ -161,13 +161,13 @@ class _OrdersPageState extends State<OrdersPage> {
                       vertical: AppSpacing.xs,
                     ),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(order.status).withOpacity(0.1),
+                      color: order.getStatusColor().withOpacity(0.1),
                       borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
                     ),
                     child: Text(
                       order.getStatusLabel(),
                       style: AppTextStyles.labelSmall.copyWith(
-                        color: _getStatusColor(order.status),
+                        color: order.getStatusColor(),
                       ),
                     ),
                   ),
@@ -199,23 +199,8 @@ class _OrdersPageState extends State<OrdersPage> {
     );
   }
 
-  Color _getStatusColor(int status) {
-    switch (status) {
-      case 1:
-        return AppColors.success;
-      case 2:
-        return AppColors.warning;
-      case 3:
-        return AppColors.secondary;
-      case 4:
-        return AppColors.primary;
-      case 5:
-        return AppColors.error;
-      default:
-        return AppColors.neutral400;
-    }
-  }
 }
+
 
 class OrderDetailsScreen extends StatelessWidget {
   final ApiOrder order;
@@ -274,13 +259,13 @@ class OrderDetailsScreen extends StatelessWidget {
                         vertical: AppSpacing.sm,
                       ),
                       decoration: BoxDecoration(
-                        color: _getStatusColor(order.status).withOpacity(0.1),
+                        color: order.getStatusColor().withOpacity(0.1),
                         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
                       ),
                       child: Text(
                         order.getStatusLabel(),
                         style: AppTextStyles.labelLarge.copyWith(
-                          color: _getStatusColor(order.status),
+                          color: order.getStatusColor(),
                         ),
                       ),
                     ),
@@ -376,22 +361,5 @@ class OrderDetailsScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Color _getStatusColor(int status) {
-    switch (status) {
-      case 1:
-        return AppColors.success;
-      case 2:
-        return AppColors.warning;
-      case 3:
-        return AppColors.secondary;
-      case 4:
-        return AppColors.primary;
-      case 5:
-        return AppColors.error;
-      default:
-        return AppColors.neutral400;
-    }
   }
 }

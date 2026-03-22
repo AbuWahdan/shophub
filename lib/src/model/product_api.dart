@@ -549,7 +549,7 @@ class CreateProductDetail {
   final int? detId;
   final String brand;
   final String color;
-  final int itemSize;
+  final String itemSize; // ← MUST be String (SIZE_CODE), NOT int
   final double discount;
   final double itemPrice;
   final int itemQty;
@@ -566,38 +566,28 @@ class CreateProductDetail {
     this.isActive = 1,
   });
 
-  Map<String, dynamic> toJson() {
-    return {
-      if (detId != null) 'det_id': detId,
-      if (detId != null) 'DET_ID': detId,
-      if (detId != null) 'item_det_id': detId,
-      'brand': brand,
-      'BRAND': brand,
-      'color': color,
-      'COLOR': color,
-      'item_size': itemSize,
-      'ITEM_SIZE': itemSize,
-      'discount': discount,
-      'DISCOUNT': discount,
-      'item_price': itemPrice,
-      'ITEM_PRICE': itemPrice,
-      'item_qty': itemQty,
-      'ITEM_QTY': itemQty,
-      'is_active': isActive,
-      'IS_ACTIVE': isActive,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    if (detId != null && detId! > 0) 'det_id': detId,
+    'brand': brand,
+    'color': color,
+    'item_size': itemSize, // SIZE_CODE string — no conversion needed
+    'discount': discount,
+    'item_price': itemPrice,
+    'item_qty': itemQty,
+    'is_active': isActive,
+  };
 }
+
 
 // ─── NEW: matches exact update-item API shape ──────────────────────────────
 class UpdateItemDetail {
-  final int detailId;    // "detail_id"
+  final int detailId;
   final double itemPrice;
   final int itemQty;
   final String brand;
   final String color;
   final String modifiedBy;
-  final String size;     // string label, e.g. "ll", "15 inch"
+  final String size; // SIZE_CODE string, e.g. "XL", "42", "32/30"
   final int isActive;
 
   const UpdateItemDetail({
@@ -618,7 +608,8 @@ class UpdateItemDetail {
     'brand': brand,
     'color': color,
     'modified_by': modifiedBy,
-    'size': size,
+    'size': size,       // some Oracle procs use this
+    'item_size': size,  // ← ADDED: others use this (matches ITEM_SIZE column)
     'is_active': isActive,
   };
 }
