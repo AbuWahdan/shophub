@@ -1,9 +1,13 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
+import '../../controllers/address_controller.dart';
+import '../../data/domain_models/address_entity.dart';
 import '../config/route.dart';
 import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
@@ -35,6 +39,57 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final http.Client _client = ApiClient();
   bool _isSubmitting = false;
   DeliveryLocation? _selectedDeliveryLocation;
+  late AddressController _addressController;
+  bool _isLoadingAddresses = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // ✅ FIX: Get AddressController instance and load addresses
+    _addressController = Get.find<AddressController>();
+    _loadUserAddresses();
+  }
+
+  /// ✅ FIX: Load addresses from API on init
+  Future<void> _loadUserAddresses() async {
+    if (!mounted) return;
+    
+    setState(() => _isLoadingAddresses = true);
+    
+    try {
+      final authState = context.read<AuthState>();
+      final username = authState.user?.username.trim() ?? '';
+      
+      if (username.isEmpty) {
+        setState(() => _isLoadingAddresses = false);
+        return;
+      }
+      
+      _addressController.username = username;
+      await _addressController.loadAddresses();
+      
+      // Auto-select default address if available
+      final defaultAddress = _addressController.getDefaultAddress();
+      if (defaultAddress != null && mounted) {
+        setState(() {
+          _selectedDeliveryLocation = DeliveryLocation(
+            label: defaultAddress.label,
+            addressId: defaultAddress.addressId?.toString(),
+            lat: defaultAddress.latitude,
+            lng: defaultAddress.longitude,
+          );
+        });
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error loading addresses: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingAddresses = false);
+      }
+    }
+  }
 
   double get _totalPrice {
     return widget.cartItems.fold(0, (sum, item) => sum + item.total);
@@ -69,14 +124,33 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     };
   }
 
+  /// ✅ FIX: Open address selection with API addresses
   Future<void> _openDeliveryLocationScreen() async {
+    if (_addressController.addresses.isEmpty) {
+      AppSnackBar.show(
+        context,
+        message: 'Please add a delivery address in your profile',
+        type: AppSnackBarType.warning,
+      );
+      return;
+    }
+
+    // Convert AddressEntity to DeliveryLocation
+    final savedLocations = _addressController.addresses
+        .map((addr) => DeliveryLocation(
+              label: addr.label,
+              addressId: addr.addressId?.toString(),
+              lat: addr.latitude,
+              lng: addr.longitude,
+            ))
+        .toList();
+
     final location = await Navigator.pushNamed<DeliveryLocation>(
       context,
       AppRoutes.deliveryLocation,
       arguments: {
-        'savedAddresses': _selectedDeliveryLocation != null
-            ? [_selectedDeliveryLocation!]
-            : []
+        'savedAddresses': savedLocations,
+        'username': context.read<AuthState>().user?.username.trim() ?? '',
       },
     );
 

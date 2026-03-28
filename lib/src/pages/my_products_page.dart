@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
+import '../../controllers/my_products_controller.dart';
 import '../config/route.dart';
-import '../design/app_colors.dart';
-import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/product_api.dart';
@@ -13,91 +14,178 @@ import '../shared/widgets/empty_state.dart';
 import '../state/auth_state.dart';
 import '../themes/theme.dart';
 
-class MyProductsPage extends StatefulWidget {
+class MyProductsPage extends StatelessWidget {
   const MyProductsPage({super.key});
 
   @override
-  State<MyProductsPage> createState() => _MyProductsPageState();
-}
+  Widget build(BuildContext context) {
+    final auth = context.read<AuthState>(); // Get auth first
+    final l10n = context.l10n;
+    final isLoggedIn = auth.isLoggedIn && auth.user != null;
 
-class _MyProductsPageState extends State<MyProductsPage> {
-  final ProductService _productService = ProductService();
-  bool _isLoading = false;
-  int? _loadingDetailsItemId;
-  List<ApiProduct> _products = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadProducts();
-  }
-
-  Future<void> _loadProducts({bool forceRefresh = false}) async {
-    final auth = context.read<AuthState>();
-    final username = auth.user?.username.trim();
-    final userId = auth.user?.userId ?? auth.userId;
-
-    if ((username == null || username.isEmpty) && userId <= 0) {
-      if (mounted) setState(() => _products = []);
-      return;
+    // Initialize controller with user credentials EARLY
+    final ctrl = Get.find<MyProductsController>();
+    
+    // ✅ FIX: Set credentials FIRST
+    if (isLoggedIn) {
+      ctrl.username = auth.user!.username.trim();
+      ctrl.userId = auth.user!.userId;
+      if (kDebugMode) {
+        debugPrint('[MyProductsPage] Initialized controller with username="${ctrl.username}", userId=${ctrl.userId}');
+      }
+    } else {
+      ctrl.username = '';
+      ctrl.userId = 0;
+      if (kDebugMode) {
+        debugPrint('[MyProductsPage] User not logged in - cleared credentials');
+      }
     }
 
-    setState(() => _isLoading = true);
+    // ✅ FIX: Schedule load AFTER credentials are set
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (isLoggedIn && ctrl.products.isEmpty && !ctrl.isLoading.value) {
+        if (kDebugMode) {
+          debugPrint('[MyProductsPage] Post-frame callback: triggering loadProducts()');
+        }
+        ctrl.loadProducts();
+      }
+    });
 
-    try {
-      final products = await _productService.getMyProducts(
-        currentUserId: userId,
-        currentUsername: username ?? '',
-        forceRefresh: forceRefresh,
-      );
-      if (!mounted) return;
-      setState(() {
-        // ── Show ALL products (active + inactive). ────────────────────────
-        // Inactive ones get a visual badge in _MyProductCard.
-        _products = products;
-      });
-    } on ProductException catch (error) {
-      if (!mounted) return;
-      setState(() => _products = []);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.productsLoadFailed(error.message))),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _products = []);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.productsLoadFailedGeneric)),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    return Scaffold(
+      appBar: AppBar(title: Text(l10n.accountMyProducts)),
+      body: !isLoggedIn
+          ? Center(
+              child: ElevatedButton(
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.login),
+                child: Text(l10n.loginSignIn),
+              ),
+            )
+          : Obx(() {
+              // ✅ FIX: Show error state first
+              if (ctrl.error.isNotEmpty) {
+                return RefreshIndicator(
+                  onRefresh: () => ctrl.loadProducts(forceRefresh: true),
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: Colors.red[300],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Error Loading Products',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              ctrl.error.value,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                            ),
+                            const SizedBox(height: 24),
+                            ElevatedButton.icon(
+                              onPressed: () => ctrl.loadProducts(forceRefresh: true),
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              // Show loading state
+              if (ctrl.isLoading.value) {
+                return const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                );
+              }
+
+              // Show empty state
+              if (ctrl.products.isEmpty) {
+                return RefreshIndicator(
+                  onRefresh: () => ctrl.loadProducts(forceRefresh: true),
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.65,
+                        child: EmptyState(
+                          icon: Icons.inventory_2_outlined,
+                          title: l10n.accountMyProducts,
+                          message: l10n.myProductsEmptyMessage,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              // Show products grid
+              return RefreshIndicator(
+                onRefresh: () => ctrl.loadProducts(forceRefresh: true),
+                child: GridView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  padding: AppTheme.padding,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.72,
+                    mainAxisSpacing: AppSpacing.lg,
+                    crossAxisSpacing: AppSpacing.lg,
+                  ),
+                  itemCount: ctrl.products.length,
+                  itemBuilder: (context, index) {
+                    return _MyProductCard(
+                      product: ctrl.products[index],
+                      onTap: () => _openEditProduct(
+                        context,
+                        ctrl.products[index],
+                        ctrl.username,
+                      ),
+                    );
+                  },
+                ),
+              );
+            }),
+    );
   }
 
-  Future<void> _openEditProduct(ApiProduct product) async {
-    setState(() => _loadingDetailsItemId = product.id);
+  Future<void> _openEditProduct(
+    BuildContext context,
+    ApiProduct product,
+    String currentUsername,
+  ) async {
+    final productService = ProductService();
 
     try {
-      final detailsRows =
-      await _productService.getItemDetailsRows(itemId: product.id);
+      final detailsRows = await productService.getItemDetailsRows(itemId: product.id);
 
       if (detailsRows.isEmpty) {
-        throw ProductException('No item details found for this product.');
+        throw Exception('No item details found for this product.');
       }
 
       final details = detailsRows.first;
       var itemImages = <ApiItemImage>[];
       try {
-        itemImages =
-        await _productService.getItemImages(itemId: product.id);
+        itemImages = await productService.getItemImages(itemId: product.id);
       } catch (_) {
         // Keep opening even if images fail.
       }
 
-      if (!mounted) return;
-
-      // ── FIX: pass the actual username, not AutofillHints.username ────────
-      final auth = context.read<AuthState>();
-      final currentUser = auth.user?.username.trim() ?? '';
+      if (!context.mounted) return;
 
       final updated = await Navigator.push<bool>(
         context,
@@ -107,89 +195,20 @@ class _MyProductsPageState extends State<MyProductsPage> {
             details: details,
             detailsRows: detailsRows,
             itemImages: itemImages,
-            currentUser: currentUser, // ← was AutofillHints.username (wrong!)
+            currentUser: currentUsername,
           ),
         ),
       );
 
       if (updated == true && context.mounted) {
-        _loadProducts(forceRefresh: true);
+        Get.find<MyProductsController>().loadProducts(forceRefresh: true);
       }
-    } on ProductException catch (error) {
-      if (!mounted) return;
+    } catch (e) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.productsLoadFailed(error.message))),
+        SnackBar(content: Text('Error: $e')),
       );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.productsLoadFailedGeneric)),
-      );
-    } finally {
-      if (mounted) setState(() => _loadingDetailsItemId = null);
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final auth = context.watch<AuthState>();
-    final isLoggedIn = auth.isLoggedIn && auth.user != null;
-
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.accountMyProducts)),
-      body: !isLoggedIn
-          ? Center(
-        child: ElevatedButton(
-          onPressed: () => Navigator.pushNamed(context, AppRoutes.login),
-          child: Text(l10n.loginSignIn),
-        ),
-      )
-          : _isLoading
-          ? const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      )
-          : RefreshIndicator(
-        onRefresh: () => _loadProducts(forceRefresh: true),
-        child: _products.isEmpty
-            ? ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            SizedBox(
-              height:
-              MediaQuery.of(context).size.height * 0.65,
-              child: EmptyState(
-                icon: Icons.inventory_2_outlined,
-                title: l10n.accountMyProducts,
-                message: l10n.myProductsEmptyMessage,
-              ),
-            ),
-          ],
-        )
-            : GridView.builder(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          padding: AppTheme.padding,
-          gridDelegate:
-          const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.72,
-            mainAxisSpacing: AppSpacing.lg,
-            crossAxisSpacing: AppSpacing.lg,
-          ),
-          itemCount: _products.length,
-          itemBuilder: (context, index) {
-            return _MyProductCard(
-              product: _products[index],
-              isLoading:
-              _loadingDetailsItemId == _products[index].id,
-              onTap: () => _openEditProduct(_products[index]),
-            );
-          },
-        ),
-      ),
-    );
   }
 }
 
@@ -200,12 +219,10 @@ class _MyProductCard extends StatelessWidget {
   const _MyProductCard({
     required this.product,
     required this.onTap,
-    required this.isLoading,
   });
 
   final ApiProduct product;
   final VoidCallback onTap;
-  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -225,7 +242,7 @@ class _MyProductCard extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        onTap: isLoading ? null : onTap,
+        onTap: onTap,
         child: Padding(
           padding: AppSpacing.insetsSm,
           child: Column(
@@ -287,25 +304,6 @@ class _MyProductCard extends StatelessWidget {
                           ),
                         ),
                       ),
-
-                    // Loading spinner overlay
-                    if (isLoading)
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black26,
-                          borderRadius:
-                          BorderRadius.circular(AppSpacing.radiusMd),
-                        ),
-                        alignment: Alignment.center,
-                        child: const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -348,30 +346,23 @@ class _MyProductCard extends StatelessWidget {
 
               const SizedBox(height: AppSpacing.xs),
 
-              // ── Stock / loading indicator ─────────────────────────────
-              if (isLoading)
-                const SizedBox(
-                  height: 16,
-                  width: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                Text(
-                  inStock
-                      ? context.l10n.stockIn
-                      : context.l10n.stockOut,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: isInactive
-                        ? Theme.of(context)
-                        .colorScheme
-                        .error
-                        .withOpacity(0.7)
-                        : inStock
-                        ? AppColors.success
-                        : AppColors.error,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+              // ── Stock indicator ─────────────────────────────────
+              Text(
+                inStock
+                    ? context.l10n.stockIn
+                    : context.l10n.stockOut,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: isInactive
+                      ? Theme.of(context)
+                      .colorScheme
+                      .error
+                      .withOpacity(0.7)
+                      : inStock
+                      ? AppColors.success
+                      : AppColors.error,
                 ),
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
         ),

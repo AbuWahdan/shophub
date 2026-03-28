@@ -7,6 +7,7 @@ import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';
+import '../model/cart_api.dart';
 import '../services/product_service.dart';
 import '../shared/widgets/app_image.dart';
 import '../shared/widgets/app_snackbar.dart';
@@ -24,6 +25,7 @@ class ProductCard extends StatefulWidget {
 class _ProductCardState extends State<ProductCard> {
   final ProductService _productService = ProductService();
   bool _isTogglingFavorite = false;
+  bool _isAddingToCart = false;
 
   Future<void> _handleToggleFavorite() async {
     final auth = context.read<AuthState>();
@@ -52,6 +54,8 @@ class _ProductCardState extends State<ProductCard> {
 
       setState(() {
         widget.product.isFavorite = !widget.product.isFavorite;
+        // ✅ CRITICAL FIX: Update AppData cache so wishlist page reflects changes
+        AppData.toggleFavorite(widget.product);
         _isTogglingFavorite = false;
       });
     } on ProductException catch (error) {
@@ -70,6 +74,82 @@ class _ProductCardState extends State<ProductCard> {
         message: 'Failed to update favorite',
         type: AppSnackBarType.error,
       );
+    }
+  }
+
+  /// ✅ NEW: Handle add to cart from product card
+  Future<void> _handleAddToCart() async {
+    final auth = context.read<AuthState>();
+    final username = auth.user?.username.trim() ?? '';
+
+    if (username.isEmpty) {
+      AppSnackBar.show(
+        context,
+        message: 'Please log in to add items to cart',
+        type: AppSnackBarType.warning,
+      );
+      return;
+    }
+
+    if (_isAddingToCart) return;
+
+    setState(() => _isAddingToCart = true);
+
+    try {
+      // Show variant selection bottom sheet
+      final selection = await showModalBottomSheet<_CartAddSelection>(
+        context: context,
+        builder: (context) => _AddToCartBottomSheet(
+          product: widget.product,
+        ),
+      );
+
+      if (!mounted || selection == null) return;
+
+      // Add to cart with selected options
+      await _productService.addItemToCart(
+        AddItemToCartRequest(
+          itemId: widget.product.id,
+          itemDetId: selection.variant.detId,
+          username: username,
+          itemQty: selection.qty,
+        ),
+      );
+
+      if (!mounted) return;
+
+      // Update AppData cache
+      AppData.addToCart(
+        product: widget.product,
+        quantity: selection.qty,
+        size: selection.variant.itemSize,
+        color: selection.variant.color,
+        detId: selection.variant.detId,
+      );
+
+      AppSnackBar.show(
+        context,
+        message: '${widget.product.name} added to cart',
+        type: AppSnackBarType.success,
+      );
+    } on ProductException catch (error) {
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        message: error.message,
+        type: AppSnackBarType.error,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        message: 'Failed to add to cart',
+        type: AppSnackBarType.error,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isAddingToCart = false);
+      }
     }
   }
 
@@ -192,20 +272,48 @@ class _ProductCardState extends State<ProductCard> {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  Wrap(
-                    spacing: AppSpacing.sm,
-                    crossAxisAlignment: WrapCrossAlignment.center,
+                  Row(
                     children: [
-                      Text(
-                        '\$${product.finalPrice.toStringAsFixed(2)}',
-                        style: AppTextStyles.priceMedium,
-                      ),
-                      if (product.discountPercentage > 0)
-                        Text(
-                          '\$${product.price.toStringAsFixed(2)}',
-                          style: AppTextStyles.priceOriginal,
+                      Expanded(
+                        child: Wrap(
+                          spacing: AppSpacing.sm,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              '\$${product.finalPrice.toStringAsFixed(2)}',
+                              style: AppTextStyles.priceMedium,
+                            ),
+                            if (product.discountPercentage > 0)
+                              Text(
+                                '\$${product.price.toStringAsFixed(2)}',
+                                style: AppTextStyles.priceOriginal,
+                              ),
+                          ],
                         ),
+                      ),
                     ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  // ✅ NEW: Add to Cart Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: _isAddingToCart
+                        ? const SizedBox(
+                            height: 36,
+                            child: Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : ElevatedButton.icon(
+                            onPressed: _handleAddToCart,
+                            icon: const Icon(Icons.shopping_cart, size: 16),
+                            label: const Text('', maxLines: 1),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSpacing.sm,
+                              ),
+                            ),
+                          ),
                   ),
                 ],
               ),
@@ -235,4 +343,169 @@ class _ProductCardState extends State<ProductCard> {
       ),
     );
   }
+}
+
+/// ✅ NEW: Bottom sheet for selecting variant & quantity when adding from product card
+class _AddToCartBottomSheet extends StatefulWidget {
+  final ApiProduct product;
+
+  const _AddToCartBottomSheet({required this.product});
+
+  @override
+  State<_AddToCartBottomSheet> createState() => _AddToCartBottomSheetState();
+}
+
+class _AddToCartBottomSheetState extends State<_AddToCartBottomSheet> {
+  late ApiProductVariant _selectedVariant;
+  int _quantity = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    final variants = widget.product.details.isNotEmpty
+        ? widget.product.details
+        : [
+            ApiProductVariant(
+              detId: widget.product.detId,
+             // itemId: widget.product.id,
+              brand: 'Unknown',
+              color: 'Default',
+              itemSize: 'Default',
+              discount: 0,
+              itemPrice: widget.product.price,
+              itemQty: widget.product.quantity,
+              //isActive: 1,
+            )
+          ];
+    _selectedVariant = variants.first;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final variants = widget.product.details.isNotEmpty
+        ? widget.product.details
+        : [
+            ApiProductVariant(
+              detId: widget.product.detId,
+              //itemId: widget.product.id,
+              brand: 'Unknown',
+              color: 'Default',
+              itemSize: 'Default',
+              discount: 0,
+              itemPrice: widget.product.price,
+              itemQty: widget.product.quantity,
+              //isActive: 1,
+            )
+          ];
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Select Options',
+              style: AppTextStyles.headingMedium,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            if (variants.length > 1)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Variant', style: AppTextStyles.labelLarge),
+                  const SizedBox(height: AppSpacing.sm),
+                  SizedBox(
+                    height: 50,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: variants.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(width: AppSpacing.sm),
+                      itemBuilder: (context, index) {
+                        final variant = variants[index];
+                        final isSelected = _selectedVariant.detId == variant.detId;
+                        return GestureDetector(
+                          onTap: () =>
+                              setState(() => _selectedVariant = variant),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                              vertical: AppSpacing.sm,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppColors.textHint,
+                              ),
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              color: isSelected
+                                  ? AppColors.primary.withValues(alpha: 0.1)
+                                  : Colors.transparent,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${variant.color} - ${variant.itemSize}',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+              ),
+            Text('Quantity', style: AppTextStyles.labelLarge),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.remove),
+                  onPressed: _quantity > 1 ? () => setState(() => _quantity--) : null,
+                ),
+                Expanded(
+                  child: Center(child: Text('$_quantity')),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: _quantity < (_selectedVariant.itemQty > 0 ? _selectedVariant.itemQty : 10)
+                      ? () => setState(() => _quantity++)
+                      : null,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(
+                  context,
+                  _CartAddSelection(_selectedVariant, _quantity),
+                );
+              },
+              child: const Text('Add to Cart'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// ✅ NEW: Data class for cart selection
+class _CartAddSelection {
+  final ApiProductVariant variant;
+  final int qty;
+
+  _CartAddSelection(this.variant, this.qty);
 }

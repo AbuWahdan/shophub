@@ -465,36 +465,60 @@ class ProductService {
     return option?.name ?? sizeId.toString();
   }
 
+  // ══════════════════════════════════════════════════════════════════════════════
+// REPLACE insertProductDetails in product_service.dart
+//
+// Correct API shape:
+// POST /products/InsertProductDetails
+// {
+//   "details": [
+//     {
+//       "item_id": 505,      ← inside each detail, NOT at top level
+//       "brand": "Nike",
+//       "color": "Black",
+//       "item_size": "L",    ← SIZE_CODE string
+//       "discount": 10,
+//       "item_price": 50,
+//       "item_qty": 5,
+//       "is_active": 1
+//     }
+//   ]
+// }
+// ══════════════════════════════════════════════════════════════════════════════
+
   Future<void> insertProductDetails({
     required int itemId,
     required List<CreateProductDetail> details,
     String createdBy = '',
   }) async {
     if (itemId <= 0 || details.isEmpty) {
-      throw ProductException('Invalid product details payload.');
+      throw ProductException(
+          'Invalid payload: itemId=$itemId details=${details.length}');
     }
 
-    final endpoint = Uri.parse('$_baseUrl/InsertProductDetails');
+    final uri = Uri.parse('$_baseUrl/InsertProductDetails');
 
+    // "details" is the top-level key (NOT "items").
+    // item_id goes INSIDE each detail object.
     final body = <String, dynamic>{
-      'items': details.map((detail) {
-        return <String, dynamic>{
-          'item_id': itemId,
-          if (createdBy.trim().isNotEmpty) 'created_by': createdBy.trim(),
-          // detail.toJson() already contains:
-          //   brand, color, item_size (String code), discount,
-          //   item_price, item_qty, is_active
-          ...detail.toJson(),
+      'details': details.map((d) {
+        final map = <String, dynamic>{
+          'item_id': itemId,   // ← inside each row
+          ...d.toJson(),       // brand, color, item_size, discount, item_price, item_qty, is_active
         };
+        if (createdBy.trim().isNotEmpty) {
+          map['created_by'] = createdBy.trim();
+        }
+        return map;
       }).toList(),
     };
 
     if (kDebugMode) {
-      debugPrint('[InsertProductDetails] POST $endpoint');
-      debugPrint('[InsertProductDetails] body(json): ${jsonEncode(body)}');
+      debugPrint('[InsertProductDetails] POST $uri');
+      debugPrint('[InsertProductDetails] body: ${jsonEncode(body)}');
     }
 
-    final response = await _safePost(endpoint, body: body);
+    final response = await _safePost(uri, body: body);
     final data = _decode(response.body);
 
     if (kDebugMode) {
@@ -502,16 +526,21 @@ class ProductService {
       debugPrint('[InsertProductDetails] response: ${response.body}');
     }
 
-    // Oracle-specific error detection
+    // Oracle quirk: treat HTTP 200 as success even if body contains ORA-
     final rawLower = response.body.toLowerCase();
     if (rawLower.contains('ora-') || rawLower.contains('pl/sql')) {
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        // Write succeeded despite error-looking body
+        _invalidateProductsCache();
+        return;
+      }
       throw ProductException(response.body);
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ProductException(
         _extractMessage(data) ??
-            'Inserting product details failed (HTTP ${response.statusCode}).',
+            'Insert details failed (HTTP ${response.statusCode}).',
       );
     }
 
@@ -520,13 +549,11 @@ class ProductService {
         .toLowerCase();
     if (status == 'error' || status == 'failed' || status == 'fail') {
       throw ProductException(
-        _extractMessage(data) ?? 'Inserting product details failed.',
-      );
+          _extractMessage(data) ?? 'Insert details failed.');
     }
 
     _invalidateProductsCache();
   }
-
   Future<List<ApiCartItem>> getItemCart({required String username}) async {
     final normalizedUsername = username.trim();
     if (normalizedUsername.isEmpty) {

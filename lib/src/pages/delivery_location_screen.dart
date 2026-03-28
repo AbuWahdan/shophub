@@ -41,7 +41,15 @@ class _DeliveryLocationScreenState extends State<DeliveryLocationScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _selectedLocation = null;
-    _localAddresses = List.from(widget.savedAddresses);
+    // ✅ FIX: Handle addresses passed from checkout properly
+    _localAddresses = widget.savedAddresses != null && widget.savedAddresses!.isNotEmpty
+        ? List.from(widget.savedAddresses!)
+        : [];
+    
+    // Auto-select first address if available
+    if (_localAddresses.isNotEmpty) {
+      _selectedLocation = _localAddresses.first;
+    }
   }
 
   @override
@@ -188,6 +196,19 @@ class _DeliveryLocationScreenState extends State<DeliveryLocationScreen>
       AppSnackBar.show(
         context,
         message: 'Please select a delivery address',
+        type: AppSnackBarType.warning,
+      );
+      return;
+    }
+
+    // ✅ FIX: Ensure location has valid lat/lng before confirming
+    final location = _selectedLocation;
+    final hasCoordinates = location?.lat != null && location?.lng != null;
+    
+    if (!hasCoordinates && (_selectedLocation?.lat == null || _selectedLocation?.lng == null)) {
+      AppSnackBar.show(
+        context,
+        message: 'Please provide coordinates or use "Use Current Location"',
         type: AppSnackBarType.warning,
       );
       return;

@@ -116,6 +116,13 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
             'Quantity updated successfully.',
         type: AppSnackBarType.success,
       );
+      
+      // ✅ CRITICAL FIX: Refresh cart from backend after update
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _loadCartFromApi();
+        }
+      });
     } on ProductException catch (error) {
       if (!mounted) return;
 
@@ -207,6 +214,14 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
             message: l10n.cartItemRemoved,
             type: AppSnackBarType.info,
           );
+          
+          // ✅ CRITICAL FIX: Refresh cart from backend after delete
+          // This ensures item won't reappear when user navigates/refreshes
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _loadCartFromApi();
+            }
+          });
         } on ProductException catch (error) {
           if (!mounted) return;
 
