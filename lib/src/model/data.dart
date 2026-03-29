@@ -260,18 +260,44 @@ class AppData {
     product.isFavorite = isFavorite(product.id);
   }
 
-  static void toggleFavorite(ApiProduct product) {
+  static void setFavorite(ApiProduct product, bool isFavorite) {
     final id = product.id;
-    if (_wishlistIds.contains(id)) {
+    if (isFavorite) {
+      _wishlistIds.add(id);
+      _wishlistProducts[id] = product;
+    } else {
       _wishlistIds.remove(id);
       _wishlistProducts.remove(id);
-      product.isFavorite = false;
-      return;
     }
 
-    _wishlistIds.add(id);
-    _wishlistProducts[id] = product;
-    product.isFavorite = true;
+    product.isFavorite = isFavorite;
+    for (final item in _products) {
+      if (item.id == id) {
+        item.isFavorite = isFavorite;
+      }
+    }
+  }
+
+  static void setWishlistProducts(List<ApiProduct> products) {
+    _wishlistIds
+      ..clear()
+      ..addAll(products.map((product) => product.id));
+    _wishlistProducts
+      ..clear()
+      ..addEntries(
+        products.map((product) {
+          product.isFavorite = true;
+          return MapEntry(product.id, product);
+        }),
+      );
+
+    for (final product in _products) {
+      product.isFavorite = _wishlistIds.contains(product.id);
+    }
+  }
+
+  static void toggleFavorite(ApiProduct product) {
+    setFavorite(product, !_wishlistIds.contains(product.id));
   }
 
   static List<ApiProduct> get wishlistProducts =>

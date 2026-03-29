@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../data/categories_data.dart';
 import '../../models/category.dart';
-import '../design/app_colors.dart';
-import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/product_api.dart';
@@ -24,6 +22,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
   int? _selectedMainCategoryId;
   int? _selectedCategoryId;
   bool _isLoading = false;
+  String? _errorMessage;
   List<ApiProduct> _products = [];
 
   @override
@@ -113,36 +112,79 @@ class _CategoriesPageState extends State<CategoriesPage> {
           ),
         ],
         const SizedBox(height: AppSpacing.sm),
-        Expanded(
-          child: _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: AppColors.primary),
-                )
-              : _selectedCategoryId == null
-              ? Center(child: Text(l10n.selectCategory))
-              : _products.isEmpty
-              ? Center(child: Text(l10n.noProductsInCategory))
-              : GridView.builder(
-                  padding: AppTheme.padding,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.75,
-                    crossAxisSpacing: AppSpacing.lg,
-                    mainAxisSpacing: AppSpacing.lg,
-                  ),
-                  itemCount: _products.length,
-                  itemBuilder: (context, index) {
-                    return ProductCard(product: _products[index]);
-                  },
-                ),
-        ),
+        Expanded(child: _buildProductsContent(l10n)),
       ],
+    );
+  }
+
+  Widget _buildProductsContent(dynamic l10n) {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
+    }
+
+    if (_errorMessage != null && _errorMessage!.trim().isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 64,
+              color: AppColors.textHint,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              _errorMessage!,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ElevatedButton(
+              onPressed: _reloadCurrentCategory,
+              child: Text(l10n.retry),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_selectedCategoryId == null) {
+      return Center(child: Text(l10n.selectCategory));
+    }
+
+    if (_products.isEmpty) {
+      return Center(child: Text(l10n.noProductsInCategory));
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async => _reloadCurrentCategory(forceRefresh: true),
+      child: GridView.builder(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        padding: AppTheme.hPadding,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.75,
+          crossAxisSpacing: AppSpacing.lg,
+          mainAxisSpacing: AppSpacing.lg,
+        ),
+        itemCount: _products.length,
+        itemBuilder: (context, index) {
+          return ProductCard(product: _products[index]);
+        },
+      ),
     );
   }
 
   Future<void> _loadProducts(int categoryId, {int? mainCategoryId}) async {
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
       _selectedCategoryId = categoryId;
       _selectedMainCategoryId = mainCategoryId ?? _selectedMainCategoryId;
     });
@@ -154,10 +196,41 @@ class _CategoriesPageState extends State<CategoriesPage> {
         _products = products.where((item) => item.isActive == 1).toList();
         _isLoading = false;
       });
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() {
         _products = [];
+        _errorMessage = error.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _reloadCurrentCategory({bool forceRefresh = false}) async {
+    final categoryId = _selectedCategoryId;
+    if (categoryId == null) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final products = await _productService.getProductsByCategory(
+        categoryId,
+        forceRefresh: forceRefresh,
+      );
+      if (!mounted) return;
+      setState(() {
+        _products = products.where((item) => item.isActive == 1).toList();
+        _isLoading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = error.toString();
         _isLoading = false;
       });
     }

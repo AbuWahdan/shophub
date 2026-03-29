@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../design/app_colors.dart';
-import '../../design/app_spacing.dart';
-import '../../design/app_text_styles.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 
 class EmptyState extends StatelessWidget {
   final IconData icon;
@@ -20,46 +18,11 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: AppSpacing.insetsLg,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: AppSpacing.hero,
-              height: AppSpacing.hero,
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceVariant,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                size: AppSpacing.iconXl,
-                color: AppColors.primary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              title,
-              style: AppTextStyles.headingMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              message,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            if (action != null) ...[
-              const SizedBox(height: AppSpacing.xl),
-              action!,
-            ],
-          ],
-        ),
-      ),
+    return EmptyStateWidget(
+      icon: icon,
+      title: title,
+      subtitle: message,
+      action: action,
     );
   }
 }

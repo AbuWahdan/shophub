@@ -4,8 +4,6 @@ import 'package:provider/provider.dart';
 import '../config/app_constants.dart';
 import '../config/route.dart';
 import '../config/ui_text.dart';
-import '../design/app_colors.dart';
-import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../model/cart_api.dart';
 import '../model/cart_item.dart';
@@ -51,10 +49,23 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     cartItems = AppData.cartItems;
   }
 
-  void _removeItem(int index) {
+  int _itemKey(CartItem item) =>
+      item.selectedDetId > 0 ? item.selectedDetId : item.product.id;
+
+  bool _isSameCartItem(CartItem left, CartItem right) {
+    return left.product.id == right.product.id &&
+        left.selectedDetId == right.selectedDetId &&
+        left.selectedSize == right.selectedSize &&
+        left.selectedColor == right.selectedColor;
+  }
+
+  void _removeItem(CartItem targetItem) {
     if (!mounted) return;
     setState(() {
-      AppData.removeFromCartAt(index);
+      final updatedItems = cartItems
+          .where((item) => !_isSameCartItem(item, targetItem))
+          .toList();
+      AppData.setCartItems(updatedItems);
       cartItems = AppData.cartItems;
     });
   }
@@ -63,7 +74,20 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     if (!mounted) return;
     final cartItem = cartItems[index];
     final oldQuantity = cartItem.quantity;
-    final username = context.read<AuthState>().user?.username.trim() ?? '';
+    final itemKey = _itemKey(cartItem);
+    final authState = context.read<AuthState>();
+    await authState.ensureInitialized();
+    if (!mounted) return;
+    final username = authState.user?.username.trim() ?? '';
+
+    if (username.isEmpty) {
+      AppSnackBar.show(
+        context,
+        message: context.l10n.productAccountUnavailable,
+        type: AppSnackBarType.error,
+      );
+      return;
+    }
 
     if (newQuantity < 1) {
       _showRemoveConfirmation(index);
@@ -72,64 +96,33 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
 
     if (newQuantity == oldQuantity) return;
 
-    // Optimistic update
     setState(() {
-      _itemsBeingUpdated.add(index);
-      cartItems[index].quantity = newQuantity;
+      _itemsBeingUpdated.add(itemKey);
     });
 
     try {
-      if (newQuantity > oldQuantity) {
-        // Increment quantity
-        final addRequest = AddItemToCartRequest(
-          itemId: cartItem.selectedDetId > 0
-              ? cartItem.product.id
-              : cartItem.product.id,
-          itemDetId: cartItem.selectedDetId,
+      await _productService.addItemToCart(
+        AddItemToCartRequest(
+          itemId: cartItem.product.id,
+          itemDetId: cartItem.selectedDetId > 0
+              ? cartItem.selectedDetId
+              : cartItem.product.detId,
           username: username,
           itemQty: newQuantity - oldQuantity,
-        );
-        await _productService.addItemToCart(addRequest);
-      } else if (newQuantity < oldQuantity) {
-        // Decrement - delete and re-add with new quantity
-        // Or if we have a dedicated decrease API, use that
-        // For now, we'll mark as updated but in real implementation
-        // you might call a separate decrease API or delete and re-add
-        final qtyDifference = oldQuantity - newQuantity;
-        for (int i = 0; i < qtyDifference; i++) {
-          await _productService.deleteItemFromCart(
-            detailId: cartItem.selectedDetId,
-            modifiedBy: username,
-          );
-        }
-      }
+        ),
+      );
 
       if (!mounted) return;
 
       setState(() {
-        _itemsBeingUpdated.remove(index);
-      });
-
-      AppSnackBar.show(
-        context,
-        message:
-            'Quantity updated successfully.',
-        type: AppSnackBarType.success,
-      );
-      
-      // ✅ CRITICAL FIX: Refresh cart from backend after update
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _loadCartFromApi();
-        }
+        cartItems[index].quantity = newQuantity;
+        _itemsBeingUpdated.remove(itemKey);
       });
     } on ProductException catch (error) {
       if (!mounted) return;
 
       setState(() {
-        _itemsBeingUpdated.remove(index);
-        // Revert optimistic update
-        cartItems[index].quantity = oldQuantity;
+        _itemsBeingUpdated.remove(itemKey);
       });
 
       AppSnackBar.show(
@@ -141,9 +134,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
       if (!mounted) return;
 
       setState(() {
-        _itemsBeingUpdated.remove(index);
-        // Revert optimistic update
-        cartItems[index].quantity = oldQuantity;
+        _itemsBeingUpdated.remove(itemKey);
       });
 
       AppSnackBar.show(
@@ -172,17 +163,6 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     return cartItems.fold(0, (sum, item) => sum + item.total);
   }
 
-  double get originalPrice {
-    return cartItems.fold(
-      0,
-      (sum, item) => sum + (item.product.price * item.quantity),
-    );
-  }
-
-  double get totalDiscount {
-    return originalPrice - totalPrice;
-  }
-
   void _showRemoveConfirmation(int index) {
     final l10n = context.l10n;
     AppDialogs.showConfirmation(
@@ -193,40 +173,50 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
       cancelLabel: l10n.commonCancel,
       onConfirm: () async {
         final cartItem = cartItems[index];
-        final username = context.read<AuthState>().user?.username.trim() ?? '';
+        final itemKey = _itemKey(cartItem);
+        final authState = context.read<AuthState>();
+        await authState.ensureInitialized();
+        if (!mounted) return;
+        final username = authState.user?.username.trim() ?? '';
+
+        if (username.isEmpty) {
+          AppSnackBar.show(
+            context,
+            message: context.l10n.productAccountUnavailable,
+            type: AppSnackBarType.error,
+          );
+          return;
+        }
 
         setState(() {
-          _itemsBeingUpdated.add(index);
+          _itemsBeingUpdated.add(itemKey);
         });
 
         try {
           await _productService.deleteItemFromCart(
-            detailId: cartItem.selectedDetId,
+            detailId: cartItem.selectedDetId > 0
+                ? cartItem.selectedDetId
+                : cartItem.product.detId,
             modifiedBy: username,
           );
 
           if (!mounted) return;
 
-          _removeItem(index);
+          _removeItem(cartItem);
+          setState(() {
+            _itemsBeingUpdated.remove(itemKey);
+          });
 
           AppSnackBar.show(
             context,
             message: l10n.cartItemRemoved,
             type: AppSnackBarType.info,
           );
-          
-          // ✅ CRITICAL FIX: Refresh cart from backend after delete
-          // This ensures item won't reappear when user navigates/refreshes
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              _loadCartFromApi();
-            }
-          });
         } on ProductException catch (error) {
           if (!mounted) return;
 
           setState(() {
-            _itemsBeingUpdated.remove(index);
+            _itemsBeingUpdated.remove(itemKey);
           });
 
           AppSnackBar.show(
@@ -238,7 +228,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
           if (!mounted) return;
 
           setState(() {
-            _itemsBeingUpdated.remove(index);
+            _itemsBeingUpdated.remove(itemKey);
           });
 
           AppSnackBar.show(
@@ -257,7 +247,10 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
 
   Future<void> _loadCartFromApi() async {
     if (!mounted) return;
-    final username = context.read<AuthState>().user?.username.trim() ?? '';
+    final authState = context.read<AuthState>();
+    await authState.ensureInitialized();
+    if (!mounted) return;
+    final username = authState.user?.username.trim() ?? '';
     if (username.isEmpty) {
       setState(() {
         _errorMessage = null;
@@ -316,7 +309,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     bool hasDiscount = product.discountPrice != null;
     final selectedSize = item.selectedSize;
     final selectedColor = item.selectedColor;
-    final isUpdating = _itemsBeingUpdated.contains(index);
+    final isUpdating = _itemsBeingUpdated.contains(_itemKey(item));
     final availableStock = product.quantity;
 
     return Card(
@@ -395,8 +388,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                                 style: AppTextStyles.bodySmall,
                               ),
                               Text(
-                                context.l10n
-                                    .cartAvailableStock(availableStock),
+                                context.l10n.cartAvailableStock(availableStock),
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: AppColors.accentOrange,
                                 ),
@@ -410,8 +402,9 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                   // Delete Button
                   IconButton(
                     icon: const Icon(Icons.close, size: AppSpacing.iconMd),
-                    onPressed: isUpdating ? null : () =>
-                        _showRemoveConfirmation(index),
+                    onPressed: isUpdating
+                        ? null
+                        : () => _showRemoveConfirmation(index),
                     color: Theme.of(context).colorScheme.onSurface,
                     constraints: const BoxConstraints(),
                     padding: EdgeInsets.zero,
@@ -438,13 +431,13 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                   else
                     QuantityStepper(
                       value: quantity,
-                      onDecrement: quantity > 1
-                          ? () => _updateQuantity(index, quantity - 1)
+                      decrementIcon: quantity == 1
+                          ? Icons.delete_outline
+                          : Icons.remove,
+                      onDecrement: () => _updateQuantity(index, quantity - 1),
+                      onIncrement: quantity < AppConstants.checkoutMaxQuantity
+                          ? () => _updateQuantity(index, quantity + 1)
                           : null,
-                      onIncrement:
-                          quantity < AppConstants.checkoutMaxQuantity
-                              ? () => _updateQuantity(index, quantity + 1)
-                              : null,
                     ),
                 ],
               ),
@@ -584,101 +577,71 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildPriceSummaryRow(
-                      context.l10n.cartSubtotal,
-                      '\$${originalPrice.toStringAsFixed(2)}',
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    if (totalDiscount > 0)
-                      _buildPriceSummaryRow(
-                        context.l10n.cartDiscount,
-                        '-\$${totalDiscount.toStringAsFixed(2)}',
-                        isDiscount: true,
-                      ),
-                    if (totalDiscount > 0)
-                      const SizedBox(height: AppSpacing.sm),
-                    _buildPriceSummaryRow(
-                      context.l10n.cartShipping,
-                      context.l10n.cartShippingFree,
-                      isHighlight: true,
-                    ),
-                    const Divider(height: AppSpacing.lg),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          context.l10n.cartTotal,
-                          style: AppTextStyles.titleMedium,
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '\$${totalPrice.toStringAsFixed(2)}',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                            Text(
+                              '${context.l10n.cartShipping}: ${context.l10n.cartShippingFree}',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.tertiary,
+                                  ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          '\$${totalPrice.toStringAsFixed(2)}',
-                          style: AppTextStyles.titleLarge.copyWith(
-                            color: AppColors.primary,
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: SizedBox(
+                            height: AppSpacing.buttonMd,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: AppColors.textOnPrimary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AppSpacing.radiusLg,
+                                  ),
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        CheckoutScreen(cartItems: cartItems),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                context.l10n.cartCheckout,
+                                style: Theme.of(context).textTheme.labelLarge
+                                    ?.copyWith(color: AppColors.textOnPrimary),
+                              ),
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    SizedBox(
-                      width: double.infinity,
-                      height: AppSpacing.buttonMd,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: AppColors.textOnPrimary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              AppSpacing.radiusLg,
-                            ),
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  CheckoutScreen(cartItems: cartItems),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          context.l10n.cartCheckout,
-                          style: AppTextStyles.buttonLarge.copyWith(
-                            color: AppColors.textOnPrimary,
-                          ),
-                        ),
-                      ),
                     ),
                   ],
                 ),
               ),
             )
           : null,
-    );
-  }
-
-  Widget _buildPriceSummaryRow(
-    String label,
-    String value, {
-    bool isDiscount = false,
-    bool isHighlight = false,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: isHighlight
-              ? AppTextStyles.labelLarge.copyWith(color: AppColors.primary)
-              : AppTextStyles.bodySmall,
-        ),
-        Text(
-          value,
-          style: isDiscount
-              ? AppTextStyles.labelLarge.copyWith(color: AppColors.primary)
-              : AppTextStyles.bodySmall,
-        ),
-      ],
     );
   }
 }

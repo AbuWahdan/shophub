@@ -7,6 +7,7 @@ import 'package:sinwar_shoping/src/l10n/app_localizations.dart';
 import 'package:sinwar_shoping/src/state/app_settings.dart';
 import 'package:sinwar_shoping/src/state/auth_state.dart';
 import 'package:sinwar_shoping/src/themes/theme.dart';
+import 'package:sinwar_shoping/src/state/wishlist_state.dart';
 import 'app_bindings.dart';
 
 Future<void> main() async {
@@ -20,8 +21,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AuthState()..initialize(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AuthState>(
+          create: (_) => AuthState()..initialize(),
+        ),
+        ChangeNotifierProxyProvider<AuthState, WishlistState>(
+          create: (_) => WishlistState(),
+          update: (_, authState, wishlistState) {
+            final state = wishlistState ?? WishlistState();
+            state.updateAuth(authState);
+            return state;
+          },
+        ),
+      ],
       child: ValueListenableBuilder<ThemeMode>(
         valueListenable: AppSettings.themeMode,
         builder: (context, themeMode, child) {
