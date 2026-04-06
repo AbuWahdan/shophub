@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/src/config/route.dart';
 
+import '../design/app_colors.dart';
+import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';
@@ -25,6 +27,26 @@ class ProductCard extends StatefulWidget {
 class _ProductCardState extends State<ProductCard> {
   final ProductService _productService = ProductService();
   bool _isAddingToCart = false;
+  bool _isOpeningDetails = false;
+
+  Future<void> _openProductDetails() async {
+    if (_isOpeningDetails) return;
+
+    setState(() => _isOpeningDetails = true);
+    widget.onSelected?.call(widget.product);
+
+    try {
+      await Navigator.pushNamed(
+        context,
+        AppRoutes.productDetails,
+        arguments: {'product': widget.product},
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isOpeningDetails = false);
+      }
+    }
+  }
 
   Future<void> _handleToggleFavorite() async {
     final auth = context.read<AuthState>();
@@ -171,14 +193,7 @@ class _ProductCardState extends State<ProductCard> {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        onTap: () {
-          Navigator.pushNamed(
-            context,
-            AppRoutes.productDetails,
-            arguments: {'product': product},
-          );
-          widget.onSelected?.call(product);
-        },
+        onTap: _isOpeningDetails ? null : _openProductDetails,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/widgets/empty_state_widget.dart';
+import '../../data/repositories/comment_repository.dart';
 import '../config/ui_text.dart';
-import '../design/app_colors.dart';
-import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
-import '../model/data.dart';
-import '../model/product_comment.dart';
-import '../shared/widgets/app_image.dart';
-import '../shared/widgets/empty_state.dart';
+import '../model/comment_model.dart';
 import '../themes/theme.dart';
 
-class ProductCommentsPage extends StatelessWidget {
+class ProductCommentsPage extends StatefulWidget {
   final int productId;
   final String productName;
 
@@ -22,19 +20,70 @@ class ProductCommentsPage extends StatelessWidget {
   });
 
   @override
+  State<ProductCommentsPage> createState() => _ProductCommentsPageState();
+}
+
+class _ProductCommentsPageState extends State<ProductCommentsPage> {
+  late final CommentRepository _commentRepository;
+  late Future<List<CommentModel>> _commentsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _commentRepository = Get.find<CommentRepository>();
+    _commentsFuture = _commentRepository.getItemComments(widget.productId);
+  }
+
+  Future<void> _reload() async {
+    setState(() {
+      _commentsFuture = _commentRepository.getItemComments(widget.productId);
+    });
+    await _commentsFuture;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final comments = AppData.commentsForProduct(productId);
     return Scaffold(
       appBar: AppBar(
-        title: Text('${UiText.commentsScreenTitlePrefix}$productName'),
+        title: Text('${UiText.commentsScreenTitlePrefix}${widget.productName}'),
       ),
-      body: comments.isEmpty
-          ? const EmptyState(
+      body: FutureBuilder<List<CommentModel>>(
+        future: _commentsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: AppTheme.padding,
+                child: EmptyStateWidget(
+                  icon: Icons.error_outline,
+                  title: 'Unable to load reviews',
+                  subtitle: snapshot.error.toString(),
+                  action: ElevatedButton.icon(
+                    onPressed: _reload,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
+                ),
+              ),
+            );
+          }
+
+          final comments = snapshot.data ?? const <CommentModel>[];
+          if (comments.isEmpty) {
+            return const EmptyStateWidget(
               icon: Icons.comment_outlined,
               title: UiText.commentsScreenEmptyTitle,
-              message: UiText.commentsScreenEmptyMessage,
-            )
-          : ListView.separated(
+              subtitle: UiText.commentsScreenEmptyMessage,
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: _reload,
+            child: ListView.separated(
               padding: AppTheme.padding,
               itemBuilder: (context, index) {
                 final comment = comments[index];
@@ -43,12 +92,15 @@ class ProductCommentsPage extends StatelessWidget {
               separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.lg),
               itemCount: comments.length,
             ),
+          );
+        },
+      ),
     );
   }
 }
 
 class _CommentCard extends StatelessWidget {
-  final ProductComment comment;
+  final CommentModel comment;
 
   const _CommentCard({required this.comment});
 
@@ -66,12 +118,16 @@ class _CommentCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(comment.userName, style: AppTextStyles.titleSmall),
+                child: Text(
+                  comment.username.isEmpty ? 'Anonymous' : comment.username,
+                  style: AppTextStyles.titleSmall,
+                ),
               ),
-              Text(
-                DateFormat.yMMMd().format(comment.date),
-                style: AppTextStyles.bodySmall,
-              ),
+              if (comment.createdAt != null)
+                Text(
+                  DateFormat.yMMMd().format(comment.createdAt!),
+                  style: AppTextStyles.bodySmall,
+                ),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -79,37 +135,14 @@ class _CommentCard extends StatelessWidget {
             children: List.generate(
               5,
               (index) => Icon(
-                index < comment.rating.round() ? Icons.star : Icons.star_border,
+                index < comment.rating ? Icons.star : Icons.star_border,
                 size: AppSpacing.iconSm,
                 color: AppColors.accentYellow,
               ),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(comment.comment, style: AppTextStyles.bodyMedium),
-          if (comment.imageUrls.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
-            SizedBox(
-              height: AppSpacing.imageSm,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (context, index) {
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                    child: AppImage(
-                      path: comment.imageUrls[index],
-                      width: AppSpacing.imageSm,
-                      height: AppSpacing.imageSm,
-                      fit: BoxFit.cover,
-                    ),
-                  );
-                },
-                separatorBuilder: (_, _) =>
-                    const SizedBox(width: AppSpacing.sm),
-                itemCount: comment.imageUrls.length,
-              ),
-            ),
-          ],
+          Text(comment.commentText, style: AppTextStyles.bodyMedium),
         ],
       ),
     );

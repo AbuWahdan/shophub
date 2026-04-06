@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../config/route.dart';
 import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
-import '../shared/dialogs/app_dialogs.dart';
-import '../shared/widgets/app_button.dart';
-import '../shared/widgets/app_snackbar.dart';
 import '../shared/widgets/section_header.dart';
 import '../state/app_settings.dart';
-import '../state/auth_state.dart';
 import '../themes/theme.dart';
 
 class ProfileSettingsPage extends StatefulWidget {
@@ -144,51 +139,6 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 },
               ),
             ],
-          ),
-          const SizedBox(height: AppSpacing.xxl),
-          AppButton(
-            label: l10n.settingsLogout,
-            style: AppButtonStyle.danger,
-            onPressed: () {
-              AppDialogs.showConfirmation(
-                context: context,
-                title: l10n.settingsLogoutConfirmTitle,
-                message: l10n.settingsLogoutConfirmMessage,
-                confirmLabel: l10n.commonLogout,
-                cancelLabel: l10n.commonCancel,
-                onConfirm: () {
-                  context.read<AuthState>().logout().then((_) {
-                    if (!context.mounted) return;
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      AppRoutes.login,
-                      (route) => false,
-                    );
-                  });
-                },
-              );
-            },
-          ),
-          const SizedBox(height: AppSpacing.md),
-          AppButton(
-            label: l10n.settingsDeleteAccount,
-            style: AppButtonStyle.danger,
-            onPressed: () {
-              AppDialogs.showConfirmation(
-                context: context,
-                title: l10n.settingsDeleteAccountConfirmTitle,
-                message: l10n.settingsDeleteAccountConfirmMessage,
-                confirmLabel: l10n.commonDelete,
-                cancelLabel: l10n.commonCancel,
-                onConfirm: () {
-                  AppSnackBar.show(
-                    context,
-                    message: l10n.settingsAccountDeleted,
-                    type: AppSnackBarType.info,
-                  );
-                },
-              );
-            },
           ),
           const SizedBox(height: AppSpacing.xxxl),
         ],

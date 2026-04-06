@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../data/domain_models/address_entity.dart';
+
+import '../../model/address_model.dart';
 
 class AddEditAddressScreen extends StatefulWidget {
   final String username;
-  final AddressEntity? initialAddress;
+  final AddressModel? initialAddress;
 
   const AddEditAddressScreen({
     required this.username,
@@ -37,10 +38,14 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
   void _initializeControllers() {
     final address = widget.initialAddress;
     _labelController = TextEditingController(text: address?.label ?? '');
-    _streetController = TextEditingController(text: address?.streetAddress ?? '');
+    _streetController = TextEditingController(
+      text: address?.streetAddress ?? '',
+    );
     _cityController = TextEditingController(text: address?.city ?? '');
     _stateController = TextEditingController(text: address?.state ?? '');
-    _countryController = TextEditingController(text: address?.country ?? 'Pakistan');
+    _countryController = TextEditingController(
+      text: address?.country ?? 'Pakistan',
+    );
     _zipCodeController = TextEditingController(text: address?.zipCode ?? '');
     _phoneController = TextEditingController(text: address?.phone ?? '');
     _latitudeController = TextEditingController(
@@ -267,7 +272,7 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
 
   void _submit() {
     if (_formKey.currentState?.validate() ?? false) {
-      final address = AddressEntity(
+      final address = AddressModel(
         addressId: widget.initialAddress?.addressId,
         username: widget.username,
         label: _labelController.text.trim(),
@@ -283,7 +288,7 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
         longitude: _longitudeController.text.isNotEmpty
             ? double.tryParse(_longitudeController.text)
             : null,
-        isDefault: widget.initialAddress?.isDefault ?? false,
+        isDefault: widget.initialAddress?.isDefault ?? 0,
       );
 
       Navigator.pop(context, address);

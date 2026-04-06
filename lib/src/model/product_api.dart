@@ -123,7 +123,7 @@ class ApiProduct {
     final primaryImage = imageList.isNotEmpty ? imageList.first : '';
 
     return ApiProduct(
-      id: _asInt(_pick(json, const ['id', 'ID'])),
+      id: _asInt(_pick(json, const ['id', 'ID', 'ITEM_ID', 'item_id'])),
       detId: topLevelDetId > 0 ? topLevelDetId : selectedVariant.detId,
       itemName: _asString(json, const ['item_name', 'ITEM_NAME']),
       itemDesc: _asString(json, const ['item_desc', 'ITEM_DESC']),
@@ -578,7 +578,6 @@ class CreateProductDetail {
   };
 }
 
-
 // ─── NEW: matches exact update-item API shape ──────────────────────────────
 class UpdateItemDetail {
   final int detailId;
@@ -608,8 +607,8 @@ class UpdateItemDetail {
     'brand': brand,
     'color': color,
     'modified_by': modifiedBy,
-    'size': size,       // some Oracle procs use this
-    'item_size': size,  // ← ADDED: others use this (matches ITEM_SIZE column)
+    'size': size, // some Oracle procs use this
+    'item_size': size, // ← ADDED: others use this (matches ITEM_SIZE column)
     'is_active': isActive,
   };
 }
@@ -641,7 +640,8 @@ class UpdateProductRequest {
     'item_desc': itemDesc,
     'is_active': isActive,
     'category_id': categoryId,
-    if (itemImgUrl != null && itemImgUrl!.isNotEmpty) 'item_img_url': itemImgUrl,
+    if (itemImgUrl != null && itemImgUrl!.isNotEmpty)
+      'item_img_url': itemImgUrl,
     'item_details': itemDetails.map((d) => d.toJson()).toList(),
   };
 }

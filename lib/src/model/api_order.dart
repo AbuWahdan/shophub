@@ -11,6 +11,7 @@ class ApiOrder {
   final double netAmount;
   final String statusRaw; // Store raw status value
   final DateTime createdDate;
+  final List<ApiOrderItem> items;
 
   ApiOrder({
     required this.orderId,
@@ -23,11 +24,13 @@ class ApiOrder {
     required this.netAmount,
     required this.statusRaw,
     required this.createdDate,
+    this.items = const [],
   });
 
   factory ApiOrder.fromJson(Map<String, dynamic> json) {
     // Check for status field with multiple possible names
-    final statusValue = json['STATUS'] ??
+    final statusValue =
+        json['STATUS'] ??
         json['status'] ??
         json['ORDER_STATUS'] ??
         json['order_status'] ??
@@ -46,6 +49,7 @@ class ApiOrder {
       netAmount: _parseDouble(json['NET_AMOUNT']),
       statusRaw: statusValue.toString().trim(),
       createdDate: _parseDateTime(json['CREATED_DATE']),
+      items: _parseItems(json),
     );
   }
 
@@ -61,7 +65,68 @@ class ApiOrder {
       'NET_AMOUNT': netAmount,
       'STATUS': statusRaw,
       'CREATED_DATE': createdDate.toIso8601String(),
+      'ITEMS': items.map((item) => item.toJson()).toList(),
     };
+  }
+
+  ApiOrder copyWith({
+    int? orderId,
+    String? orderNo,
+    String? username,
+    DateTime? orderDate,
+    double? totalAmount,
+    double? taxAmount,
+    double? discountAmount,
+    double? netAmount,
+    String? statusRaw,
+    DateTime? createdDate,
+    List<ApiOrderItem>? items,
+  }) {
+    return ApiOrder(
+      orderId: orderId ?? this.orderId,
+      orderNo: orderNo ?? this.orderNo,
+      username: username ?? this.username,
+      orderDate: orderDate ?? this.orderDate,
+      totalAmount: totalAmount ?? this.totalAmount,
+      taxAmount: taxAmount ?? this.taxAmount,
+      discountAmount: discountAmount ?? this.discountAmount,
+      netAmount: netAmount ?? this.netAmount,
+      statusRaw: statusRaw ?? this.statusRaw,
+      createdDate: createdDate ?? this.createdDate,
+      items: items ?? this.items,
+    );
+  }
+
+  static List<ApiOrderItem> _parseItems(Map<String, dynamic> json) {
+    final parsedItems = <ApiOrderItem>[];
+    final candidates = <dynamic>[
+      json['ITEMS'],
+      json['items'],
+      json['ORDER_ITEMS'],
+      json['order_items'],
+      json['DETAILS'],
+      json['details'],
+    ];
+
+    for (final candidate in candidates) {
+      if (candidate is List) {
+        for (final item in candidate) {
+          if (item is Map<String, dynamic>) {
+            parsedItems.add(ApiOrderItem.fromJson(item));
+          }
+        }
+        if (parsedItems.isNotEmpty) {
+          return parsedItems;
+        }
+      }
+    }
+
+    final topLevelItem = ApiOrderItem.fromJson(json);
+    if (topLevelItem.itemId > 0 || topLevelItem.productName.isNotEmpty) {
+      return [topLevelItem];
+    }
+
+    return const [];
   }
 
   static DateTime _parseDateTime(dynamic value) {
@@ -146,18 +211,118 @@ class ApiOrderResponse {
   final String status;
   final List<ApiOrder> data;
 
-  ApiOrderResponse({
-    required this.status,
-    required this.data,
-  });
+  ApiOrderResponse({required this.status, required this.data});
 
   factory ApiOrderResponse.fromJson(Map<String, dynamic> json) {
     final data = json['data'] as List<dynamic>? ?? [];
+    final groupedOrders = <int, ApiOrder>{};
+
+    for (final item in data) {
+      if (item is! Map<String, dynamic>) continue;
+      final order = ApiOrder.fromJson(item);
+      final existing = groupedOrders[order.orderId];
+
+      if (existing == null) {
+        groupedOrders[order.orderId] = order;
+        continue;
+      }
+
+      groupedOrders[order.orderId] = existing.copyWith(
+        items: [
+          ...existing.items,
+          ...order.items.where(
+            (candidate) => existing.items.every(
+              (existingItem) =>
+                  existingItem.itemId != candidate.itemId ||
+                  existingItem.itemDetId != candidate.itemDetId,
+            ),
+          ),
+        ],
+      );
+    }
+
     return ApiOrderResponse(
       status: json['status'] as String? ?? 'error',
-      data: data
-          .map((item) => ApiOrder.fromJson(item as Map<String, dynamic>))
-          .toList(),
+      data: groupedOrders.values.toList(),
     );
   }
+}
+
+class ApiOrderItem {
+  final int itemId;
+  final int itemDetId;
+  final String productName;
+  final String productImage;
+  final int quantity;
+  final double price;
+
+  const ApiOrderItem({
+    required this.itemId,
+    required this.itemDetId,
+    required this.productName,
+    required this.productImage,
+    required this.quantity,
+    required this.price,
+  });
+
+  factory ApiOrderItem.fromJson(Map<String, dynamic> json) {
+    return ApiOrderItem(
+      itemId: _parseInt(
+        json['ITEM_ID'] ??
+            json['item_id'] ??
+            json['PRODUCT_ID'] ??
+            json['product_id'],
+      ),
+      itemDetId: _parseInt(
+        json['ITEM_DET_ID'] ??
+            json['item_det_id'] ??
+            json['DET_ID'] ??
+            json['det_id'],
+      ),
+      productName:
+          (json['ITEM_NAME'] ??
+                  json['item_name'] ??
+                  json['PRODUCT_NAME'] ??
+                  json['product_name'] ??
+                  '')
+              .toString(),
+      productImage:
+          (json['ITEM_IMG_URL'] ??
+                  json['item_img_url'] ??
+                  json['PRODUCT_IMAGE'] ??
+                  json['product_image'] ??
+                  '')
+              .toString(),
+      quantity: _parseInt(
+        json['ITEM_QTY'] ?? json['item_qty'] ?? json['QTY'] ?? json['qty'] ?? 1,
+      ),
+      price: _parseDouble(
+        json['ITEM_PRICE'] ??
+            json['item_price'] ??
+            json['PRICE'] ??
+            json['price'],
+      ),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ITEM_ID': itemId,
+      'ITEM_DET_ID': itemDetId,
+      'ITEM_NAME': productName,
+      'ITEM_IMG_URL': productImage,
+      'ITEM_QTY': quantity,
+      'ITEM_PRICE': price,
+    };
+  }
+}
+
+int _parseInt(dynamic value) {
+  if (value is num) return value.toInt();
+  return int.tryParse((value ?? '').toString()) ?? 0;
+}
+
+double _parseDouble(dynamic value) {
+  if (value is num) return value.toDouble();
+  return double.tryParse((value ?? '').toString()) ?? 0;
 }

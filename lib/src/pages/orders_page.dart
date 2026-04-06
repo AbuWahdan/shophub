@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/repositories/order_repository.dart';
 import '../design/app_colors.dart';
 import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/api_order.dart';
-import '../services/product_service.dart';
 import '../state/auth_state.dart';
 import '../themes/theme.dart';
+import 'order_details_screen.dart';
 
 class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
@@ -19,12 +21,13 @@ class OrdersPage extends StatefulWidget {
 }
 
 class _OrdersPageState extends State<OrdersPage> {
-  final ProductService _productService = ProductService();
+  late final OrderRepository _orderRepository;
   late Future<List<ApiOrder>> _ordersFuture;
 
   @override
   void initState() {
     super.initState();
+    _orderRepository = Get.find<OrderRepository>();
     _loadOrders();
   }
 
@@ -33,7 +36,7 @@ class _OrdersPageState extends State<OrdersPage> {
     final username = authState.user?.username.trim() ?? '';
     _ordersFuture = username.isEmpty
         ? Future.value([])
-        : _productService.getOrders(username: username);
+        : _orderRepository.getOrders(username: username);
   }
 
   Future<void> _onRefresh() async {
@@ -58,11 +61,7 @@ class _OrdersPageState extends State<OrdersPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: AppColors.error,
-                  ),
+                  Icon(Icons.error_outline, size: 64, color: AppColors.error),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
                     'Failed to load orders',
@@ -97,10 +96,7 @@ class _OrdersPageState extends State<OrdersPage> {
                     color: AppColors.neutral400,
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    'No orders yet',
-                    style: AppTextStyles.titleMedium,
-                  ),
+                  Text('No orders yet', style: AppTextStyles.titleMedium),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     'You haven\'t placed any orders',
@@ -135,7 +131,10 @@ class _OrdersPageState extends State<OrdersPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => OrderDetailsScreen(order: order),
+              builder: (context) => OrderDetailsScreen(
+                orderId: order.orderId,
+                orderNo: order.orderNo,
+              ),
             ),
           );
         },
@@ -182,10 +181,7 @@ class _OrdersPageState extends State<OrdersPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Total:',
-                    style: AppTextStyles.bodySmall,
-                  ),
+                  Text('Total:', style: AppTextStyles.bodySmall),
                   Text(
                     '\$${order.netAmount.toStringAsFixed(2)}',
                     style: AppTextStyles.titleMedium,
@@ -195,170 +191,6 @@ class _OrdersPageState extends State<OrdersPage> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-}
-
-
-class OrderDetailsScreen extends StatelessWidget {
-  final ApiOrder order;
-
-  const OrderDetailsScreen({super.key, required this.order});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Order Details')),
-      body: SingleChildScrollView(
-        padding: AppTheme.padding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Card(
-              child: Padding(
-                padding: AppSpacing.insetsLg,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Order Information',
-                      style: AppTextStyles.titleMedium,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    _buildInfoRow('Order Number', order.orderNo),
-                    _buildInfoRow('Username', order.username),
-                    _buildInfoRow(
-                      'Order Date',
-                      DateFormat.yMMMd().add_jm().format(order.orderDate),
-                    ),
-                    _buildInfoRow(
-                      'Created Date',
-                      DateFormat.yMMMd().add_jm().format(order.createdDate),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Card(
-              child: Padding(
-                padding: AppSpacing.insetsLg,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Order Status',
-                      style: AppTextStyles.titleMedium,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Container(
-                      padding: AppSpacing.symmetric(
-                        horizontal: AppSpacing.md,
-                        vertical: AppSpacing.sm,
-                      ),
-                      decoration: BoxDecoration(
-                        color: order.getStatusColor().withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                      ),
-                      child: Text(
-                        order.getStatusLabel(),
-                        style: AppTextStyles.labelLarge.copyWith(
-                          color: order.getStatusColor(),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Card(
-              child: Padding(
-                padding: AppSpacing.insetsLg,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Order Summary',
-                      style: AppTextStyles.titleMedium,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    _buildSummaryRow(
-                      'Total Amount',
-                      order.totalAmount,
-                    ),
-                    _buildSummaryRow(
-                      'Tax Amount',
-                      order.taxAmount,
-                    ),
-                    if (order.discountAmount > 0)
-                      _buildSummaryRow(
-                        'Discount Amount',
-                        order.discountAmount,
-                        isDiscount: true,
-                      ),
-                    const Divider(height: AppSpacing.xl),
-                    _buildSummaryRow(
-                      'Net Amount',
-                      order.netAmount,
-                      isBold: true,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: AppTextStyles.labelSmall,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            value,
-            style: AppTextStyles.bodyMedium,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryRow(
-    String label,
-    double value, {
-    bool isBold = false,
-    bool isDiscount = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: isBold ? AppTextStyles.labelLarge : AppTextStyles.bodyMedium,
-          ),
-          Text(
-            '${isDiscount ? '-' : ''}\$${value.toStringAsFixed(2)}',
-            style: (isBold ? AppTextStyles.labelLarge : AppTextStyles.bodyMedium)
-                .copyWith(
-              color: isDiscount ? AppColors.error : null,
-            ),
-          ),
-        ],
       ),
     );
   }

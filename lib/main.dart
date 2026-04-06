@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/src/config/route.dart';
+import 'package:sinwar_shoping/src/config/mapbox_config.dart';
 import 'package:sinwar_shoping/src/l10n/app_localizations.dart';
 import 'package:sinwar_shoping/src/state/app_settings.dart';
 import 'package:sinwar_shoping/src/state/auth_state.dart';
@@ -12,6 +14,7 @@ import 'app_bindings.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MapboxOptions.setAccessToken(MapboxConfig.accessToken);
   await AppSettings.load();
   runApp(const MyApp());
 }

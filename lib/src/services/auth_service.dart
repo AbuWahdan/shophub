@@ -131,6 +131,7 @@ class AuthService {
           address: _readString(userData, const ['address', 'ADDRESS']),
           role: _readString(userData, const ['role', 'ROLE']),
           country: _readString(userData, const ['country', 'COUNTRY']),
+          gender: _readNullableInt(userData, const ['gender', 'GENDER']),
           createdAt: _readString(userData, const [
             'created_at',
             'CREATED_AT',
@@ -147,14 +148,16 @@ class AuthService {
             int.tryParse(_extractUserId(data, payload)) ?? 0;
         final userId = user.userId > 0 ? user.userId : extractedUserId;
 
+        final resolvedUser = user.copyWith(userId: userId);
+
         await _storageService.saveAuthToken(token);
-        await _storageService.saveUser(user);
+        await _storageService.saveUser(resolvedUser);
         if (userId > 0) {
           await _storageService.saveUserId(userId);
         }
         await _storageService.setLoggedIn(true);
 
-        return AuthSession(token: token, user: user, userId: userId);
+        return AuthSession(token: token, user: resolvedUser, userId: userId);
       }
 
       if (requestRound == 0 && (hadTimeoutError || hadNetworkError)) {
@@ -195,6 +198,7 @@ class AuthService {
       'address': user.address,
       'role': normalizedRole,
       'country': user.country,
+      if (user.gender != null) 'gender': user.gender,
       'USERNAME': user.username,
       'PASSWORD': user.passwordHash,
       'FULL_NAME': user.fullname,
@@ -203,6 +207,7 @@ class AuthService {
       'ADDRESS': user.address,
       'ROLE': normalizedRole,
       'COUNTRY': user.country,
+      if (user.gender != null) 'GENDER': user.gender,
     };
 
     final requestMap = {
@@ -344,9 +349,7 @@ class AuthService {
             .toLowerCase();
 
         if (status == 'error' ||
-            (status != null &&
-                status.isNotEmpty &&
-                status != 'success')) {
+            (status != null && status.isNotEmpty && status != 'success')) {
           lastError = _extractMessage(data) ?? 'Sending OTP failed.';
           continue;
         }
@@ -426,9 +429,7 @@ class AuthService {
             .toLowerCase();
 
         if (status == 'error' ||
-            (status != null &&
-                status.isNotEmpty &&
-                status != 'success')) {
+            (status != null && status.isNotEmpty && status != 'success')) {
           lastError = _extractMessage(data) ?? 'OTP verification failed.';
           continue;
         }
@@ -500,8 +501,6 @@ class AuthService {
             _extractMessage(_decode(response.body)) ??
             'Password reset failed (HTTP ${response.statusCode}).';
         continue;
-
-        return;
       } on TimeoutException catch (error) {
         timeoutError = error;
         continue;
@@ -705,6 +704,17 @@ class AuthService {
       if (parsed != null) return parsed;
     }
     return 0;
+  }
+
+  int? _readNullableInt(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final value = map[key];
+      if (value is num) return value.toInt();
+      if (value == null) continue;
+      final parsed = int.tryParse(value.toString().trim());
+      if (parsed != null) return parsed;
+    }
+    return null;
   }
 
   String _normalizeRoleForApi(String role) {

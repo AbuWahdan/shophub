@@ -36,20 +36,50 @@ class AddressModel {
   /// Create from JSON (API response)
   factory AddressModel.fromJson(Map<String, dynamic> json) {
     return AddressModel(
-      addressId: _toInt(json['address_id'] ?? json['addressId']),
-      username: _toString(json['username'] ?? ''),
-      label: _toString(json['label'] ?? ''),
-      streetAddress: _toString(json['street_address'] ?? json['streetAddress'] ?? ''),
-      city: _toString(json['city'] ?? ''),
-      state: _toString(json['state'] ?? ''),
-      country: _toString(json['country'] ?? ''),
-      zipCode: _toString(json['zip_code'] ?? json['zipCode'] ?? ''),
-      phone: _toString(json['phone'] ?? ''),
-      latitude: _toDouble(json['latitude']),
-      longitude: _toDouble(json['longitude']),
-      isDefault: _toInt(json['is_default'] ?? json['isDefault']),
-      createdDate: _toString(json['created_date'] ?? json['createdDate']),
-      modifiedDate: _toString(json['modified_date'] ?? json['modifiedDate']),
+      addressId: _toInt(
+        json['ADDRESS_ID'] ??
+            json['ADDRESS ID'] ??
+            json['address_id'] ??
+            json['addressId'],
+      ),
+      username: _toString(json['USERNAME'] ?? json['username']),
+      label: _toString(json['LABEL'] ?? json['label']),
+      streetAddress: _toString(
+        json['STREET_ADDRESS'] ??
+            json['STREET ADDRESS'] ??
+            json['street_address'] ??
+            json['streetAddress'],
+      ),
+      city: _toString(json['CITY'] ?? json['city']),
+      state: _toString(json['STATE'] ?? json['state']),
+      country: _toString(json['COUNTRY'] ?? json['country']),
+      zipCode: _toString(
+        json['ZIP_CODE'] ??
+            json['ZIP CODE'] ??
+            json['zip_code'] ??
+            json['zipCode'],
+      ),
+      phone: _toString(json['PHONE'] ?? json['phone']),
+      latitude: _toDouble(json['LATITUDE'] ?? json['latitude']),
+      longitude: _toDouble(json['LONGITUDE'] ?? json['longitude']),
+      isDefault: _toInt(
+        json['IS_DEFAULT'] ??
+            json['IS DEFAULT'] ??
+            json['is_default'] ??
+            json['isDefault'],
+      ),
+      createdDate: _toString(
+        json['CREATED_AT'] ??
+            json['CREATED DATE'] ??
+            json['created_at'] ??
+            json['createdDate'],
+      ),
+      modifiedDate: _toString(
+        json['MODIFIED_AT'] ??
+            json['MODIFIED DATE'] ??
+            json['modified_at'] ??
+            json['modifiedDate'],
+      ),
     );
   }
 
@@ -65,8 +95,8 @@ class AddressModel {
       'country': country,
       'zip_code': zipCode,
       'phone': phone,
-      if (latitude != null) 'latitude': latitude,
-      if (longitude != null) 'longitude': longitude,
+      if (latitude != null) 'latitude': latitude!.toString(),
+      if (longitude != null) 'longitude': longitude!.toString(),
       if (isDefault != null) 'is_default': isDefault,
     };
   }
@@ -114,11 +144,11 @@ class AddressModel {
       label == other.label;
 
   @override
-  int get hashCode =>
-      addressId.hashCode ^ username.hashCode ^ label.hashCode;
+  int get hashCode => addressId.hashCode ^ username.hashCode ^ label.hashCode;
 
   @override
-  String toString() => 'AddressModel(id: $addressId, label: $label, '
+  String toString() =>
+      'AddressModel(id: $addressId, label: $label, '
       'street: $streetAddress, city: $city, phone: $phone)';
 
   // Helper methods for null-safe parsing

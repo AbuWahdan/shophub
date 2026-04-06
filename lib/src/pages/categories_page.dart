@@ -153,7 +153,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     }
 
     if (_selectedCategoryId == null) {
-      return Center(child: Text(l10n.selectCategory));
+      return Center(child: Text(l10n.searchFilterSelectCategory));
     }
 
     if (_products.isEmpty) {

@@ -9,6 +9,8 @@ import '../model/product_api.dart';
 import '../services/product_service.dart';
 import '../themes/theme.dart';
 import '../widgets/product_card.dart';
+import '../shared/widgets/product_search_bar.dart';
+import 'camera_picker_screen.dart';
 
 class SearchFilterPage extends StatefulWidget {
   const SearchFilterPage({super.key});
@@ -18,8 +20,10 @@ class SearchFilterPage extends StatefulWidget {
 }
 
 class _SearchFilterPageState extends State<SearchFilterPage> {
+  final TextEditingController _searchController = TextEditingController();
   final ProductService _productService = ProductService();
   bool _isLoadingProducts = false;
+  bool _hasSearchText = false;
   List<ApiProduct> _products = [];
   String searchQuery = '';
   String selectedCategory = 'All';
@@ -68,6 +72,12 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
     }
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadProducts() async {
     setState(() => _isLoadingProducts = true);
     try {
@@ -104,26 +114,29 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
         children: [
           Padding(
             padding: AppTheme.padding,
-            child: TextField(
+            child: ProductSearchBar(
+              controller: _searchController,
+              hintText: context.l10n.searchFilterHint,
+              hasSearchText: _hasSearchText,
               onChanged: (value) {
                 setState(() {
                   searchQuery = value;
+                  _hasSearchText = value.trim().isNotEmpty;
                 });
               },
-              decoration: InputDecoration(
-                hintText: context.l10n.searchFilterHint,
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          setState(() {
-                            searchQuery = '';
-                          });
-                        },
-                      )
-                    : null,
-              ),
+              onClear: () {
+                _searchController.clear();
+                setState(() {
+                  searchQuery = '';
+                  _hasSearchText = false;
+                });
+              },
+              onCameraTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CameraPickerScreen()),
+                );
+              },
             ),
           ),
           SingleChildScrollView(

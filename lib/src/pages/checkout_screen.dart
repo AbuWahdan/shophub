@@ -1,184 +1,203 @@
-import 'dart:convert';
-
-import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:sinwar_shoping/src/model/cart_api.dart';
 
 import '../../controllers/address_controller.dart';
-import '../../data/domain_models/address_entity.dart';
-import '../config/route.dart';
-import '../design/app_colors.dart';
-import '../design/app_spacing.dart';
+import '../../data/repositories/checkout_repository.dart';
+import '../../core/utils/apex_response_helper.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
-import '../model/cart_item.dart';
-import '../model/delivery_location.dart';
-import '../services/api_client.dart';
+import '../model/address_model.dart';
+import '../model/checkout_request.dart';
+import '../model/payment_method_model.dart';
+import 'addresses/address_selection_bottom_sheet.dart';
 import '../shared/widgets/app_button.dart';
 import '../shared/widgets/app_snackbar.dart';
-import '../themes/theme.dart';
 import '../state/auth_state.dart';
+import '../themes/theme.dart';
+import 'addresses/addresses_page.dart';
 import 'order_confirmation_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
-  const CheckoutScreen({
-    super.key,
-    required this.cartItems,
-  });
+  const CheckoutScreen({super.key, required this.cartItems});
 
-  final List<CartItem> cartItems;
+  final List<ApiCartItem> cartItems;
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  static const String _baseUrl = 'https://oracleapex.com/ords/topg/products';
-  final http.Client _client = ApiClient();
+  late final AddressController _addressController;
+  late final CheckoutRepository _checkoutRepository;
+
   bool _isSubmitting = false;
-  DeliveryLocation? _selectedDeliveryLocation;
-  late AddressController _addressController;
   bool _isLoadingAddresses = false;
+  AddressModel? _selectedAddress;
+  int? _selectedPaymentMethodId;
+  String? _addressError;
+  String? _paymentMethodError;
+  String? _authError;
 
   @override
   void initState() {
     super.initState();
-    // ✅ FIX: Get AddressController instance and load addresses
     _addressController = Get.find<AddressController>();
+    _checkoutRepository = Get.find<CheckoutRepository>();
     _loadUserAddresses();
-  }
-
-  /// ✅ FIX: Load addresses from API on init
-  Future<void> _loadUserAddresses() async {
-    if (!mounted) return;
-    
-    setState(() => _isLoadingAddresses = true);
-    
-    try {
-      final authState = context.read<AuthState>();
-      final username = authState.user?.username.trim() ?? '';
-      
-      if (username.isEmpty) {
-        setState(() => _isLoadingAddresses = false);
-        return;
-      }
-      
-      _addressController.username = username;
-      await _addressController.loadAddresses();
-      
-      // Auto-select default address if available
-      final defaultAddress = _addressController.getDefaultAddress();
-      if (defaultAddress != null && mounted) {
-        setState(() {
-          _selectedDeliveryLocation = DeliveryLocation(
-            label: defaultAddress.label,
-            addressId: defaultAddress.addressId?.toString(),
-            lat: defaultAddress.latitude,
-            lng: defaultAddress.longitude,
-          );
-        });
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error loading addresses: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoadingAddresses = false);
-      }
-    }
   }
 
   double get _totalPrice {
     return widget.cartItems.fold(0, (sum, item) => sum + item.total);
   }
 
-  Map<String, dynamic> _buildOrderPayload() {
-    final authState = context.read<AuthState>();
-    final username = authState.user?.username.trim() ?? '';
-    final userId = authState.userId;
-
-    return {
-      'username': username,
-      'user_id': userId,
-      'total': _totalPrice,
-      'delivery_address': _selectedDeliveryLocation?.label ?? '',
-      'delivery_lat': _selectedDeliveryLocation?.lat,
-      'delivery_lng': _selectedDeliveryLocation?.lng,
-      'items': widget.cartItems
-          .map(
-            (item) => {
-              'item_id': item.product.id,
-              'item_det_id':
-                  item.selectedDetId > 0 ? item.selectedDetId : item.product.detId,
-              'item_qty': item.quantity,
-              'item_price': item.product.finalPrice,
-              'item_name': item.product.name,
-              'color': item.selectedColor,
-              'item_size': item.selectedSize,
-            },
-          )
-          .toList(),
-    };
+  List<PaymentMethodModel> _paymentMethods(BuildContext context) {
+    final l10n = context.l10n;
+    return [
+      PaymentMethodModel(
+        id: 1,
+        label: l10n.checkoutPaymentCard,
+        icon: Icons.credit_card_outlined,
+      ),
+      PaymentMethodModel(
+        id: 2,
+        label: l10n.checkoutPaymentCash,
+        icon: Icons.payments_outlined,
+      ),
+      PaymentMethodModel(
+        id: 3,
+        label: l10n.checkoutPaymentWallet,
+        icon: Icons.account_balance_wallet_outlined,
+      ),
+    ];
   }
 
-  /// ✅ FIX: Open address selection with API addresses
-  Future<void> _openDeliveryLocationScreen() async {
-    if (_addressController.addresses.isEmpty) {
-      AppSnackBar.show(
-        context,
-        message: 'Please add a delivery address in your profile',
-        type: AppSnackBarType.warning,
-      );
-      return;
+  PaymentMethodModel? _selectedPaymentMethod(BuildContext context) {
+    final selectedId = _selectedPaymentMethodId;
+    if (selectedId == null) return null;
+    for (final method in _paymentMethods(context)) {
+      if (method.id == selectedId) {
+        return method;
+      }
     }
+    return null;
+  }
 
-    // Convert AddressEntity to DeliveryLocation
-    final savedLocations = _addressController.addresses
-        .map((addr) => DeliveryLocation(
-              label: addr.label,
-              addressId: addr.addressId?.toString(),
-              lat: addr.latitude,
-              lng: addr.longitude,
-            ))
-        .toList();
+  Future<void> _loadUserAddresses({bool forceRefresh = false}) async {
+    if (!mounted) return;
 
-    final location = await Navigator.pushNamed<DeliveryLocation>(
-      context,
-      AppRoutes.deliveryLocation,
-      arguments: {
-        'savedAddresses': savedLocations,
-        'username': context.read<AuthState>().user?.username.trim() ?? '',
-      },
+    setState(() {
+      _isLoadingAddresses = true;
+      _authError = null;
+      _addressError = null;
+    });
+
+    try {
+      final authState = context.read<AuthState>();
+      await authState.ensureInitialized();
+      final username = authState.user?.username.trim() ?? '';
+
+      if (username.isEmpty) {
+        setState(() {
+          _authError = 'Please log in to continue with checkout.';
+          _isLoadingAddresses = false;
+        });
+        return;
+      }
+
+      _addressController.username = username;
+      await _addressController.loadAddresses(forceRefresh: forceRefresh);
+
+      final controllerError = _addressController.error.value.trim();
+      if (controllerError.isNotEmpty && _addressController.addresses.isEmpty) {
+        setState(() {
+          _addressError = controllerError;
+        });
+        return;
+      }
+
+      final selectedAddressId = _addressController.selectedAddressId.value;
+      final defaultAddress = _addressController.getDefaultAddress();
+      final matchedAddress = selectedAddressId != null
+          ? _addressController.getAddressById(selectedAddressId)
+          : defaultAddress;
+
+      setState(() {
+        _selectedAddress = matchedAddress;
+        _addressController.selectedAddressId.value = matchedAddress?.addressId;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingAddresses = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _openAddressSelection() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddressSelectionBottomSheet(
+        savedAddresses: _addressController.addresses.toList(),
+        selectedAddressId:
+            _selectedAddress?.addressId ??
+            _addressController.selectedAddressId.value,
+        onAddressSelected: (address) {
+          setState(() {
+            _selectedAddress = address;
+            _addressController.selectedAddressId.value = address.addressId;
+            _addressError = null;
+          });
+        },
+        onAddNewAddress: () async {
+          Navigator.of(context).pop();
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddressesPage()),
+          );
+          await _loadUserAddresses(forceRefresh: true);
+        },
+      ),
     );
-
-    if (location != null) {
-      setState(() => _selectedDeliveryLocation = location);
-      AppSnackBar.show(
-        context,
-        message: 'Delivery address updated',
-        type: AppSnackBarType.success,
-      );
-    }
   }
 
   Future<void> _placeOrder() async {
     if (_isSubmitting) return;
+
+    final authState = context.read<AuthState>();
+    await authState.ensureInitialized();
+    if (!mounted) return;
+
+    final username = authState.user?.username.trim();
+    final addressId = _selectedAddress?.addressId;
+    final paymentMethodId = _selectedPaymentMethodId;
+
+    setState(() {
+      _authError = (username == null || username.isEmpty)
+          ? 'Please log in to continue.'
+          : null;
+      _addressError = addressId == null
+          ? 'Please select a delivery address.'
+          : null;
+      _paymentMethodError = paymentMethodId == null
+          ? 'Please select a payment method.'
+          : null;
+    });
+
+    if (_authError != null ||
+        _addressError != null ||
+        _paymentMethodError != null) {
+      return;
+    }
+
     if (widget.cartItems.isEmpty) {
       AppSnackBar.show(
         context,
         message: 'Your cart is empty.',
-        type: AppSnackBarType.warning,
-      );
-      return;
-    }
-
-    if (_selectedDeliveryLocation == null) {
-      AppSnackBar.show(
-        context,
-        message: 'Please select a delivery address',
         type: AppSnackBarType.warning,
       );
       return;
@@ -189,54 +208,45 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
-      final response = await _client.post(
-        Uri.parse('$_baseUrl/CheckOut'),
-        headers: const {'Content-Type': 'application/json'},
-        body: jsonEncode(_buildOrderPayload()),
+      final response = await _checkoutRepository.placeOrder(
+        CheckoutRequest(
+          username: username!,
+          shippingAddress: addressId!,
+          paymentMethod: paymentMethodId!,
+        ),
       );
-      final body = response.body.trim();
-      final decoded = body.isEmpty ? null : jsonDecode(body);
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw Exception(
-          decoded is Map<String, dynamic>
-              ? decoded['message']?.toString() ?? body
-              : body,
-        );
-      }
+
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => OrderConfirmationScreen(
-            receipt: decoded is Map<String, dynamic> ? decoded : const {},
-            total: _totalPrice,
-          ),
+          builder: (_) =>
+              OrderConfirmationScreen(receipt: response, total: _totalPrice),
         ),
       );
     } catch (error) {
       if (!mounted) return;
       AppSnackBar.show(
         context,
-        message: error.toString(),
+        message: ApexResponseHelper.messageForContext(
+          'PlaceOrder',
+          error.toString(),
+        ),
         type: AppSnackBarType.error,
       );
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isSubmitting = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
-  }
-
-  @override
-  void dispose() {
-    _client.close();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+
     return Scaffold(
       appBar: AppBar(title: Text(l10n.checkoutTitle)),
       body: SafeArea(
@@ -245,13 +255,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l10n.checkoutOrderSummary, style: AppTextStyles.headingMedium),
+              if (_authError != null) ...[
+                Text(
+                  _authError!,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.error,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+              Text(
+                l10n.checkoutOrderSummary,
+                style: AppTextStyles.headingMedium,
+              ),
               const SizedBox(height: AppSpacing.md),
               if (widget.cartItems.isEmpty)
-                Text(
-                  l10n.cartEmptyMessage,
-                  style: AppTextStyles.bodyMedium,
-                )
+                Text(l10n.cartEmptyMessage, style: AppTextStyles.bodyMedium)
               else
                 ...widget.cartItems.map(
                   (item) => Padding(
@@ -261,74 +280,161 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               const Divider(height: AppSpacing.xl),
               const SizedBox(height: AppSpacing.md),
-              // Delivery Address Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Delivery Address',
-                    style: AppTextStyles.titleSmall,
-                  ),
-                  GestureDetector(
-                    onTap: _openDeliveryLocationScreen,
-                    child: const Icon(Icons.edit, size: 18),
-                  ),
-                ],
+              Text(
+                l10n.checkoutDeliveryAddress,
+                style: AppTextStyles.titleSmall,
               ),
               const SizedBox(height: AppSpacing.sm),
               GestureDetector(
-                onTap: _openDeliveryLocationScreen,
+                onTap: _isLoadingAddresses ? null : _openAddressSelection,
                 child: Container(
                   padding: AppSpacing.insetsMd,
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: _selectedDeliveryLocation != null
+                      color: _selectedAddress != null
                           ? AppColors.primary
                           : Colors.grey[300]!,
                       width: 1.5,
                     ),
-                    borderRadius: BorderRadius.circular(8),
-                    color: _selectedDeliveryLocation != null
-                        ? AppColors.primary.withOpacity(0.05)
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    color: _selectedAddress != null
+                        ? AppColors.primary.withValues(alpha: 0.05)
                         : Colors.transparent,
                   ),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(
                         Icons.location_on_outlined,
                         size: 20,
-                        color: _selectedDeliveryLocation != null
+                        color: _selectedAddress != null
                             ? AppColors.primary
                             : Colors.grey,
                       ),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _selectedDeliveryLocation?.label ??
-                                  'Select delivery address',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: _selectedDeliveryLocation != null
-                                    ? null
-                                    : Colors.grey[600],
+                        child: _isLoadingAddresses
+                            ? const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: AppSpacing.sm,
+                                ),
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _selectedAddress?.label ??
+                                        'Select delivery address',
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: _selectedAddress != null
+                                          ? null
+                                          : Colors.grey[600],
+                                    ),
+                                  ),
+                                  if (_selectedAddress != null) ...[
+                                    const SizedBox(height: AppSpacing.xs),
+                                    Text(
+                                      _selectedAddress!.streetAddress,
+                                      style: AppTextStyles.bodySmall,
+                                    ),
+                                    const SizedBox(height: AppSpacing.xs),
+                                    Text(
+                                      [
+                                            _selectedAddress!.city,
+                                            _selectedAddress!.country,
+                                          ]
+                                          .where(
+                                            (value) => value.trim().isNotEmpty,
+                                          )
+                                          .join(', '),
+                                      style: AppTextStyles.bodySmall,
+                                    ),
+                                  ],
+                                ],
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
                       ),
-                      Icon(
-                        Icons.chevron_right,
-                        size: 20,
-                        color: Colors.grey,
-                      ),
+                      const Icon(Icons.keyboard_arrow_down),
                     ],
                   ),
                 ),
               ),
+              if (_addressError != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  _addressError!,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.error,
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.xl),
+              Text(l10n.checkoutPaymentMethod, style: AppTextStyles.titleSmall),
+              const SizedBox(height: AppSpacing.sm),
+              ..._paymentMethods(context).map(
+                (method) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    onTap: () {
+                      setState(() {
+                        _selectedPaymentMethodId = method.id;
+                        _paymentMethodError = null;
+                      });
+                    },
+                    child: Container(
+                      padding: AppSpacing.insetsMd,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(
+                          AppSpacing.radiusMd,
+                        ),
+                        border: Border.all(
+                          color: _selectedPaymentMethodId == method.id
+                              ? AppColors.primary
+                              : Colors.grey[300]!,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(method.icon, color: AppColors.primary),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Text(
+                              method.label,
+                              style: AppTextStyles.bodyMedium,
+                            ),
+                          ),
+                          Radio<int>(
+                            value: method.id,
+                            groupValue: _selectedPaymentMethodId,
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedPaymentMethodId = value;
+                                _paymentMethodError = null;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              if (_paymentMethodError != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  _paymentMethodError!,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.error,
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.xl),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -340,6 +446,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                 ],
               ),
+              if (_selectedPaymentMethod(context) != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Selected payment: ${_selectedPaymentMethod(context)!.label}',
+                  style: AppTextStyles.bodySmall,
+                ),
+              ],
               const SizedBox(height: AppSpacing.xl),
               AppButton(
                 label: 'Place Order',
@@ -350,9 +463,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : null,
-                onPressed: (_isSubmitting || _selectedDeliveryLocation == null)
-                    ? null
-                    : _placeOrder,
+                onPressed: _isSubmitting ? null : _placeOrder,
               ),
             ],
           ),
@@ -365,52 +476,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 class _OrderSummaryRow extends StatelessWidget {
   const _OrderSummaryRow({required this.item});
 
-  final CartItem item;
+  final ApiCartItem item;
 
   @override
   Widget build(BuildContext context) {
-    final total = item.total;
-    return Container(
-      padding: AppSpacing.insetsMd,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.product.name,
-                  style: AppTextStyles.labelLarge,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Qty: ${item.quantity}',
-                  style: AppTextStyles.bodySmall,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  '\$${item.product.finalPrice.toStringAsFixed(2)}',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.primary,
-                  ),
-                ),
-              ],
-            ),
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.product.name,
+                style: AppTextStyles.bodyLarge,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                '${context.l10n.checkoutQuantity(item.itemQty)} • ${item.displayColor} • ${item.displaySize}',
+                style: AppTextStyles.bodySmall,
+              ),
+            ],
           ),
-          Text(
-            '\$${total.toStringAsFixed(2)}',
-            style: AppTextStyles.labelLarge,
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Text(
+          '\$${item.total.toStringAsFixed(2)}',
+          style: AppTextStyles.bodyLarge,
+        ),
+      ],
     );
   }
 }

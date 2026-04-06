@@ -1,51 +1,35 @@
-import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
-import '../data/domain_models/address_entity.dart';
-import '../data/repositories/address_repository_interface.dart';
+import 'package:get/get.dart';
 
-// State classes
-class AddressInitial {}
+import '../data/repositories/address_repository.dart';
+import '../src/model/address_model.dart';
 
-class AddressLoading {}
-
-class AddressesLoaded {
-  final List<AddressEntity> addresses;
-  AddressesLoaded(this.addresses);
-}
-
-class AddressLoaded {
-  final AddressEntity address;
-  AddressLoaded(this.address);
-}
-
-class AddressError {
-  final String message;
-  AddressError(this.message);
-}
-
-class AddressesEmpty {}
-
-/// GetX Controller for managing Address operations
+/// GetX controller for all address operations.
+/// Uses [AddressModel] exclusively — there is no AddressEntity in this project.
+/// After every mutation (add/update/delete) it reloads from the server so the
+/// list always reflects the real database state, including the server-assigned
+/// ADDRESS_ID that APEX may not echo back in the write response.
 class AddressController extends GetxController {
-  final AddressRepositoryInterface _repository;
+  final AddressRepository _repository;
 
   AddressController(this._repository);
 
-  // Observable state
-  final addresses = <AddressEntity>[].obs;
+  // ── Observable state ───────────────────────────────────────────────────────
+  final addresses = <AddressModel>[].obs;
   final isLoading = false.obs;
   final error = ''.obs;
   final selectedAddressId = Rx<int?>(null);
 
+  /// Must be set before calling [loadAddresses].
   String username = '';
 
-  /// Load all addresses for current user
+  // ── Read ───────────────────────────────────────────────────────────────────
+
   Future<void> loadAddresses({bool forceRefresh = false}) async {
-    if (username.isEmpty) {
-      if (kDebugMode) {
-        debugPrint('[AddressController.loadAddresses] ⚠️ Username is empty');
-      }
-      error.value = 'Username not set';
+    if (username.trim().isEmpty) {
+      addresses.clear();
+      error.value = 'User not authenticated';
+      isLoading.value = false;
       return;
     }
 
@@ -54,185 +38,99 @@ class AddressController extends GetxController {
 
     try {
       if (kDebugMode) {
-        debugPrint('[AddressController.loadAddresses] Loading addresses for username=$username');
+        debugPrint(
+          '[AddressController] loading addresses for "$username"',
+        );
       }
 
-      final result = await _repository.getUserAddresses(
-        username,
-        forceRefresh: forceRefresh,
-      );
-
-      if (kDebugMode) {
-        debugPrint('[AddressController.loadAddresses] Got ${result.length} addresses');
-      }
-
+      final result = await _repository.getUserAddresses(username.trim());
       addresses.assignAll(result);
 
       if (kDebugMode) {
-        debugPrint('[AddressController.loadAddresses] ✅ Addresses loaded successfully');
-      }
-    } catch (e) {
-      error.value = e.toString();
-      if (kDebugMode) {
-        debugPrint('[AddressController.loadAddresses] ❌ Error: $e');
-      }
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  /// Add a new address
-  Future<void> addAddress(AddressEntity address) async {
-    try {
-      if (kDebugMode) {
-        debugPrint('[AddressController.addAddress] Adding address: ${address.label}');
-      }
-
-      isLoading.value = true;
-      error.value = '';
-
-      final result = await _repository.addAddress(address);
-
-      // Add to list
-      addresses.add(result);
-
-      if (kDebugMode) {
         debugPrint(
-          '[AddressController.addAddress] ✅ Address added with ID=${result.addressId}',
+          '[AddressController] ✅ loaded ${result.length} addresses',
         );
       }
     } catch (e) {
-      error.value = e.toString();
+      error.value = _friendlyError(e);
       if (kDebugMode) {
-        debugPrint('[AddressController.addAddress] ❌ Error: $e');
+        debugPrint('[AddressController] ❌ loadAddresses: $e');
       }
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ── Write ──────────────────────────────────────────────────────────────────
+
+  /// Adds [address] then reloads the list so the server-assigned ID is present.
+  Future<void> addAddress(AddressModel address) async {
+    isLoading.value = true;
+    error.value = '';
+    try {
+      await _repository.addAddress(address);
+      // Reload to get the real ADDRESS_ID from the server
+      await _reload();
+    } catch (e) {
+      error.value = _friendlyError(e);
+      if (kDebugMode) debugPrint('[AddressController] ❌ addAddress: $e');
       rethrow;
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// Update an existing address
-  Future<void> updateAddress(AddressEntity address) async {
+  /// Updates [address] then reloads the list.
+  Future<void> updateAddress(AddressModel address) async {
     if (address.addressId == null) {
-      error.value = 'Address ID cannot be null';
+      error.value = 'Address ID is missing — cannot update.';
       return;
     }
-
+    isLoading.value = true;
+    error.value = '';
     try {
-      if (kDebugMode) {
-        debugPrint('[AddressController.updateAddress] Updating ID=${address.addressId}');
-      }
-
-      isLoading.value = true;
-      error.value = '';
-
-      final result = await _repository.updateAddress(address);
-
-      // Update in list
-      final index = addresses.indexWhere((a) => a.addressId == result.addressId);
-      if (index >= 0) {
-        addresses[index] = result;
-      }
-
-      if (kDebugMode) {
-        debugPrint('[AddressController.updateAddress] ✅ Address updated successfully');
-      }
+      await _repository.updateAddress(address);
+      await _reload();
     } catch (e) {
-      error.value = e.toString();
-      if (kDebugMode) {
-        debugPrint('[AddressController.updateAddress] ❌ Error: $e');
-      }
+      error.value = _friendlyError(e);
+      if (kDebugMode) debugPrint('[AddressController] ❌ updateAddress: $e');
       rethrow;
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// Delete an address
+  /// Deletes the address with [addressId] and removes it from the local list.
   Future<void> deleteAddress(int addressId) async {
+    isLoading.value = true;
+    error.value = '';
     try {
-      if (kDebugMode) {
-        debugPrint('[AddressController.deleteAddress] Deleting ID=$addressId');
-      }
-
-      isLoading.value = true;
-      error.value = '';
-
       await _repository.deleteAddress(addressId);
-
-      // Remove from list
-      addresses.removeWhere((a) => a.addressId == addressId);
-
-      if (selectedAddressId.value == addressId) {
+      await _reload();
+      if (selectedAddressId.value == addressId &&
+          getAddressById(addressId) == null) {
         selectedAddressId.value = null;
       }
-
-      if (kDebugMode) {
-        debugPrint('[AddressController.deleteAddress] ✅ Address deleted successfully');
-      }
     } catch (e) {
-      error.value = e.toString();
-      if (kDebugMode) {
-        debugPrint('[AddressController.deleteAddress] ❌ Error: $e');
-      }
+      error.value = _friendlyError(e);
+      if (kDebugMode) debugPrint('[AddressController] ❌ deleteAddress: $e');
       rethrow;
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// Set an address as default
-  Future<void> setDefaultAddress(int addressId) async {
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  AddressModel? getDefaultAddress() {
     try {
-      if (kDebugMode) {
-        debugPrint('[AddressController.setDefaultAddress] Setting default: $addressId');
-      }
-
-      isLoading.value = true;
-      error.value = '';
-
-      await _repository.setDefaultAddress(addressId, username);
-
-      // Update all addresses
-      for (int i = 0; i < addresses.length; i++) {
-        if (addresses[i].addressId == addressId) {
-          final updated = addresses[i].copyWith(isDefault: true);
-          addresses[i] = updated;
-          selectedAddressId.value = addressId;
-        } else {
-          if (addresses[i].isDefault) {
-            final updated = addresses[i].copyWith(isDefault: false);
-            addresses[i] = updated;
-          }
-        }
-      }
-
-      if (kDebugMode) {
-        debugPrint('[AddressController.setDefaultAddress] ✅ Default address set');
-      }
-    } catch (e) {
-      error.value = e.toString();
-      if (kDebugMode) {
-        debugPrint('[AddressController.setDefaultAddress] ❌ Error: $e');
-      }
-      rethrow;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  /// Get default address
-  AddressEntity? getDefaultAddress() {
-    try {
-      return addresses.firstWhere((a) => a.isDefault);
+      return addresses.firstWhere((a) => a.isDefault == 1);
     } catch (_) {
-      return null;
+      return addresses.isNotEmpty ? addresses.first : null;
     }
   }
 
-  /// Get address by ID
-  AddressEntity? getAddressById(int addressId) {
+  AddressModel? getAddressById(int addressId) {
     try {
       return addresses.firstWhere((a) => a.addressId == addressId);
     } catch (_) {
@@ -240,15 +138,28 @@ class AddressController extends GetxController {
     }
   }
 
-  /// Clear all data
   void clear() {
     addresses.clear();
     error.value = '';
     selectedAddressId.value = null;
     username = '';
     isLoading.value = false;
-    if (kDebugMode) {
-      debugPrint('[AddressController.clear] Cleared all address data');
+  }
+
+  // ── Private ────────────────────────────────────────────────────────────────
+
+  Future<void> _reload() async {
+    final result = await _repository.getUserAddresses(username.trim());
+    addresses.assignAll(result);
+  }
+
+  String _friendlyError(Object e) {
+    final raw = e.toString();
+    // Hide raw Oracle / APEX internals from the UI
+    if (raw.contains('ORA-') || raw.contains('cursor') || raw.contains('PL/SQL')) {
+      return 'Something went wrong. Please try again.';
     }
+    // Strip the leading "Exception: " that Dart adds
+    return raw.replaceFirst('Exception: ', '');
   }
 }

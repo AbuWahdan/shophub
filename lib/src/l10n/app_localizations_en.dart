@@ -9,761 +9,167 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'ShopHub - E-Commerce';
+  String get appTitle => 'ShopHub';
 
   @override
   String get appVersion => '1.0.0';
 
   @override
-  String get appLegalese => '© 2026 ShopHub. All rights reserved.';
-
-  @override
-  String get settingsTitle => 'Settings';
-
-  @override
-  String get settingsDisplay => 'Display';
-
-  @override
-  String get settingsTheme => 'Theme';
-
-  @override
-  String get settingsThemeUpdated => 'Theme updated';
-
-  @override
-  String get themeSystem => 'System';
-
-  @override
-  String get themeLight => 'Light';
-
-  @override
-  String get themeDark => 'Dark';
-
-  @override
-  String get settingsLanguageRegion => 'Language & Region';
-
-  @override
-  String get settingsAccount => 'Account';
-
-  @override
-  String get settingsEmailNotifications => 'Email Notifications';
-
-  @override
-  String get settingsEmailNotificationsSubtitle =>
-      'Orders, offers, and updates';
-
-  @override
-  String get settingsPushNotifications => 'Push Notifications';
-
-  @override
-  String get settingsPushNotificationsSubtitle => 'Stay updated with deals';
-
-  @override
-  String get settingsAbout => 'About';
-
-  @override
-  String get settingsAboutApp => 'About ShopHub';
+  String get appLegalese => '© 2024 ShopHub. All rights reserved.';
 
   @override
   String get settingsPrivacyPolicy => 'Privacy Policy';
 
   @override
-  String get settingsPrivacyPolicyContent =>
-      'Your privacy is important to us. We collect and process personal data in accordance with our privacy policy.';
+  String get settingsPrivacyPolicyContent => 'Your privacy is important to us.';
 
   @override
-  String get commonClose => 'Close';
+  String get settingsTerms => 'Terms and Conditions';
 
   @override
-  String get settingsTerms => 'Terms & Conditions';
+  String get settingsTermsContent => 'Please read our terms and conditions.';
 
   @override
-  String get settingsTermsContent =>
-      'By using ShopHub, you agree to these terms and conditions.';
+  String get settingsHelp => 'Help';
 
   @override
-  String get settingsHelp => 'Help & Support';
-
-  @override
-  String get settingsHelpContent =>
-      'Contact us at support@shophub.com for assistance.';
-
-  @override
-  String get settingsLogout => 'Logout';
-
-  @override
-  String get settingsLogoutConfirmTitle => 'Logout?';
-
-  @override
-  String get settingsLogoutConfirmMessage => 'Are you sure you want to logout?';
-
-  @override
-  String get commonLogout => 'Logout';
-
-  @override
-  String get commonCancel => 'Cancel';
-
-  @override
-  String get settingsDeleteAccount => 'Delete Account';
-
-  @override
-  String get settingsDeleteAccountConfirmTitle => 'Delete Account?';
-
-  @override
-  String get settingsDeleteAccountConfirmMessage =>
-      'This action cannot be undone. All your data will be permanently deleted.';
-
-  @override
-  String get commonDelete => 'Delete';
-
-  @override
-  String get settingsAccountDeleted => 'Account deleted';
-
-  @override
-  String get settingsLanguage => 'Language';
-
-  @override
-  String get languageSystem => 'System';
-
-  @override
-  String get languageEnglish => 'English';
-
-  @override
-  String get languageArabic => 'Arabic';
-
-  @override
-  String get settingsLanguageUpdated => 'Language updated';
-
-  @override
-  String get accountTitle => 'Account';
-
-  @override
-  String get accountShoppingSection => 'Shopping';
-
-  @override
-  String get accountMyOrders => 'My Orders';
-
-  @override
-  String get accountMyProducts => 'My Products';
-
-  @override
-  String get accountMyOrdersSubtitle => 'View and track your orders';
-
-  @override
-  String get accountWishlist => 'Wishlist';
-
-  @override
-  String get accountWishlistSubtitle => 'Your saved items';
-
-  @override
-  String get accountWishlistComingSoon => 'Wishlist feature coming soon';
-
-  @override
-  String get accountReviews => 'Reviews';
-
-  @override
-  String get accountReviewsSubtitle => 'Rate your purchases';
-
-  @override
-  String get accountReviewsComingSoon => 'Reviews feature coming soon';
-
-  @override
-  String get accountSettingsSection => 'Account Settings';
-
-  @override
-  String get accountDeliveryAddresses => 'Delivery Addresses';
-
-  @override
-  String get accountDeliveryAddressesSubtitle => 'Manage your addresses';
-
-  @override
-  String get accountPaymentMethods => 'Payment Methods';
-
-  @override
-  String get accountPaymentMethodsSubtitle => 'Manage payment options';
-
-  @override
-  String get accountPaymentMethodsComingSoon => 'Payment methods coming soon';
-
-  @override
-  String get accountSettings => 'Settings';
-
-  @override
-  String get accountSettingsSubtitle => 'App preferences';
-
-  @override
-  String get accountSupportSection => 'Support';
-
-  @override
-  String get accountHelp => 'Help & Support';
-
-  @override
-  String get accountHelpSubtitle => 'Get help with your orders';
-
-  @override
-  String get accountHelpMessage =>
-      'Need help? Contact us:\nEmail: support@shophub.com\nPhone: 1-800-SHOPHUB\nAvailable: 24/7';
-
-  @override
-  String get accountAbout => 'About ShopHub';
-
-  @override
-  String get accountAboutSubtitle => 'Learn about us';
-
-  @override
-  String get accountUserName => 'John Doe';
-
-  @override
-  String get accountUserEmail => 'john.doe@example.com';
-
-  @override
-  String get accountUserPhone => '+1 (555) 123-4567';
-
-  @override
-  String get accountLogoutConfirmMessage =>
-      'Are you sure you want to logout from your account?';
-
-  @override
-  String get checkoutTitle => 'Checkout';
-
-  @override
-  String get checkoutDeliveryAddress => 'Delivery Address';
-
-  @override
-  String get checkoutPaymentMethod => 'Payment Method';
-
-  @override
-  String get checkoutOrderReview => 'Order Review';
-
-  @override
-  String get checkoutAddNewAddress => 'Add New Address';
-
-  @override
-  String get checkoutPaymentCard => 'Credit/Debit Card';
-
-  @override
-  String get checkoutPaymentCash => 'Cash on Delivery';
-
-  @override
-  String get checkoutPaymentWallet => 'Digital Wallet';
-
-  @override
-  String get checkoutOrderSummary => 'Order Summary';
-
-  @override
-  String checkoutQuantity(Object count) {
-    return 'Qty: $count';
-  }
-
-  @override
-  String get checkoutSubtotal => 'Subtotal';
-
-  @override
-  String get checkoutShipping => 'Shipping';
-
-  @override
-  String get checkoutDiscount => 'Discount';
-
-  @override
-  String get checkoutTotal => 'Total';
-
-  @override
-  String get orderIdPrefix => 'ORD-';
-
-  @override
-  String get addressesTitle => 'Delivery Addresses';
-
-  @override
-  String get addressesAddNew => 'Add New Address';
-
-  @override
-  String get addressesDefault => 'Default';
-
-  @override
-  String get addressesSetDefault => 'Set Default';
-
-  @override
-  String get commonEdit => 'Edit';
-
-  @override
-  String get addressesDeleteTitle => 'Delete Address?';
-
-  @override
-  String get addressesDeleteMessage => 'This action cannot be undone.';
-
-  @override
-  String get addressesDeleted => 'Address deleted';
-
-  @override
-  String get addressesSaved => 'Address saved successfully';
-
-  @override
-  String get addressesAddTitle => 'Add Address';
-
-  @override
-  String get addressesEditTitle => 'Edit Address';
-
-  @override
-  String get addressesNameLabel => 'Name';
-
-  @override
-  String get addressesNameHint => 'e.g., Home';
-
-  @override
-  String get addressesPhoneLabel => 'Phone';
-
-  @override
-  String get addressesPhoneHint => 'Enter phone number';
-
-  @override
-  String get addressesStreetLabel => 'Street Address';
-
-  @override
-  String get addressesStreetHint => 'Enter street address';
-
-  @override
-  String get addressesCityLabel => 'City';
-
-  @override
-  String get addressesCityHint => 'Enter city';
-
-  @override
-  String get addressesStateLabel => 'State';
-
-  @override
-  String get addressesStateHint => 'Enter state';
-
-  @override
-  String get addressesZipLabel => 'Zip Code';
-
-  @override
-  String get addressesZipHint => 'Enter zip code';
-
-  @override
-  String get addressesCountryLabel => 'Country';
-
-  @override
-  String get addressesCountryHint => 'Enter country';
-
-  @override
-  String get commonSave => 'Save';
-
-  @override
-  String get addressesFillAll => 'Please fill all fields';
+  String get settingsHelpContent => 'How can we help you?';
 
   @override
   String get ordersTitle => 'My Orders';
 
   @override
-  String ordersOrderId(Object id) {
-    return 'Order $id';
-  }
-
-  @override
-  String ordersPlacedOn(Object date) {
-    return 'Placed on $date';
-  }
-
-  @override
-  String ordersItemCount(Object count) {
-    return '$count item(s)';
-  }
-
-  @override
-  String ordersEstimatedDelivery(Object date) {
-    return 'Est. Delivery: $date';
-  }
-
-  @override
-  String get orderDetailsTitle => 'Order Details';
-
-  @override
-  String get orderDetailsItems => 'Items';
-
-  @override
-  String orderDetailsSize(Object size) {
-    return 'Size: $size';
-  }
-
-  @override
-  String orderDetailsColor(Object color) {
-    return 'Color: $color';
-  }
-
-  @override
-  String orderDetailsQuantity(Object count) {
-    return 'Qty: $count';
-  }
-
-  @override
-  String get orderDetailsPaymentMethod => 'Payment method';
-
-  @override
-  String get orderDetailsSubtotal => 'Subtotal';
-
-  @override
-  String get orderDetailsShipping => 'Shipping';
-
-  @override
-  String get orderDetailsDiscount => 'Discount';
-
-  @override
-  String get orderDetailsTotal => 'Total';
-
-  @override
-  String get orderDetailsStatus => 'Order Status';
-
-  @override
-  String get orderStatusPending => 'Pending';
-
-  @override
-  String get orderStatusProcessing => 'Processing';
-
-  @override
-  String get orderStatusShipped => 'Shipped';
-
-  @override
-  String get orderStatusDelivered => 'Delivered';
-
-  @override
-  String get orderStatusCancelled => 'Cancelled';
-
-  @override
-  String get orderSuccessTitle => 'Order Confirmed!';
-
-  @override
-  String get orderSuccessSubtitle => 'Your order has been placed successfully';
-
-  @override
-  String get orderSuccessOrderId => 'Order ID';
-
-  @override
-  String get orderSuccessTotalAmount => 'Total Amount';
-
-  @override
-  String get orderSuccessThanks => 'Thank you for your purchase!';
-
-  @override
-  String get orderSuccessContinueShopping => 'Continue Shopping';
-
-  @override
-  String get orderSuccessViewOrders => 'View Orders';
-
-  @override
-  String get searchFilterTitle => 'Search & Filter';
-
-  @override
-  String get searchFilterHint => 'Search products...';
-
-  @override
-  String get searchFilterCategory => 'Category';
-
-  @override
-  String get searchFilterPrice => 'Price';
-
-  @override
-  String get searchFilterRating => 'Rating';
-
-  @override
-  String get searchFilterSort => 'Sort';
-
-  @override
-  String get searchFilterNoResults => 'No products found';
-
-  @override
-  String get searchFilterSelectCategory => 'Select Category';
-
-  @override
-  String get searchFilterPriceRange => 'Price Range';
-
-  @override
-  String get commonApply => 'Apply';
-
-  @override
-  String get searchFilterMinimumRating => 'Minimum Rating';
-
-  @override
-  String get searchFilterAnyRating => 'Any Rating';
-
-  @override
-  String get searchFilterSortBy => 'Sort By';
-
-  @override
-  String get searchFilterSortBestSelling => 'Best Selling';
-
-  @override
-  String get searchFilterSortPriceLowHigh => 'Price Low to High';
-
-  @override
-  String get searchFilterSortPriceHighLow => 'Price High to Low';
-
-  @override
-  String get searchFilterSortBestRating => 'Best Rating';
-
-  @override
-  String get searchFilterSortNewest => 'Newest';
-
-  @override
-  String get categoryAll => 'All';
-
-  @override
-  String get categorySneakers => 'Sneakers';
-
-  @override
-  String get categoryJackets => 'Jackets';
-
-  @override
-  String get categoryWatches => 'Watches';
-
-  @override
-  String get categoryElectronics => 'Electronics';
-
-  @override
-  String get categoryClothing => 'Clothing';
-
-  @override
-  String get categoriesAll => 'All Categories';
-
-  @override
-  String get categoriesSelectTitle => 'Select categories';
-
-  @override
-  String categoriesSelectedCount(Object count) {
-    return 'Categories ($count)';
-  }
-
-  @override
-  String get navHome => 'Home';
-
-  @override
-  String get navCategories => 'Categories';
-
-  @override
-  String get navCart => 'Cart';
-
-  @override
-  String get navAccount => 'Account';
-
-  @override
-  String get categoriesSearchHint => 'Search products and categories';
-
-  @override
-  String get homeSearchHint => 'Search Products';
-
-  @override
-  String get onboardingWelcomeTitle => 'Welcome to ShopHub';
-
-  @override
-  String get onboardingWelcomeSubtitle =>
-      'Discover the best products at unbeatable prices';
-
-  @override
-  String get onboardingDeliveryTitle => 'Fast Delivery';
-
-  @override
-  String get onboardingDeliverySubtitle =>
-      'Get your orders delivered quickly to your doorstep';
-
-  @override
-  String get onboardingSecureTitle => 'Secure Payment';
-
-  @override
-  String get onboardingSecureSubtitle =>
-      'Shop with confidence using our secure payment options';
-
-  @override
-  String get onboardingDealsTitle => 'Best Deals';
-
-  @override
-  String get onboardingDealsSubtitle =>
-      'Enjoy exclusive offers and discounts every day';
-
-  @override
-  String get onboardingSkip => 'Skip';
-
-  @override
-  String get onboardingGetStarted => 'Get Started';
-
-  @override
-  String get onboardingNext => 'Next';
-
-  @override
-  String get splashTitle => 'ShopHub';
-
-  @override
-  String get splashSubtitle => 'Your Premium Shopping Destination';
-
-  @override
-  String get profileOrders => 'Orders';
-
-  @override
-  String get profileAddresses => 'Addresses';
-
-  @override
-  String get profileSettings => 'Settings';
-
-  @override
-  String get insertProductMenu => 'Insert Product';
-
-  @override
   String get productEditTitle => 'Edit Product';
 
   @override
-  String get productItemName => 'Item Name';
+  String get commonCancel => 'Cancel';
 
   @override
-  String get productItemNameHint => 'Enter item name';
+  String get insertProductMenu => 'Add Product';
 
   @override
-  String get productDescriptionLabel => 'Item Description';
+  String get productItemName => 'Product Name';
 
   @override
-  String get productDescriptionHint => 'Enter item description';
+  String get productItemNameHint => 'Enter product name';
 
   @override
-  String get productPriceLabel => 'Item Price';
+  String get productDescriptionLabel => 'Description';
 
   @override
-  String get productPriceHint => 'Enter item price';
-
-  @override
-  String get productQuantityLabel => 'Item Quantity';
-
-  @override
-  String get productQuantityHint => 'Enter item quantity';
-
-  @override
-  String get productImageUrlLabel => 'Image URL';
-
-  @override
-  String get productImageUrlHint => 'Enter image URL';
+  String get productDescriptionHint => 'Enter product description';
 
   @override
   String get productCategory => 'Category';
 
   @override
-  String get productCategoryHint => 'Select a category';
+  String get productUsername => 'Seller';
 
   @override
-  String get productUsername => 'Username';
+  String get productIsActive => 'Active';
 
   @override
-  String get productIsActive => 'Is Active';
+  String get productInsertAction => 'Add Product';
 
   @override
-  String get productInsertAction => 'Insert Product';
+  String get productRequiredField => 'This field is required';
 
   @override
-  String get productUpdateAction => 'Update Product';
+  String get productInvalidValue => 'Please enter a valid value';
 
   @override
-  String get productInsertSuccess => 'Product added successfully!';
+  String get productSelectCategoryValidation => 'Please select a category';
 
   @override
-  String get productInsertFailed => 'Failed to insert product.';
+  String get productAddImageValidation => 'Please add at least one image';
 
   @override
-  String get productUpdateSuccess => 'Product updated successfully!';
+  String get productAccountUnavailable =>
+      'Account information is not available';
 
   @override
-  String get productUpdateFailed => 'Failed to update product.';
+  String get productInsertSuccess => 'Product added successfully';
 
   @override
-  String get productSelectCategoryValidation => 'Please select a category.';
+  String get productInsertFailed => 'Failed to add product';
 
   @override
-  String get productAddImageValidation => 'Please add at least one image.';
+  String get productColor => 'Color';
 
   @override
-  String get productAccountUnavailable => 'Account details are not available.';
+  String get productSize => 'Size';
 
   @override
-  String get productRequiredField => 'Required field';
+  String get productPriceLabel => 'Price';
 
   @override
-  String get productInvalidValue => 'Enter a valid value';
+  String get productPriceHint => 'Enter price';
 
   @override
-  String get profileHelp => 'Help & Support';
+  String get productQuantityLabel => 'Quantity';
 
   @override
-  String get profileHelpMessage =>
-      'Contact us at support@shophub.com for any assistance.';
+  String get productQuantityHint => 'Enter quantity';
 
   @override
-  String get cartRemoveItemTitle => 'Remove Item';
+  String get otpVerificationTitle => 'Verify OTP';
 
   @override
-  String get cartRemoveItemMessage => 'Remove this item from your cart?';
+  String get otpVerificationSubtitle => 'Enter the OTP sent to your email';
 
   @override
-  String get commonRemove => 'Remove';
+  String get otpVerificationVerify => 'Verify';
 
   @override
-  String get cartItemRemoved => 'Item removed from cart';
+  String get otpResendQuestion => 'Didn\'t receive the code?';
 
   @override
-  String get cartQuantity => 'Quantity';
+  String get otpResend => 'Resend';
 
   @override
-  String cartAvailableStock(Object count) {
-    return 'Available: $count';
+  String otpResendCountdown(Object seconds) {
+    return 'Resend in $seconds seconds';
   }
 
   @override
-  String get cartItemTotal => 'Item Total';
+  String get forgotPasswordTitle => 'Forgot Password';
 
   @override
-  String get cartEmptyTitle => 'Your Cart is Empty';
+  String get forgotPasswordSubtitle =>
+      'Enter your email to reset your password';
 
   @override
-  String get cartEmptyMessage => 'Add items to get started';
+  String get forgotPasswordSendOtp => 'Send OTP';
 
   @override
-  String get cartStartShopping => 'Start Shopping';
+  String get registerTitle => 'Create Account';
 
   @override
-  String get cartTitle => 'Shopping Cart';
+  String get registerFullNameLabel => 'Full Name';
 
   @override
-  String get cartSubtotal => 'Subtotal';
+  String get registerFullNameHint => 'Enter your full name';
 
   @override
-  String get cartDiscount => 'Discount';
+  String get validationNameRequired => 'Name is required';
 
   @override
-  String get cartShipping => 'Shipping';
+  String get registerEmailLabel => 'Email';
 
   @override
-  String get cartShippingFree => 'Free';
+  String get registerEmailHint => 'Enter your email';
 
   @override
-  String get cartTotal => 'Total';
+  String get validationEmailRequired => 'Email is required';
 
   @override
-  String get cartCheckout => 'Proceed to Checkout';
+  String get validationEmailInvalid => 'Please enter a valid email';
 
   @override
-  String get myProductsEmptyMessage => 'You haven\'t created any products yet';
+  String get homeSearchHint => 'Search products';
 
   @override
-  String get stockIn => 'In Stock';
-
-  @override
-  String get stockOut => 'Out of Stock';
-
-  @override
-  String productsLoadFailed(Object error) {
-    return 'Failed to load products: $error';
-  }
-
-  @override
-  String get productsLoadFailedGeneric => 'Failed to load products';
-
-  @override
-  String get noProductsInCategory => 'No products in this category';
-
-  @override
-  String get selectCategory => 'Select a category';
+  String get categoryAll => 'All';
 
   @override
   String get errorLoadingProducts => 'Error loading products';
@@ -772,105 +178,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Retry';
 
   @override
-  String get productTotalPrice => 'Total Price';
-
-  @override
-  String get productAddToCart => 'Add to Cart';
-
-  @override
-  String get productSelectSizeQuantity => 'Please select a size and quantity.';
-
-  @override
-  String productAddedToCart(Object name) {
-    return '$name added to cart';
-  }
-
-  @override
-  String productAvailableStock(Object count) {
-    return 'Available: $count';
-  }
-
-  @override
-  String productReviews(Object count) {
-    return '($count reviews)';
-  }
-
-  @override
-  String productSold(Object count) {
-    return '$count+ sold';
-  }
-
-  @override
-  String get productFreeShipping => 'Free Shipping';
-
-  @override
-  String get productSize => 'Size';
-
-  @override
-  String get productColor => 'Color';
-
-  @override
-  String get productQuantity => 'Quantity';
-
-  @override
-  String get productDeliveryEstimate => 'Delivery Estimate';
-
-  @override
-  String productDeliveryWindow(Object start, Object end) {
-    return 'Arrives between $start - $end';
-  }
-
-  @override
-  String get productReturnsTitle => 'Returns';
-
-  @override
-  String get productReturnsPolicy => '30-day return policy';
-
-  @override
-  String get productDescription => 'Description';
-
-  @override
-  String get productShowLess => 'Show Less';
-
-  @override
-  String get productShowMore => 'Show More';
-
-  @override
-  String get loginWelcomeBack => 'Welcome Back';
-
-  @override
-  String get loginSubtitle => 'Sign in to your account';
-
-  @override
-  String get loginEmailOrPhoneLabel => 'Email or Phone';
-
-  @override
-  String get loginEmailOrPhoneHint => 'Enter your email or phone';
-
-  @override
-  String get validationEmailRequired => 'Email is required';
-
-  @override
-  String get validationEmailInvalid => 'Enter a valid email';
+  String get noProductsInCategory => 'No products in this category';
 
   @override
   String get validationPhoneRequired => 'Phone number is required';
 
   @override
-  String get validationPhoneInvalid => 'Enter a valid phone number';
+  String get validationPhoneInvalid => 'Please enter a valid phone number';
 
   @override
-  String get loginPasswordLabel => 'Password';
+  String get registerPasswordLabel => 'Password';
 
   @override
-  String get loginPasswordHint => 'Enter your password';
+  String get registerPasswordHint => 'Enter your password';
 
   @override
   String get validationPasswordRequired => 'Password is required';
 
   @override
   String get validationPasswordTooShort =>
-      'Password must be at least 6 characters';
+      'Password must be at least 8 characters';
+
+  @override
+  String get registerConfirmPasswordLabel => 'Confirm Password';
+
+  @override
+  String get registerConfirmPasswordHint => 'Confirm your password';
+
+  @override
+  String get validationConfirmPasswordRequired =>
+      'Confirm password is required';
+
+  @override
+  String get validationConfirmPasswordMismatch => 'Passwords do not match';
+
+  @override
+  String get registerAgreeTerms => 'I agree to the Terms and Conditions';
+
+  @override
+  String get registerCreateAccount => 'Create Account';
+
+  @override
+  String get registerHaveAccount => 'Already have an account?';
+
+  @override
+  String get otpSentTitle => 'OTP Sent';
+
+  @override
+  String get otpSentSubtitle => 'We\'ve sent an OTP to your email';
+
+  @override
+  String get commonContinue => 'Continue';
+
+  @override
+  String get loginSubtitle => 'Sign in to your account';
+
+  @override
+  String get loginPasswordLabel => 'Password';
+
+  @override
+  String get loginPasswordHint => 'Enter your password';
 
   @override
   String get loginForgotPassword => 'Forgot Password?';
@@ -888,117 +255,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginCreateAccount => 'Create Account';
 
   @override
-  String get registerTitle => 'Create Account';
+  String get resetPasswordTitle => 'Reset Password';
 
   @override
-  String get registerFullNameLabel => 'Full Name';
-
-  @override
-  String get registerFullNameHint => 'Enter your full name';
-
-  @override
-  String get validationNameRequired => 'Full name is required';
-
-  @override
-  String get registerEmailLabel => 'Email';
-
-  @override
-  String get registerEmailHint => 'Enter your email';
-
-  @override
-  String get registerPasswordLabel => 'Password';
-
-  @override
-  String get registerPasswordHint => 'Enter your password';
-
-  @override
-  String get registerConfirmPasswordLabel => 'Confirm Password';
-
-  @override
-  String get registerConfirmPasswordHint => 'Re-enter your password';
-
-  @override
-  String get validationConfirmPasswordRequired => 'Confirm your password';
-
-  @override
-  String get validationConfirmPasswordMismatch => 'Passwords do not match';
-
-  @override
-  String get registerAgreeTerms =>
-      'I agree to Terms of Service and Privacy Policy';
-
-  @override
-  String get registerCreateAccount => 'Create Account';
-
-  @override
-  String get registerHaveAccount => 'Already have an account? Sign In';
-
-  @override
-  String get otpTitle => 'Verify OTP';
-
-  @override
-  String get otpEnterCode => 'Enter Verification Code';
-
-  @override
-  String get otpSubtitle => 'We\'ve sent a 6-digit code to your email';
-
-  @override
-  String get validationOtpRequired => 'OTP is required';
-
-  @override
-  String get validationOtpInvalid => 'Enter a valid OTP digit';
-
-  @override
-  String otpResendIn(Object seconds) {
-    return 'Resend code in ${seconds}s';
-  }
-
-  @override
-  String get otpResend => 'Resend Code';
-
-  @override
-  String get otpVerify => 'Verify';
-
-  @override
-  String get validationOtpInvalidLength => 'Enter the full OTP code';
-
-  @override
-  String get forgotPasswordTitle => 'Forgot Password';
-
-  @override
-  String get forgotPasswordSubtitle => 'Enter your account details';
-
-  @override
-  String get forgotPasswordSendOtp => 'Send OTP';
-
-  @override
-  String get otpSentTitle => 'Check your email';
-
-  @override
-  String get otpSentSubtitle => 'We sent a 6-digit code to your email';
-
-  @override
-  String get otpVerificationTitle => 'Enter verification code';
-
-  @override
-  String get otpVerificationSubtitle => 'We sent a 6-digit code to your email';
-
-  @override
-  String get otpVerificationVerify => 'Verify';
-
-  @override
-  String get otpResendQuestion => 'Didn\'t receive a code?';
-
-  @override
-  String otpResendCountdown(Object text) {
-    return '$text';
-  }
-
-  @override
-  String get resetPasswordTitle => 'Create new password';
-
-  @override
-  String get resetPasswordSubtitle => 'Enter your new password below';
+  String get resetPasswordSubtitle => 'Enter your new password';
 
   @override
   String get resetPasswordNewLabel => 'New Password';
@@ -1010,32 +270,533 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetPasswordUpdateButton => 'Update Password';
 
   @override
-  String get passwordUpdatedTitle => 'Password Updated!';
+  String get passwordUpdatedTitle => 'Password Updated';
 
   @override
   String get passwordUpdatedSubtitle =>
-      'Your password has been changed successfully';
+      'Your password has been successfully updated';
 
   @override
   String get passwordUpdatedBackToLogin => 'Back to Login';
 
   @override
-  String passwordUpdatedAutoRedirect(Object count) {
-    return 'Redirecting in $count seconds...';
+  String passwordUpdatedAutoRedirect(Object seconds) {
+    return 'Redirecting to login in $seconds seconds';
   }
 
   @override
-  String get deliveryLocationTitle => 'Select Delivery Location';
+  String get otpTitle => 'Verify OTP';
 
   @override
-  String get deliveryLocationCurrent => 'Use Current Location';
+  String get otpEnterCode => 'Enter the OTP code';
 
   @override
-  String get deliveryLocationSaved => 'Saved Addresses';
+  String get otpSubtitle => 'Enter the 6-digit code sent to your email';
 
   @override
-  String get deliveryLocationConfirm => 'Confirm Location';
+  String get validationOtpRequired => 'OTP is required';
 
   @override
-  String get commonContinue => 'Continue';
+  String get validationOtpInvalid => 'Please enter a valid OTP';
+
+  @override
+  String otpResendIn(Object seconds) {
+    return 'Resend in $seconds seconds';
+  }
+
+  @override
+  String get otpVerify => 'Verify';
+
+  @override
+  String get validationOtpInvalidLength => 'OTP must be 6 digits';
+
+  @override
+  String get onboardingWelcomeTitle => 'Welcome to ShopHub';
+
+  @override
+  String get onboardingWelcomeSubtitle => 'Your favorite shopping destination';
+
+  @override
+  String get onboardingDeliveryTitle => 'Fast Delivery';
+
+  @override
+  String get onboardingDeliverySubtitle => 'Get your orders delivered quickly';
+
+  @override
+  String get onboardingSecureTitle => 'Secure Shopping';
+
+  @override
+  String get onboardingSecureSubtitle => 'Your transactions are protected';
+
+  @override
+  String get onboardingDealsTitle => 'Exclusive Deals';
+
+  @override
+  String get onboardingDealsSubtitle =>
+      'Get amazing discounts on your favorite products';
+
+  @override
+  String get onboardingSkip => 'Skip';
+
+  @override
+  String get onboardingGetStarted => 'Get Started';
+
+  @override
+  String get onboardingNext => 'Next';
+
+  @override
+  String get accountTitle => 'Account';
+
+  @override
+  String get accountShoppingSection => 'Shopping';
+
+  @override
+  String get accountMyOrders => 'My Orders';
+
+  @override
+  String get accountMyOrdersSubtitle => 'View your orders';
+
+  @override
+  String get accountWishlist => 'Wishlist';
+
+  @override
+  String get accountWishlistSubtitle => 'Your saved items';
+
+  @override
+  String get accountReviews => 'My Reviews';
+
+  @override
+  String get accountReviewsSubtitle => 'Rate products';
+
+  @override
+  String get accountReviewsComingSoon => 'Coming soon';
+
+  @override
+  String get accountSettingsSection => 'Settings';
+
+  @override
+  String get accountDeliveryAddresses => 'Delivery Addresses';
+
+  @override
+  String get accountDeliveryAddressesSubtitle => 'Manage addresses';
+
+  @override
+  String get accountPaymentMethods => 'Payment Methods';
+
+  @override
+  String get accountPaymentMethodsSubtitle => 'Add payment methods';
+
+  @override
+  String get accountPaymentMethodsComingSoon => 'Coming soon';
+
+  @override
+  String get accountSettings => 'Settings';
+
+  @override
+  String get accountSettingsSubtitle => 'Account settings';
+
+  @override
+  String get accountSupportSection => 'Support';
+
+  @override
+  String get accountHelp => 'Help';
+
+  @override
+  String get accountHelpSubtitle => 'Get help';
+
+  @override
+  String get accountAbout => 'About';
+
+  @override
+  String get accountAboutSubtitle => 'About ShopHub';
+
+  @override
+  String get settingsLogout => 'Logout';
+
+  @override
+  String get accountUserName => 'Name';
+
+  @override
+  String get accountUserEmail => 'Email';
+
+  @override
+  String get accountUserPhone => 'Phone';
+
+  @override
+  String get settingsLogoutConfirmTitle => 'Logout';
+
+  @override
+  String get accountLogoutConfirmMessage => 'Are you sure you want to logout?';
+
+  @override
+  String get commonLogout => 'Logout';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsDisplay => 'Display';
+
+  @override
+  String get settingsTheme => 'Theme';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
+  String get settingsLanguageRegion => 'Language & Region';
+
+  @override
+  String get settingsAccount => 'Account';
+
+  @override
+  String get settingsEmailNotifications => 'Email Notifications';
+
+  @override
+  String get settingsEmailNotificationsSubtitle => 'Receive email updates';
+
+  @override
+  String get settingsPushNotifications => 'Push Notifications';
+
+  @override
+  String get settingsPushNotificationsSubtitle => 'Receive push notifications';
+
+  @override
+  String get settingsAbout => 'About';
+
+  @override
+  String get settingsAboutApp => 'About App';
+
+  @override
+  String get settingsLogoutConfirmMessage => 'Are you sure you want to logout?';
+
+  @override
+  String get settingsDeleteAccount => 'Delete Account';
+
+  @override
+  String get settingsDeleteAccountConfirmTitle => 'Delete Account';
+
+  @override
+  String get settingsDeleteAccountConfirmMessage =>
+      'Are you sure? This action cannot be undone.';
+
+  @override
+  String get commonDelete => 'Delete';
+
+  @override
+  String get settingsAccountDeleted => 'Account deleted successfully';
+
+  @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageArabic => 'العربية';
+
+  @override
+  String get searchFilterTitle => 'Search & Filter';
+
+  @override
+  String get searchFilterHint => 'Search products';
+
+  @override
+  String get searchFilterCategory => 'Category';
+
+  @override
+  String get searchFilterPrice => 'Price';
+
+  @override
+  String get searchFilterRating => 'Rating';
+
+  @override
+  String get searchFilterSort => 'Sort';
+
+  @override
+  String get searchFilterNoResults => 'No results found';
+
+  @override
+  String get searchFilterSelectCategory => 'Select Category';
+
+  @override
+  String get searchFilterPriceRange => 'Price Range';
+
+  @override
+  String get commonApply => 'Apply';
+
+  @override
+  String get searchFilterMinimumRating => 'Minimum Rating';
+
+  @override
+  String get searchFilterAnyRating => 'Any';
+
+  @override
+  String get searchFilterSortBy => 'Sort By';
+
+  @override
+  String get categorySneakers => 'Sneakers';
+
+  @override
+  String get categoryJackets => 'Jackets';
+
+  @override
+  String get categoryWatches => 'Watches';
+
+  @override
+  String get categoryElectronics => 'Electronics';
+
+  @override
+  String get categoryClothing => 'Clothing';
+
+  @override
+  String get searchFilterSortBestSelling => 'Best Selling';
+
+  @override
+  String get searchFilterSortPriceLowHigh => 'Price: Low to High';
+
+  @override
+  String get searchFilterSortPriceHighLow => 'Price: High to Low';
+
+  @override
+  String get searchFilterSortBestRating => 'Best Rating';
+
+  @override
+  String get searchFilterSortNewest => 'Newest';
+
+  @override
+  String get addressesSaved => 'Address saved successfully';
+
+  @override
+  String get addressesDeleted => 'Address deleted successfully';
+
+  @override
+  String get addressesTitle => 'Addresses';
+
+  @override
+  String get addressesDefault => 'Default';
+
+  @override
+  String get commonEdit => 'Edit';
+
+  @override
+  String get addressesSetDefault => 'Set as Default';
+
+  @override
+  String get addressesEditTitle => 'Edit Address';
+
+  @override
+  String get addressesAddTitle => 'Add New Address';
+
+  @override
+  String get addressesNameLabel => 'Name';
+
+  @override
+  String get addressesStreetLabel => 'Street Address';
+
+  @override
+  String get addressesCityLabel => 'City';
+
+  @override
+  String get addressesStateLabel => 'State';
+
+  @override
+  String get addressesCountryLabel => 'Country';
+
+  @override
+  String get addressesZipLabel => 'ZIP Code';
+
+  @override
+  String get addressesPhoneLabel => 'Phone';
+
+  @override
+  String get commonSave => 'Save';
+
+  @override
+  String get checkoutPaymentCard => 'Credit Card';
+
+  @override
+  String get checkoutPaymentCash => 'Cash on Delivery';
+
+  @override
+  String get checkoutPaymentWallet => 'Wallet';
+
+  @override
+  String get checkoutTitle => 'Checkout';
+
+  @override
+  String get checkoutOrderSummary => 'Order Summary';
+
+  @override
+  String get cartEmptyMessage => 'Your cart is empty';
+
+  @override
+  String get checkoutDeliveryAddress => 'Delivery Address';
+
+  @override
+  String get checkoutPaymentMethod => 'Payment Method';
+
+  @override
+  String get checkoutTotal => 'Total';
+
+  @override
+  String checkoutQuantity(Object quantity) {
+    return 'Qty: $quantity';
+  }
+
+  @override
+  String get accountMyProducts => 'My Products';
+
+  @override
+  String get myProductsEmptyMessage => 'No products yet';
+
+  @override
+  String get stockIn => 'In Stock';
+
+  @override
+  String get stockOut => 'Out of Stock';
+
+  @override
+  String get orderSuccessTitle => 'Order Confirmed';
+
+  @override
+  String get orderSuccessSubtitle => 'Thank you for your order';
+
+  @override
+  String get orderSuccessOrderId => 'Order ID';
+
+  @override
+  String get orderSuccessTotalAmount => 'Total Amount';
+
+  @override
+  String get orderSuccessThanks => 'Thank you for shopping with us';
+
+  @override
+  String get orderSuccessContinueShopping => 'Continue Shopping';
+
+  @override
+  String get orderSuccessViewOrders => 'View Orders';
+
+  @override
+  String get splashTitle => 'ShopHub';
+
+  @override
+  String get splashSubtitle => 'Your shopping destination';
+
+  @override
+  String get profileOrders => 'Orders';
+
+  @override
+  String get profileAddresses => 'Addresses';
+
+  @override
+  String get profileSettings => 'Settings';
+
+  @override
+  String get profileHelp => 'Help';
+
+  @override
+  String get profileHelpMessage => 'How can we help you?';
+
+  @override
+  String get commonClose => 'Close';
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String get navCategories => 'Categories';
+
+  @override
+  String get navCart => 'Cart';
+
+  @override
+  String get navAccount => 'Account';
+
+  @override
+  String get orderStatusPending => 'Pending';
+
+  @override
+  String get orderStatusProcessing => 'Processing';
+
+  @override
+  String get orderStatusShipped => 'Shipped';
+
+  @override
+  String get orderStatusDelivered => 'Delivered';
+
+  @override
+  String get orderStatusCancelled => 'Cancelled';
+
+  @override
+  String get cartQuantity => 'Quantity';
+
+  @override
+  String get productAddToCart => 'Add to Cart';
+
+  @override
+  String get cartRemoveItemTitle => 'Remove Item';
+
+  @override
+  String get cartRemoveItemMessage =>
+      'Are you sure you want to remove this item?';
+
+  @override
+  String get commonRemove => 'Remove';
+
+  @override
+  String get cartItemRemoved => 'Item removed from cart';
+
+  @override
+  String cartAvailableStock(Object stock) {
+    return 'Available: $stock';
+  }
+
+  @override
+  String get cartItemTotal => 'Total';
+
+  @override
+  String get cartEmptyTitle => 'Your cart is empty';
+
+  @override
+  String get cartStartShopping => 'Start Shopping';
+
+  @override
+  String get cartTitle => 'Shopping Cart';
+
+  @override
+  String get cartShipping => 'Shipping';
+
+  @override
+  String get cartShippingFree => 'Free';
+
+  @override
+  String get cartCheckout => 'Proceed to Checkout';
+
+  @override
+  String productReviews(Object count) {
+    return '$count Reviews';
+  }
+
+  @override
+  String productSold(Object count) {
+    return '$count Sold';
+  }
+
+  @override
+  String get productDescription => 'Description';
+
+  @override
+  String get productShowLess => 'Show Less';
+
+  @override
+  String get productShowMore => 'Show More';
+
+  @override
+  String productAddedToCart(Object name) {
+    return '$name added to cart';
+  }
 }

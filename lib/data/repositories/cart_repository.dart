@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
+import '../../core/utils/apex_response_helper.dart';
 import '../../src/model/cart_api.dart';
 
 class CartRepository {
@@ -11,24 +12,29 @@ class CartRepository {
   /// Get shopping cart items for a user
   Future<List<ApiCartItem>> getCart({required String username}) async {
     try {
-      if (kDebugMode) {
-        debugPrint('[CartRepository] Fetching cart for $username');
-      }
-
-      final response = await _apiService.post(
-        ApiConstants.getItemCart,
-        body: {'username': username},
-        isReadOperation: true,
-      );
-
-      if (response == null) {
+      final normalizedUsername = username.trim();
+      if (normalizedUsername.isEmpty) {
         return <ApiCartItem>[];
       }
 
-      final cartItems = _parseCartItems(response);
-      
       if (kDebugMode) {
-        debugPrint('[CartRepository] Cart loaded with ${cartItems.length} items');
+        debugPrint('[CartRepository] Fetching cart for $normalizedUsername');
+      }
+
+      final response = await _apiService.get(
+        ApiConstants.getItemCart,
+        queryParams: {'USERNAME': normalizedUsername},
+        isReadOperation: true,
+      );
+
+      final cartItems = _parseCartItems(
+        ApexResponseHelper.extractData(response, 'GetItemCart'),
+      );
+
+      if (kDebugMode) {
+        debugPrint(
+          '[CartRepository] Cart loaded with ${cartItems.length} items',
+        );
       }
 
       return cartItems;
@@ -69,20 +75,28 @@ class CartRepository {
     required int detailId,
     required String modifiedBy,
   }) async {
+    final normalizedModifiedBy = modifiedBy.trim();
+    if (detailId <= 0) {
+      throw Exception('Invalid cart detail id: $detailId');
+    }
+    if (normalizedModifiedBy.isEmpty) {
+      throw Exception('User not authenticated.');
+    }
+
     try {
       if (kDebugMode) {
-        debugPrint('[CartRepository] Deleting item from cart (detailId=$detailId)');
+        debugPrint(
+          '[CartRepository] Deleting item from cart (detailId=$detailId)',
+        );
       }
 
-      // Send exactly { "detail_id": detailId, "modified_by": modifiedBy }
-      await _apiService.post(
+      final response = await _apiService.post(
         ApiConstants.deleteItemCart,
-        body: {
-          'detail_id': detailId,
-          'modified_by': modifiedBy,
-        },
+        body: {'detail_id': detailId, 'modified_by': normalizedModifiedBy},
         isReadOperation: false,
       );
+
+      ApexResponseHelper.unwrapResponse(response, 'DeleteItemCart');
 
       if (kDebugMode) {
         debugPrint('[CartRepository] Item deleted from cart successfully');
@@ -99,13 +113,10 @@ class CartRepository {
   // Private parsing methods
   // ═══════════════════════════════════════════════════════════════════════════
 
-  List<ApiCartItem> _parseCartItems(dynamic response) {
-    if (response is List) {
-      return [
-        for (final item in response)
-          if (item is Map<String, dynamic>) ApiCartItem.fromJson(item),
-      ];
-    }
-    return <ApiCartItem>[];
+  List<ApiCartItem> _parseCartItems(List<dynamic> response) {
+    return [
+      for (final item in response)
+        if (item is Map<String, dynamic>) ApiCartItem.fromJson(item),
+    ];
   }
 }

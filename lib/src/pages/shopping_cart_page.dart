@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -6,7 +7,6 @@ import '../config/route.dart';
 import '../config/ui_text.dart';
 import '../design/app_text_styles.dart';
 import '../model/cart_api.dart';
-import '../model/cart_item.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';
@@ -31,7 +31,7 @@ class ShoppingCartPage extends StatefulWidget {
 
 class _ShoppingCartPageState extends State<ShoppingCartPage> {
   final ProductService _productService = ProductService();
-  late List<CartItem> cartItems;
+  late List<ApiCartItem> cartItems;
   bool _isLoading = false;
   String? _errorMessage;
   final Set<int> _itemsBeingUpdated = <int>{};
@@ -46,34 +46,45 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   }
 
   void _initializeCart() {
-    cartItems = AppData.cartItems;
+    cartItems = List<ApiCartItem>.from(AppData.cartItems);
+    _isLoading = cartItems.isEmpty;
   }
 
-  int _itemKey(CartItem item) =>
-      item.selectedDetId > 0 ? item.selectedDetId : item.product.id;
+  int _itemKey(ApiCartItem item) => item.cartItemId > 0
+      ? item.cartItemId
+      : (item.detailId > 0
+            ? item.detailId
+            : (item.itemDetId > 0 ? item.itemDetId : item.itemId));
 
-  bool _isSameCartItem(CartItem left, CartItem right) {
-    return left.product.id == right.product.id &&
-        left.selectedDetId == right.selectedDetId &&
-        left.selectedSize == right.selectedSize &&
-        left.selectedColor == right.selectedColor;
+  bool _isSameCartItem(ApiCartItem left, ApiCartItem right) {
+    if (left.detailId > 0 && right.detailId > 0) {
+      return left.detailId == right.detailId;
+    }
+    return left.itemId == right.itemId &&
+        left.itemDetId == right.itemDetId &&
+        left.displaySize == right.displaySize &&
+        left.displayColor == right.displayColor;
   }
 
-  void _removeItem(CartItem targetItem) {
+  void _removeItem(ApiCartItem targetItem) {
     if (!mounted) return;
     setState(() {
-      final updatedItems = cartItems
-          .where((item) => !_isSameCartItem(item, targetItem))
-          .toList();
+      final updatedItems = targetItem.detailId > 0
+          ? cartItems
+                .where((item) => item.detailId != targetItem.detailId)
+                .toList()
+          : cartItems
+                .where((item) => !_isSameCartItem(item, targetItem))
+                .toList();
       AppData.setCartItems(updatedItems);
-      cartItems = AppData.cartItems;
+      cartItems = List<ApiCartItem>.from(AppData.cartItems);
     });
   }
 
   Future<void> _updateQuantity(int index, int newQuantity) async {
     if (!mounted) return;
     final cartItem = cartItems[index];
-    final oldQuantity = cartItem.quantity;
+    final oldQuantity = cartItem.itemQty;
     final itemKey = _itemKey(cartItem);
     final authState = context.read<AuthState>();
     await authState.ensureInitialized();
@@ -104,8 +115,8 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
       await _productService.addItemToCart(
         AddItemToCartRequest(
           itemId: cartItem.product.id,
-          itemDetId: cartItem.selectedDetId > 0
-              ? cartItem.selectedDetId
+          itemDetId: cartItem.itemDetId > 0
+              ? cartItem.itemDetId
               : cartItem.product.detId,
           username: username,
           itemQty: newQuantity - oldQuantity,
@@ -115,7 +126,9 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
       if (!mounted) return;
 
       setState(() {
-        cartItems[index].quantity = newQuantity;
+        cartItems = List<ApiCartItem>.from(cartItems)
+          ..[index] = cartItems[index].copyWith(itemQty: newQuantity);
+        AppData.setCartItems(cartItems);
         _itemsBeingUpdated.remove(itemKey);
       });
     } on ProductException catch (error) {
@@ -145,16 +158,16 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     }
   }
 
-  void _openProductDetails(CartItem cartItem) {
+  void _openProductDetails(ApiCartItem cartItem) {
     final product = cartItem.product;
     Navigator.pushNamed(
       context,
       AppRoutes.productDetails,
       arguments: {
         'product': product,
-        'selectedSize': cartItem.selectedSize,
-        'selectedColor': cartItem.selectedColor,
-        'selectedDetId': cartItem.selectedDetId,
+        'selectedSize': cartItem.displaySize,
+        'selectedColor': cartItem.displayColor,
+        'selectedDetId': cartItem.itemDetId,
       },
     );
   }
@@ -193,10 +206,29 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
         });
 
         try {
+          final detailId = cartItem.detailId > 0
+              ? cartItem.detailId
+              : cartItem.itemDetId;
+          if (detailId <= 0) {
+            if (kDebugMode) {
+              debugPrint(
+                '[ShoppingCartPage] Missing cart detail id for productId=${cartItem.product.id} detId=${cartItem.itemDetId}',
+              );
+            }
+            if (!mounted) return;
+            setState(() {
+              _itemsBeingUpdated.remove(itemKey);
+            });
+            AppSnackBar.show(
+              context,
+              message: 'Could not remove item. Please try again.',
+              type: AppSnackBarType.error,
+            );
+            return;
+          }
+
           await _productService.deleteItemFromCart(
-            detailId: cartItem.selectedDetId > 0
-                ? cartItem.selectedDetId
-                : cartItem.product.detId,
+            detailId: detailId,
             modifiedBy: username,
           );
 
@@ -256,7 +288,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
         _errorMessage = null;
         _isLoading = false;
         AppData.setCartItems(const []);
-        cartItems = AppData.cartItems;
+        cartItems = List<ApiCartItem>.from(AppData.cartItems);
       });
       return;
     }
@@ -269,22 +301,9 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     try {
       final apiItems = await _productService.getItemCart(username: username);
       if (!mounted) return;
-      final mapped = apiItems
-          .map(
-            (item) => CartItem(
-              product: item.toProduct(),
-              quantity: item.itemQty > 0 ? item.itemQty : 1,
-              selectedSize: item.itemSize.trim().isEmpty
-                  ? 'Default'
-                  : item.itemSize,
-              selectedColor: item.color.trim().isEmpty ? 'Default' : item.color,
-              selectedDetId: item.itemDetId,
-            ),
-          )
-          .toList();
       setState(() {
-        AppData.setCartItems(mapped);
-        cartItems = AppData.cartItems;
+        AppData.setCartItems(apiItems);
+        cartItems = List<ApiCartItem>.from(AppData.cartItems);
         _isLoading = false;
       });
     } on ProductException catch (error) {
@@ -302,15 +321,17 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     }
   }
 
-  Widget _buildCartItemCard(int index, CartItem item) {
+  Widget _buildCartItemCard(int index, ApiCartItem item) {
     ApiProduct product = item.product;
-    int quantity = item.quantity;
+    int quantity = item.itemQty;
     double itemTotal = product.finalPrice * quantity;
     bool hasDiscount = product.discountPrice != null;
-    final selectedSize = item.selectedSize;
-    final selectedColor = item.selectedColor;
+    final selectedSize = item.displaySize;
+    final selectedColor = item.displayColor;
     final isUpdating = _itemsBeingUpdated.contains(_itemKey(item));
-    final availableStock = product.quantity;
+    final availableStock = item.availableQty > 0
+        ? item.availableQty
+        : product.quantity;
 
     return Card(
       shape: RoundedRectangleBorder(

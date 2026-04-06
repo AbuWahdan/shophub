@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access lets you capture a product photo for visual search.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo library access lets you choose a product image for visual search.</string>
+	<key>MBXAccessToken</key>
+	<string>REMOVED_TOKEN</string>
 </dict>
 </plist>
