@@ -10,6 +10,7 @@ import '../model/product_api.dart';
 import '../services/product_service.dart';
 import '../themes/theme.dart';
 import '../widgets/product_card.dart';
+import '../pages/camera_picker_screen.dart';
 import '../shared/widgets/product_search_bar.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -82,6 +83,12 @@ class _MyHomePageState extends State<MyHomePage> {
               setState(() {
                 _hasSearchText = value.trim().isNotEmpty;
               });
+            },
+            onCameraTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CameraPickerScreen()),
+              );
             },
           ),
         ),

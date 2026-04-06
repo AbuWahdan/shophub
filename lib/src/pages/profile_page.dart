@@ -52,6 +52,14 @@ class ProfilePage extends StatelessWidget {
                   style: AppTextStyles.bodySmall,
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: AppSpacing.md),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pushNamed(context, AppRoutes.editProfile);
+                  },
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('Edit Profile'),
+                ),
               ] else ...[
                 SizedBox(
                   width: double.infinity,
@@ -102,9 +110,10 @@ class ProfilePage extends StatelessWidget {
               _buildMenuItem(context, Icons.favorite, l10n.accountWishlist, () {
                 Navigator.pushNamed(context, AppRoutes.wishlist);
               }),
-              _buildMenuItem(context, Icons.help_outline, l10n.profileHelp, () {
-                _showHelpDialog(context);
-              }),
+              if (isLoggedIn)
+                _buildMenuItem(context, Icons.logout, l10n.settingsLogout, () {
+                  _showLogoutDialog(context);
+                }),
             ],
           ),
         ),
@@ -132,13 +141,24 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  void _showHelpDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context) {
     final l10n = context.l10n;
-    AppDialogs.showInfo(
+    AppDialogs.showConfirmation(
       context: context,
-      title: l10n.profileHelp,
-      message: l10n.profileHelpMessage,
-      closeLabel: l10n.commonClose,
+      title: l10n.settingsLogoutConfirmTitle,
+      message: l10n.accountLogoutConfirmMessage,
+      confirmLabel: l10n.commonLogout,
+      cancelLabel: l10n.commonCancel,
+      onConfirm: () {
+        context.read<AuthState>().logout().then((_) {
+          if (!context.mounted) return;
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.login,
+            (route) => false,
+          );
+        });
+      },
     );
   }
 }

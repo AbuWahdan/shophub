@@ -44,11 +44,12 @@ class WishlistState extends ChangeNotifier {
           _errorMessage != null ||
           _hasLoadedForUser) {
         _username = '';
+        _isLoading = false;
         _itemsById.clear();
         _togglingIds.clear();
         _errorMessage = null;
         _hasLoadedForUser = false;
-        AppData.setWishlistProducts(const <ApiProduct>[]);
+        AppData.setWishlistProducts(const []);
         notifyListeners();
       }
       return;
@@ -66,25 +67,24 @@ class WishlistState extends ChangeNotifier {
     _togglingIds.clear();
     _errorMessage = null;
     _hasLoadedForUser = false;
-    AppData.setWishlistProducts(const <ApiProduct>[]);
     notifyListeners();
     Future<void>.microtask(_refreshSilently);
   }
 
   Future<void> _refreshSilently() async {
     try {
-      await refresh();
+      await fetchWishlist();
     } catch (_) {
       // The consumers render the stored error state.
     }
   }
 
-  Future<void> refresh() async {
+  Future<void> fetchWishlist() async {
     if (_username.isEmpty) {
+      _isLoading = false;
       _itemsById.clear();
       _errorMessage = null;
       _hasLoadedForUser = true;
-      AppData.setWishlistProducts(const <ApiProduct>[]);
       notifyListeners();
       return;
     }
@@ -100,13 +100,13 @@ class WishlistState extends ChangeNotifier {
       _itemsById
         ..clear()
         ..addEntries(
-          favorites.map((product) {
+          favorites.where((product) => product.id > 0).map((product) {
             product.isFavorite = true;
             return MapEntry(product.id, product);
           }),
         );
-      _hasLoadedForUser = true;
       AppData.setWishlistProducts(items);
+      _hasLoadedForUser = true;
     } catch (error) {
       _errorMessage = error.toString();
       _hasLoadedForUser = true;
@@ -116,6 +116,8 @@ class WishlistState extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> refresh() => fetchWishlist();
 
   Future<WishlistToggleAction> toggleWishlist(ApiProduct product) async {
     if (_username.isEmpty) {
@@ -143,13 +145,14 @@ class WishlistState extends ChangeNotifier {
 
       if (wasInWishlist) {
         _itemsById.remove(productId);
+        AppData.setFavorite(product, false);
       } else {
         product.isFavorite = true;
         _itemsById[productId] = product;
+        AppData.setFavorite(product, true);
       }
 
       product.isFavorite = !wasInWishlist;
-      AppData.setFavorite(product, !wasInWishlist);
 
       return wasInWishlist
           ? WishlistToggleAction.removed

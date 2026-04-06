@@ -33,6 +33,7 @@ class StorageService {
       'address': user.address,
       'role': user.role,
       'country': user.country,
+      'gender': user.gender,
       'created_at': user.createdAt,
       'updated_at': user.updatedAt,
       'is_active': user.isActive,
@@ -64,6 +65,9 @@ class StorageService {
         address: (data['address'] ?? '').toString(),
         role: (data['role'] ?? '').toString(),
         country: (data['country'] ?? '').toString(),
+        gender: data['gender'] is num
+            ? (data['gender'] as num).toInt()
+            : int.tryParse((data['gender'] ?? '').toString()),
         createdAt: (data['created_at'] ?? '').toString(),
         updatedAt: (data['updated_at'] ?? '').toString(),
         isActive: parsedIsActive,
@@ -80,25 +84,25 @@ class StorageService {
 
   Future<int?> getUserId() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Check if key exists
     if (!prefs.containsKey(_userIdKey)) return null;
-    
+
     // Get the value without type casting
     final value = prefs.get(_userIdKey);
-    
+
     if (value == null) return null;
-    
+
     // Handle different types safely
     if (value is int) {
       return value;
     }
-    
+
     if (value is String) {
       if (value.trim().isEmpty) return null;
       return int.tryParse(value.trim());
     }
-    
+
     // Handle unexpected types
     return null;
   }

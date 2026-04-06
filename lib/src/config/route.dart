@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sinwar_shoping/src/pages/about_page.dart';
-import 'package:sinwar_shoping/src/pages/addresses_page.dart';
+import 'package:sinwar_shoping/src/pages/addresses/addresses_page.dart';
 import 'package:sinwar_shoping/src/pages/auth/login_screen.dart';
 import 'package:sinwar_shoping/src/pages/auth/otp_screen.dart';
 import 'package:sinwar_shoping/src/pages/auth/register_screen.dart';
@@ -10,7 +10,6 @@ import 'package:sinwar_shoping/src/pages/auth/otp_verification_screen.dart';
 import 'package:sinwar_shoping/src/pages/auth/reset_password_screen.dart';
 import 'package:sinwar_shoping/src/pages/auth/password_updated_screen.dart';
 import 'package:sinwar_shoping/src/pages/categories_page.dart';
-import 'package:sinwar_shoping/src/pages/checkout_screen.dart';
 import 'package:sinwar_shoping/src/pages/info_page.dart';
 import 'package:sinwar_shoping/src/pages/main_page.dart';
 import 'package:sinwar_shoping/src/pages/my_products_page.dart';
@@ -23,13 +22,10 @@ import 'package:sinwar_shoping/src/pages/product_details_new.dart';
 import 'package:sinwar_shoping/src/pages/profile_settings_page.dart';
 import 'package:sinwar_shoping/src/pages/search_filter_page.dart';
 import 'package:sinwar_shoping/src/pages/splash_screen.dart';
-import 'package:sinwar_shoping/src/pages/delivery_location_screen.dart';
+import 'package:sinwar_shoping/src/pages/edit_profile_screen.dart';
 import 'package:sinwar_shoping/src/pages/wishlist_page.dart';
 import 'package:sinwar_shoping/src/pages/rate_product_screen.dart';
-import 'package:sinwar_shoping/src/model/cart_item.dart';
-import 'package:sinwar_shoping/src/model/data.dart';
 import 'package:sinwar_shoping/src/model/product_api.dart';
-import 'package:sinwar_shoping/src/model/delivery_location.dart';
 import '../l10n/app_localizations.dart';
 
 class AppRoutes {
@@ -50,6 +46,7 @@ class AppRoutes {
   static const String productComments = '/product-comments';
   static const String productDetails = '/product-details';
   static const String settings = '/settings';
+  static const String editProfile = '/edit-profile';
   static const String privacy = '/privacy';
   static const String terms = '/terms';
   static const String help = '/help';
@@ -113,10 +110,7 @@ class AppRoutes {
         final email = args?['email'] as String? ?? '';
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => OtpSentNoticeScreen(
-            username: username,
-            email: email,
-          ),
+          builder: (_) => OtpSentNoticeScreen(username: username, email: email),
         );
 
       case otpVerification:
@@ -124,19 +118,15 @@ class AppRoutes {
         final email = args?['email'] as String? ?? '';
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => OtpVerificationScreen(
-            username: username,
-            email: email,
-          ),
+          builder: (_) =>
+              OtpVerificationScreen(username: username, email: email),
         );
 
       case resetPassword:
         final username = args?['username'] as String? ?? '';
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => ResetPasswordScreen(
-            username: username,
-          ),
+          builder: (_) => ResetPasswordScreen(username: username),
         );
 
       case passwordUpdated:
@@ -176,17 +166,16 @@ class AppRoutes {
           builder: (_) => const AddressesPage(),
         );
 
-      case checkout:
-        final cartItems =
-            (args?['cartItems'] as List<CartItem>?) ?? AppData.cartItems;
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => CheckoutScreen(cartItems: cartItems),
-        );
+      // case checkout:
+      //   final cartItems =
+      //       (args?['cartItems'] as List<CartItem>?) ?? AppData.cartItems;
+      //   return MaterialPageRoute(
+      //     settings: settings,
+      //     builder: (_) => CheckoutScreen(cartItems: cartItems),
+      //   );
 
       case orderConfirmation:
-        final receipt =
-            (args?['receipt'] as Map<String, dynamic>?) ?? const {};
+        final receipt = (args?['receipt'] as Map<String, dynamic>?) ?? const {};
         final total = (args?['total'] as num?)?.toDouble() ?? 0;
         final onContinue = args?['onContinue'] as VoidCallback?;
         return MaterialPageRoute(
@@ -208,6 +197,12 @@ class AppRoutes {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const ProfileSettingsPage(),
+        );
+
+      case editProfile:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const EditProfileScreen(),
         );
 
       case privacy:
@@ -344,15 +339,14 @@ class AppRoutes {
       //     builder: (_) => CategoryListScreen(categoryName: categoryName),
       //   );
 
-      case deliveryLocation:
-        final savedAddresses =
-            (args?['savedAddresses'] as List<DeliveryLocation>?) ?? const [];
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => DeliveryLocationScreen(
-            savedAddresses: savedAddresses,
-          ),
-        );
+      // case deliveryLocation:
+      //   final savedAddresses =
+      //       (args?['savedAddresses'] as List<DeliveryLocation>?) ?? const [];
+      //   return MaterialPageRoute(
+      //     settings: settings,
+      //     builder: (_) =>
+      //         DeliveryLocationScreen(savedAddresses: savedAddresses),
+      //   );
 
       case rateProduct:
         final product = args?['product'] as ApiProduct?;

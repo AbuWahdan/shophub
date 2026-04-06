@@ -222,8 +222,8 @@ DATA (External Resources)
 ### Key Files
 - [AddressController](lib/controllers/address_controller.dart) - State management
 - [AddressRepositoryImpl](lib/data/repositories/address_repository_impl.dart) - Business logic
-- [AddressesListScreen](lib/src/pages/addresses_list_screen.dart) - List UI
-- [AddEditAddressScreen](lib/src/pages/add_edit_address_screen.dart) - Form UI
+- [AddressesListScreen](lib/src/pages/addresses/addresses_list_screen.dart) - List UI
+- [AddEditAddressScreen](lib/src/pages/addresses/add_edit_address_screen.dart) - Form UI
 
 ---
 

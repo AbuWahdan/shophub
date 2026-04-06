@@ -32,6 +32,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = false;
+  int? _selectedGender;
+  String? _genderError;
   String _passwordStrength = 'Weak';
   Color _passwordStrengthColor = AppColors.error;
 
@@ -117,6 +119,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                   textInputAction: TextInputAction.next,
                 ),
+                const SizedBox(height: AppSpacing.lg),
+                Text('Gender', style: AppTextStyles.labelMedium),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: [
+                    Radio<int>(
+                      value: 1,
+                      groupValue: _selectedGender,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedGender = value;
+                          _genderError = null;
+                        });
+                      },
+                    ),
+                    const Text('Male'),
+                    const SizedBox(width: 24),
+                    Radio<int>(
+                      value: 2,
+                      groupValue: _selectedGender,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedGender = value;
+                          _genderError = null;
+                        });
+                      },
+                    ),
+                    const Text('Female'),
+                  ],
+                ),
+                if (_genderError != null) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    _genderError!,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.error,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.lg),
                 AppTextField(
                   controller: _emailController,
@@ -270,6 +311,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           if (!(_formKey.currentState?.validate() ?? false)) {
                             return;
                           }
+                          if (_selectedGender == null) {
+                            setState(() {
+                              _genderError = 'Please select your gender';
+                            });
+                            return;
+                          }
                           final user = User(
                             userId: 0,
                             username: _usernameController.text.trim(),
@@ -280,6 +327,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             address: _addressController.text.trim(),
                             role: 'customer',
                             country: _countryController.text.trim(),
+                            gender: _selectedGender,
                             createdAt: '',
                             updatedAt: '',
                             isActive: 1,

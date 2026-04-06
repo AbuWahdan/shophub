@@ -6,7 +6,8 @@ import '../../models/category.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:http/http.dart' as http;
 
-import '../config/size_options.dart';
+import '../../core/utils/apex_response_helper.dart';
+import '../../features/products/models/product_image_model.dart';
 import '../model/api_order.dart';
 import '../model/cart_api.dart';
 import '../model/product_api.dart';
@@ -341,29 +342,6 @@ class ProductService {
     return false;
   }
 
-  void _debugLogUpdatePayloadTypes(Map<String, dynamic> payload) {
-    if (!kDebugMode) return;
-    debugPrint(
-      '[UpdateProduct][Types] item_qty: ${payload['item_qty']} (${payload['item_qty']?.runtimeType})',
-    );
-    debugPrint(
-      '[UpdateProduct][Types] is_active: ${payload['is_active']} (${payload['is_active']?.runtimeType})',
-    );
-    final details = payload['details'];
-    if (details is List && details.isNotEmpty && details.first is Map) {
-      final firstDetail = Map<String, dynamic>.from(details.first as Map);
-      debugPrint(
-        '[UpdateProduct][Types] details.item_price: ${firstDetail['item_price']} (${firstDetail['item_price']?.runtimeType})',
-      );
-      debugPrint(
-        '[UpdateProduct][Types] details.discount: ${firstDetail['discount']} (${firstDetail['discount']?.runtimeType})',
-      );
-      debugPrint(
-        '[UpdateProduct][Types] details.item_qty: ${firstDetail['item_qty']} (${firstDetail['item_qty']?.runtimeType})',
-      );
-    }
-  }
-
   Future<UpdateProductResult> updateProduct(
     UpdateProductRequest request,
   ) async {
@@ -459,32 +437,26 @@ class ProductService {
   //     return int.tryParse((v ?? '').toString()) ?? 0;
   //   }
 
-  String _resolveSizeLabel(int sizeId) {
-    if (sizeId <= 0) return '';
-    final option = findSizeOptionById(sizeId);
-    return option?.name ?? sizeId.toString();
-  }
-
   // ══════════════════════════════════════════════════════════════════════════════
-// REPLACE insertProductDetails in product_service.dart
-//
-// Correct API shape:
-// POST /products/InsertProductDetails
-// {
-//   "details": [
-//     {
-//       "item_id": 505,      ← inside each detail, NOT at top level
-//       "brand": "Nike",
-//       "color": "Black",
-//       "item_size": "L",    ← SIZE_CODE string
-//       "discount": 10,
-//       "item_price": 50,
-//       "item_qty": 5,
-//       "is_active": 1
-//     }
-//   ]
-// }
-// ══════════════════════════════════════════════════════════════════════════════
+  // REPLACE insertProductDetails in product_service.dart
+  //
+  // Correct API shape:
+  // POST /products/InsertProductDetails
+  // {
+  //   "details": [
+  //     {
+  //       "item_id": 505,      ← inside each detail, NOT at top level
+  //       "brand": "Nike",
+  //       "color": "Black",
+  //       "item_size": "L",    ← SIZE_CODE string
+  //       "discount": 10,
+  //       "item_price": 50,
+  //       "item_qty": 5,
+  //       "is_active": 1
+  //     }
+  //   ]
+  // }
+  // ══════════════════════════════════════════════════════════════════════════════
 
   Future<void> insertProductDetails({
     required int itemId,
@@ -493,7 +465,8 @@ class ProductService {
   }) async {
     if (itemId <= 0 || details.isEmpty) {
       throw ProductException(
-          'Invalid payload: itemId=$itemId details=${details.length}');
+        'Invalid payload: itemId=$itemId details=${details.length}',
+      );
     }
 
     final uri = Uri.parse('$_baseUrl/InsertProductDetails');
@@ -503,8 +476,8 @@ class ProductService {
     final body = <String, dynamic>{
       'details': details.map((d) {
         final map = <String, dynamic>{
-          'item_id': itemId,   // ← inside each row
-          ...d.toJson(),       // brand, color, item_size, discount, item_price, item_qty, is_active
+          'item_id': itemId, // ← inside each row
+          ...d.toJson(), // brand, color, item_size, discount, item_price, item_qty, is_active
         };
         if (createdBy.trim().isNotEmpty) {
           map['created_by'] = createdBy.trim();
@@ -548,12 +521,12 @@ class ProductService {
         ?.toString()
         .toLowerCase();
     if (status == 'error' || status == 'failed' || status == 'fail') {
-      throw ProductException(
-          _extractMessage(data) ?? 'Insert details failed.');
+      throw ProductException(_extractMessage(data) ?? 'Insert details failed.');
     }
 
     _invalidateProductsCache();
   }
+
   Future<List<ApiCartItem>> getItemCart({required String username}) async {
     final normalizedUsername = username.trim();
     if (normalizedUsername.isEmpty) {
@@ -572,7 +545,10 @@ class ProductService {
       );
     }
 
-    final items = _extractItems(data);
+    final items = ApexResponseHelper.extractData(
+      data,
+      'GetItemCart',
+    ).whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
     if (items.isEmpty) return const [];
     return items.map(ApiCartItem.fromJson).toList();
   }
@@ -610,10 +586,18 @@ class ProductService {
     required int detailId,
     required String modifiedBy,
   }) async {
+    final normalizedModifiedBy = modifiedBy.trim();
+    if (detailId <= 0) {
+      throw ProductException('Invalid cart detail id: $detailId');
+    }
+    if (normalizedModifiedBy.isEmpty) {
+      throw ProductException('User not authenticated.');
+    }
+
     final endpoint = Uri.parse('$_baseUrl/DeleteItemCart');
     final payload = {
       'detail_id': detailId,
-      'modified_by': modifiedBy,
+      'modified_by': normalizedModifiedBy,
     };
     if (kDebugMode) {
       debugPrint('[DeleteItemCart] POST $endpoint');
@@ -624,19 +608,35 @@ class ProductService {
       debugPrint('[DeleteItemCart] status: ${response.statusCode}');
       debugPrint('[DeleteItemCart] response: ${response.body}');
     }
-    
-    // CRITICAL RULE: For delete operations, HTTP 200 is success regardless of body.
-    // The Oracle proc returns ORA- messages even on successful deletes.
+
+    final responseBody = response.body.trim();
+    final responseLower = responseBody.toLowerCase();
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      // HTTP 200 = success regardless of body content
+      final data = _decode(responseBody);
+      if (data != null) {
+        try {
+          ApexResponseHelper.unwrapResponse(data, 'DeleteItemCart');
+          return;
+        } catch (error) {
+          throw ProductException(error.toString());
+        }
+      }
+
+      if (responseLower.contains('ora-') || responseLower.contains('pl/sql')) {
+        throw ProductException(
+          ApexResponseHelper.messageForContext('DeleteItemCart', responseBody),
+        );
+      }
+
       return;
     }
-    
-    // Only non-200 status codes are treated as errors
-    final data = _decode(response.body);
+
+    final data = _decode(responseBody);
     throw ProductException(
-      _extractMessage(data) ??
-          'Deleting item from cart failed (HTTP ${response.statusCode}).',
+      ApexResponseHelper.messageForContext(
+        'DeleteItemCart',
+        _extractMessage(data) ?? responseBody,
+      ),
     );
   }
 
@@ -696,7 +696,7 @@ class ProductService {
   Future<List<ApiItemImage>> getItemImages({required int itemId}) async {
     final uri = Uri.parse(
       '$_baseUrl/GetItemImages',
-    ).replace(queryParameters: {'id': itemId.toString()});
+    ).replace(queryParameters: {'item_id': itemId.toString()});
     final response = await _safeGet(uri);
     final data = _decode(response.body);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -735,6 +735,120 @@ class ProductService {
 
   Future<List<ApiItemImage>> loadItemImages({required int itemId}) {
     return getItemImages(itemId: itemId);
+  }
+
+  Future<List<ProductImageModel>> getItemImagesBase64({
+    required int itemId,
+  }) async {
+    if (itemId <= 0) {
+      return const <ProductImageModel>[];
+    }
+
+    final uri = Uri.parse(
+      '$_baseUrl/GetItemImages',
+    ).replace(queryParameters: {'item_id': itemId.toString()});
+    final response = await _safeGet(uri);
+    final data = _decode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ProductException(
+        _extractMessage(data) ??
+            'Fetching item images failed (HTTP ${response.statusCode}).',
+      );
+    }
+
+    final images = _extractImageRows(data)
+        .map(ProductImageModel.fromJson)
+        .where(
+          (image) =>
+              image.imageBase64.trim().isNotEmpty ||
+              image.imagePath.trim().isNotEmpty,
+        )
+        .toList();
+    if (images.isEmpty) {
+      return const <ProductImageModel>[];
+    }
+
+    final defaultIndex = images.indexWhere((image) => image.isDefault);
+    if (defaultIndex <= 0) {
+      return images;
+    }
+
+    final ordered = <ProductImageModel>[images[defaultIndex]];
+    for (var index = 0; index < images.length; index++) {
+      if (index == defaultIndex) continue;
+      ordered.add(images[index]);
+    }
+    return ordered;
+  }
+
+  Future<void> insertItemImage({
+    required int itemId,
+    required String imageBase64,
+    required bool isDefault,
+  }) async {
+    final normalizedImage = imageBase64.trim();
+    if (itemId <= 0) {
+      throw ProductException('Invalid item id.');
+    }
+    if (normalizedImage.isEmpty) {
+      throw ProductException('Image data is required.');
+    }
+
+    final endpoint = Uri.parse('$_baseUrl/InsertItemImages');
+    final response = await _safePost(
+      endpoint,
+      body: {
+        'item_id': itemId,
+        'is_Default': isDefault ? 1 : 0,
+        'image_base64': normalizedImage,
+      },
+    );
+    final data = _decode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ProductException(
+        _extractMessage(data) ??
+            'Uploading image failed (HTTP ${response.statusCode}).',
+      );
+    }
+
+    if (data != null) {
+      ApexResponseHelper.unwrapResponse(data, 'InsertItemImages');
+    }
+  }
+
+  Future<void> setDefaultItemImage({
+    required int imageId,
+    required String imageBase64,
+  }) async {
+    if (imageId <= 0) {
+      throw ProductException('Invalid image id.');
+    }
+
+    final endpoint = Uri.parse('$_baseUrl/UpdateItemImages');
+    final response = await _safePost(
+      endpoint,
+      body: {
+        'items': [
+          {
+            'image_id': imageId,
+            'is_Default': 1,
+            if (imageBase64.trim().isNotEmpty)
+              'image_base64': imageBase64.trim(),
+          },
+        ],
+      },
+    );
+    final data = _decode(response.body);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ProductException(
+        _extractMessage(data) ??
+            'Updating default image failed (HTTP ${response.statusCode}).',
+      );
+    }
+
+    if (data != null) {
+      ApexResponseHelper.unwrapResponse(data, 'UpdateItemImages');
+    }
   }
 
   Future<void> updateItemImage({
@@ -967,6 +1081,12 @@ class ProductService {
     return int.tryParse((value ?? '').toString()) ?? 0;
   }
 
+  int _extractPositiveItemId(Map<String, dynamic> json) {
+    return _asInt(
+      json['ITEM_ID'] ?? json['item_id'] ?? json['ID'] ?? json['id'],
+    );
+  }
+
   List<ApiProduct> _groupProductsByItemId(List<ApiProduct> flatProducts) {
     if (flatProducts.isEmpty) return const [];
 
@@ -1134,44 +1254,71 @@ class ProductService {
       throw ProductException('Username is required to fetch favorites.');
     }
 
-    final uri = Uri.parse('$_baseUrl/GetUserFavorites')
-        .replace(queryParameters: {'body': normalizedUsername});
+    final queryAttempts = <Map<String, String>>[
+      {'USERNAME': normalizedUsername},
+      {'username': normalizedUsername},
+      {'body': normalizedUsername},
+    ];
 
-    if (kDebugMode) {
-      debugPrint('[GetUserFavorites] GET $uri');
-    }
+    ProductException? lastError;
 
-    try {
-      final response = await _safeGet(uri);
+    for (var i = 0; i < queryAttempts.length; i++) {
+      final uri = Uri.parse(
+        '$_baseUrl/GetUserFavorites',
+      ).replace(queryParameters: queryAttempts[i]);
 
       if (kDebugMode) {
-        debugPrint('[GetUserFavorites] status: ${response.statusCode}');
-        debugPrint('[GetUserFavorites] response: ${response.body}');
+        debugPrint('[GetUserFavorites] GET $uri');
       }
 
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw ProductException(
-          'Failed to fetch favorites (HTTP ${response.statusCode}).',
-        );
+      try {
+        final response = await _safeGet(uri);
+
+        if (kDebugMode) {
+          debugPrint('[GetUserFavorites] status: ${response.statusCode}');
+          debugPrint('[GetUserFavorites] response: ${response.body}');
+        }
+
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          throw ProductException(
+            'Failed to fetch favorites (HTTP ${response.statusCode}).',
+          );
+        }
+
+        final data = _decode(response.body);
+        final items = ApexResponseHelper.extractData(data, 'GetUserFavorites')
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .where((item) => _extractPositiveItemId(item) > 0)
+            .toList();
+
+        if (items.isEmpty && i < queryAttempts.length - 1) {
+          continue;
+        }
+
+        return items.map((item) {
+          final product = ApiProduct.fromJson(item);
+          product.isFavorite = true;
+          return product;
+        }).toList();
+      } on ProductException catch (error) {
+        lastError = error;
+        if (i == queryAttempts.length - 1) {
+          rethrow;
+        }
+      } catch (error) {
+        lastError = ProductException('Error fetching favorites: $error');
+        if (i == queryAttempts.length - 1) {
+          throw lastError;
+        }
       }
-
-      final data = _decode(response.body);
-      final items = _extractItems(data);
-      if (items.isEmpty) return const [];
-
-      // Map items to ApiProduct and set isFavorite = true
-      final products = items.map((item) {
-        final product = ApiProduct.fromJson(item);
-        product.isFavorite = true;
-        return product;
-      }).toList();
-
-      return products;
-    } on ProductException {
-      rethrow;
-    } catch (error) {
-      throw ProductException('Error fetching favorites: $error');
     }
+
+    if (lastError != null) {
+      throw lastError;
+    }
+
+    return const [];
   }
 
   Future<void> toggleFavorite({
@@ -1184,10 +1331,7 @@ class ProductService {
     }
 
     final endpoint = Uri.parse('$_baseUrl/ToggleFavoriteItem');
-    final payload = {
-      'item_id': itemId,
-      'username': normalizedUsername,
-    };
+    final payload = {'item_id': itemId, 'username': normalizedUsername};
 
     if (kDebugMode) {
       debugPrint('[ToggleFavoriteItem] POST $endpoint');
@@ -1201,9 +1345,21 @@ class ProductService {
       debugPrint('[ToggleFavoriteItem] response: ${response.body}');
     }
 
-    // CRITICAL RULE: For toggle operations, HTTP 200 is success regardless of body.
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      // HTTP 200 = success regardless of body content
+      final data = _decode(response.body);
+      if (data != null) {
+        ApexResponseHelper.unwrapResponse(data, 'ToggleFavoriteItem');
+      } else {
+        final rawLower = response.body.toLowerCase();
+        if (rawLower.contains('ora-') || rawLower.contains('pl/sql')) {
+          throw ProductException(
+            ApexResponseHelper.messageForContext(
+              'ToggleFavoriteItem',
+              response.body,
+            ),
+          );
+        }
+      }
       return;
     }
 

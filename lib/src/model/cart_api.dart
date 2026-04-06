@@ -1,6 +1,8 @@
 import 'product_api.dart';
 
 class ApiCartItem {
+  final int cartItemId;
+  final int detailId;
   final int itemId;
   final int itemDetId;
   final String username;
@@ -14,8 +16,11 @@ class ApiCartItem {
   final String color;
   final String itemSize;
   final String brand;
+  final ApiProduct? _product;
 
   const ApiCartItem({
+    this.cartItemId = 0,
+    this.detailId = 0,
     required this.itemId,
     required this.itemDetId,
     required this.username,
@@ -29,14 +34,86 @@ class ApiCartItem {
     required this.color,
     required this.itemSize,
     required this.brand,
-  });
+    ApiProduct? product,
+  }) : _product = product;
+
+  ApiProduct get product => _product ?? toProduct();
+
+  String get displaySize => itemSize.trim().isEmpty ? 'Default' : itemSize;
+
+  String get displayColor => color.trim().isEmpty ? 'Default' : color;
+
+  double get total => product.finalPrice * itemQty;
+
+  ApiCartItem copyWith({
+    int? cartItemId,
+    int? detailId,
+    int? itemId,
+    int? itemDetId,
+    String? username,
+    int? itemQty,
+    int? availableQty,
+    String? itemName,
+    String? itemDesc,
+    double? itemPrice,
+    double? discount,
+    String? itemImgUrl,
+    String? color,
+    String? itemSize,
+    String? brand,
+    ApiProduct? product,
+  }) {
+    return ApiCartItem(
+      cartItemId: cartItemId ?? this.cartItemId,
+      detailId: detailId ?? this.detailId,
+      itemId: itemId ?? this.itemId,
+      itemDetId: itemDetId ?? this.itemDetId,
+      username: username ?? this.username,
+      itemQty: itemQty ?? this.itemQty,
+      availableQty: availableQty ?? this.availableQty,
+      itemName: itemName ?? this.itemName,
+      itemDesc: itemDesc ?? this.itemDesc,
+      itemPrice: itemPrice ?? this.itemPrice,
+      discount: discount ?? this.discount,
+      itemImgUrl: itemImgUrl ?? this.itemImgUrl,
+      color: color ?? this.color,
+      itemSize: itemSize ?? this.itemSize,
+      brand: brand ?? this.brand,
+      product: product ?? _product,
+    );
+  }
 
   factory ApiCartItem.fromJson(Map<String, dynamic> json) {
+    final parsedDetailId = _asInt(
+      _pick(json, const [
+        'DETAIL_ID',
+        'detail_id',
+        'CART_DET_ID',
+        'cart_det_id',
+        'CART_DETAIL_ID',
+        'cart_detail_id',
+      ]),
+    );
+    final parsedCartItemId = _asInt(
+      _pick(json, const [
+        'CART_ITEM_ID',
+        'cart_item_id',
+        'CART_ID',
+        'cart_id',
+      ]),
+    );
+    final parsedItemDetId = _asInt(
+      _pick(json, const ['ITEM_DET_ID', 'item_det_id', 'DET_ID', 'det_id']),
+    );
     return ApiCartItem(
+      cartItemId: parsedCartItemId > 0
+          ? parsedCartItemId
+          : (parsedDetailId > 0 ? parsedDetailId : parsedItemDetId),
+      detailId: parsedDetailId > 0
+          ? parsedDetailId
+          : (parsedItemDetId > 0 ? parsedItemDetId : parsedCartItemId),
       itemId: _asInt(_pick(json, const ['ITEM_ID', 'item_id', 'ID', 'id'])),
-      itemDetId: _asInt(
-        _pick(json, const ['ITEM_DET_ID', 'item_det_id', 'DET_ID', 'det_id']),
-      ),
+      itemDetId: parsedItemDetId,
       username: _asString(json, const ['USERNAME', 'username']),
       itemQty: _asInt(_pick(json, const ['ITEM_QTY', 'item_qty', 'qty'])),
       availableQty: _asInt(
@@ -100,8 +177,8 @@ class ApiCartItem {
         ApiProductVariant(
           detId: itemDetId,
           brand: brand,
-          color: color,
-          itemSize: itemSize,
+          color: displayColor,
+          itemSize: displaySize,
           discount: discount,
           itemPrice: finalPrice,
           itemQty: itemQty,

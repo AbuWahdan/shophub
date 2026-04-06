@@ -1,12 +1,8 @@
 import 'package:sinwar_shoping/src/config/app_images.dart';
 import 'package:flutter/foundation.dart';
+import 'package:sinwar_shoping/src/model/cart_api.dart';
 import 'package:sinwar_shoping/src/model/product_api.dart';
-
-import 'address.dart';
-import 'cart_item.dart';
 import 'category.dart';
-import 'order.dart';
-import 'product_comment.dart';
 
 class AppData {
   static final List<ApiProduct> _products = <ApiProduct>[];
@@ -33,18 +29,11 @@ class AppData {
       ..addAll(keep);
   }
 
-  static final List<CartItem> cartItems = <CartItem>[];
-  static final ValueNotifier<int> cartCountNotifier = ValueNotifier<int>(0);
-
-  static void setCartItems(List<CartItem> items) {
-    cartItems
-      ..clear()
-      ..addAll(items);
-    _notifyCartCountChanged();
-  }
 
   static final Set<int> _wishlistIds = <int>{};
   static final Map<int, ApiProduct> _wishlistProducts = <int, ApiProduct>{};
+  static final List<ApiCartItem> _cartItems = <ApiCartItem>[];
+  static final ValueNotifier<int> cartCountNotifier = ValueNotifier<int>(0);
 
   static List<Categories> categoryList = [
     Categories(id: 0, name: 'All', image: AppImages.all, isSelected: true),
@@ -194,66 +183,6 @@ class AppData {
     ),
   ];
 
-  static List<String> showThumbnailList = [
-    AppImages.shoeThumb5,
-    AppImages.shoeThumb1,
-    AppImages.shoeThumb4,
-    AppImages.shoeThumb3,
-  ];
-
-  static List<Address> addressList = [
-    Address(
-      id: '1',
-      name: 'Home',
-      phone: '+1 (555) 123-4567',
-      street: '123 Main Street',
-      city: 'New York',
-      state: 'NY',
-      zipCode: '10001',
-      country: 'USA',
-      isDefault: true,
-    ),
-    Address(
-      id: '2',
-      name: 'Office',
-      phone: '+1 (555) 987-6543',
-      street: '456 Business Ave',
-      city: 'New York',
-      state: 'NY',
-      zipCode: '10002',
-      country: 'USA',
-      isDefault: false,
-    ),
-  ];
-
-  static List<Order> orderList = [
-    Order(
-      id: 'ORD-001',
-      items: [
-        OrderItem(
-          productId: 1,
-          productName: 'Nike Air Max 200',
-          image: AppImages.shoeTilt1,
-          price: 200.00,
-          quantity: 1,
-          selectedSize: '10',
-          selectedColor: 'Black',
-        ),
-      ],
-      subtotal: 200.00,
-      shipping: 10.00,
-      discount: 0,
-      total: 210.00,
-      status: OrderStatus.delivered,
-      date: DateTime.now().subtract(const Duration(days: 15)),
-      addressId: '1',
-      estimatedDelivery: 'Delivered',
-      paymentMethod: 'Credit/Debit Card',
-    ),
-  ];
-
-  static List<ProductComment> productComments = [];
-
   static bool isFavorite(int productId) => _wishlistIds.contains(productId);
 
   static void syncFavoriteFor(ApiProduct product) {
@@ -303,60 +232,81 @@ class AppData {
   static List<ApiProduct> get wishlistProducts =>
       _wishlistProducts.values.toList();
 
+  static List<ApiCartItem> get cartItems => List.unmodifiable(_cartItems);
+
+  static void setCartItems(List<ApiCartItem> items) {
+    _cartItems
+      ..clear()
+      ..addAll(items);
+    _syncCartCount();
+  }
+
   static void addToCart({
     required ApiProduct product,
     required int quantity,
     required String size,
     required String color,
-    int detId = 0,
+    required int detId,
+    String username = '',
   }) {
-    final existingIndex = cartItems.indexWhere(
-      (item) =>
-          item.product.id == product.id &&
-          item.selectedDetId == detId &&
-          item.selectedSize == size &&
-          item.selectedColor == color,
-    );
-
-    if (existingIndex >= 0) {
-      cartItems[existingIndex].quantity += quantity;
-      _notifyCartCountChanged();
+    if (quantity <= 0) {
       return;
     }
 
-    cartItems.add(
-      CartItem(
+    final normalizedSize = size.trim().isEmpty ? 'Default' : size.trim();
+    final normalizedColor = color.trim().isEmpty ? 'Default' : color.trim();
+    final resolvedDetId = detId > 0 ? detId : product.detId;
+    final matchingVariant = product.variantFor(
+      size: normalizedSize,
+      color: normalizedColor,
+    );
+
+    final existingIndex = _cartItems.indexWhere((item) {
+      if (resolvedDetId > 0 && item.itemDetId == resolvedDetId) {
+        return true;
+      }
+      return item.itemId == product.id &&
+          item.displaySize == normalizedSize &&
+          item.displayColor == normalizedColor;
+    });
+
+    if (existingIndex != -1) {
+      final existing = _cartItems[existingIndex];
+      _cartItems[existingIndex] = existing.copyWith(
+        itemQty: existing.itemQty + quantity,
+        availableQty: product.quantity,
         product: product,
-        quantity: quantity,
-        selectedSize: size,
-        selectedColor: color,
-        selectedDetId: detId,
+      );
+      _syncCartCount();
+      return;
+    }
+
+    _cartItems.add(
+      ApiCartItem(
+        detailId: resolvedDetId,
+        itemId: product.id,
+        itemDetId: resolvedDetId,
+        username: username,
+        itemQty: quantity,
+        availableQty: product.quantity,
+        itemName: product.itemName,
+        itemDesc: product.itemDesc,
+        itemPrice: product.finalPrice,
+        discount: product.discountPercentage.toDouble(),
+        itemImgUrl: product.itemImgUrl,
+        color: normalizedColor,
+        itemSize: normalizedSize,
+        brand: matchingVariant?.brand ??
+            (product.details.isNotEmpty ? product.details.first.brand : ''),
+        product: product,
       ),
     );
-    _notifyCartCountChanged();
+    _syncCartCount();
   }
 
-  static void removeFromCartAt(int index) {
-    if (index < 0 || index >= cartItems.length) return;
-    cartItems.removeAt(index);
-    _notifyCartCountChanged();
+  static void _syncCartCount() {
+    cartCountNotifier.value =
+        _cartItems.fold<int>(0, (sum, item) => sum + item.itemQty);
   }
 
-  static void clearCart() {
-    cartItems.clear();
-    _notifyCartCountChanged();
-  }
-
-  static void _notifyCartCountChanged() {
-    cartCountNotifier.value = cartItems.length;
-  }
-
-  static List<ProductComment> commentsForProduct(int productId) {
-    return productComments
-        .where((comment) => comment.productId == productId)
-        .toList();
-  }
-
-  static String description =
-      'Clean lines, versatile and timeless. The Nike Air Max 90 stays true to its OG running roots with the iconic Waffle sole, stitched overlays and classic TPU details.';
 }

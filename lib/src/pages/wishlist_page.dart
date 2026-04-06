@@ -8,8 +8,35 @@ import '../state/wishlist_state.dart';
 import '../themes/theme.dart';
 import '../widgets/product_card.dart';
 
-class WishlistPage extends StatelessWidget {
+class WishlistPage extends StatefulWidget {
   const WishlistPage({super.key});
+
+  @override
+  State<WishlistPage> createState() => _WishlistPageState();
+}
+
+class _WishlistPageState extends State<WishlistPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchWishlistOnLoad();
+    });
+  }
+
+  Future<void> _fetchWishlistOnLoad() async {
+    final authState = context.read<AuthState>();
+    await authState.ensureInitialized();
+    if (!mounted || !authState.isLoggedIn || authState.user == null) {
+      return;
+    }
+
+    try {
+      await context.read<WishlistState>().fetchWishlist();
+    } catch (_) {
+      // The screen renders the provider error state.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +60,7 @@ class _WishlistBody extends StatelessWidget {
 
   Future<void> _refresh() async {
     try {
-      await wishlistState.refresh();
+      await wishlistState.fetchWishlist();
     } catch (_) {
       // The screen renders the provider error state.
     }

@@ -8,6 +8,7 @@ class ProductSearchBar extends StatelessWidget {
   final String hintText;
   final bool hasSearchText;
   final VoidCallback? onClear;
+  final VoidCallback? onCameraTap;
   final ValueChanged<String>? onChanged;
 
   const ProductSearchBar({
@@ -16,6 +17,7 @@ class ProductSearchBar extends StatelessWidget {
     required this.hintText,
     required this.hasSearchText,
     this.onClear,
+    this.onCameraTap,
     this.onChanged,
   });
 
@@ -56,7 +58,7 @@ class ProductSearchBar extends StatelessWidget {
                   hasSearchText ? Icons.close : Icons.camera_alt_outlined,
                   color: iconColor,
                 ),
-                onPressed: hasSearchText ? onClear : null,
+                onPressed: hasSearchText ? onClear : onCameraTap,
               ),
               IconButton(
                 icon: Icon(Icons.search, color: iconColor),

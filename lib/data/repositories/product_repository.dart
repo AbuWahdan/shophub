@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
 import '../../core/exceptions/app_exception.dart';
+import '../../core/utils/apex_response_helper.dart';
+import '../../features/products/models/product_image_model.dart';
 import '../../src/model/product_api.dart';
 
 class ProductRepository {
@@ -34,13 +36,15 @@ class ProductRepository {
 
     try {
       if (kDebugMode) {
-        debugPrint('[ProductRepository.getProducts] Cache MISS - fetching from API...');
+        debugPrint(
+          '[ProductRepository.getProducts] Cache MISS - fetching from API...',
+        );
       }
 
       // Try GET first (REST convention for fetching data)
       dynamic response;
       String lastTryMethod = 'GET';
-      
+
       try {
         if (kDebugMode) {
           debugPrint('[ProductRepository.getProducts] Attempting GET request');
@@ -51,7 +55,9 @@ class ProductRepository {
         );
       } catch (getError) {
         if (kDebugMode) {
-          debugPrint('[ProductRepository.getProducts] GET failed: $getError, trying POST as fallback');
+          debugPrint(
+            '[ProductRepository.getProducts] GET failed: $getError, trying POST as fallback',
+          );
         }
         // Fallback to POST if GET fails
         lastTryMethod = 'POST';
@@ -68,14 +74,16 @@ class ProductRepository {
               '[ProductRepository.getProducts] Both GET and POST failed. GET: $getError, POST: $postError',
             );
           }
-          
+
           // If POST also fails, re-throw the POST error (or GET if both failed)
           rethrow;
         }
       }
 
       if (kDebugMode) {
-        debugPrint('[ProductRepository.getProducts] API response received (via $lastTryMethod): ${response.runtimeType}');
+        debugPrint(
+          '[ProductRepository.getProducts] API response received (via $lastTryMethod): ${response.runtimeType}',
+        );
       }
 
       if (response == null) {
@@ -90,12 +98,16 @@ class ProductRepository {
       // Extract items from response (handles various response formats)
       final rawItems = _extractItems(response);
       if (kDebugMode) {
-        debugPrint('[ProductRepository.getProducts] ✅ Extracted ${rawItems.length} raw items');
+        debugPrint(
+          '[ProductRepository.getProducts] ✅ Extracted ${rawItems.length} raw items',
+        );
       }
 
       if (rawItems.isEmpty) {
         if (kDebugMode) {
-          debugPrint('[ProductRepository.getProducts] Response was empty - no items found');
+          debugPrint(
+            '[ProductRepository.getProducts] Response was empty - no items found',
+          );
         }
         _cachedProducts = const [];
         _lastProductsFetch = now;
@@ -103,21 +115,23 @@ class ProductRepository {
       }
 
       // Parse items to models
-      final parsed = rawItems
-          .map((item) {
-            try {
-              return ApiProduct.fromJson(item);
-            } catch (parseError) {
-              if (kDebugMode) {
-                debugPrint('[ProductRepository.getProducts] ⚠️ Error parsing item: $parseError');
-              }
-              rethrow;
-            }
-          })
-          .toList();
-      
+      final parsed = rawItems.map((item) {
+        try {
+          return ApiProduct.fromJson(item);
+        } catch (parseError) {
+          if (kDebugMode) {
+            debugPrint(
+              '[ProductRepository.getProducts] ⚠️ Error parsing item: $parseError',
+            );
+          }
+          rethrow;
+        }
+      }).toList();
+
       if (kDebugMode) {
-        debugPrint('[ProductRepository.getProducts] Parsed ${parsed.length} products successfully');
+        debugPrint(
+          '[ProductRepository.getProducts] Parsed ${parsed.length} products successfully',
+        );
       }
 
       // Group variants by product ID
@@ -137,23 +151,29 @@ class ProductRepository {
     } on ServerException catch (e) {
       // Handle API errors specifically
       if (kDebugMode) {
-        debugPrint('[ProductRepository.getProducts] ❌ ServerException: ${e.message} (statusCode: ${e.statusCode})');
+        debugPrint(
+          '[ProductRepository.getProducts] ❌ ServerException: ${e.message} (statusCode: ${e.statusCode})',
+        );
       }
-      
+
       // On 404/405 (not found / method not allowed), return empty list gracefully
       if (e.statusCode == 404 || e.statusCode == 405) {
         if (kDebugMode) {
-          debugPrint('[ProductRepository.getProducts] Endpoint not available or method not supported - returning empty list');
+          debugPrint(
+            '[ProductRepository.getProducts] Endpoint not available or method not supported - returning empty list',
+          );
         }
         _cachedProducts = const [];
         _lastProductsFetch = now;
         return _cachedProducts;
       }
-      
+
       rethrow;
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('[ProductRepository.getProducts] ❌ Unexpected error: ${e.runtimeType} - $e');
+        debugPrint(
+          '[ProductRepository.getProducts] ❌ Unexpected error: ${e.runtimeType} - $e',
+        );
       }
       rethrow;
     }
@@ -200,21 +220,21 @@ class ProductRepository {
         final matchesOwnerId =
             normalizedUserId > 0 && ownerId == normalizedUserId;
         final matchesCreatedByUserId =
-            normalizedUserId > 0 &&
-                product.createdByUserId == normalizedUserId;
+            normalizedUserId > 0 && product.createdByUserId == normalizedUserId;
         final matchesUsername =
             normalizedUsername.isNotEmpty &&
-                product.createdBy.trim().toLowerCase() == normalizedUsername;
-        
-        final matches = matchesOwnerId || matchesCreatedByUserId || matchesUsername;
-        
+            product.createdBy.trim().toLowerCase() == normalizedUsername;
+
+        final matches =
+            matchesOwnerId || matchesCreatedByUserId || matchesUsername;
+
         if (kDebugMode && matches) {
           debugPrint(
             '[ProductRepository.getMyProducts] ✅ Product matched: "${product.itemName}" '
             '(ownerId=$ownerId, createdByUserId=${product.createdByUserId}, createdBy="${product.createdBy}")',
           );
         }
-        
+
         return matches;
       }).toList();
 
@@ -228,22 +248,28 @@ class ProductRepository {
     } on ServerException catch (e) {
       // Handle API errors specifically
       if (kDebugMode) {
-        debugPrint('[ProductRepository.getMyProducts] ❌ ServerException: ${e.message} (statusCode: ${e.statusCode})');
+        debugPrint(
+          '[ProductRepository.getMyProducts] ❌ ServerException: ${e.message} (statusCode: ${e.statusCode})',
+        );
       }
-      
+
       // On 404/405, return empty list gracefully
       if (e.statusCode == 404 || e.statusCode == 405) {
         if (kDebugMode) {
-          debugPrint('[ProductRepository.getMyProducts] Endpoint issue - returning empty list');
+          debugPrint(
+            '[ProductRepository.getMyProducts] Endpoint issue - returning empty list',
+          );
         }
         return <ApiProduct>[];
       }
-      
+
       _invalidateCache();
       rethrow;
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('[ProductRepository.getMyProducts] ❌ ERROR: ${e.runtimeType} - $e');
+        debugPrint(
+          '[ProductRepository.getMyProducts] ❌ ERROR: ${e.runtimeType} - $e',
+        );
       }
       _invalidateCache();
       rethrow;
@@ -298,6 +324,83 @@ class ProductRepository {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[ProductRepository] Error fetching item images: $e');
+      }
+      rethrow;
+    }
+  }
+
+  Future<List<ProductImageModel>> getItemImagesBase64({
+    required int itemId,
+  }) async {
+    try {
+      final response = await _apiService.get(
+        ApiConstants.getItemImages,
+        queryParams: {'item_id': itemId.toString()},
+        isReadOperation: true,
+      );
+
+      if (response is! Map<String, dynamic>) {
+        return <ProductImageModel>[];
+      }
+
+      final rawItems =
+          (response['data'] ??
+                  response['items'] ??
+                  response['images'] ??
+                  response['result'] ??
+                  const <dynamic>[])
+              as List<dynamic>;
+      final images = rawItems
+          .whereType<Map>()
+          .map(
+            (item) =>
+                ProductImageModel.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .where(
+            (image) =>
+                image.imageBase64.trim().isNotEmpty ||
+                image.imagePath.trim().isNotEmpty,
+          )
+          .toList();
+
+      final defaultIndex = images.indexWhere((image) => image.isDefault);
+      if (defaultIndex <= 0) {
+        return images;
+      }
+
+      final ordered = <ProductImageModel>[images[defaultIndex]];
+      for (var index = 0; index < images.length; index++) {
+        if (index == defaultIndex) continue;
+        ordered.add(images[index]);
+      }
+      return ordered;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[ProductRepository] Error fetching base64 item images: $e');
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> insertItemImage({
+    required int itemId,
+    required String imageBase64,
+    required bool isDefault,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        ApiConstants.insertItemImages,
+        body: {
+          'item_id': itemId,
+          'is_Default': isDefault ? 1 : 0,
+          'image_base64': imageBase64.trim(),
+        },
+        isReadOperation: false,
+      );
+      ApexResponseHelper.unwrapResponse(response, 'InsertItemImages');
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[ProductRepository] Error inserting item image: $e');
       }
       rethrow;
     }
@@ -398,7 +501,7 @@ class ProductRepository {
         'details': details.map((d) {
           return <String, dynamic>{
             'item_id': itemId, // ← inside each detail row
-            ...d.toJson(),     // brand, color, item_size, discount, item_price, item_qty, is_active
+            ...d.toJson(), // brand, color, item_size, discount, item_price, item_qty, is_active
             if (createdBy.trim().isNotEmpty) 'created_by': createdBy.trim(),
           };
         }).toList(),
@@ -458,19 +561,32 @@ class ProductRepository {
   /// Get user favorites.
   Future<List<ApiProduct>> getUserFavorites({required String username}) async {
     try {
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Fetching favorites for $username');
+      final normalizedUsername = username.trim();
+      if (normalizedUsername.isEmpty) {
+        return <ApiProduct>[];
       }
 
-      final response = await _apiService.post(
+      if (kDebugMode) {
+        debugPrint(
+          '[ProductRepository] Fetching favorites for $normalizedUsername',
+        );
+      }
+
+      final response = await _apiService.get(
         ApiConstants.getUserFavorites,
-        body: {'username': username},
+        queryParams: {'USERNAME': normalizedUsername},
         isReadOperation: true,
       );
 
       if (response == null) return <ApiProduct>[];
 
-      final rawItems = _extractItems(response);
+      final rawItems = _extractItems(response).where((item) {
+        final rawId =
+            item['ITEM_ID'] ?? item['item_id'] ?? item['ID'] ?? item['id'];
+        if (rawId is num) return rawId.toInt() > 0;
+        return int.tryParse('${rawId ?? ''}') != null &&
+            int.parse('${rawId ?? ''}') > 0;
+      });
       return rawItems.map((item) => ApiProduct.fromJson(item)).toList();
     } catch (e) {
       if (kDebugMode) {
@@ -487,9 +603,7 @@ class ProductRepository {
   }) async {
     try {
       if (kDebugMode) {
-        debugPrint(
-          '[ProductRepository] Toggling favorite for itemId=$itemId',
-        );
+        debugPrint('[ProductRepository] Toggling favorite for itemId=$itemId');
       }
 
       await _apiService.post(
@@ -634,16 +748,16 @@ class ProductRepository {
         final sourceVariants = row.details.isNotEmpty
             ? row.details
             : <ApiProductVariant>[
-          ApiProductVariant(
-            detId: row.detId,
-            brand: '',
-            color: row.colors.isNotEmpty ? row.colors.first : '',
-            itemSize: row.sizes.isNotEmpty ? row.sizes.first : '',
-            discount: 0,
-            itemPrice: row.itemPrice,
-            itemQty: row.itemQty,
-          ),
-        ];
+                ApiProductVariant(
+                  detId: row.detId,
+                  brand: '',
+                  color: row.colors.isNotEmpty ? row.colors.first : '',
+                  itemSize: row.sizes.isNotEmpty ? row.sizes.first : '',
+                  discount: 0,
+                  itemPrice: row.itemPrice,
+                  itemQty: row.itemQty,
+                ),
+              ];
 
         for (final variant in sourceVariants) {
           final key =
@@ -699,7 +813,9 @@ class ProductRepository {
           itemDesc: base.itemDesc,
           itemPrice: displayPrice > 0 ? displayPrice : base.itemPrice,
           itemQty: displayVariant?.itemQty ?? base.itemQty,
-          itemImgUrl: mergedImages.isNotEmpty ? mergedImages.first : base.itemImgUrl,
+          itemImgUrl: mergedImages.isNotEmpty
+              ? mergedImages.first
+              : base.itemImgUrl,
           images: mergedImages.isNotEmpty ? mergedImages : base.images,
           categoryId: base.categoryId,
           category: base.category,

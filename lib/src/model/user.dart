@@ -8,6 +8,7 @@ class User {
   final String address;
   final String role;
   final String country;
+  final int? gender;
   final String createdAt;
   final String updatedAt;
   final int isActive;
@@ -22,10 +23,13 @@ class User {
     required this.address,
     required this.role,
     required this.country,
+    this.gender,
     this.createdAt = '',
     this.updatedAt = '',
     this.isActive = 1,
   });
+
+  String get fullName => fullname;
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
@@ -43,6 +47,7 @@ class User {
       address: _asString(json, const ['address', 'ADDRESS']),
       role: _asString(json, const ['role', 'ROLE']),
       country: _asString(json, const ['country', 'COUNTRY']),
+      gender: _asNullableInt(_pick(json, const ['gender', 'GENDER'])),
       createdAt: _asString(json, const [
         'created_at',
         'CREATED_AT',
@@ -70,10 +75,43 @@ class User {
       'ADDRESS': address,
       'ROLE': role,
       'COUNTRY': country,
+      if (gender != null) 'GENDER': gender,
       'CREATED_AT': createdAt,
       'UPDATED_AT': updatedAt,
       'IS_ACTIVE': isActive,
     };
+  }
+
+  User copyWith({
+    int? userId,
+    String? username,
+    String? passwordHash,
+    String? fullname,
+    String? email,
+    String? phone,
+    String? address,
+    String? role,
+    String? country,
+    int? gender,
+    String? createdAt,
+    String? updatedAt,
+    int? isActive,
+  }) {
+    return User(
+      userId: userId ?? this.userId,
+      username: username ?? this.username,
+      passwordHash: passwordHash ?? this.passwordHash,
+      fullname: fullname ?? this.fullname,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      address: address ?? this.address,
+      role: role ?? this.role,
+      country: country ?? this.country,
+      gender: gender ?? this.gender,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isActive: isActive ?? this.isActive,
+    );
   }
 
   static dynamic _pick(Map<String, dynamic> json, List<String> keys) {
@@ -91,5 +129,11 @@ class User {
   static int _asInt(dynamic value) {
     if (value is num) return value.toInt();
     return int.tryParse((value ?? '').toString()) ?? 0;
+  }
+
+  static int? _asNullableInt(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString());
   }
 }

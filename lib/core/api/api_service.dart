@@ -17,7 +17,9 @@ class ApiService {
 
   Uri _uri(String endpoint, [Map<String, String>? queryParams]) {
     final uri = Uri.parse('${ApiConstants.baseUrl}$endpoint');
-    return queryParams != null ? uri.replace(queryParameters: queryParams) : uri;
+    return queryParams != null
+        ? uri.replace(queryParameters: queryParams)
+        : uri;
   }
 
   Future<dynamic> get(
@@ -68,29 +70,31 @@ class ApiService {
 
   dynamic _handle(http.Response response, {required bool isReadOperation}) {
     final body = response.body;
-    final bodyLower = body.toLowerCase();
 
     // HTTP error → always throw
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ServerException(
-        _extractMessage(_decode(body)) ?? 'Server error (HTTP ${response.statusCode})',
+        _extractMessage(_decode(body)) ??
+            'Server error (HTTP ${response.statusCode})',
         statusCode: response.statusCode,
       );
     }
 
-    // ORA- / PL/SQL in body:
-    // - Read operation  → throw (data is corrupt/missing)
-    // - Write operation → silently succeed (Oracle quirk, DB was updated)
+    final decoded = _decode(body);
+    if (decoded != null || body.trim().isEmpty) {
+      return decoded;
+    }
+
+    final bodyLower = body.toLowerCase();
     if (bodyLower.contains('ora-') || bodyLower.contains('pl/sql')) {
       if (isReadOperation) {
-        throw ServerException(_extractMessage(_decode(body)) ?? body);
+        throw ServerException(body);
       } else {
-        // Write succeeded despite error-looking body — return null
         return null;
       }
     }
 
-    return _decode(body);
+    return isReadOperation ? body : null;
   }
 
   dynamic _decode(String body) {

@@ -1,9 +1,16 @@
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/utils/image_converter.dart';
+import '../../core/widgets/empty_state_widget.dart';
+import '../../data/repositories/comment_repository.dart';
+import '../../features/products/models/product_image_model.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
+import '../model/comment_model.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';
 import '../model/cart_api.dart';
@@ -12,6 +19,7 @@ import '../shared/widgets/add_to_cart_bottom_sheet.dart';
 import '../shared/widgets/app_image.dart';
 import '../shared/widgets/app_snackbar.dart';
 import '../state/auth_state.dart';
+import '../state/review_refresh_notifier.dart';
 import '../state/wishlist_state.dart';
 import '../themes/theme.dart';
 
@@ -35,7 +43,9 @@ class ProductDetailsPage extends StatefulWidget {
 
 class _ProductDetailsPageState extends State<ProductDetailsPage> {
   final ProductService _productService = ProductService();
+  late final CommentRepository _commentRepository;
   late PageController _imageController;
+  late Future<List<CommentModel>> _commentsFuture;
   int _currentImageIndex = 0;
   String? _selectedSize;
   String? _selectedColor;
@@ -43,7 +53,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   bool _isExpanded = false;
   bool _isLoadingItemImages = false;
   String? _itemImagesError;
-  List<ApiItemImage> _itemImages = const [];
+  List<ProductImageModel> _itemImages = const [];
   List<ApiProductVariant> _drawerVariants = const [];
   bool _isAddingToCart = false;
   List<ApiProductVariant> get _variants =>
@@ -52,7 +62,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   @override
   void initState() {
     super.initState();
+    _commentRepository = Get.find<CommentRepository>();
     _imageController = PageController();
+    _commentsFuture = _commentRepository.getItemComments(widget.product.id);
     _selectedSize =
         widget.initialSize ??
         (widget.product.sizes.isNotEmpty ? widget.product.sizes.first : null);
@@ -75,20 +87,34 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     }
     _loadItemImages();
     _loadDrawerVariants();
+    ReviewRefreshNotifier.updatedItemId.addListener(_handleReviewRefresh);
   }
 
   @override
   void dispose() {
+    ReviewRefreshNotifier.updatedItemId.removeListener(_handleReviewRefresh);
     _imageController.dispose();
     super.dispose();
   }
 
-  List<String> get _displayImages {
-    if (_itemImages.isNotEmpty) {
-      return _itemImages.map((image) => image.imagePath).toList();
+  void _handleReviewRefresh() {
+    final updatedItemId = ReviewRefreshNotifier.updatedItemId.value;
+    if (updatedItemId != widget.product.id || !mounted) {
+      return;
     }
-    return widget.product.imagesForColor(_selectedColor);
+
+    setState(() {
+      _commentsFuture = _commentRepository.getItemComments(widget.product.id);
+    });
   }
+
+  bool get _hasBase64Images => _itemImages.isNotEmpty;
+
+  List<String> get _fallbackImages =>
+      widget.product.imagesForColor(_selectedColor);
+
+  int get _imageCount =>
+      _hasBase64Images ? _itemImages.length : _fallbackImages.length;
 
   Future<void> _loadItemImages() async {
     setState(() {
@@ -96,7 +122,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       _itemImagesError = null;
     });
     try {
-      final images = await _productService.getItemImages(
+      final images = await _productService.getItemImagesBase64(
         itemId: widget.product.id,
       );
       if (!mounted) return;
@@ -192,6 +218,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       _buildRatingSection(),
                       const SizedBox(height: AppSpacing.xxl),
                       _buildDescriptionSection(),
+                      const SizedBox(height: AppSpacing.xxl),
+                      _buildReviewsSection(),
                       SizedBox(height: bottomActionHeight),
                     ],
                   ),
@@ -276,7 +304,15 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   }
 
   Widget _buildImageCarousel() {
-    final images = _displayImages;
+    if (_imageCount == 0) {
+      return Container(
+        height: AppSpacing.imageHero,
+        color: Theme.of(context).colorScheme.surface,
+        alignment: Alignment.center,
+        child: const Icon(Icons.broken_image_outlined, size: 56),
+      );
+    }
+
     return Column(
       children: [
         Stack(
@@ -291,13 +327,13 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                     _currentImageIndex = index;
                   });
                 },
-                itemCount: images.length,
+                itemCount: _imageCount,
                 itemBuilder: (context, index) {
                   return GestureDetector(
-                    onTap: () => _openImageViewer(images, index),
+                    onTap: () => _openImageViewer(index),
                     child: Hero(
                       tag: 'product_${widget.product.id}',
-                      child: AppImage(path: images[index], fit: BoxFit.cover),
+                      child: _buildGalleryImage(index, fit: BoxFit.cover),
                     ),
                   );
                 },
@@ -310,7 +346,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
-                  images.length,
+                  _imageCount,
                   (index) => Container(
                     width: _currentImageIndex == index
                         ? AppSpacing.xxl
@@ -331,7 +367,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             ),
           ],
         ),
-        if (images.length > 1)
+        if (_imageCount > 1)
           Padding(
             padding: AppSpacing.symmetric(vertical: AppSpacing.md),
             child: SizedBox(
@@ -339,7 +375,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               child: ListView.separated(
                 padding: AppSpacing.horizontal(AppSpacing.lg),
                 scrollDirection: Axis.horizontal,
-                itemCount: images.length,
+                itemCount: _imageCount,
                 separatorBuilder: (_, _) =>
                     const SizedBox(width: AppSpacing.sm),
                 itemBuilder: (context, index) {
@@ -355,7 +391,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                         _currentImageIndex = index;
                       });
                     },
-                    onDoubleTap: () => _openImageViewer(images, index),
+                    onDoubleTap: () => _openImageViewer(index),
                     child: Container(
                       padding: AppSpacing.all(AppSpacing.xs),
                       decoration: BoxDecoration(
@@ -372,11 +408,10 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                         ),
                         color: Theme.of(context).colorScheme.surface,
                       ),
-                      child: AppImage(
-                        path: images[index],
+                      child: SizedBox(
                         width: AppSpacing.imageSm,
                         height: AppSpacing.imageSm,
-                        fit: BoxFit.cover,
+                        child: _buildGalleryImage(index, fit: BoxFit.cover),
                       ),
                     ),
                   );
@@ -405,11 +440,34 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     );
   }
 
-  void _openImageViewer(List<String> images, int initialIndex) {
+  Widget _buildGalleryImage(int index, {BoxFit fit = BoxFit.cover}) {
+    if (_hasBase64Images) {
+      final image = _itemImages[index];
+      final bytes = ImageConverter.base64ToBytes(image.imageBase64);
+      if (bytes != null) {
+        return Image.memory(bytes, fit: fit);
+      }
+      if (image.imagePath.trim().isNotEmpty) {
+        return AppImage(path: image.imagePath, fit: fit);
+      }
+      return const Center(child: Icon(Icons.broken_image_outlined));
+    }
+
+    final images = _fallbackImages;
+    if (index < 0 || index >= images.length) {
+      return const Center(child: Icon(Icons.broken_image_outlined));
+    }
+    return AppImage(path: images[index], fit: fit);
+  }
+
+  void _openImageViewer(int initialIndex) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) =>
-            _ProductImageViewer(images: images, initialIndex: initialIndex),
+        builder: (_) => _ProductImageViewer(
+          itemImages: _itemImages,
+          fallbackImages: _fallbackImages,
+          initialIndex: initialIndex,
+        ),
       ),
     );
   }
@@ -510,6 +568,110 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           duration: const Duration(milliseconds: 300),
         ),
       ],
+    );
+  }
+
+  Widget _buildReviewsSection() {
+    return FutureBuilder<List<CommentModel>>(
+      future: _commentsFuture,
+      builder: (context, snapshot) {
+        final comments = snapshot.data ?? const <CommentModel>[];
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Reviews (${comments.length})',
+              style: AppTextStyles.titleMedium,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (snapshot.connectionState == ConnectionState.waiting)
+              Column(
+                children: List.generate(
+                  3,
+                  (_) => Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                    padding: AppSpacing.insetsLg,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 120,
+                          height: 14,
+                          color: AppColors.surfaceVariant,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Container(
+                          width: 80,
+                          height: 12,
+                          color: AppColors.surfaceVariant,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Container(
+                          width: double.infinity,
+                          height: 12,
+                          color: AppColors.surfaceVariant,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Container(
+                          width: MediaQuery.of(context).size.width * 0.5,
+                          height: 12,
+                          color: AppColors.surfaceVariant,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            else if (snapshot.hasError)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    snapshot.error.toString(),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.error,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _commentsFuture = _commentRepository.getItemComments(
+                          widget.product.id,
+                        );
+                      });
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
+              )
+            else if (comments.isEmpty)
+              const EmptyStateWidget(
+                icon: Icons.rate_review_outlined,
+                title: 'No reviews yet',
+                subtitle:
+                    'Be the first to share your experience with this product.',
+              )
+            else
+              Column(
+                children: comments
+                    .map(
+                      (comment) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: _CommentReviewCard(comment: comment),
+                      ),
+                    )
+                    .toList(),
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -671,11 +833,95 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   }
 }
 
+class _CommentReviewCard extends StatelessWidget {
+  final CommentModel comment;
+
+  const _CommentReviewCard({required this.comment});
+
+  String get _initials {
+    final parts = comment.username
+        .split(' ')
+        .where((part) => part.trim().isNotEmpty)
+        .toList();
+    if (parts.isEmpty) {
+      return '?';
+    }
+    if (parts.length == 1) {
+      return parts.first.substring(0, 1).toUpperCase();
+    }
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: AppSpacing.insetsLg,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+                foregroundColor: AppColors.primary,
+                child: Text(_initials),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      comment.username.isEmpty ? 'Anonymous' : comment.username,
+                      style: AppTextStyles.titleSmall,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Row(
+                      children: List.generate(
+                        5,
+                        (index) => Icon(
+                          index < comment.rating
+                              ? Icons.star
+                              : Icons.star_border,
+                          size: AppSpacing.iconSm,
+                          color: const Color(0xFFFFB800),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (comment.createdAt != null)
+                Text(
+                  DateFormat.yMMMd().format(comment.createdAt!),
+                  style: AppTextStyles.bodySmall,
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(comment.comment, style: AppTextStyles.bodyMedium),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProductImageViewer extends StatefulWidget {
-  final List<String> images;
+  final List<ProductImageModel> itemImages;
+  final List<String> fallbackImages;
   final int initialIndex;
 
-  const _ProductImageViewer({required this.images, required this.initialIndex});
+  const _ProductImageViewer({
+    required this.itemImages,
+    required this.fallbackImages,
+    required this.initialIndex,
+  });
 
   @override
   State<_ProductImageViewer> createState() => _ProductImageViewerState();
@@ -700,28 +946,50 @@ class _ProductImageViewerState extends State<_ProductImageViewer> {
 
   @override
   Widget build(BuildContext context) {
+    final imageCount = widget.itemImages.isNotEmpty
+        ? widget.itemImages.length
+        : widget.fallbackImages.length;
+
     return Scaffold(
       backgroundColor: AppColors.textPrimary,
       appBar: AppBar(
         backgroundColor: AppColors.textPrimary,
         foregroundColor: AppColors.textOnPrimary,
-        title: Text('${_index + 1}/${widget.images.length}'),
+        title: Text('${_index + 1}/$imageCount'),
       ),
       body: PageView.builder(
         controller: _controller,
-        itemCount: widget.images.length,
+        itemCount: imageCount,
         onPageChanged: (value) {
           setState(() {
             _index = value;
           });
         },
         itemBuilder: (context, index) {
+          Widget imageWidget;
+          if (widget.itemImages.isNotEmpty) {
+            final image = widget.itemImages[index];
+            final bytes = ImageConverter.base64ToBytes(image.imageBase64);
+            imageWidget = bytes != null
+                ? Image.memory(bytes, fit: BoxFit.contain)
+                : image.imagePath.trim().isNotEmpty
+                ? AppImage(path: image.imagePath, fit: BoxFit.contain)
+                : const Icon(
+                    Icons.broken_image_outlined,
+                    color: AppColors.textOnPrimary,
+                    size: 56,
+                  );
+          } else {
+            imageWidget = AppImage(
+              path: widget.fallbackImages[index],
+              fit: BoxFit.contain,
+            );
+          }
+
           return InteractiveViewer(
             minScale: 1,
             maxScale: 4,
-            child: Center(
-              child: AppImage(path: widget.images[index], fit: BoxFit.contain),
-            ),
+            child: Center(child: imageWidget),
           );
         },
       ),

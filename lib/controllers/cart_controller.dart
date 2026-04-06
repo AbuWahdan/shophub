@@ -10,14 +10,19 @@ class CartController extends GetxController {
 
   final items = <ApiCartItem>[].obs;
   final isLoading = false.obs;
-  
-  // Per-item loading: key = detail_id (itemDetId), value = true while API in flight
+
+  // Per-item loading: key = cart line id when available, else item detail id.
   final itemLoading = <int, bool>{}.obs;
+
+  int _itemKey(ApiCartItem item) =>
+      item.cartItemId > 0
+          ? item.cartItemId
+          : (item.detailId > 0 ? item.detailId : item.itemDetId);
 
   /// Load cart for a user
   Future<void> loadCart({required String username}) async {
     isLoading.value = true;
-    
+
     try {
       if (kDebugMode) {
         debugPrint('[CartController] Loading cart for $username');
@@ -25,9 +30,11 @@ class CartController extends GetxController {
 
       final cartItems = await _repo.getCart(username: username);
       items.assignAll(cartItems);
-      
+
       if (kDebugMode) {
-        debugPrint('[CartController] Cart loaded with ${cartItems.length} items');
+        debugPrint(
+          '[CartController] Cart loaded with ${cartItems.length} items',
+        );
       }
     } on Exception catch (e) {
       if (kDebugMode) {
@@ -45,58 +52,31 @@ class CartController extends GetxController {
     required String username,
   }) async {
     // Optimistic update
-    itemLoading[item.itemDetId] = true;
+    itemLoading[_itemKey(item)] = true;
     final idx = items.indexWhere((i) => i.itemDetId == item.itemDetId);
     final oldQty = idx != -1 ? items[idx].itemQty : 0;
-    
+
     if (idx != -1) {
-      // Create new instance with incremented quantity
-      items[idx] = ApiCartItem(
-        itemId: items[idx].itemId,
-        itemDetId: items[idx].itemDetId,
-        username: items[idx].username,
-        itemQty: items[idx].itemQty + 1,
-        availableQty: items[idx].availableQty,
-        itemName: items[idx].itemName,
-        itemDesc: items[idx].itemDesc,
-        itemPrice: items[idx].itemPrice,
-        discount: items[idx].discount,
-        itemImgUrl: items[idx].itemImgUrl,
-        color: items[idx].color,
-        itemSize: items[idx].itemSize,
-        brand: items[idx].brand,
-      );
+      items[idx] = items[idx].copyWith(itemQty: items[idx].itemQty + 1);
     }
 
     try {
-      await _repo.addToCart(AddItemToCartRequest(
-        itemId: item.itemId,
-        itemDetId: item.itemDetId,
-        username: username,
-        itemQty: 1,
-      ));
-      
+      await _repo.addToCart(
+        AddItemToCartRequest(
+          itemId: item.itemId,
+          itemDetId: item.itemDetId,
+          username: username,
+          itemQty: 1,
+        ),
+      );
+
       if (kDebugMode) {
         debugPrint('[CartController] Item incremented successfully');
       }
     } catch (e) {
       // Revert optimistic update
       if (idx != -1) {
-        items[idx] = ApiCartItem(
-          itemId: items[idx].itemId,
-          itemDetId: items[idx].itemDetId,
-          username: items[idx].username,
-          itemQty: oldQty,
-          availableQty: items[idx].availableQty,
-          itemName: items[idx].itemName,
-          itemDesc: items[idx].itemDesc,
-          itemPrice: items[idx].itemPrice,
-          discount: items[idx].discount,
-          itemImgUrl: items[idx].itemImgUrl,
-          color: items[idx].color,
-          itemSize: items[idx].itemSize,
-          brand: items[idx].brand,
-        );
+        items[idx] = items[idx].copyWith(itemQty: oldQty);
       }
       if (kDebugMode) {
         debugPrint('[CartController] Error incrementing item: $e');
@@ -104,7 +84,7 @@ class CartController extends GetxController {
       Get.snackbar('Error', 'Failed to update item: $e');
       rethrow;
     } finally {
-      itemLoading[item.itemDetId] = false;
+      itemLoading[_itemKey(item)] = false;
     }
   }
 
@@ -121,35 +101,23 @@ class CartController extends GetxController {
     }
 
     // Optimistic update
-    itemLoading[item.itemDetId] = true;
+    itemLoading[_itemKey(item)] = true;
     final idx = items.indexWhere((i) => i.itemDetId == item.itemDetId);
     final oldQty = idx != -1 ? items[idx].itemQty : 0;
-    
+
     if (idx != -1) {
-      items[idx] = ApiCartItem(
-        itemId: items[idx].itemId,
-        itemDetId: items[idx].itemDetId,
-        username: items[idx].username,
-        itemQty: items[idx].itemQty - 1,
-        availableQty: items[idx].availableQty,
-        itemName: items[idx].itemName,
-        itemDesc: items[idx].itemDesc,
-        itemPrice: items[idx].itemPrice,
-        discount: items[idx].discount,
-        itemImgUrl: items[idx].itemImgUrl,
-        color: items[idx].color,
-        itemSize: items[idx].itemSize,
-        brand: items[idx].brand,
-      );
+      items[idx] = items[idx].copyWith(itemQty: items[idx].itemQty - 1);
     }
 
     try {
-      await _repo.addToCart(AddItemToCartRequest(
-        itemId: item.itemId,
-        itemDetId: item.itemDetId,
-        username: username,
-        itemQty: -1, // Decrease by 1 (or API interprets as reduce)
-      ));
+      await _repo.addToCart(
+        AddItemToCartRequest(
+          itemId: item.itemId,
+          itemDetId: item.itemDetId,
+          username: username,
+          itemQty: -1, // Decrease by 1 (or API interprets as reduce)
+        ),
+      );
 
       if (kDebugMode) {
         debugPrint('[CartController] Item decremented successfully');
@@ -157,21 +125,7 @@ class CartController extends GetxController {
     } catch (e) {
       // Revert optimistic update
       if (idx != -1) {
-        items[idx] = ApiCartItem(
-          itemId: items[idx].itemId,
-          itemDetId: items[idx].itemDetId,
-          username: items[idx].username,
-          itemQty: oldQty,
-          availableQty: items[idx].availableQty,
-          itemName: items[idx].itemName,
-          itemDesc: items[idx].itemDesc,
-          itemPrice: items[idx].itemPrice,
-          discount: items[idx].discount,
-          itemImgUrl: items[idx].itemImgUrl,
-          color: items[idx].color,
-          itemSize: items[idx].itemSize,
-          brand: items[idx].brand,
-        );
+        items[idx] = items[idx].copyWith(itemQty: oldQty);
       }
       if (kDebugMode) {
         debugPrint('[CartController] Error decrementing item: $e');
@@ -179,7 +133,7 @@ class CartController extends GetxController {
       Get.snackbar('Error', 'Failed to update item: $e');
       rethrow;
     } finally {
-      itemLoading[item.itemDetId] = false;
+      itemLoading[_itemKey(item)] = false;
     }
   }
 
@@ -188,16 +142,26 @@ class CartController extends GetxController {
     required ApiCartItem item,
     required String username,
   }) async {
-    itemLoading[item.itemDetId] = true;
-    
+    itemLoading[_itemKey(item)] = true;
+
+    if (item.detailId <= 0) {
+      itemLoading[_itemKey(item)] = false;
+      Get.snackbar('Error', 'Could not remove item. Please try again.');
+      return;
+    }
+
     try {
       await _repo.deleteFromCart(
-        detailId: item.itemDetId,
+        detailId: item.detailId,
         modifiedBy: username,
       );
-      
-      items.removeWhere((i) => i.itemDetId == item.itemDetId);
-      
+
+      items.removeWhere(
+        (i) =>
+            i.detailId == item.detailId ||
+            (i.itemDetId == item.itemDetId && i.itemId == item.itemId),
+      );
+
       if (kDebugMode) {
         debugPrint('[CartController] Item removed from cart');
       }
@@ -208,7 +172,7 @@ class CartController extends GetxController {
       Get.snackbar('Error', 'Failed to remove item: $e');
       rethrow;
     } finally {
-      itemLoading[item.itemDetId] = false;
+      itemLoading[_itemKey(item)] = false;
     }
   }
 

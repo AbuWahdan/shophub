@@ -9,16 +9,16 @@ class ApiClient extends http.BaseClient {
   final http.Client _inner;
   final StorageService _storageService;
 
-  ApiClient({
-    http.Client? inner,
-    StorageService? storageService,
-  })  : _inner = inner ?? http.Client(),
-        _storageService = storageService ?? StorageService();
+  ApiClient({http.Client? inner, StorageService? storageService})
+    : _inner = inner ?? http.Client(),
+      _storageService = storageService ?? StorageService();
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     request.headers.putIfAbsent('Accept', () => 'application/json');
-    request.headers.putIfAbsent('Content-Type', () => 'application/json');
+    if (request is! http.MultipartRequest) {
+      request.headers.putIfAbsent('Content-Type', () => 'application/json');
+    }
 
     final token = await _storageService.getAuthToken();
     if (token != null && token.isNotEmpty) {

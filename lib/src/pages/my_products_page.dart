@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../controllers/my_products_controller.dart';
+import '../../features/products/models/product_image_model.dart';
 import '../config/route.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
@@ -14,8 +15,15 @@ import '../shared/widgets/empty_state.dart';
 import '../state/auth_state.dart';
 import '../themes/theme.dart';
 
-class MyProductsPage extends StatelessWidget {
+class MyProductsPage extends StatefulWidget {
   const MyProductsPage({super.key});
+
+  @override
+  State<MyProductsPage> createState() => _MyProductsPageState();
+}
+
+class _MyProductsPageState extends State<MyProductsPage> {
+  bool _isOpeningProduct = false;
 
   @override
   Widget build(BuildContext context) {
@@ -25,13 +33,15 @@ class MyProductsPage extends StatelessWidget {
 
     // Initialize controller with user credentials EARLY
     final ctrl = Get.find<MyProductsController>();
-    
+
     // ✅ FIX: Set credentials FIRST
     if (isLoggedIn) {
       ctrl.username = auth.user!.username.trim();
       ctrl.userId = auth.user!.userId;
       if (kDebugMode) {
-        debugPrint('[MyProductsPage] Initialized controller with username="${ctrl.username}", userId=${ctrl.userId}');
+        debugPrint(
+          '[MyProductsPage] Initialized controller with username="${ctrl.username}", userId=${ctrl.userId}',
+        );
       }
     } else {
       ctrl.username = '';
@@ -45,7 +55,9 @@ class MyProductsPage extends StatelessWidget {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (isLoggedIn && ctrl.products.isEmpty && !ctrl.isLoading.value) {
         if (kDebugMode) {
-          debugPrint('[MyProductsPage] Post-frame callback: triggering loadProducts()');
+          debugPrint(
+            '[MyProductsPage] Post-frame callback: triggering loadProducts()',
+          );
         }
         ctrl.loadProducts();
       }
@@ -87,13 +99,13 @@ class MyProductsPage extends StatelessWidget {
                             Text(
                               ctrl.error.value,
                               textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: Colors.grey[600]),
                             ),
                             const SizedBox(height: 24),
                             ElevatedButton.icon(
-                              onPressed: () => ctrl.loadProducts(forceRefresh: true),
+                              onPressed: () =>
+                                  ctrl.loadProducts(forceRefresh: true),
                               icon: const Icon(Icons.refresh),
                               label: const Text('Retry'),
                             ),
@@ -168,19 +180,26 @@ class MyProductsPage extends StatelessWidget {
     ApiProduct product,
     String currentUsername,
   ) async {
+    if (_isOpeningProduct) return;
+    setState(() => _isOpeningProduct = true);
+
     final productService = ProductService();
 
     try {
-      final detailsRows = await productService.getItemDetailsRows(itemId: product.id);
+      final detailsRows = await productService.getItemDetailsRows(
+        itemId: product.id,
+      );
 
       if (detailsRows.isEmpty) {
         throw Exception('No item details found for this product.');
       }
 
       final details = detailsRows.first;
-      var itemImages = <ApiItemImage>[];
+      var itemImages = <ProductImageModel>[];
       try {
-        itemImages = await productService.getItemImages(itemId: product.id);
+        itemImages = await productService.getItemImagesBase64(
+          itemId: product.id,
+        );
       } catch (_) {
         // Keep opening even if images fail.
       }
@@ -205,9 +224,13 @@ class MyProductsPage extends StatelessWidget {
       }
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+    } finally {
+      if (mounted) {
+        setState(() => _isOpeningProduct = false);
+      }
     }
   }
 }
@@ -216,10 +239,7 @@ class MyProductsPage extends StatelessWidget {
 // _MyProductCard
 // ══════════════════════════════════════════════════════════════════════════════
 class _MyProductCard extends StatelessWidget {
-  const _MyProductCard({
-    required this.product,
-    required this.onTap,
-  });
+  const _MyProductCard({required this.product, required this.onTap});
 
   final ApiProduct product;
   final VoidCallback onTap;
@@ -235,9 +255,9 @@ class _MyProductCard extends StatelessWidget {
         // Muted border for inactive products
         side: isInactive
             ? BorderSide(
-          color: Theme.of(context).colorScheme.error.withOpacity(0.4),
-          width: 1.5,
-        )
+                color: Theme.of(context).colorScheme.error.withOpacity(0.4),
+                width: 1.5,
+              )
             : BorderSide.none,
       ),
       child: InkWell(
@@ -254,21 +274,36 @@ class _MyProductCard extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     ClipRRect(
-                      borderRadius:
-                      BorderRadius.circular(AppSpacing.radiusMd),
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                       child: ColorFiltered(
                         // Desaturate the image for inactive products
                         colorFilter: isInactive
                             ? const ColorFilter.matrix(<double>[
-                          0.2126, 0.7152, 0.0722, 0, 0,
-                          0.2126, 0.7152, 0.0722, 0, 0,
-                          0.2126, 0.7152, 0.0722, 0, 0,
-                          0,      0,      0,      1, 0,
-                        ])
+                                0.2126,
+                                0.7152,
+                                0.0722,
+                                0,
+                                0,
+                                0.2126,
+                                0.7152,
+                                0.0722,
+                                0,
+                                0,
+                                0.2126,
+                                0.7152,
+                                0.0722,
+                                0,
+                                0,
+                                0,
+                                0,
+                                0,
+                                1,
+                                0,
+                              ])
                             : const ColorFilter.mode(
-                          Colors.transparent,
-                          BlendMode.multiply,
-                        ),
+                                Colors.transparent,
+                                BlendMode.multiply,
+                              ),
                         child: Image.network(
                           product.itemImgUrl,
                           fit: BoxFit.cover,
@@ -289,7 +324,9 @@ class _MyProductCard extends StatelessWidget {
                         left: 6,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 3),
+                            horizontal: 6,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: Theme.of(context).colorScheme.error,
                             borderRadius: BorderRadius.circular(6),
@@ -318,11 +355,9 @@ class _MyProductCard extends StatelessWidget {
                 style: AppTextStyles.bodyMedium.copyWith(
                   // Muted text for inactive
                   color: isInactive
-                      ? Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.color
-                      ?.withOpacity(0.5)
+                      ? Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withOpacity(0.5)
                       : null,
                 ),
               ),
@@ -334,11 +369,9 @@ class _MyProductCard extends StatelessWidget {
                 '\$${product.itemPrice.toStringAsFixed(2)}',
                 style: AppTextStyles.labelLarge.copyWith(
                   color: isInactive
-                      ? Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.color
-                      ?.withOpacity(0.4)
+                      ? Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withOpacity(0.4)
                       : null,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -348,15 +381,10 @@ class _MyProductCard extends StatelessWidget {
 
               // ── Stock indicator ─────────────────────────────────
               Text(
-                inStock
-                    ? context.l10n.stockIn
-                    : context.l10n.stockOut,
+                inStock ? context.l10n.stockIn : context.l10n.stockOut,
                 style: AppTextStyles.bodySmall.copyWith(
                   color: isInactive
-                      ? Theme.of(context)
-                      .colorScheme
-                      .error
-                      .withOpacity(0.7)
+                      ? Theme.of(context).colorScheme.error.withOpacity(0.7)
                       : inStock
                       ? AppColors.success
                       : AppColors.error,

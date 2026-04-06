@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../data/categories_data.dart';
+import '../../../features/products/models/product_image_model.dart';
 import '../../../models/category.dart';
+import '../../../core/utils/image_converter.dart';
 import '../../config/size_options.dart';
 import '../../design/app_spacing.dart';
 import '../../l10n/l10n.dart';
@@ -25,7 +29,7 @@ class EditProductPage extends StatefulWidget {
   final ApiProduct product;
   final ApiProductDetails details;
   final List<ApiProductDetails> detailsRows;
-  final List<ApiItemImage> itemImages;
+  final List<ProductImageModel> itemImages;
   final String currentUser;
 
   @override
@@ -40,11 +44,12 @@ class _EditProductPageState extends State<EditProductPage> {
   late final TextEditingController _descController;
 
   final List<_VariantEntry> _variantEntries = [];
-  final List<String> _imagePaths = [];
+  final List<ProductImageModel> _itemImages = [];
   final ImagePicker _imagePicker = ImagePicker();
 
   bool _isSubmitting = false;
-  final int _defaultImageIndex = 0;
+  bool _isUploadingImage = false;
+  int? _defaultImageId;
   late final int _itemId;
   Category? _selectedCategory;
 
@@ -70,17 +75,19 @@ class _EditProductPageState extends State<EditProductPage> {
       //   • A SIZE_NAME    → "Extra Large"  → name match
       //   • "0" or ""      → no size, leave both dropdowns empty
       final opt = _resolveSize(d.itemSize);
-      _variantEntries.add(_VariantEntry(
-        detId: d.detId,
-        isActive: d.isActive == 1,
-        sizeGroupId: opt?.groupId,
-        sizeId: opt?.id,
-        brand: d.brand,
-        color: d.color,
-        price: d.itemPrice,
-        qty: d.itemQty,
-        discount: d.discount,
-      ));
+      _variantEntries.add(
+        _VariantEntry(
+          detId: d.detId,
+          isActive: d.isActive == 1,
+          sizeGroupId: opt?.groupId,
+          sizeId: opt?.id,
+          brand: d.brand,
+          color: d.color,
+          price: d.itemPrice,
+          qty: d.itemQty,
+          discount: d.discount,
+        ),
+      );
     }
   }
 
@@ -119,7 +126,10 @@ class _EditProductPageState extends State<EditProductPage> {
 
   void _initializeImages() {
     for (final img in widget.itemImages) {
-      _imagePaths.add(img.imagePath);
+      _itemImages.add(img);
+      if (img.isDefault) {
+        _defaultImageId = img.imageId;
+      }
     }
   }
 
@@ -127,12 +137,11 @@ class _EditProductPageState extends State<EditProductPage> {
   void dispose() {
     _nameController.dispose();
     _descController.dispose();
-    for (final e in _variantEntries) e.dispose();
+    for (final e in _variantEntries) {
+      e.dispose();
+    }
     super.dispose();
   }
-
-  int get _totalQty => _variantEntries.fold(
-      0, (sum, e) => sum + (int.tryParse(e.qtyController.text) ?? 0));
 
   // ── Variant active toggle — local only; delete-check runs at save ─────────
   void _toggleVariantActive(int index, bool newValue) {
@@ -148,13 +157,19 @@ class _EditProductPageState extends State<EditProductPage> {
   Future<void> _updateProduct() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCategory == null) {
-      AppSnackBar.show(context,
-          message: 'Please select a category', type: AppSnackBarType.warning);
+      AppSnackBar.show(
+        context,
+        message: 'Please select a category',
+        type: AppSnackBarType.warning,
+      );
       return;
     }
     if (_variantEntries.isEmpty) {
-      AppSnackBar.show(context,
-          message: 'Add at least one variant', type: AppSnackBarType.warning);
+      AppSnackBar.show(
+        context,
+        message: 'Add at least one variant',
+        type: AppSnackBarType.warning,
+      );
       return;
     }
 
@@ -163,8 +178,9 @@ class _EditProductPageState extends State<EditProductPage> {
     try {
       // ── Step 1: pending deactivations ────────────────────────────────────
       final toHardDelete = <int>{};
-      for (final e
-      in _variantEntries.where((e) => !e.isNew && e.pendingDeactivate)) {
+      for (final e in _variantEntries.where(
+        (e) => !e.isNew && e.pendingDeactivate,
+      )) {
         try {
           final deleted = await _productService.deleteVariantDetail(e.detId!);
           if (deleted) toHardDelete.add(e.detId!);
@@ -181,39 +197,45 @@ class _EditProductPageState extends State<EditProductPage> {
         if (price <= 0) throw 'All variants must have a price > 0';
 
         // Derive SIZE_CODE from the selected sizeId at submit time
-        final sizeOpt =
-        e.sizeId != null ? findSizeOptionById(e.sizeId!) : null;
+        final sizeOpt = e.sizeId != null ? findSizeOptionById(e.sizeId!) : null;
         final sizeCode = sizeOpt?.code ?? '';
 
-        existingDetails.add(UpdateItemDetail(
-          detailId: e.detId!,
-          itemPrice: price,
-          itemQty: int.tryParse(e.qtyController.text.trim()) ?? 0,
-          brand: e.brandController.text.trim().isEmpty
-              ? 'N/A'
-              : e.brandController.text.trim(),
-          color: e.colorController.text.trim().isEmpty
-              ? 'N/A'
-              : e.colorController.text.trim(),
-          modifiedBy: widget.currentUser,
-          size: sizeCode, // SIZE_CODE string (e.g. "XL", "42")
-          isActive: e.isActive ? 1 : 0,
-        ));
+        existingDetails.add(
+          UpdateItemDetail(
+            detailId: e.detId!,
+            itemPrice: price,
+            itemQty: int.tryParse(e.qtyController.text.trim()) ?? 0,
+            brand: e.brandController.text.trim().isEmpty
+                ? 'N/A'
+                : e.brandController.text.trim(),
+            color: e.colorController.text.trim().isEmpty
+                ? 'N/A'
+                : e.colorController.text.trim(),
+            modifiedBy: widget.currentUser,
+            size: sizeCode, // SIZE_CODE string (e.g. "XL", "42")
+            isActive: e.isActive ? 1 : 0,
+          ),
+        );
       }
 
       // product is_active = 1 if any variant is active
-      final productIsActive =
-      existingDetails.any((d) => d.isActive == 1) ? 1 : 0;
+      final productIsActive = existingDetails.any((d) => d.isActive == 1)
+          ? 1
+          : 0;
 
-      await _productService.updateProduct(UpdateProductRequest(
-        id: _itemId,
-        itemName: _nameController.text.trim(),
-        itemDesc: _descController.text.trim(),
-        isActive: productIsActive,
-        itemDetails: existingDetails,
-        categoryId: _selectedCategory!.id,
-        itemImgUrl: _imagePaths.isNotEmpty ? _imagePaths.first : null,
-      ));
+      await _productService.updateProduct(
+        UpdateProductRequest(
+          id: _itemId,
+          itemName: _nameController.text.trim(),
+          itemDesc: _descController.text.trim(),
+          isActive: productIsActive,
+          itemDetails: existingDetails,
+          categoryId: _selectedCategory!.id,
+          itemImgUrl: widget.product.itemImgUrl.trim().isEmpty
+              ? null
+              : widget.product.itemImgUrl,
+        ),
+      );
 
       // ── Step 3: insert new variants ───────────────────────────────────────
       final newEntries = _variantEntries.where((e) => e.isNew).toList();
@@ -223,23 +245,26 @@ class _EditProductPageState extends State<EditProductPage> {
           final price = double.tryParse(e.priceController.text.trim()) ?? 0;
           if (price <= 0) throw 'New variant price must be > 0';
 
-          final sizeOpt =
-          e.sizeId != null ? findSizeOptionById(e.sizeId!) : null;
+          final sizeOpt = e.sizeId != null
+              ? findSizeOptionById(e.sizeId!)
+              : null;
           final sizeCode = sizeOpt?.code ?? '';
 
-          insertDetails.add(CreateProductDetail(
-            brand: e.brandController.text.trim().isEmpty
-                ? 'N/A'
-                : e.brandController.text.trim(),
-            color: e.colorController.text.trim().isEmpty
-                ? 'N/A'
-                : e.colorController.text.trim(),
-            itemSize: sizeCode, // String SIZE_CODE
-            itemPrice: price,
-            itemQty: int.tryParse(e.qtyController.text.trim()) ?? 0,
-            discount: double.tryParse(e.discountController.text.trim()) ?? 0,
-            isActive: e.isActive ? 1 : 0,
-          ));
+          insertDetails.add(
+            CreateProductDetail(
+              brand: e.brandController.text.trim().isEmpty
+                  ? 'N/A'
+                  : e.brandController.text.trim(),
+              color: e.colorController.text.trim().isEmpty
+                  ? 'N/A'
+                  : e.colorController.text.trim(),
+              itemSize: sizeCode, // String SIZE_CODE
+              itemPrice: price,
+              itemQty: int.tryParse(e.qtyController.text.trim()) ?? 0,
+              discount: double.tryParse(e.discountController.text.trim()) ?? 0,
+              isActive: e.isActive ? 1 : 0,
+            ),
+          );
         }
         await _productService.insertProductDetails(
           itemId: _itemId,
@@ -249,14 +274,19 @@ class _EditProductPageState extends State<EditProductPage> {
       }
 
       if (!mounted) return;
-      AppSnackBar.show(context,
-          message: 'Product updated successfully',
-          type: AppSnackBarType.success);
+      AppSnackBar.show(
+        context,
+        message: 'Product updated successfully',
+        type: AppSnackBarType.success,
+      );
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      AppSnackBar.show(context,
-          message: 'Error: $e', type: AppSnackBarType.error);
+      AppSnackBar.show(
+        context,
+        message: 'Error: $e',
+        type: AppSnackBarType.error,
+      );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -276,29 +306,29 @@ class _EditProductPageState extends State<EditProductPage> {
         child: _isSubmitting
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(context),
-                const SizedBox(height: AppSpacing.xl),
-                _buildBasicInfo(context, l10n),
-                const SizedBox(height: AppSpacing.xl),
-                _buildVariants(context),
-                const SizedBox(height: AppSpacing.xl),
-                _buildImages(context),
-                const SizedBox(height: AppSpacing.xl),
-                _buildCategorySection(context, l10n),
-                // ← is_active toggle REMOVED from here
-                const SizedBox(height: AppSpacing.xl),
-                _buildActions(context, l10n),
-                const SizedBox(height: AppSpacing.lg),
-              ],
-            ),
-          ),
-        ),
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(context),
+                      const SizedBox(height: AppSpacing.xl),
+                      _buildBasicInfo(context, l10n),
+                      const SizedBox(height: AppSpacing.xl),
+                      _buildVariants(context),
+                      const SizedBox(height: AppSpacing.xl),
+                      _buildImages(context),
+                      const SizedBox(height: AppSpacing.xl),
+                      _buildCategorySection(context, l10n),
+                      // ← is_active toggle REMOVED from here
+                      const SizedBox(height: AppSpacing.xl),
+                      _buildActions(context, l10n),
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
+                  ),
+                ),
+              ),
       ),
     );
   }
@@ -309,99 +339,121 @@ class _EditProductPageState extends State<EditProductPage> {
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border:
-        Border.all(color: Theme.of(context).primaryColor.withOpacity(0.2)),
-      ),
-      child: Row(children: [
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(Icons.shopping_bag_outlined,
-              color: Theme.of(context).primaryColor, size: 28),
+        border: Border.all(
+          color: Theme.of(context).primaryColor.withOpacity(0.2),
         ),
-        const SizedBox(width: AppSpacing.lg),
-        Expanded(
-          child: Column(
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.shopping_bag_outlined,
+              color: Theme.of(context).primaryColor,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Product ID: $_itemId',
-                    style: Theme.of(context).textTheme.labelSmall,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  'Product ID: $_itemId',
+                  style: Theme.of(context).textTheme.labelSmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: AppSpacing.xs),
-                Text('Editing product details',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    overflow: TextOverflow.ellipsis),
-              ]),
-        ),
-      ]),
+                Text(
+                  'Editing product details',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildBasicInfo(BuildContext context, dynamic l10n) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _sectionTitle(context, 'Basic Information', Icons.info_outline),
-      const SizedBox(height: AppSpacing.lg),
-      AppTextField(
-        controller: _nameController,
-        label: l10n.productItemName,
-        hintText: l10n.productItemNameHint,
-        validator: (v) => (v?.trim().isEmpty ?? true) ? 'Required' : null,
-      ),
-      const SizedBox(height: AppSpacing.lg),
-      AppTextField(
-        controller: _descController,
-        label: l10n.productDescriptionLabel,
-        hintText: l10n.productDescriptionHint,
-        validator: (v) => (v?.trim().isEmpty ?? true) ? 'Required' : null,
-      ),
-    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(context, 'Basic Information', Icons.info_outline),
+        const SizedBox(height: AppSpacing.lg),
+        AppTextField(
+          controller: _nameController,
+          label: l10n.productItemName,
+          hintText: l10n.productItemNameHint,
+          validator: (v) => (v?.trim().isEmpty ?? true) ? 'Required' : null,
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        AppTextField(
+          controller: _descController,
+          label: l10n.productDescriptionLabel,
+          hintText: l10n.productDescriptionHint,
+          validator: (v) => (v?.trim().isEmpty ?? true) ? 'Required' : null,
+        ),
+      ],
+    );
   }
 
   Widget _buildVariants(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _sectionTitle(context, 'Variants', Icons.tune),
-      const SizedBox(height: AppSpacing.lg),
-      if (_variantEntries.isEmpty)
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Text('No variants yet',
-                style: Theme.of(context).textTheme.bodyMedium),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(context, 'Variants', Icons.tune),
+        const SizedBox(height: AppSpacing.lg),
+        if (_variantEntries.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Text(
+                'No variants yet',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          )
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _variantEntries.length,
+            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.lg),
+            itemBuilder: (_, i) =>
+                _buildVariantCard(context, i, _variantEntries[i]),
           ),
-        )
-      else
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _variantEntries.length,
-          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.lg),
-          itemBuilder: (_, i) =>
-              _buildVariantCard(context, i, _variantEntries[i]),
+        const SizedBox(height: AppSpacing.lg),
+        OutlinedButton.icon(
+          onPressed: _isSubmitting
+              ? null
+              : () => setState(() => _variantEntries.add(_VariantEntry())),
+          icon: const Icon(Icons.add),
+          label: const Text('Add Variant'),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 48),
+          ),
         ),
-      const SizedBox(height: AppSpacing.lg),
-      OutlinedButton.icon(
-        onPressed: _isSubmitting
-            ? null
-            : () => setState(() => _variantEntries.add(_VariantEntry())),
-        icon: const Icon(Icons.add),
-        label: const Text('Add Variant'),
-        style: OutlinedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 48)),
-      ),
-    ]);
+      ],
+    );
   }
 
   /// Variant card — identical pattern to InsertProductPage._buildVariantCard.
   /// Size group + size are stored directly on _VariantEntry and updated via
   /// setState on the PARENT, exactly like the working insert page.
   Widget _buildVariantCard(
-      BuildContext context, int index, _VariantEntry entry) {
+    BuildContext context,
+    int index,
+    _VariantEntry entry,
+  ) {
     // The sizes available for the currently selected group
-    final groupSizes =
-    (sizeOptions[entry.sizeGroupId] ?? <SizeOption>[]);
+    final groupSizes = (sizeOptions[entry.sizeGroupId] ?? <SizeOption>[]);
 
     return Card(
       elevation: 0,
@@ -415,374 +467,573 @@ class _EditProductPageState extends State<EditProductPage> {
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // ── Header ──────────────────────────────────────────────────────
-          Row(children: [
-            Expanded(
-              child: Text(
-                'Variant ${index + 1}${entry.isNew ? ' (new)' : ''}',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 4),
-            if (entry.isNew)
-              IconButton(
-                icon: const Icon(Icons.close, size: 20),
-                tooltip: 'Remove',
-                onPressed: _isSubmitting
-                    ? null
-                    : () => setState(() {
-                  entry.dispose();
-                  _variantEntries.removeAt(index);
-                }),
-              )
-            else
-            // Active/inactive toggle for existing variants
-              Row(mainAxisSize: MainAxisSize.min, children: [
-                Flexible(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header ──────────────────────────────────────────────────────
+            Row(
+              children: [
+                Expanded(
                   child: Text(
-                    entry.isActive ? 'Active' : 'Inactive',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: entry.isActive
-                          ? Colors.green
-                          : Theme.of(context).colorScheme.error,
+                    'Variant ${index + 1}${entry.isNew ? ' (new)' : ''}',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Switch(
-                  value: entry.isActive,
-                  activeColor: Colors.green,
-                  onChanged: _isSubmitting
-                      ? null
-                      : (val) => _toggleVariantActive(index, val),
-                ),
-              ]),
-          ]),
+                const SizedBox(width: 4),
+                if (entry.isNew)
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    tooltip: 'Remove',
+                    onPressed: _isSubmitting
+                        ? null
+                        : () => setState(() {
+                            entry.dispose();
+                            _variantEntries.removeAt(index);
+                          }),
+                  )
+                else
+                  // Active/inactive toggle for existing variants
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          entry.isActive ? 'Active' : 'Inactive',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: entry.isActive
+                                    ? Colors.green
+                                    : Theme.of(context).colorScheme.error,
+                              ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Switch(
+                        value: entry.isActive,
+                        activeColor: Colors.green,
+                        onChanged: _isSubmitting
+                            ? null
+                            : (val) => _toggleVariantActive(index, val),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
 
-          if (!entry.isActive && entry.pendingDeactivate)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: Text(
-                'Will be removed or deactivated on save',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.error),
+            if (!entry.isActive && entry.pendingDeactivate)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: Text(
+                  'Will be removed or deactivated on save',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // ── Brand / Color ────────────────────────────────────────────────
+            Row(
+              children: [
+                Expanded(
+                  child: AppTextField(
+                    controller: entry.brandController,
+                    label: 'Brand',
+                    hintText: 'Brand name',
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: AppTextField(
+                    controller: entry.colorController,
+                    label: 'Color',
+                    hintText: 'Color',
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // ── Size Group dropdown ──────────────────────────────────────────
+            // Pattern copied exactly from InsertProductPage:
+            // • value comes from entry.sizeGroupId (always current, always valid)
+            // • setState on parent updates the entry and rebuilds the card
+            // • No separate StatefulWidget — no stale state issues
+            DropdownButtonFormField<int>(
+              value: entry.sizeGroupId,
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: 'Size Group',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
+              ),
+              hint: const Text(
+                'Select group (optional)',
                 overflow: TextOverflow.ellipsis,
               ),
+              items: sizeGroups
+                  .map(
+                    (g) => DropdownMenuItem<int>(
+                      value: g.id,
+                      child: Text(
+                        g.name,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: _isSubmitting
+                  ? null
+                  : (val) {
+                      setState(() {
+                        entry.sizeGroupId = val;
+                        // Clear size if it no longer belongs to new group
+                        final options = sizeOptions[val] ?? [];
+                        if (val == null ||
+                            options.every((o) => o.id != entry.sizeId)) {
+                          entry.sizeId = null;
+                        }
+                      });
+                    },
             ),
 
-          const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md),
 
-          // ── Brand / Color ────────────────────────────────────────────────
-          Row(children: [
-            Expanded(
-              child: AppTextField(
-                controller: entry.brandController,
-                label: 'Brand',
-                hintText: 'Brand name',
+            // ── Size dropdown (filtered by group) ────────────────────────────
+            DropdownButtonFormField<int>(
+              value: entry.sizeId,
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: 'Size',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
+                ),
               ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: AppTextField(
-                controller: entry.colorController,
-                label: 'Color',
-                hintText: 'Color',
+              hint: Text(
+                entry.sizeGroupId == null
+                    ? 'Select a group first'
+                    : 'Select size (optional)',
+                overflow: TextOverflow.ellipsis,
               ),
+              items: groupSizes
+                  .map(
+                    (s) => DropdownMenuItem<int>(
+                      value: s.id,
+                      child: Text(
+                        s.name,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (_isSubmitting || entry.sizeGroupId == null)
+                  ? null
+                  : (val) {
+                      setState(() => entry.sizeId = val);
+                    },
             ),
-          ]),
 
-          const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md),
 
-          // ── Size Group dropdown ──────────────────────────────────────────
-          // Pattern copied exactly from InsertProductPage:
-          // • value comes from entry.sizeGroupId (always current, always valid)
-          // • setState on parent updates the entry and rebuilds the card
-          // • No separate StatefulWidget — no stale state issues
-          DropdownButtonFormField<int>(
-            value: entry.sizeGroupId,
-            isExpanded: true,
-            decoration: InputDecoration(
-              labelText: 'Size Group',
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8)),
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 14),
+            // ── Price / Qty / Discount ───────────────────────────────────────
+            Row(
+              children: [
+                Expanded(
+                  child: AppTextField(
+                    controller: entry.priceController,
+                    label: 'Price',
+                    hintText: '0.00',
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: AppTextField(
+                    controller: entry.qtyController,
+                    label: 'Qty',
+                    hintText: '0',
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: AppTextField(
+                    controller: entry.discountController,
+                    label: 'Disc %',
+                    hintText: '0',
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+              ],
             ),
-            hint: const Text('Select group (optional)',
-                overflow: TextOverflow.ellipsis),
-            items: sizeGroups
-                .map((g) => DropdownMenuItem<int>(
-              value: g.id,
-              child: Text(g.name,
-                  overflow: TextOverflow.ellipsis, maxLines: 1),
-            ))
-                .toList(),
-            onChanged: _isSubmitting
-                ? null
-                : (val) {
-              setState(() {
-                entry.sizeGroupId = val;
-                // Clear size if it no longer belongs to new group
-                final options = sizeOptions[val] ?? [];
-                if (val == null ||
-                    options.every((o) => o.id != entry.sizeId)) {
-                  entry.sizeId = null;
-                }
-              });
-            },
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // ── Size dropdown (filtered by group) ────────────────────────────
-          DropdownButtonFormField<int>(
-            value: entry.sizeId,
-            isExpanded: true,
-            decoration: InputDecoration(
-              labelText: 'Size',
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8)),
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 14),
-            ),
-            hint: Text(
-              entry.sizeGroupId == null
-                  ? 'Select a group first'
-                  : 'Select size (optional)',
-              overflow: TextOverflow.ellipsis,
-            ),
-            items: groupSizes
-                .map((s) => DropdownMenuItem<int>(
-              value: s.id,
-              child: Text(s.name,
-                  overflow: TextOverflow.ellipsis, maxLines: 1),
-            ))
-                .toList(),
-            onChanged: (_isSubmitting || entry.sizeGroupId == null)
-                ? null
-                : (val) {
-              setState(() => entry.sizeId = val);
-            },
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // ── Price / Qty / Discount ───────────────────────────────────────
-          Row(children: [
-            Expanded(
-              child: AppTextField(
-                controller: entry.priceController,
-                label: 'Price',
-                hintText: '0.00',
-                keyboardType: TextInputType.number,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: AppTextField(
-                controller: entry.qtyController,
-                label: 'Qty',
-                hintText: '0',
-                keyboardType: TextInputType.number,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: AppTextField(
-                controller: entry.discountController,
-                label: 'Disc %',
-                hintText: '0',
-                keyboardType: TextInputType.number,
-              ),
-            ),
-          ]),
-        ]),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildImages(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _sectionTitle(context, 'Product Images', Icons.image_outlined),
-      const SizedBox(height: AppSpacing.lg),
-      if (_imagePaths.isEmpty)
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Text('No images yet',
-                style: Theme.of(context).textTheme.bodyMedium),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(context, 'Product Images', Icons.image_outlined),
+        const SizedBox(height: AppSpacing.lg),
+        if (_itemImages.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Text(
+                'No images yet',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          )
+        else
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+            ),
+            itemCount: _itemImages.length + 1,
+            itemBuilder: (_, i) {
+              if (i == _itemImages.length) {
+                return _buildAddImageTile(context);
+              }
+              return _buildImageTile(context, i);
+            },
           ),
-        )
-      else
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
+        const SizedBox(height: AppSpacing.lg),
+        OutlinedButton.icon(
+          onPressed: (_isSubmitting || _isUploadingImage) ? null : _pickImage,
+          icon: const Icon(Icons.image_outlined),
+          label: Text(_isUploadingImage ? 'Uploading...' : 'Add Image'),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 48),
           ),
-          itemCount: _imagePaths.length,
-          itemBuilder: (_, i) => _buildImageTile(context, i),
         ),
-      const SizedBox(height: AppSpacing.lg),
-      OutlinedButton.icon(
-        onPressed: _isSubmitting ? null : _pickImage,
-        icon: const Icon(Icons.image_outlined),
-        label: const Text('Add Image'),
-        style: OutlinedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 48)),
+      ],
+    );
+  }
+
+  Widget _buildAddImageTile(BuildContext context) {
+    return InkWell(
+      onTap: (_isSubmitting || _isUploadingImage) ? null : _pickImage,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Theme.of(context).dividerColor),
+          color: Theme.of(context).cardColor,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.add_photo_alternate_outlined),
+            const SizedBox(height: 8),
+            Text(
+              _isUploadingImage ? 'Uploading' : 'Add',
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+          ],
+        ),
       ),
-    ]);
+    );
   }
 
   Widget _buildImageTile(BuildContext context, int index) {
-    return Stack(fit: StackFit.expand, children: [
-      ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          _imagePaths[index],
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
-            color: Theme.of(context).dividerColor,
-            child: const Icon(Icons.broken_image_outlined),
+    final image = _itemImages[index];
+    final bytes = ImageConverter.base64ToBytes(image.imageBase64);
+    final isDefault =
+        image.isDefault ||
+        (_defaultImageId != null && image.imageId == _defaultImageId);
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: (_isSubmitting || _isUploadingImage || isDefault)
+                ? null
+                : () => _setDefaultImage(image),
+            borderRadius: BorderRadius.circular(8),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: bytes != null
+                  ? Image.memory(bytes, fit: BoxFit.cover)
+                  : image.imagePath.trim().isNotEmpty
+                  ? Image.network(
+                      image.imagePath,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: Theme.of(context).dividerColor,
+                        child: const Icon(Icons.broken_image_outlined),
+                      ),
+                    )
+                  : Container(
+                      color: Theme.of(context).dividerColor,
+                      child: const Icon(Icons.broken_image_outlined),
+                    ),
+            ),
           ),
         ),
-      ),
-      Positioned(
-        top: 4,
-        right: 4,
-        child: GestureDetector(
-          onTap: _isSubmitting
-              ? null
-              : () => setState(() => _imagePaths.removeAt(index)),
-          child: Container(
-            decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.85),
-                borderRadius: BorderRadius.circular(50)),
-            padding: const EdgeInsets.all(4),
-            child: const Icon(Icons.close, size: 14, color: Colors.white),
-          ),
-        ),
-      ),
-      if (index == _defaultImageIndex)
         Positioned(
-          bottom: 4,
-          left: 4,
-          child: Container(
-            decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                borderRadius: BorderRadius.circular(50)),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            child: const Text('Default',
-                style: TextStyle(color: Colors.white, fontSize: 10),
-                overflow: TextOverflow.ellipsis),
+          top: 6,
+          left: 6,
+          child: Icon(
+            isDefault ? Icons.star_rounded : Icons.star_outline_rounded,
+            color: isDefault ? Colors.amber : Colors.white,
+            size: 20,
           ),
         ),
-    ]);
+        if (isDefault)
+          Positioned(
+            bottom: 4,
+            left: 4,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                borderRadius: BorderRadius.circular(50),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              child: const Text(
+                'Default',
+                style: TextStyle(color: Colors.white, fontSize: 10),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        if (!isDefault)
+          Positioned(
+            right: 6,
+            bottom: 6,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'Tap to set default',
+                style: TextStyle(color: Colors.white, fontSize: 10),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
   // is_active toggle removed — product active state is derived from variants
   Widget _buildCategorySection(BuildContext context, dynamic l10n) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _sectionTitle(context, 'Category', Icons.category_outlined),
-      const SizedBox(height: AppSpacing.lg),
-      Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).dividerColor),
-        ),
-        child: DropdownButtonFormField<Category>(
-          value: _selectedCategory,
-          isExpanded: true,
-          decoration: InputDecoration(
-            labelText: l10n.productCategory,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle(context, 'Category', Icons.category_outlined),
+        const SizedBox(height: AppSpacing.lg),
+        Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Theme.of(context).dividerColor),
           ),
-          items: CategoriesData.getAllCategoriesFlat()
-              .map((c) => DropdownMenuItem(
-            value: c,
-            child: Text(
-              c.parentId == null ? c.name : '  - ${c.name}',
-              overflow: TextOverflow.ellipsis,
+          child: DropdownButtonFormField<Category>(
+            value: _selectedCategory,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: l10n.productCategory,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
             ),
-          ))
-              .toList(),
-          onChanged: _isSubmitting
-              ? null
-              : (v) => setState(() => _selectedCategory = v),
+            items: CategoriesData.getAllCategoriesFlat()
+                .map(
+                  (c) => DropdownMenuItem(
+                    value: c,
+                    child: Text(
+                      c.parentId == null ? c.name : '  - ${c.name}',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                )
+                .toList(),
+            onChanged: _isSubmitting
+                ? null
+                : (v) => setState(() => _selectedCategory = v),
+          ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 
   Widget _buildActions(BuildContext context, dynamic l10n) {
-    return Column(children: [
-      AppButton(
-        label: l10n.productUpdateAction,
-        leading: _isSubmitting
-            ? const SizedBox(
-          width: 18,
-          height: 18,
-          child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor:
-              AlwaysStoppedAnimation<Color>(Colors.white)),
-        )
-            : null,
-        onPressed: _isSubmitting ? null : _updateProduct,
-      ),
-      const SizedBox(height: AppSpacing.md),
-      OutlinedButton(
-        onPressed: _isSubmitting ? null : () => Navigator.pop(context),
-        style: OutlinedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 48)),
-        child:
-        Text(context.l10n.commonCancel, overflow: TextOverflow.ellipsis),
-      ),
-    ]);
+    return Column(
+      children: [
+        AppButton(
+          label: l10n.productUpdateAction,
+          leading: _isSubmitting
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : null,
+          onPressed: _isSubmitting ? null : _updateProduct,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        OutlinedButton(
+          onPressed: _isSubmitting ? null : () => Navigator.pop(context),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 48),
+          ),
+          child: Text(
+            context.l10n.commonCancel,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _sectionTitle(BuildContext context, String title, IconData icon) {
-    return Row(children: [
-      Container(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: Theme.of(context).primaryColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          decoration: BoxDecoration(
+            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: Theme.of(context).primaryColor, size: 20),
         ),
-        child: Icon(icon, color: Theme.of(context).primaryColor, size: 20),
-      ),
-      const SizedBox(width: AppSpacing.md),
-      Expanded(
-        child: Text(title,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
-            overflow: TextOverflow.ellipsis),
-      ),
-    ]);
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _reloadImages() async {
+    final images = await _productService.getItemImagesBase64(itemId: _itemId);
+    if (!mounted) return;
+
+    setState(() {
+      _itemImages
+        ..clear()
+        ..addAll(images);
+      final defaultIndex = images.indexWhere((image) => image.isDefault);
+      _defaultImageId = defaultIndex == -1
+          ? null
+          : images[defaultIndex].imageId;
+    });
+  }
+
+  Future<void> _setDefaultImage(ProductImageModel image) async {
+    setState(() => _isUploadingImage = true);
+
+    try {
+      await _productService.setDefaultItemImage(
+        imageId: image.imageId,
+        imageBase64: image.imageBase64,
+      );
+      await _reloadImages();
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        message: 'Default image updated',
+        type: AppSnackBarType.success,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        message: 'Failed to update default image',
+        type: AppSnackBarType.error,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+      }
+    }
   }
 
   Future<void> _pickImage() async {
     try {
       final result = await _imagePicker.pickImage(source: ImageSource.gallery);
-      if (result != null && mounted) {
-        setState(() => _imagePaths.add(result.path));
+      if (result == null) {
+        return;
       }
+
+      final base64 = await ImageConverter.compressAndConvert(File(result.path));
+      if (base64 == null) {
+        if (!mounted) return;
+        AppSnackBar.show(
+          context,
+          message: 'Failed to process image',
+          type: AppSnackBarType.error,
+        );
+        return;
+      }
+
+      if (mounted) {
+        setState(() => _isUploadingImage = true);
+      }
+
+      await _productService.insertItemImage(
+        itemId: _itemId,
+        imageBase64: base64,
+        isDefault: _itemImages.isEmpty,
+      );
+      await _reloadImages();
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        message: 'Image uploaded successfully',
+        type: AppSnackBarType.success,
+      );
     } catch (e) {
       if (mounted) {
-        AppSnackBar.show(context,
-            message: 'Failed to pick image', type: AppSnackBarType.error);
+        AppSnackBar.show(
+          context,
+          message: 'Failed to pick image',
+          type: AppSnackBarType.error,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
       }
     }
   }
@@ -820,15 +1071,18 @@ class _VariantEntry {
     double price = 0,
     int qty = 0,
     double discount = 0,
-  })  : pendingDeactivate = false,
-        brandController = TextEditingController(text: brand),
-        colorController = TextEditingController(text: color),
-        priceController =
-        TextEditingController(text: price > 0 ? price.toString() : ''),
-        qtyController =
-        TextEditingController(text: qty > 0 ? qty.toString() : ''),
-        discountController =
-        TextEditingController(text: discount > 0 ? discount.toString() : '');
+  }) : pendingDeactivate = false,
+       brandController = TextEditingController(text: brand),
+       colorController = TextEditingController(text: color),
+       priceController = TextEditingController(
+         text: price > 0 ? price.toString() : '',
+       ),
+       qtyController = TextEditingController(
+         text: qty > 0 ? qty.toString() : '',
+       ),
+       discountController = TextEditingController(
+         text: discount > 0 ? discount.toString() : '',
+       );
 
   bool get isNew => detId == null || detId! <= 0;
 
