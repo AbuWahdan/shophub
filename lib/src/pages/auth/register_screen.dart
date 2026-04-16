@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
 import '../../model/user.dart';

@@ -8,13 +8,13 @@ import 'package:provider/provider.dart';
 import '../../../data/categories_data.dart';
 import '../../config/size_options.dart';
 import '../../config/route.dart';
-import '../../design/app_spacing.dart';
 import '../../l10n/l10n.dart';
 import '../../model/product_api.dart';
 import '../../services/product_service.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_snackbar.dart';
 import '../../shared/widgets/app_text_field.dart';
+import '../../shared/widgets/color_picker/color_hex_field.dart';
 import '../../state/auth_state.dart';
 import '../../themes/theme.dart';
 
@@ -299,7 +299,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
     if (details.isEmpty) {
       AppSnackBar.show(
         context,
-        message: 'Please add at least one valid product variant.',
+        message: context.l10n.productVariantRequired,
         type: AppSnackBarType.warning,
       );
       return;
@@ -447,7 +447,9 @@ class _InsertProductPageState extends State<InsertProductPage> {
 
         // ── Big preview card (display only, tappable only when empty) ──
         GestureDetector(
-          onTap: _images.isEmpty && !_isSubmitting ? _showAddImageOptions : null,
+          onTap: _images.isEmpty && !_isSubmitting
+              ? _showAddImageOptions
+              : null,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             width: double.infinity,
@@ -504,9 +506,11 @@ class _InsertProductPageState extends State<InsertProductPage> {
                         borderRadius: BorderRadius.circular(14),
                         child: Image.file(
                           File(
-                            _images[
-                              _defaultImageIndex.clamp(0, _images.length - 1)
-                            ].path,
+                            _images[_defaultImageIndex.clamp(
+                                  0,
+                                  _images.length - 1,
+                                )]
+                                .path,
                           ),
                           fit: BoxFit.cover,
                         ),
@@ -570,14 +574,14 @@ class _InsertProductPageState extends State<InsertProductPage> {
         ),
 
         // ── Thumbnail scroll row (only when images exist) ──
-        if (_images.isNotEmpty) ...[  
+        if (_images.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.md),
           SizedBox(
             height: 88,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _images.length + 1, // +1 for the Add button at the end
-              separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+              separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
               itemBuilder: (context, index) {
                 // Last item = Add More button
                 if (index == _images.length) {
@@ -588,7 +592,9 @@ class _InsertProductPageState extends State<InsertProductPage> {
                       height: 88,
                       decoration: BoxDecoration(
                         color: AppColors.surfaceVariant,
-                        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                        borderRadius: BorderRadius.circular(
+                          AppSpacing.radiusSm,
+                        ),
                         border: Border.all(
                           color: AppColors.neutral400,
                           width: 1.5,
@@ -631,7 +637,9 @@ class _InsertProductPageState extends State<InsertProductPage> {
                         width: 88,
                         height: 88,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.radiusSm,
+                          ),
                           border: Border.all(
                             color: isDefault
                                 ? AppColors.primary
@@ -799,23 +807,24 @@ class _InsertProductPageState extends State<InsertProductPage> {
           ),
           AppTextField(
             controller: variant.brandController,
-            label: 'Brand',
-            hintText: 'Enter brand',
+            label: context.l10n.productBrand,
+            hintText: context.l10n.productBrandHint,
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: AppSpacing.sm),
-          AppTextField(
-            controller: variant.colorController,
+          ColorHexField(
+            initialColor: variant.colorController.text,
             label: context.l10n.productColor,
-            hintText: 'Enter color',
-            textInputAction: TextInputAction.next,
+            onColorChanged: (value) {
+              variant.colorController.text = value;
+            },
           ),
           const SizedBox(height: AppSpacing.sm),
           DropdownButtonFormField<int>(
             initialValue: variant.selectedSizeGroupId,
-            decoration: const InputDecoration(
-              labelText: 'Size Group',
-              hintText: 'Optional',
+            decoration: InputDecoration(
+              labelText: context.l10n.productSizeGroup,
+              hintText: context.l10n.productSizeGroupOptional,
             ),
             items: sizeGroups
                 .map(
@@ -852,8 +861,8 @@ class _InsertProductPageState extends State<InsertProductPage> {
             decoration: InputDecoration(
               labelText: context.l10n.productSize,
               hintText: variant.selectedSizeGroupId == null
-                  ? 'Select group first'
-                  : 'Select size (optional)',
+                  ? context.l10n.productSelectGroupFirst
+                  : context.l10n.productSelectSizeOptional,
             ),
             items:
                 (sizeOptions[variant.selectedSizeGroupId] ??
@@ -901,8 +910,8 @@ class _InsertProductPageState extends State<InsertProductPage> {
           const SizedBox(height: AppSpacing.sm),
           AppTextField(
             controller: variant.discountController,
-            label: 'Discount (%)',
-            hintText: 'Optional, defaults to 0',
+            label: context.l10n.productDiscountLabel,
+            hintText: context.l10n.productDiscountHint,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             validator: _nonNegativeDoubleOrEmptyValidator,
             textInputAction: TextInputAction.done,
@@ -974,7 +983,9 @@ class _InsertProductPageState extends State<InsertProductPage> {
     final text = (value ?? '').trim();
     if (text.isEmpty) return null;
     final parsed = double.tryParse(text);
-    if (parsed == null || parsed < 0) return context.l10n.productInvalidValue;
+    if (parsed == null || parsed < 0 || parsed > 100) {
+      return context.l10n.productDiscountInvalidRange;
+    }
     return null;
   }
 

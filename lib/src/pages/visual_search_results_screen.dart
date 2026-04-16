@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../core/widgets/empty_state_widget.dart';
-import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../model/product_api.dart';
 import '../themes/theme.dart';

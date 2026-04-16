@@ -10,7 +10,7 @@ import '../../data/repositories/comment_repository.dart';
 import '../../features/products/models/product_image_model.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
-import '../model/comment_model.dart';
+import '../model/api_item_comment.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';
 import '../model/cart_api.dart';
@@ -45,7 +45,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   final ProductService _productService = ProductService();
   late final CommentRepository _commentRepository;
   late PageController _imageController;
-  late Future<List<CommentModel>> _commentsFuture;
+  late Future<List<ApiItemComment>> _commentsFuture;
   int _currentImageIndex = 0;
   String? _selectedSize;
   String? _selectedColor;
@@ -64,7 +64,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     super.initState();
     _commentRepository = Get.find<CommentRepository>();
     _imageController = PageController();
-    _commentsFuture = _commentRepository.getItemComments(widget.product.id);
+    _commentsFuture = _commentRepository.getItemComments(
+      itemId: widget.product.id,
+    );
     _selectedSize =
         widget.initialSize ??
         (widget.product.sizes.isNotEmpty ? widget.product.sizes.first : null);
@@ -104,7 +106,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     }
 
     setState(() {
-      _commentsFuture = _commentRepository.getItemComments(widget.product.id);
+      _commentsFuture = _commentRepository.getItemComments(
+        itemId: widget.product.id,
+      );
     });
   }
 
@@ -572,10 +576,10 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   }
 
   Widget _buildReviewsSection() {
-    return FutureBuilder<List<CommentModel>>(
+    return FutureBuilder<List<ApiItemComment>>(
       future: _commentsFuture,
       builder: (context, snapshot) {
-        final comments = snapshot.data ?? const <CommentModel>[];
+        final comments = snapshot.data ?? const <ApiItemComment>[];
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -643,7 +647,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                     onPressed: () {
                       setState(() {
                         _commentsFuture = _commentRepository.getItemComments(
-                          widget.product.id,
+                          itemId: widget.product.id,
                         );
                       });
                     },
@@ -834,7 +838,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
 }
 
 class _CommentReviewCard extends StatelessWidget {
-  final CommentModel comment;
+  final ApiItemComment comment;
 
   const _CommentReviewCard({required this.comment});
 
@@ -897,9 +901,9 @@ class _CommentReviewCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (comment.createdAt != null)
+              if (comment.hasCreatedAt)
                 Text(
-                  DateFormat.yMMMd().format(comment.createdAt!),
+                  DateFormat.yMMMd().format(comment.createdAt.toLocal()),
                   style: AppTextStyles.bodySmall,
                 ),
             ],

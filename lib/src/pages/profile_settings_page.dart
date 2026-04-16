@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../config/route.dart';
-import '../design/app_colors.dart';
-import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../shared/widgets/section_header.dart';
 import '../state/app_settings.dart';
+import '../state/auth_state.dart';
 import '../themes/theme.dart';
 
 class ProfileSettingsPage extends StatefulWidget {
@@ -32,6 +32,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final isLoggedIn = context.watch<AuthState>().isLoggedIn;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
       body: ListView(
@@ -66,6 +67,17 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
           _buildSection(
             title: l10n.settingsAccount,
             children: [
+              if (isLoggedIn) ...[
+                _buildSettingItem(
+                  icon: Icons.lock_outline,
+                  title: l10n.settingsChangePassword,
+                  subtitle: l10n.settingsChangePasswordSubtitle,
+                  onTap: () {
+                    Navigator.pushNamed(context, AppRoutes.changePassword);
+                  },
+                ),
+                const Divider(),
+              ],
               _buildSettingItem(
                 icon: Icons.email,
                 title: l10n.settingsEmailNotifications,

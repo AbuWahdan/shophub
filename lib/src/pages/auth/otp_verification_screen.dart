@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../design/app_colors.dart';
-import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
 import '../../services/auth_service.dart';

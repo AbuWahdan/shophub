@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../shared/widgets/app_button.dart';
 import '../themes/theme.dart';

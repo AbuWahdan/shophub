@@ -1,41 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
-import '../../design/app_spacing.dart';
+import '../../../controllers/password_controller.dart';
+import '../../../data/repositories/user_repository.dart';
+import '../../config/route.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
-import '../../services/auth_service.dart';
-import '../../shared/validation/auth_validators.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_snackbar.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../themes/theme.dart';
-import '../../config/route.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String username;
 
-  const ResetPasswordScreen({
-    required this.username,
-    super.key,
-  });
+  const ResetPasswordScreen({required this.username, super.key});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-  final _newPasswordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _obscureNewPassword = true;
-  bool _obscureConfirmPassword = true;
-  bool _isLoading = false;
-  final _authService = AuthService();
+  late final String _controllerTag;
+  late final PasswordController _passwordController;
+
+  @override
+  void initState() {
+    super.initState();
+    _controllerTag = 'reset-password-${identityHashCode(this)}';
+    _passwordController = Get.put(
+      PasswordController(Get.find<UserRepository>()),
+      tag: _controllerTag,
+    );
+  }
 
   @override
   void dispose() {
-    _newPasswordController.dispose();
-    _confirmPasswordController.dispose();
+    if (Get.isRegistered<PasswordController>(tag: _controllerTag)) {
+      Get.delete<PasswordController>(tag: _controllerTag);
+    }
     super.dispose();
   }
 
@@ -44,89 +48,28 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
 
-    final newPassword = _newPasswordController.text.trim();
-
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      await _authService.resetPassword(
-        username: widget.username,
-        newPassword: newPassword,
-      );
-
-      if (!mounted) return;
-
-      // Show green success snackbar
-      AppSnackBar.show(
-        context,
-        message: 'Password updated successfully',
-        type: AppSnackBarType.success,
-      );
-
-      // Wait 1 second before navigating so user can see the snackbar
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (!mounted) return;
-
-      // Navigate to password updated screen without back button
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.passwordUpdated,
-        (route) => false,
-      );
-    } on AuthException catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      AppSnackBar.show(
-        context,
-        message: error.message,
-        type: AppSnackBarType.error,
-      );
-    } catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      AppSnackBar.show(
-        context,
-        message: 'Failed to reset password. Please try again.',
-        type: AppSnackBarType.error,
-      );
-    }
-  }
-
-  String? _validatePassword(String? value) {
-    return AuthValidators.password(
-      value,
-      emptyMessage: 'Password is required',
-      tooShortMessage: 'Password must be at least 8 characters',
-      minLength: 8,
+    final resetSucceeded = await _passwordController.resetPassword(
+      context: context,
+      username: widget.username,
     );
-  }
-
-  String? _validateConfirmPassword(String? value) {
-    final newPassword = _newPasswordController.text.trim();
-    final confirmPassword = value?.trim() ?? '';
-
-    if (confirmPassword.isEmpty) {
-      return 'Confirm password is required';
+    if (!resetSucceeded || !mounted) {
+      return;
     }
 
-    if (newPassword != confirmPassword) {
-      return 'Passwords do not match';
+    AppSnackBar.show(
+      context,
+      message: context.l10n.passwordUpdateSuccess,
+      type: AppSnackBarType.success,
+    );
+    await Future.delayed(const Duration(seconds: 1));
+    if (!mounted) {
+      return;
     }
-
-    return null;
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.passwordUpdated,
+      (route) => false,
+    );
   }
 
   @override
@@ -145,77 +88,78 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             padding: AppTheme.padding,
             child: Form(
               key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: AppSpacing.xl),
-                  Text(
-                    l10n.resetPasswordSubtitle,
-                    style: AppTextStyles.bodyMedium,
-                  ),
-                  const SizedBox(height: AppSpacing.xxxl),
-                  AppTextField(
-                    controller: _newPasswordController,
-                    label: l10n.resetPasswordNewLabel,
-                    hintText: 'Enter new password',
-                    obscureText: _obscureNewPassword,
-                    prefixIcon: const Icon(Icons.lock_outlined),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureNewPassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
+              child: Obx(
+                () => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: AppSpacing.xl),
+                    Text(
+                      l10n.resetPasswordSubtitle,
+                      style: AppTextStyles.bodyMedium,
+                    ),
+                    const SizedBox(height: AppSpacing.xxxl),
+                    AppTextField(
+                      controller: _passwordController.newPasswordController,
+                      label: l10n.resetPasswordNewLabel,
+                      hintText: l10n.resetPasswordNewHint,
+                      obscureText:
+                          _passwordController.isNewPasswordHidden.value,
+                      prefixIcon: const Icon(Icons.lock_outlined),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _passwordController.isNewPasswordHidden.value
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed:
+                            _passwordController.toggleNewPasswordVisibility,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureNewPassword = !_obscureNewPassword;
-                        });
-                      },
+                      validator: (value) => _passwordController
+                          .validateResetPassword(context, value),
+                      textInputAction: TextInputAction.next,
                     ),
-                    validator: _validatePassword,
-                    textInputAction: TextInputAction.next,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  AppTextField(
-                    controller: _confirmPasswordController,
-                    label: l10n.resetPasswordConfirmLabel,
-                    hintText: 'Confirm new password',
-                    obscureText: _obscureConfirmPassword,
-                    prefixIcon: const Icon(Icons.lock_outlined),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConfirmPassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
+                    const SizedBox(height: AppSpacing.lg),
+                    AppTextField(
+                      controller: _passwordController.confirmPasswordController,
+                      label: l10n.resetPasswordConfirmLabel,
+                      hintText: l10n.resetPasswordConfirmHint,
+                      obscureText:
+                          _passwordController.isConfirmPasswordHidden.value,
+                      prefixIcon: const Icon(Icons.lock_outlined),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _passwordController.isConfirmPasswordHidden.value
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed:
+                            _passwordController.toggleConfirmPasswordVisibility,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _obscureConfirmPassword =
-                              !_obscureConfirmPassword;
-                        });
-                      },
+                      validator: (value) => _passwordController
+                          .validateConfirmPassword(context, value),
+                      textInputAction: TextInputAction.done,
                     ),
-                    validator: _validateConfirmPassword,
-                    textInputAction: TextInputAction.done,
-                  ),
-                  const SizedBox(height: AppSpacing.xxl),
-                  SizedBox(
-                    width: double.infinity,
-                    child: AppButton(
-                      label: l10n.resetPasswordUpdateButton,
-                      onPressed: _isLoading ? null : _handleResetPassword,
-                      leading: _isLoading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : null,
+                    const SizedBox(height: AppSpacing.xxl),
+                    SizedBox(
+                      width: double.infinity,
+                      child: AppButton(
+                        label: l10n.resetPasswordUpdateButton,
+                        onPressed: _passwordController.isSubmitting.value
+                            ? null
+                            : _handleResetPassword,
+                        leading: _passwordController.isSubmitting.value
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : null,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

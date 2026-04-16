@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../design/app_colors.dart';
 import '../design/app_text_styles.dart';
 
 class CheckoutPage extends StatelessWidget {

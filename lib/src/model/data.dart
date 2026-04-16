@@ -275,7 +275,6 @@ class AppData {
       _cartItems[existingIndex] = existing.copyWith(
         itemQty: existing.itemQty + quantity,
         availableQty: product.quantity,
-        product: product,
       );
       _syncCartCount();
       return;
@@ -298,7 +297,6 @@ class AppData {
         itemSize: normalizedSize,
         brand: matchingVariant?.brand ??
             (product.details.isNotEmpty ? product.details.first.brand : ''),
-        product: product,
       ),
     );
     _syncCartCount();

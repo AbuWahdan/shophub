@@ -9,6 +9,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get productUpdateAction => 'Update action';
+
+  @override
   String get appTitle => 'ShopHub';
 
   @override
@@ -264,10 +267,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetPasswordNewLabel => 'New Password';
 
   @override
+  String get resetPasswordNewHint => 'Enter new password';
+
+  @override
   String get resetPasswordConfirmLabel => 'Confirm Password';
 
   @override
+  String get resetPasswordConfirmHint => 'Confirm new password';
+
+  @override
   String get resetPasswordUpdateButton => 'Update Password';
+
+  @override
+  String get resetPasswordFailed =>
+      'Failed to reset password. Please try again.';
+
+  @override
+  String get passwordUpdateSuccess => 'Password updated successfully';
+
+  @override
+  String get changePasswordTitle => 'Change Password';
+
+  @override
+  String get changePasswordCurrentLabel => 'Current Password';
+
+  @override
+  String get changePasswordCurrentHint => 'Enter current password';
+
+  @override
+  String get changePasswordNewHint => 'Enter new password';
+
+  @override
+  String get changePasswordConfirmLabel => 'Confirm New Password';
+
+  @override
+  String get changePasswordConfirmHint => 'Confirm new password';
+
+  @override
+  String get changePasswordCurrentRequired => 'Current password is required';
+
+  @override
+  String get settingsChangePassword => 'Change Password';
+
+  @override
+  String get settingsChangePasswordSubtitle => 'Update your account password';
+
+  @override
+  String get validationPasswordPolicy =>
+      'Password must be at least 8 characters and include 1 uppercase letter, 1 number, and 1 special character';
 
   @override
   String get passwordUpdatedTitle => 'Password Updated';
@@ -487,6 +534,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonDelete => 'Delete';
 
   @override
+  String get commonSelect => 'Select';
+
+  @override
   String get settingsAccountDeleted => 'Account deleted successfully';
 
   @override
@@ -658,6 +708,78 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get stockOut => 'Out of Stock';
+
+  @override
+  String get productBrand => 'Brand';
+
+  @override
+  String get productBrandHint => 'Enter brand';
+
+  @override
+  String get productSizeGroup => 'Size Group';
+
+  @override
+  String get productSizeGroupOptional => 'Optional';
+
+  @override
+  String get productSelectGroupFirst => 'Select group first';
+
+  @override
+  String get productSelectGroupOptional => 'Select group (optional)';
+
+  @override
+  String get productSelectSizeOptional => 'Select size (optional)';
+
+  @override
+  String get productDiscountLabel => 'Discount (%)';
+
+  @override
+  String get productDiscountHint => 'Optional, defaults to 0';
+
+  @override
+  String get productDiscountInvalidRange =>
+      'Discount must be between 0 and 100';
+
+  @override
+  String get productVariantRequired =>
+      'Please add at least one valid product variant.';
+
+  @override
+  String get colorPickerHexHint => 'RRGGBB';
+
+  @override
+  String get colorPickerInvalidHex => 'Enter a valid 6-digit hex color';
+
+  @override
+  String get itemReviewYourReview => 'Your Review';
+
+  @override
+  String get itemReviewSubmitButton => 'Submit Review';
+
+  @override
+  String get itemReviewCommentLabel => 'Comment';
+
+  @override
+  String get itemReviewCommentHint => 'Share your experience with this item';
+
+  @override
+  String get itemReviewAlreadyRated => 'You have already rated this item.';
+
+  @override
+  String get itemReviewRatingRequired =>
+      'Please select a rating between 1 and 5.';
+
+  @override
+  String get itemReviewCommentRequired => 'Please enter a comment.';
+
+  @override
+  String get itemReviewSubmittedSuccess => 'Review submitted successfully.';
+
+  @override
+  String get itemReviewLoginRequired => 'Please sign in to review this item.';
+
+  @override
+  String get itemReviewLoadFailed => 'Unable to load reviews right now.';
 
   @override
   String get orderSuccessTitle => 'Order Confirmed';

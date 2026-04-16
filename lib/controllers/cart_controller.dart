@@ -5,60 +5,123 @@ import '../src/model/cart_api.dart';
 
 class CartController extends GetxController {
   final CartRepository _repo;
-
   CartController(this._repo);
 
-  final items = <ApiCartItem>[].obs;
-  final isLoading = false.obs;
+  // ── State ────────────────────────────────────────────────────────────────
+  final RxList<ApiCartItem> items = <ApiCartItem>[].obs;
+  final RxBool isLoading = false.obs;
 
-  // Per-item loading: key = cart line id when available, else item detail id.
-  final itemLoading = <int, bool>{}.obs;
+  /// Per-item loading state.
+  /// Key is always [itemKey] — one single source of truth.
+  final RxMap<int, bool> itemLoading = <int, bool>{}.obs;
 
-  int _itemKey(ApiCartItem item) =>
-      item.cartItemId > 0
-          ? item.cartItemId
-          : (item.detailId > 0 ? item.detailId : item.itemDetId);
+  // ── Key Resolution ────────────────────────────────────────────────────────
+  /// THE single source of truth for identifying a cart row.
+  /// Public so the view uses the exact same logic — no duplication.
+  ///
+  /// Priority: detailId (cart line PK) → cartItemId → itemDetId (last resort)
+  int itemKey(ApiCartItem item) {
+    if (item.detailId > 0) return item.detailId;
+    return item.itemDetId;
+  }
 
-  /// Load cart for a user
+  // ── Load ──────────────────────────────────────────────────────────────────
   Future<void> loadCart({required String username}) async {
     isLoading.value = true;
-
     try {
-      if (kDebugMode) {
-        debugPrint('[CartController] Loading cart for $username');
-      }
+      final fetched = await _repo.getCart(username: username);
 
-      final cartItems = await _repo.getCart(username: username);
-      items.assignAll(cartItems);
+      // Clamp qty to available stock in case stock dropped since last session
+      final clamped = fetched.map((item) {
+        if (item.availableQty > 0 && item.itemQty > item.availableQty) {
+          debugPrint(
+            '[CartController] Clamping ${item.itemName}: '
+                '${item.itemQty} → ${item.availableQty}',
+          );
+          return item.copyWith(itemQty: item.availableQty);
+        }
+        return item;
+      }).toList();
 
-      if (kDebugMode) {
-        debugPrint(
-          '[CartController] Cart loaded with ${cartItems.length} items',
-        );
-      }
+      items.assignAll(clamped);
     } on Exception catch (e) {
-      if (kDebugMode) {
-        debugPrint('[CartController] Error loading cart: $e');
-      }
+      debugPrint('[CartController] loadCart error: $e');
       Get.snackbar('Error', 'Failed to load cart: $e');
     } finally {
       isLoading.value = false;
     }
   }
 
-  /// Increment item quantity (optimistic update)
+  // ── Remove ────────────────────────────────────────────────────────────────
+  Future<bool> removeItem({
+    required ApiCartItem item,
+    required String username,
+  }) async {
+    // itemKey() and deleteId are now the SAME value — no priority mismatch
+    final key = itemKey(item);
+
+    if (key <= 0) {
+      debugPrint(
+        '[CartController] removeItem BLOCKED — no valid ID. '
+            'itemDetId=${item.itemDetId}',
+      );
+      Get.snackbar(
+        'Error',
+        'Cannot delete: cart row ID not found. '
+            'Check that the API returns detail_id.',
+        snackPosition: SnackPosition.TOP,
+      );
+      return false;
+    }
+
+    // Guard against double-tap
+    if (itemLoading[key] == true) return false;
+    itemLoading[key] = true;
+
+    try {
+      await _repo.deleteFromCart(detailId: key, modifiedBy: username);
+
+      // removeWhere uses the same key — guaranteed to find the right row
+      items.removeWhere((i) => itemKey(i) == key);
+      return true;
+    } on Exception catch (e) {
+      debugPrint('[CartController] removeItem error: $e');
+      Get.snackbar('Error', 'Server failed to delete item: $e');
+      return false;
+    } finally {
+      itemLoading.remove(key);
+    }
+  }
+
+  // ── Increment ─────────────────────────────────────────────────────────────
   Future<void> incrementItem({
     required ApiCartItem item,
     required String username,
   }) async {
-    // Optimistic update
-    itemLoading[_itemKey(item)] = true;
-    final idx = items.indexWhere((i) => i.itemDetId == item.itemDetId);
-    final oldQty = idx != -1 ? items[idx].itemQty : 0;
+    final key = itemKey(item);
+    if (itemLoading[key] == true) return;
 
-    if (idx != -1) {
-      items[idx] = items[idx].copyWith(itemQty: items[idx].itemQty + 1);
+    // Find index by itemKey — not by itemDetId — to handle duplicate variants
+    final idx = items.indexWhere((i) => itemKey(i) == key);
+    if (idx == -1) return;
+
+    final current = items[idx];
+    final stock = current.availableQty > 0 ? current.availableQty : current.itemQty;
+
+    if (current.itemQty >= stock) {
+      Get.snackbar(
+        'Out of Stock',
+        'Only $stock unit(s) available for ${current.itemName}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
     }
+
+    itemLoading[key] = true;
+
+    // Optimistic update
+    final oldQty = current.itemQty;
+    items[idx] = current.copyWith(itemQty: oldQty + 1);
 
     try {
       await _repo.addToCart(
@@ -69,45 +132,40 @@ class CartController extends GetxController {
           itemQty: 1,
         ),
       );
-
-      if (kDebugMode) {
-        debugPrint('[CartController] Item incremented successfully');
-      }
-    } catch (e) {
-      // Revert optimistic update
-      if (idx != -1) {
-        items[idx] = items[idx].copyWith(itemQty: oldQty);
-      }
-      if (kDebugMode) {
-        debugPrint('[CartController] Error incrementing item: $e');
-      }
-      Get.snackbar('Error', 'Failed to update item: $e');
+    } on Exception catch (e) {
+      // Revert on failure
+      items[idx] = items[idx].copyWith(itemQty: oldQty);
+      debugPrint('[CartController] incrementItem error: $e');
+      Get.snackbar('Error', 'Failed to update quantity: $e');
       rethrow;
     } finally {
-      itemLoading[_itemKey(item)] = false;
+      itemLoading.remove(key);
     }
   }
 
-  /// Decrement item quantity (optimistic update)
-  /// If quantity would reach 0, delete the item from cart instead
+  // ── Decrement ─────────────────────────────────────────────────────────────
   Future<void> decrementItem({
     required ApiCartItem item,
     required String username,
   }) async {
-    // If quantity is 1, delete the item completely
+    // If qty is 1, decrementing means delete the row entirely
     if (item.itemQty <= 1) {
       await removeItem(item: item, username: username);
       return;
     }
 
-    // Optimistic update
-    itemLoading[_itemKey(item)] = true;
-    final idx = items.indexWhere((i) => i.itemDetId == item.itemDetId);
-    final oldQty = idx != -1 ? items[idx].itemQty : 0;
+    final key = itemKey(item);
+    if (itemLoading[key] == true) return;
 
-    if (idx != -1) {
-      items[idx] = items[idx].copyWith(itemQty: items[idx].itemQty - 1);
-    }
+    // Find index by itemKey — consistent with increment
+    final idx = items.indexWhere((i) => itemKey(i) == key);
+    if (idx == -1) return;
+
+    itemLoading[key] = true;
+
+    // Optimistic update
+    final oldQty = items[idx].itemQty;
+    items[idx] = items[idx].copyWith(itemQty: oldQty - 1);
 
     try {
       await _repo.addToCart(
@@ -115,69 +173,17 @@ class CartController extends GetxController {
           itemId: item.itemId,
           itemDetId: item.itemDetId,
           username: username,
-          itemQty: -1, // Decrease by 1 (or API interprets as reduce)
+          itemQty: -1,
         ),
       );
-
-      if (kDebugMode) {
-        debugPrint('[CartController] Item decremented successfully');
-      }
-    } catch (e) {
-      // Revert optimistic update
-      if (idx != -1) {
-        items[idx] = items[idx].copyWith(itemQty: oldQty);
-      }
-      if (kDebugMode) {
-        debugPrint('[CartController] Error decrementing item: $e');
-      }
-      Get.snackbar('Error', 'Failed to update item: $e');
+    } on Exception catch (e) {
+      // Revert on failure
+      items[idx] = items[idx].copyWith(itemQty: oldQty);
+      debugPrint('[CartController] decrementItem error: $e');
+      Get.snackbar('Error', 'Failed to update quantity: $e');
       rethrow;
     } finally {
-      itemLoading[_itemKey(item)] = false;
+      itemLoading.remove(key);
     }
-  }
-
-  /// Remove item from cart with confirmation
-  Future<void> removeItem({
-    required ApiCartItem item,
-    required String username,
-  }) async {
-    itemLoading[_itemKey(item)] = true;
-
-    if (item.detailId <= 0) {
-      itemLoading[_itemKey(item)] = false;
-      Get.snackbar('Error', 'Could not remove item. Please try again.');
-      return;
-    }
-
-    try {
-      await _repo.deleteFromCart(
-        detailId: item.detailId,
-        modifiedBy: username,
-      );
-
-      items.removeWhere(
-        (i) =>
-            i.detailId == item.detailId ||
-            (i.itemDetId == item.itemDetId && i.itemId == item.itemId),
-      );
-
-      if (kDebugMode) {
-        debugPrint('[CartController] Item removed from cart');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[CartController] Error removing item: $e');
-      }
-      Get.snackbar('Error', 'Failed to remove item: $e');
-      rethrow;
-    } finally {
-      itemLoading[_itemKey(item)] = false;
-    }
-  }
-
-  /// Clear error state
-  void clearError() {
-    itemLoading.clear();
   }
 }

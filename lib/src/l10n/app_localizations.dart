@@ -94,6 +94,12 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[Locale('en')];
 
+  /// No description provided for @productUpdateAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Update action'**
+  String get productUpdateAction;
+
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
@@ -592,17 +598,101 @@ abstract class AppLocalizations {
   /// **'New Password'**
   String get resetPasswordNewLabel;
 
+  /// No description provided for @resetPasswordNewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter new password'**
+  String get resetPasswordNewHint;
+
   /// No description provided for @resetPasswordConfirmLabel.
   ///
   /// In en, this message translates to:
   /// **'Confirm Password'**
   String get resetPasswordConfirmLabel;
 
+  /// No description provided for @resetPasswordConfirmHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm new password'**
+  String get resetPasswordConfirmHint;
+
   /// No description provided for @resetPasswordUpdateButton.
   ///
   /// In en, this message translates to:
   /// **'Update Password'**
   String get resetPasswordUpdateButton;
+
+  /// No description provided for @resetPasswordFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to reset password. Please try again.'**
+  String get resetPasswordFailed;
+
+  /// No description provided for @passwordUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password updated successfully'**
+  String get passwordUpdateSuccess;
+
+  /// No description provided for @changePasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Password'**
+  String get changePasswordTitle;
+
+  /// No description provided for @changePasswordCurrentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Password'**
+  String get changePasswordCurrentLabel;
+
+  /// No description provided for @changePasswordCurrentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter current password'**
+  String get changePasswordCurrentHint;
+
+  /// No description provided for @changePasswordNewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter new password'**
+  String get changePasswordNewHint;
+
+  /// No description provided for @changePasswordConfirmLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm New Password'**
+  String get changePasswordConfirmLabel;
+
+  /// No description provided for @changePasswordConfirmHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm new password'**
+  String get changePasswordConfirmHint;
+
+  /// No description provided for @changePasswordCurrentRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password is required'**
+  String get changePasswordCurrentRequired;
+
+  /// No description provided for @settingsChangePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Password'**
+  String get settingsChangePassword;
+
+  /// No description provided for @settingsChangePasswordSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your account password'**
+  String get settingsChangePasswordSubtitle;
+
+  /// No description provided for @validationPasswordPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 8 characters and include 1 uppercase letter, 1 number, and 1 special character'**
+  String get validationPasswordPolicy;
 
   /// No description provided for @passwordUpdatedTitle.
   ///
@@ -1024,6 +1114,12 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get commonDelete;
 
+  /// No description provided for @commonSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get commonSelect;
+
   /// No description provided for @settingsAccountDeleted.
   ///
   /// In en, this message translates to:
@@ -1365,6 +1461,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Out of Stock'**
   String get stockOut;
+
+  /// No description provided for @productBrand.
+  ///
+  /// In en, this message translates to:
+  /// **'Brand'**
+  String get productBrand;
+
+  /// No description provided for @productBrandHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter brand'**
+  String get productBrandHint;
+
+  /// No description provided for @productSizeGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Size Group'**
+  String get productSizeGroup;
+
+  /// No description provided for @productSizeGroupOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get productSizeGroupOptional;
+
+  /// No description provided for @productSelectGroupFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Select group first'**
+  String get productSelectGroupFirst;
+
+  /// No description provided for @productSelectGroupOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Select group (optional)'**
+  String get productSelectGroupOptional;
+
+  /// No description provided for @productSelectSizeOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Select size (optional)'**
+  String get productSelectSizeOptional;
+
+  /// No description provided for @productDiscountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount (%)'**
+  String get productDiscountLabel;
+
+  /// No description provided for @productDiscountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional, defaults to 0'**
+  String get productDiscountHint;
+
+  /// No description provided for @productDiscountInvalidRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount must be between 0 and 100'**
+  String get productDiscountInvalidRange;
+
+  /// No description provided for @productVariantRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please add at least one valid product variant.'**
+  String get productVariantRequired;
+
+  /// No description provided for @colorPickerHexHint.
+  ///
+  /// In en, this message translates to:
+  /// **'RRGGBB'**
+  String get colorPickerHexHint;
+
+  /// No description provided for @colorPickerInvalidHex.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid 6-digit hex color'**
+  String get colorPickerInvalidHex;
+
+  /// No description provided for @itemReviewYourReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Review'**
+  String get itemReviewYourReview;
+
+  /// No description provided for @itemReviewSubmitButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Review'**
+  String get itemReviewSubmitButton;
+
+  /// No description provided for @itemReviewCommentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment'**
+  String get itemReviewCommentLabel;
+
+  /// No description provided for @itemReviewCommentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your experience with this item'**
+  String get itemReviewCommentHint;
+
+  /// No description provided for @itemReviewAlreadyRated.
+  ///
+  /// In en, this message translates to:
+  /// **'You have already rated this item.'**
+  String get itemReviewAlreadyRated;
+
+  /// No description provided for @itemReviewRatingRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a rating between 1 and 5.'**
+  String get itemReviewRatingRequired;
+
+  /// No description provided for @itemReviewCommentRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a comment.'**
+  String get itemReviewCommentRequired;
+
+  /// No description provided for @itemReviewSubmittedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Review submitted successfully.'**
+  String get itemReviewSubmittedSuccess;
+
+  /// No description provided for @itemReviewLoginRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in to review this item.'**
+  String get itemReviewLoginRequired;
+
+  /// No description provided for @itemReviewLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load reviews right now.'**
+  String get itemReviewLoadFailed;
 
   /// No description provided for @orderSuccessTitle.
   ///

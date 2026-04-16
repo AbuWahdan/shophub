@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../model/user.dart';
+import '../model/forget_password_request.dart';
 import 'api_client.dart';
 import 'storage_service.dart';
 
@@ -456,9 +457,11 @@ class AuthService {
   Future<void> resetPassword({
     required String username,
     required String newPassword,
+    String? oldPassword,
   }) async {
     final usernameValue = username.trim();
     final passwordValue = newPassword.trim();
+    final oldPasswordValue = oldPassword?.trim();
 
     if (usernameValue.isEmpty) {
       throw AuthException('Username is required.');
@@ -472,12 +475,13 @@ class AuthService {
     bool hadNetworkError = false;
 
     final endpoint = Uri.parse('$_baseUrl/ForgetPassword');
-    final payload = {
-      'username': usernameValue,
-      'password': passwordValue,
-      'USERNAME': usernameValue,
-      'PASSWORD': passwordValue,
-    };
+    final payload = ForgetPasswordRequest(
+      username: usernameValue,
+      newPassword: passwordValue,
+      oldPassword: oldPasswordValue != null && oldPasswordValue.isNotEmpty
+          ? oldPasswordValue
+          : null,
+    ).toJson();
 
     for (int attempt = 0; attempt < 2; attempt++) {
       try {

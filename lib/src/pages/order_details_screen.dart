@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/widgets/empty_state_widget.dart';
 import '../../data/repositories/order_repository.dart';
 import '../design/app_text_styles.dart';
 import '../model/order_detail_item_model.dart';
+import '../shared/widgets/item_review_section.dart';
+import '../state/auth_state.dart';
 import '../themes/theme.dart';
-import 'rate_item_screen.dart';
 
 class OrderDetailsScreen extends StatefulWidget {
   const OrderDetailsScreen({
@@ -42,6 +44,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUsername =
+        context.watch<AuthState>().user?.username.trim() ?? '';
+
     return Scaffold(
       appBar: AppBar(title: Text(widget.orderNo)),
       body: FutureBuilder<List<OrderDetailItemModel>>(
@@ -95,8 +100,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               padding: AppTheme.padding,
               itemCount: items.length,
               separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
-              itemBuilder: (context, index) =>
-                  _OrderDetailCard(item: items[index]),
+              itemBuilder: (context, index) => _OrderDetailCard(
+                item: items[index],
+                currentUsername: currentUsername,
+              ),
             ),
           );
         },
@@ -106,9 +113,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 }
 
 class _OrderDetailCard extends StatelessWidget {
-  const _OrderDetailCard({required this.item});
+  const _OrderDetailCard({required this.item, required this.currentUsername});
 
   final OrderDetailItemModel item;
+  final String currentUsername;
 
   @override
   Widget build(BuildContext context) {
@@ -179,25 +187,9 @@ class _OrderDetailCard extends StatelessWidget {
             ],
             if (isDelivered) ...[
               const SizedBox(height: AppSpacing.sm),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  icon: const Icon(Icons.star_outline, size: 16),
-                  label: const Text('Rate'),
-                  onPressed: () {
-                    Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => RateItemScreen(
-                          itemId: item.itemId,
-                          orderId: item.orderId,
-                          itemName: item.itemName,
-                          brand: item.brand,
-                        ),
-                      ),
-                    );
-                  },
-                ),
+              ItemReviewSection(
+                itemId: item.itemId,
+                currentUsername: currentUsername,
               ),
             ],
           ],

@@ -1,18 +1,18 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:get/get.dart'; // Add GetX
 
+import '../../controllers/cart_controller.dart';
 import '../config/app_constants.dart';
 import '../config/route.dart';
 import '../config/ui_text.dart';
 import '../design/app_text_styles.dart';
 import '../model/cart_api.dart';
 import '../l10n/l10n.dart';
-import '../model/data.dart';
 import '../model/product_api.dart';
 import '../pages/checkout_screen.dart';
 import '../pages/main_page.dart';
-import '../services/product_service.dart';
 import '../state/auth_state.dart';
 import '../shared/dialogs/app_dialogs.dart';
 import '../shared/widgets/app_button.dart';
@@ -22,6 +22,7 @@ import '../shared/widgets/app_snackbar.dart';
 import '../shared/widgets/quantity_stepper.dart';
 import '../themes/theme.dart';
 
+
 class ShoppingCartPage extends StatefulWidget {
   const ShoppingCartPage({super.key});
 
@@ -30,141 +31,44 @@ class ShoppingCartPage extends StatefulWidget {
 }
 
 class _ShoppingCartPageState extends State<ShoppingCartPage> {
-  final ProductService _productService = ProductService();
-  late List<ApiCartItem> cartItems;
-  bool _isLoading = false;
-  String? _errorMessage;
-  final Set<int> _itemsBeingUpdated = <int>{};
+  // 1. Inject the controller
+  final CartController cartController = Get.find<CartController>();
 
   @override
   void initState() {
     super.initState();
-    _initializeCart();
+    // Fetch data on load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadCartFromApi();
     });
   }
 
-  void _initializeCart() {
-    cartItems = List<ApiCartItem>.from(AppData.cartItems);
-    _isLoading = cartItems.isEmpty;
-  }
-
-  int _itemKey(ApiCartItem item) => item.cartItemId > 0
-      ? item.cartItemId
-      : (item.detailId > 0
-            ? item.detailId
-            : (item.itemDetId > 0 ? item.itemDetId : item.itemId));
-
-  bool _isSameCartItem(ApiCartItem left, ApiCartItem right) {
-    if (left.detailId > 0 && right.detailId > 0) {
-      return left.detailId == right.detailId;
-    }
-    return left.itemId == right.itemId &&
-        left.itemDetId == right.itemDetId &&
-        left.displaySize == right.displaySize &&
-        left.displayColor == right.displayColor;
-  }
-
-  void _removeItem(ApiCartItem targetItem) {
-    if (!mounted) return;
-    setState(() {
-      final updatedItems = targetItem.detailId > 0
-          ? cartItems
-                .where((item) => item.detailId != targetItem.detailId)
-                .toList()
-          : cartItems
-                .where((item) => !_isSameCartItem(item, targetItem))
-                .toList();
-      AppData.setCartItems(updatedItems);
-      cartItems = List<ApiCartItem>.from(AppData.cartItems);
-    });
-  }
-
-  Future<void> _updateQuantity(int index, int newQuantity) async {
-    if (!mounted) return;
-    final cartItem = cartItems[index];
-    final oldQuantity = cartItem.itemQty;
-    final itemKey = _itemKey(cartItem);
+  // Helper to fetch username safely
+  Future<String> _getUsername() async {
+    if (!mounted) return '';
     final authState = context.read<AuthState>();
     await authState.ensureInitialized();
-    if (!mounted) return;
-    final username = authState.user?.username.trim() ?? '';
+    return authState.user?.username.trim() ?? '';
+  }
 
-    if (username.isEmpty) {
-      AppSnackBar.show(
-        context,
-        message: context.l10n.productAccountUnavailable,
-        type: AppSnackBarType.error,
-      );
-      return;
-    }
-
-    if (newQuantity < 1) {
-      _showRemoveConfirmation(index);
-      return;
-    }
-
-    if (newQuantity == oldQuantity) return;
-
-    setState(() {
-      _itemsBeingUpdated.add(itemKey);
-    });
-
-    try {
-      await _productService.addItemToCart(
-        AddItemToCartRequest(
-          itemId: cartItem.product.id,
-          itemDetId: cartItem.itemDetId > 0
-              ? cartItem.itemDetId
-              : cartItem.product.detId,
-          username: username,
-          itemQty: newQuantity - oldQuantity,
-        ),
-      );
-
-      if (!mounted) return;
-
-      setState(() {
-        cartItems = List<ApiCartItem>.from(cartItems)
-          ..[index] = cartItems[index].copyWith(itemQty: newQuantity);
-        AppData.setCartItems(cartItems);
-        _itemsBeingUpdated.remove(itemKey);
-      });
-    } on ProductException catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        _itemsBeingUpdated.remove(itemKey);
-      });
-
-      AppSnackBar.show(
-        context,
-        message: error.message,
-        type: AppSnackBarType.error,
-      );
-    } catch (error) {
-      if (!mounted) return;
-
-      setState(() {
-        _itemsBeingUpdated.remove(itemKey);
-      });
-
-      AppSnackBar.show(
-        context,
-        message: 'Failed to update quantity. Please try again.',
-        type: AppSnackBarType.error,
-      );
+  Future<void> _loadCartFromApi() async {
+    final username = await _getUsername();
+    if (username.isNotEmpty) {
+      await cartController.loadCart(username: username);
     }
   }
 
+  // Helper matching the controller's logic to check loading states
+  // int _itemKey(ApiCartItem item) => item.cartItemId > 0
+  //     ? item.cartItemId
+  //     : (item.detailId > 0 ? item.detailId : item.itemDetId);
+
   void _openProductDetails(ApiCartItem cartItem) {
-    final product = cartItem.product;
     Navigator.pushNamed(
       context,
       AppRoutes.productDetails,
       arguments: {
-        'product': product,
+        'product': cartItem.product,
         'selectedSize': cartItem.displaySize,
         'selectedColor': cartItem.displayColor,
         'selectedDetId': cartItem.itemDetId,
@@ -172,11 +76,12 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     );
   }
 
+  // 2. Computed property directly from the reactive list
   double get totalPrice {
-    return cartItems.fold(0, (sum, item) => sum + item.total);
+    return cartController.items.fold(0, (sum, item) => sum + item.total);
   }
 
-  void _showRemoveConfirmation(int index) {
+  void _showRemoveConfirmation(ApiCartItem cartItem) {
     final l10n = context.l10n;
     AppDialogs.showConfirmation(
       context: context,
@@ -185,150 +90,37 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
       confirmLabel: l10n.commonRemove,
       cancelLabel: l10n.commonCancel,
       onConfirm: () async {
-        final cartItem = cartItems[index];
-        final itemKey = _itemKey(cartItem);
-        final authState = context.read<AuthState>();
-        await authState.ensureInitialized();
-        if (!mounted) return;
-        final username = authState.user?.username.trim() ?? '';
-
+        final username = await _getUsername();
         if (username.isEmpty) {
-          AppSnackBar.show(
-            context,
-            message: context.l10n.productAccountUnavailable,
-            type: AppSnackBarType.error,
-          );
+          AppSnackBar.show(context, message: context.l10n.productAccountUnavailable, type: AppSnackBarType.error);
           return;
         }
 
-        setState(() {
-          _itemsBeingUpdated.add(itemKey);
-        });
+        // Await the boolean result from the controller
+        bool success = await cartController.removeItem(item: cartItem, username: username);
 
-        try {
-          final detailId = cartItem.detailId > 0
-              ? cartItem.detailId
-              : cartItem.itemDetId;
-          if (detailId <= 0) {
-            if (kDebugMode) {
-              debugPrint(
-                '[ShoppingCartPage] Missing cart detail id for productId=${cartItem.product.id} detId=${cartItem.itemDetId}',
-              );
-            }
-            if (!mounted) return;
-            setState(() {
-              _itemsBeingUpdated.remove(itemKey);
-            });
-            AppSnackBar.show(
-              context,
-              message: 'Could not remove item. Please try again.',
-              type: AppSnackBarType.error,
-            );
-            return;
-          }
-
-          await _productService.deleteItemFromCart(
-            detailId: detailId,
-            modifiedBy: username,
-          );
-
-          if (!mounted) return;
-
-          _removeItem(cartItem);
-          setState(() {
-            _itemsBeingUpdated.remove(itemKey);
-          });
-
+        if (mounted && success) {
           AppSnackBar.show(
             context,
             message: l10n.cartItemRemoved,
             type: AppSnackBarType.info,
-          );
-        } on ProductException catch (error) {
-          if (!mounted) return;
-
-          setState(() {
-            _itemsBeingUpdated.remove(itemKey);
-          });
-
-          AppSnackBar.show(
-            context,
-            message: error.message,
-            type: AppSnackBarType.error,
-          );
-        } catch (error) {
-          if (!mounted) return;
-
-          setState(() {
-            _itemsBeingUpdated.remove(itemKey);
-          });
-
-          AppSnackBar.show(
-            context,
-            message: 'Failed to remove item. Please try again.',
-            type: AppSnackBarType.error,
           );
         }
       },
     );
   }
 
-  Future<void> _refreshCart() async {
-    await _loadCartFromApi();
-  }
-
-  Future<void> _loadCartFromApi() async {
-    if (!mounted) return;
-    final authState = context.read<AuthState>();
-    await authState.ensureInitialized();
-    if (!mounted) return;
-    final username = authState.user?.username.trim() ?? '';
-    if (username.isEmpty) {
-      setState(() {
-        _errorMessage = null;
-        _isLoading = false;
-        AppData.setCartItems(const []);
-        cartItems = List<ApiCartItem>.from(AppData.cartItems);
-      });
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final apiItems = await _productService.getItemCart(username: username);
-      if (!mounted) return;
-      setState(() {
-        AppData.setCartItems(apiItems);
-        cartItems = List<ApiCartItem>.from(AppData.cartItems);
-        _isLoading = false;
-      });
-    } on ProductException catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = error.message;
-        _isLoading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = 'Failed to load cart items.';
-        _isLoading = false;
-      });
-    }
-  }
-
-  Widget _buildCartItemCard(int index, ApiCartItem item) {
+  Widget _buildCartItemCard(ApiCartItem item) {
     ApiProduct product = item.product;
     int quantity = item.itemQty;
     double itemTotal = product.finalPrice * quantity;
     bool hasDiscount = product.discountPrice != null;
     final selectedSize = item.displaySize;
     final selectedColor = item.displayColor;
-    final isUpdating = _itemsBeingUpdated.contains(_itemKey(item));
+
+    // 4. Read per-item loading state from Controller
+    final isUpdating = cartController.itemLoading[cartController.itemKey(item)] == true;
+
     final availableStock = item.availableQty > 0
         ? item.availableQty
         : product.quantity;
@@ -348,7 +140,6 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Product Image
                   Container(
                     width: AppSpacing.imageMd,
                     height: AppSpacing.imageMd,
@@ -357,14 +148,11 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                       color: Theme.of(context).colorScheme.surface,
                     ),
                     child: AppImage(
-                      path: product.images.isNotEmpty
-                          ? product.images.first
-                          : '',
+                      path: product.images.isNotEmpty ? product.images.first : '',
                       fit: BoxFit.cover,
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),
-                  // Product Info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -376,7 +164,6 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                           style: AppTextStyles.titleMedium,
                         ),
                         const SizedBox(height: AppSpacing.xs),
-                        // Price Display
                         Wrap(
                           spacing: AppSpacing.sm,
                           runSpacing: AppSpacing.xs,
@@ -420,12 +207,11 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                       ],
                     ),
                   ),
-                  // Delete Button
                   IconButton(
                     icon: const Icon(Icons.close, size: AppSpacing.iconMd),
                     onPressed: isUpdating
                         ? null
-                        : () => _showRemoveConfirmation(index),
+                        : () => _showRemoveConfirmation(item),
                     color: Theme.of(context).colorScheme.onSurface,
                     constraints: const BoxConstraints(),
                     padding: EdgeInsets.zero,
@@ -433,7 +219,6 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                 ],
               ),
               const Divider(height: AppSpacing.lg),
-              // Quantity Selector
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -452,18 +237,28 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                   else
                     QuantityStepper(
                       value: quantity,
-                      decrementIcon: quantity == 1
+                      decrementIcon: quantity <= 1
                           ? Icons.delete_outline
                           : Icons.remove,
-                      onDecrement: () => _updateQuantity(index, quantity - 1),
+                      // 5. Delegate quantity logic directly to controller
+                      onDecrement: () async {
+                        final username = await _getUsername();
+                        if (username.isNotEmpty) {
+                          cartController.decrementItem(item: item, username: username);
+                        }
+                      },
                       onIncrement: quantity < AppConstants.checkoutMaxQuantity
-                          ? () => _updateQuantity(index, quantity + 1)
+                          ? () async {
+                        final username = await _getUsername();
+                        if (username.isNotEmpty) {
+                          cartController.incrementItem(item: item, username: username);
+                        }
+                      }
                           : null,
                     ),
                 ],
               ),
               const Divider(height: AppSpacing.lg),
-              // Item Total
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -496,13 +291,12 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
             context,
             AppConstants.homeTabIndex,
           );
-          if (switched) {
-            return;
-          }
+          if (switched) return;
+
           Navigator.pushNamedAndRemoveUntil(
             context,
             AppRoutes.main,
-            (route) => false,
+                (route) => false,
             arguments: {'initialTabIndex': AppConstants.homeTabIndex},
           );
         },
@@ -512,157 +306,130 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     );
   }
 
-  Widget _cartItems() {
-    if (_isLoading) {
-      return const Padding(
-        padding: EdgeInsets.only(top: AppSpacing.xl),
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (_errorMessage != null && _errorMessage!.trim().isNotEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: AppSpacing.iconXl),
-            const SizedBox(height: AppSpacing.md),
-            Text(_errorMessage!, textAlign: TextAlign.center),
-            const SizedBox(height: AppSpacing.md),
-            AppButton(
-              label: context.l10n.retry,
-              onPressed: _loadCartFromApi,
-              fullWidth: false,
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (cartItems.isEmpty) {
-      return _buildEmptyCart();
-    }
-
-    return Column(
-      children: cartItems.asMap().entries.map((entry) {
-        return _buildCartItemCard(entry.key, entry.value);
-      }).toList(),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final showSummary =
-        !_isLoading &&
-        (_errorMessage == null || _errorMessage!.trim().isEmpty) &&
-        cartItems.isNotEmpty;
-
-    final scrollBody = LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: Padding(
-            padding: AppTheme.padding,
-            child: Column(
-              children: [
-                _cartItems(),
-                if (showSummary) const SizedBox(height: AppSpacing.hero),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
+    // 6. Wrap the dynamic parts of the UI in Obx
     return Scaffold(
       appBar: AppBar(
         title: Text(context.l10n.cartTitle),
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
-      body: RefreshIndicator(onRefresh: _refreshCart, child: scrollBody),
-      bottomNavigationBar: showSummary
-          ? SafeArea(
-              child: Container(
-                padding: AppTheme.padding,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  border: Border(
-                    top: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: AppSpacing.borderThin,
-                    ),
+      body: Obx(() {
+        if (cartController.isLoading.value && cartController.items.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.only(top: AppSpacing.xl),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (cartController.items.isEmpty) {
+          return _buildEmptyCart();
+        }
+
+        return RefreshIndicator(
+          onRefresh: _loadCartFromApi,
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Padding(
+                  padding: AppTheme.padding,
+                  child: Column(
+                    children: [
+                      ...cartController.items.map((item) => _buildCartItemCard(item)),
+                      const SizedBox(height: AppSpacing.hero),
+                    ],
                   ),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+              ),
+            ),
+          ),
+        );
+      }),
+      // Bottom Navigation Bar is also wrapped in Obx because total price and visibility change
+      bottomNavigationBar: Obx(() {
+        if (cartController.items.isEmpty || cartController.isLoading.value) {
+          return const SizedBox.shrink();
+        }
+
+        return SafeArea(
+          child: Container(
+            padding: AppTheme.padding,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              border: Border(
+                top: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                  width: AppSpacing.borderThin,
+                ),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
                   children: [
-                    Row(
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '\$${totalPrice.toStringAsFixed(2)}',
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                            Text(
-                              '${context.l10n.cartShipping}: ${context.l10n.cartShippingFree}',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.tertiary,
-                                  ),
-                            ),
-                          ],
+                        Text(
+                          '\$${totalPrice.toStringAsFixed(2)}',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: SizedBox(
-                            height: AppSpacing.buttonMd,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: AppColors.textOnPrimary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    AppSpacing.radiusLg,
-                                  ),
-                                ),
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        CheckoutScreen(cartItems: cartItems),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                context.l10n.cartCheckout,
-                                style: Theme.of(context).textTheme.labelLarge
-                                    ?.copyWith(color: AppColors.textOnPrimary),
-                              ),
-                            ),
+                        Text(
+                          '${context.l10n.cartShipping}: ${context.l10n.cartShippingFree}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.tertiary,
                           ),
                         ),
                       ],
                     ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: SizedBox(
+                        height: AppSpacing.buttonMd,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.textOnPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => CheckoutScreen(
+                                  // Pass the items directly from the controller
+                                  cartItems: cartController.items.toList(),
+                                ),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            context.l10n.cartCheckout,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(color: AppColors.textOnPrimary),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            )
-          : null,
+              ],
+            ),
+          ),
+        );
+      }),
     );
   }
 }

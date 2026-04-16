@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/src/config/route.dart';
 
-import '../design/app_colors.dart';
-import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';

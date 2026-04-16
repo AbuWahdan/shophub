@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../data/repositories/visual_search_repository.dart';
-import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import 'visual_search_results_screen.dart';
 
