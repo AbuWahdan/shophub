@@ -19,11 +19,12 @@ import 'package:sinwar_shoping/src/pages/orders_page.dart';
 import 'package:sinwar_shoping/src/pages/products/insert_product_page.dart';
 import 'package:sinwar_shoping/src/pages/product_comments_page.dart';
 import 'package:sinwar_shoping/src/pages/product_details_new.dart';
+import 'package:sinwar_shoping/src/pages/profile/change_password_screen.dart';
 import 'package:sinwar_shoping/src/pages/profile_settings_page.dart';
 import 'package:sinwar_shoping/src/pages/search_filter_page.dart';
 import 'package:sinwar_shoping/src/pages/splash_screen.dart';
 import 'package:sinwar_shoping/src/pages/edit_profile_screen.dart';
-import 'package:sinwar_shoping/src/pages/wishlist_page.dart';
+import 'package:sinwar_shoping/src/pages/wishlist/wishlist_page.dart';
 import 'package:sinwar_shoping/src/pages/rate_product_screen.dart';
 import 'package:sinwar_shoping/src/model/product_api.dart';
 import '../l10n/app_localizations.dart';
@@ -47,6 +48,7 @@ class AppRoutes {
   static const String productDetails = '/product-details';
   static const String settings = '/settings';
   static const String editProfile = '/edit-profile';
+  static const String changePassword = '/change-password';
   static const String privacy = '/privacy';
   static const String terms = '/terms';
   static const String help = '/help';
@@ -203,6 +205,12 @@ class AppRoutes {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const EditProfileScreen(),
+        );
+
+      case changePassword:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const ChangePasswordScreen(),
         );
 
       case privacy:

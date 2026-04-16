@@ -26,7 +26,12 @@ class CartRepository {
         queryParams: {'USERNAME': normalizedUsername},
         isReadOperation: true,
       );
-
+      if (kDebugMode) {
+        for (final row in ApexResponseHelper.extractData(response, 'GetItemCart')) {
+          debugPrint('>>> CART ROW KEYS: ${(row as Map).keys.toList()}');
+          debugPrint('>>> CART ROW VALUES: $row');
+        }
+      }
       final cartItems = _parseCartItems(
         ApexResponseHelper.extractData(response, 'GetItemCart'),
       );
@@ -90,13 +95,12 @@ class CartRepository {
         );
       }
 
-      final response = await _apiService.post(
+      // 👈 THE FIX: Just await the post call. No need to assign to 'final response'
+      await _apiService.post(
         ApiConstants.deleteItemCart,
         body: {'detail_id': detailId, 'modified_by': normalizedModifiedBy},
         isReadOperation: false,
       );
-
-      ApexResponseHelper.unwrapResponse(response, 'DeleteItemCart');
 
       if (kDebugMode) {
         debugPrint('[CartRepository] Item deleted from cart successfully');
@@ -108,7 +112,6 @@ class CartRepository {
       rethrow;
     }
   }
-
   // ═══════════════════════════════════════════════════════════════════════════
   // Private parsing methods
   // ═══════════════════════════════════════════════════════════════════════════

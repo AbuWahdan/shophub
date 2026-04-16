@@ -6,7 +6,7 @@ import '../../core/widgets/empty_state_widget.dart';
 import '../../data/repositories/comment_repository.dart';
 import '../config/ui_text.dart';
 import '../design/app_text_styles.dart';
-import '../model/comment_model.dart';
+import '../model/api_item_comment.dart';
 import '../themes/theme.dart';
 
 class ProductCommentsPage extends StatefulWidget {
@@ -25,18 +25,22 @@ class ProductCommentsPage extends StatefulWidget {
 
 class _ProductCommentsPageState extends State<ProductCommentsPage> {
   late final CommentRepository _commentRepository;
-  late Future<List<CommentModel>> _commentsFuture;
+  late Future<List<ApiItemComment>> _commentsFuture;
 
   @override
   void initState() {
     super.initState();
     _commentRepository = Get.find<CommentRepository>();
-    _commentsFuture = _commentRepository.getItemComments(widget.productId);
+    _commentsFuture = _commentRepository.getItemComments(
+      itemId: widget.productId,
+    );
   }
 
   Future<void> _reload() async {
     setState(() {
-      _commentsFuture = _commentRepository.getItemComments(widget.productId);
+      _commentsFuture = _commentRepository.getItemComments(
+        itemId: widget.productId,
+      );
     });
     await _commentsFuture;
   }
@@ -47,7 +51,7 @@ class _ProductCommentsPageState extends State<ProductCommentsPage> {
       appBar: AppBar(
         title: Text('${UiText.commentsScreenTitlePrefix}${widget.productName}'),
       ),
-      body: FutureBuilder<List<CommentModel>>(
+      body: FutureBuilder<List<ApiItemComment>>(
         future: _commentsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -72,7 +76,7 @@ class _ProductCommentsPageState extends State<ProductCommentsPage> {
             );
           }
 
-          final comments = snapshot.data ?? const <CommentModel>[];
+          final comments = snapshot.data ?? const <ApiItemComment>[];
           if (comments.isEmpty) {
             return const EmptyStateWidget(
               icon: Icons.comment_outlined,
@@ -100,7 +104,7 @@ class _ProductCommentsPageState extends State<ProductCommentsPage> {
 }
 
 class _CommentCard extends StatelessWidget {
-  final CommentModel comment;
+  final ApiItemComment comment;
 
   const _CommentCard({required this.comment});
 
@@ -123,9 +127,9 @@ class _CommentCard extends StatelessWidget {
                   style: AppTextStyles.titleSmall,
                 ),
               ),
-              if (comment.createdAt != null)
+              if (comment.hasCreatedAt)
                 Text(
-                  DateFormat.yMMMd().format(comment.createdAt!),
+                  DateFormat.yMMMd().format(comment.createdAt.toLocal()),
                   style: AppTextStyles.bodySmall,
                 ),
             ],

@@ -32,6 +32,11 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
   String _selectedAddress = '';
   bool _isResolvingAddress = false;
   bool _isLoadingInitialLocation = true;
+  bool _isLocatingUser = false;
+
+  // True when GPS is unavailable and no initial coords were provided.
+  // Shows an informational message in the bottom card.
+  bool _gpsUnavailable = false;
 
   @override
   void initState() {
@@ -39,65 +44,100 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
     _resolveInitialLocation();
   }
 
+  // ── Initial location ───────────────────────────────────────────────────────
+
   Future<void> _resolveInitialLocation() async {
-    final initialLatitude = widget.initialLatitude;
-    final initialLongitude = widget.initialLongitude;
-
-    if (initialLatitude != null && initialLongitude != null) {
+    // 1. Caller passed explicit coords (editing an existing address)
+    final initialLat = widget.initialLatitude;
+    final initialLng = widget.initialLongitude;
+    if (initialLat != null && initialLng != null) {
       await _setSelection(
-        latitude: initialLatitude,
-        longitude: initialLongitude,
+        latitude: initialLat,
+        longitude: initialLng,
         reverseGeocode: true,
       );
       return;
     }
 
-    final currentPosition = await _resolveDevicePosition();
-    if (currentPosition != null) {
+    // 2. Try GPS
+    final position = await _resolveDevicePosition();
+    if (position != null) {
       await _setSelection(
-        latitude: currentPosition.latitude,
-        longitude: currentPosition.longitude,
+        latitude: position.latitude,
+        longitude: position.longitude,
         reverseGeocode: true,
       );
       return;
     }
 
-    await _setSelection(
-      latitude: MapboxConfig.fallbackLatitude,
-      longitude: MapboxConfig.fallbackLongitude,
-      reverseGeocode: true,
-    );
+    // 3. GPS truly unavailable — show world view + message, no silent fallback
+    if (!mounted) return;
+    setState(() {
+      _isLoadingInitialLocation = false;
+      _gpsUnavailable = true;
+    });
   }
 
   Future<geo.Position?> _resolveDevicePosition() async {
     try {
       final serviceEnabled = await geo.Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        return null;
-      }
+      if (!serviceEnabled) return null;
 
       var permission = await geo.Geolocator.checkPermission();
       if (permission == geo.LocationPermission.denied) {
         permission = await geo.Geolocator.requestPermission();
       }
-
       if (permission != geo.LocationPermission.always &&
           permission != geo.LocationPermission.whileInUse) {
         return null;
       }
 
-      try {
-        return await geo.Geolocator.getCurrentPosition(
-          desiredAccuracy: geo.LocationAccuracy.high,
-          timeLimit: const Duration(seconds: 12),
-        );
-      } catch (_) {
-        return await geo.Geolocator.getLastKnownPosition();
-      }
+      // Try last known first (instant) — better UX than waiting 12s on cold start
+      final last = await geo.Geolocator.getLastKnownPosition();
+      if (last != null) return last;
+
+      return await geo.Geolocator.getCurrentPosition(
+        desiredAccuracy: geo.LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 15),
+      );
     } catch (_) {
       return null;
     }
   }
+
+  // ── FAB: go to my location ─────────────────────────────────────────────────
+
+  Future<void> _goToMyLocation() async {
+    if (_isLocatingUser) return;
+    setState(() => _isLocatingUser = true);
+
+    try {
+      final position = await _resolveDevicePosition();
+      if (!mounted) return;
+
+      if (position == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Location unavailable. Please enable GPS in your device settings.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      setState(() => _gpsUnavailable = false);
+      await _setSelection(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        reverseGeocode: true,
+      );
+    } finally {
+      if (mounted) setState(() => _isLocatingUser = false);
+    }
+  }
+
+  // ── Selection & camera ─────────────────────────────────────────────────────
 
   Future<void> _setSelection({
     required double latitude,
@@ -114,11 +154,12 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
 
     final mapboxMap = _mapboxMap;
     if (mapboxMap != null) {
-      await mapboxMap.setCamera(
+      await mapboxMap.flyTo(
         CameraOptions(
           center: Point(coordinates: Position(longitude, latitude)),
           zoom: 15.5,
         ),
+        MapAnimationOptions(duration: 500),
       );
     }
 
@@ -132,7 +173,6 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
     required double longitude,
   }) async {
     if (!mounted) return;
-
     setState(() => _isResolvingAddress = true);
 
     final uri =
@@ -149,47 +189,34 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 12));
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw Exception('Mapbox geocoding failed.');
+        throw Exception('Geocoding failed');
       }
-
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final features = (data['features'] as List<dynamic>? ?? const []);
+      final features = data['features'] as List<dynamic>? ?? const [];
       final placeName = features.isNotEmpty
           ? (features.first as Map<String, dynamic>)['place_name']
                     ?.toString() ??
                 ''
           : '';
-
       if (!mounted) return;
-      setState(() {
-        _selectedAddress = placeName.trim();
-      });
+      setState(() => _selectedAddress = placeName.trim());
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _selectedAddress = '';
-      });
+      setState(() => _selectedAddress = '');
     } finally {
-      if (mounted) {
-        setState(() => _isResolvingAddress = false);
-      }
+      if (mounted) setState(() => _isResolvingAddress = false);
     }
   }
 
+  // ── Map callbacks ──────────────────────────────────────────────────────────
+
   Future<void> _handleMapCreated(MapboxMap mapboxMap) async {
     _mapboxMap = mapboxMap;
-
-    final latitude = _selectedLatitude;
-    final longitude = _selectedLongitude;
-    if (latitude == null || longitude == null) {
-      return;
-    }
-
+    final lat = _selectedLatitude;
+    final lng = _selectedLongitude;
+    if (lat == null || lng == null) return;
     await mapboxMap.setCamera(
-      CameraOptions(
-        center: Point(coordinates: Position(longitude, latitude)),
-        zoom: 15.5,
-      ),
+      CameraOptions(center: Point(coordinates: Position(lng, lat)), zoom: 15.5),
     );
   }
 
@@ -199,81 +226,115 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
 
     final cameraState = await mapboxMap.getCameraState();
     final center = cameraState.center.coordinates;
+    final lat = center.lat.toDouble();
+    final lng = center.lng.toDouble();
 
-    if (_selectedLatitude == center.lat && _selectedLongitude == center.lng) {
+    // Sub-pixel epsilon prevents infinite geocode loops from camera drift
+    if (_selectedLatitude != null &&
+        _selectedLongitude != null &&
+        (lat - _selectedLatitude!).abs() < 0.00001 &&
+        (lng - _selectedLongitude!).abs() < 0.00001) {
       return;
     }
 
-    await _setSelection(
-      latitude: center.lat.toDouble(),
-      longitude: center.lng.toDouble(),
-      reverseGeocode: true,
-    );
+    await _setSelection(latitude: lat, longitude: lng, reverseGeocode: true);
   }
 
+  // ── Confirm ────────────────────────────────────────────────────────────────
+
   void _confirmSelection() {
-    final latitude = _selectedLatitude;
-    final longitude = _selectedLongitude;
-    if (latitude == null || longitude == null) {
-      return;
-    }
+    final lat = _selectedLatitude;
+    final lng = _selectedLongitude;
+    if (lat == null || lng == null) return;
 
     Navigator.of(context).pop(
       MapPickerResult(
-        latitude: latitude,
-        longitude: longitude,
+        latitude: lat,
+        longitude: lng,
         address: _selectedAddress.trim(),
       ),
     );
   }
 
+  // ── Build ──────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    final latitude = _selectedLatitude;
-    final longitude = _selectedLongitude;
+    final lat = _selectedLatitude;
+    final lng = _selectedLongitude;
+    final hasSelection = lat != null && lng != null;
+
+    // World view when GPS unavailable and no initial coords
+    final initialCamera = hasSelection
+        ? CameraOptions(
+            center: Point(coordinates: Position(lng, lat)),
+            zoom: 15.5,
+          )
+        : CameraOptions(center: Point(coordinates: Position(0, 20)), zoom: 1.5);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pick location'),
+        // Back arrow silently discards — no dialog
         actions: [
           TextButton(
-            onPressed: _selectedLatitude == null || _selectedLongitude == null
-                ? null
-                : _confirmSelection,
+            onPressed: hasSelection ? _confirmSelection : null,
             child: const Text('Confirm'),
           ),
         ],
       ),
-      body: latitude == null || longitude == null
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'my_location_fab',
+            onPressed: _isLocatingUser ? null : _goToMyLocation,
+            tooltip: 'My location',
+            child: _isLocatingUser
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.my_location),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          FloatingActionButton.extended(
+            heroTag: 'confirm_fab',
+            onPressed: hasSelection ? _confirmSelection : null,
+            icon: const Icon(Icons.check),
+            label: const Text('Use location'),
+          ),
+        ],
+      ),
+      body: _isLoadingInitialLocation
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
                 MapWidget(
                   key: const ValueKey('address_map_widget'),
                   styleUri: MapboxStyles.STANDARD,
-                  cameraOptions: CameraOptions(
-                    center: Point(coordinates: Position(longitude, latitude)),
-                    zoom: 15.5,
-                  ),
+                  cameraOptions: initialCamera,
                   onMapCreated: _handleMapCreated,
                   onMapIdleListener: _handleMapIdle,
                 ),
-                const IgnorePointer(
-                  child: Center(
-                    child: Icon(
-                      Icons.location_pin,
-                      size: 46,
-                      color: Colors.redAccent,
+
+                // Pin — only visible when a location is selected
+                if (hasSelection)
+                  const IgnorePointer(
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: 46),
+                        child: Icon(
+                          Icons.location_pin,
+                          size: 46,
+                          color: Colors.redAccent,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                if (_isLoadingInitialLocation)
-                  const Positioned(
-                    top: AppSpacing.md,
-                    left: AppSpacing.md,
-                    right: AppSpacing.md,
-                    child: LinearProgressIndicator(),
-                  ),
+
+                // Bottom card
                 Positioned(
                   left: AppSpacing.md,
                   right: AppSpacing.md,
@@ -287,27 +348,64 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // GPS unavailable notice
+                            if (_gpsUnavailable)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: AppSpacing.sm,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.location_off_outlined,
+                                      size: 16,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.error,
+                                    ),
+                                    const SizedBox(width: AppSpacing.xs),
+                                    Expanded(
+                                      child: Text(
+                                        'GPS is off. Enable location services '
+                                        'or move the map to pick manually.',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.error,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
                             Text(
-                              _selectedAddress.trim().isNotEmpty
+                              _selectedAddress.isNotEmpty
                                   ? _selectedAddress
                                   : (_isResolvingAddress
-                                        ? 'Resolving address...'
+                                        ? 'Resolving address…'
                                         : 'Move the map to choose a location'),
                               style: Theme.of(context).textTheme.titleSmall,
                             ),
-                            const SizedBox(height: AppSpacing.sm),
-                            Text(
-                              '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
+
+                            if (hasSelection) ...[
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                '${lat.toStringAsFixed(5)}, '
+                                '${lng.toStringAsFixed(5)}',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ],
+
                             const SizedBox(height: AppSpacing.md),
                             AppButton(
                               label: 'Use this location',
-                              onPressed:
-                                  _selectedLatitude == null ||
-                                      _selectedLongitude == null
-                                  ? null
-                                  : _confirmSelection,
+                              onPressed: hasSelection
+                                  ? _confirmSelection
+                                  : null,
                             ),
                           ],
                         ),

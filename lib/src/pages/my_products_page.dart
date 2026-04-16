@@ -308,7 +308,7 @@ class _MyProductCard extends StatelessWidget {
                           product.itemImgUrl,
                           fit: BoxFit.cover,
                           width: double.infinity,
-                          errorBuilder: (_, __, ___) => Container(
+                          errorBuilder: (_, _, _) => Container(
                             color: Theme.of(context).colorScheme.surface,
                             alignment: Alignment.center,
                             child: const Icon(Icons.image_outlined),

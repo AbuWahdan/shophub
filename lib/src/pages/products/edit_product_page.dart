@@ -15,6 +15,7 @@ import '../../services/product_service.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_snackbar.dart';
 import '../../shared/widgets/app_text_field.dart';
+import '../../shared/widgets/color_picker/color_hex_field.dart';
 
 class EditProductPage extends StatefulWidget {
   const EditProductPage({
@@ -205,6 +206,8 @@ class _EditProductPageState extends State<EditProductPage> {
             detailId: e.detId!,
             itemPrice: price,
             itemQty: int.tryParse(e.qtyController.text.trim()) ?? 0,
+            itemDiscount:
+                double.tryParse(e.discountController.text.trim()) ?? 0,
             brand: e.brandController.text.trim().isEmpty
                 ? 'N/A'
                 : e.brandController.text.trim(),
@@ -425,7 +428,7 @@ class _EditProductPageState extends State<EditProductPage> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: _variantEntries.length,
-            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.lg),
+            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.lg),
             itemBuilder: (_, i) =>
                 _buildVariantCard(context, i, _variantEntries[i]),
           ),
@@ -452,6 +455,7 @@ class _EditProductPageState extends State<EditProductPage> {
     int index,
     _VariantEntry entry,
   ) {
+    final l10n = context.l10n;
     // The sizes available for the currently selected group
     final groupSizes = (sizeOptions[entry.sizeGroupId] ?? <SizeOption>[]);
 
@@ -513,7 +517,7 @@ class _EditProductPageState extends State<EditProductPage> {
                       ),
                       Switch(
                         value: entry.isActive,
-                        activeColor: Colors.green,
+                        activeThumbColor: Colors.green,
                         onChanged: _isSubmitting
                             ? null
                             : (val) => _toggleVariantActive(index, val),
@@ -543,16 +547,18 @@ class _EditProductPageState extends State<EditProductPage> {
                 Expanded(
                   child: AppTextField(
                     controller: entry.brandController,
-                    label: 'Brand',
-                    hintText: 'Brand name',
+                    label: l10n.productBrand,
+                    hintText: l10n.productBrandHint,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
-                  child: AppTextField(
-                    controller: entry.colorController,
-                    label: 'Color',
-                    hintText: 'Color',
+                  child: ColorHexField(
+                    initialColor: entry.colorController.text,
+                    label: l10n.productColor,
+                    onColorChanged: (value) {
+                      entry.colorController.text = value;
+                    },
                   ),
                 ),
               ],
@@ -566,10 +572,10 @@ class _EditProductPageState extends State<EditProductPage> {
             // • setState on parent updates the entry and rebuilds the card
             // • No separate StatefulWidget — no stale state issues
             DropdownButtonFormField<int>(
-              value: entry.sizeGroupId,
+              initialValue: entry.sizeGroupId,
               isExpanded: true,
               decoration: InputDecoration(
-                labelText: 'Size Group',
+                labelText: l10n.productSizeGroup,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -578,8 +584,8 @@ class _EditProductPageState extends State<EditProductPage> {
                   vertical: 14,
                 ),
               ),
-              hint: const Text(
-                'Select group (optional)',
+              hint: Text(
+                l10n.productSelectGroupOptional,
                 overflow: TextOverflow.ellipsis,
               ),
               items: sizeGroups
@@ -613,10 +619,10 @@ class _EditProductPageState extends State<EditProductPage> {
 
             // ── Size dropdown (filtered by group) ────────────────────────────
             DropdownButtonFormField<int>(
-              value: entry.sizeId,
+              initialValue: entry.sizeId,
               isExpanded: true,
               decoration: InputDecoration(
-                labelText: 'Size',
+                labelText: l10n.productSize,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -627,8 +633,8 @@ class _EditProductPageState extends State<EditProductPage> {
               ),
               hint: Text(
                 entry.sizeGroupId == null
-                    ? 'Select a group first'
-                    : 'Select size (optional)',
+                    ? l10n.productSelectGroupFirst
+                    : l10n.productSelectSizeOptional,
                 overflow: TextOverflow.ellipsis,
               ),
               items: groupSizes
@@ -676,9 +682,12 @@ class _EditProductPageState extends State<EditProductPage> {
                 Expanded(
                   child: AppTextField(
                     controller: entry.discountController,
-                    label: 'Disc %',
-                    hintText: '0',
-                    keyboardType: TextInputType.number,
+                    label: l10n.productDiscountLabel,
+                    hintText: l10n.productDiscountHint,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: _validateDiscount,
                   ),
                 ),
               ],
@@ -785,7 +794,7 @@ class _EditProductPageState extends State<EditProductPage> {
                   ? Image.network(
                       image.imagePath,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
+                      errorBuilder: (_, _, _) => Container(
                         color: Theme.of(context).dividerColor,
                         child: const Icon(Icons.broken_image_outlined),
                       ),
@@ -858,7 +867,7 @@ class _EditProductPageState extends State<EditProductPage> {
             border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: DropdownButtonFormField<Category>(
-            value: _selectedCategory,
+            initialValue: _selectedCategory,
             isExpanded: true,
             decoration: InputDecoration(
               labelText: l10n.productCategory,
@@ -892,7 +901,7 @@ class _EditProductPageState extends State<EditProductPage> {
     return Column(
       children: [
         AppButton(
-          label: l10n.productUpdateAction,
+          label: context.l10n.productUpdateAction,
           leading: _isSubmitting
               ? const SizedBox(
                   width: 18,
@@ -1036,6 +1045,19 @@ class _EditProductPageState extends State<EditProductPage> {
         setState(() => _isUploadingImage = false);
       }
     }
+  }
+
+  String? _validateDiscount(String? value) {
+    final text = (value ?? '').trim();
+    if (text.isEmpty) {
+      return null;
+    }
+
+    final parsed = double.tryParse(text);
+    if (parsed == null || parsed < 0 || parsed > 100) {
+      return context.l10n.productDiscountInvalidRange;
+    }
+    return null;
   }
 }
 

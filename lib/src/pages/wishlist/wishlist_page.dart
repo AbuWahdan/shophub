@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/widgets/empty_state_widget.dart';
-import '../l10n/l10n.dart';
-import '../state/auth_state.dart';
-import '../state/wishlist_state.dart';
-import '../themes/theme.dart';
-import '../widgets/product_card.dart';
+import '../../../core/widgets/empty_state_widget.dart';
+import '../../l10n/l10n.dart';
+import '../../state/auth_state.dart';
+import '../../state/wishlist_state.dart';
+import '../../themes/theme.dart';
+import '../../widgets/product_card.dart';
 
 class WishlistPage extends StatefulWidget {
   const WishlistPage({super.key});
@@ -27,15 +27,18 @@ class _WishlistPageState extends State<WishlistPage> {
   Future<void> _fetchWishlistOnLoad() async {
     final authState = context.read<AuthState>();
     await authState.ensureInitialized();
-    if (!mounted || !authState.isLoggedIn || authState.user == null) {
-      return;
-    }
+    if (!mounted || !authState.isLoggedIn || authState.user == null) return;
+
+    final wishlistState = context.read<WishlistState>();
+
+    // Skip if already loaded — avoids overwriting optimistic toggle state.
+    // Pull-to-refresh still calls fetchWishlist() directly when the user wants fresh data,
+    // and overrides in WishlistState protect the local state even then.
+    if (wishlistState.hasLoadedForUser) return;
 
     try {
-      await context.read<WishlistState>().fetchWishlist();
-    } catch (_) {
-      // The screen renders the provider error state.
-    }
+      await wishlistState.fetchWishlist();
+    } catch (_) {}
   }
 
   @override

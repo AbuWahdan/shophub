@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
+import '../../src/model/forget_password_request.dart';
 
 class UserRepository {
   final ApiService _apiService;
@@ -19,10 +21,7 @@ class UserRepository {
 
       await _apiService.post(
         ApiConstants.sendOtp,
-        body: {
-          'username': username,
-          'email': email,
-        },
+        body: {'username': username, 'email': email},
         isReadOperation: false,
       );
 
@@ -50,11 +49,7 @@ class UserRepository {
 
       await _apiService.post(
         ApiConstants.verifyOtp,
-        body: {
-          'username': username,
-          'email': email,
-          'otp': otp,
-        },
+        body: {'username': username, 'email': email, 'otp': otp},
         isReadOperation: false,
       );
 
@@ -74,8 +69,19 @@ class UserRepository {
   Future<void> resetPassword({
     required String username,
     required String newPassword,
+    String? oldPassword,
   }) async {
     try {
+      final normalizedOldPassword = oldPassword?.trim();
+      final request = ForgetPasswordRequest(
+        username: username.trim(),
+        newPassword: newPassword.trim(),
+        oldPassword:
+            normalizedOldPassword != null && normalizedOldPassword.isNotEmpty
+            ? normalizedOldPassword
+            : null,
+      );
+
       if (kDebugMode) {
         debugPrint('[UserRepository] Resetting password for $username');
       }
@@ -83,10 +89,7 @@ class UserRepository {
       // Pass isReadOperation=false so HTTP 200 with ORA- is treated as success
       await _apiService.post(
         ApiConstants.forgetPassword,
-        body: {
-          'username': username,
-          'password': newPassword,
-        },
+        body: request.toJson(),
         isReadOperation: false,
       );
 

@@ -3,16 +3,16 @@ import 'package:flutter/foundation.dart';
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
 import '../../core/utils/apex_response_helper.dart';
-import '../../src/model/comment_model.dart';
+import '../../src/model/api_item_comment.dart';
 
 class CommentRepository {
   final ApiService _apiService;
 
   CommentRepository(this._apiService);
 
-  Future<List<CommentModel>> getItemComments(int itemId) async {
+  Future<List<ApiItemComment>> getItemComments({required int itemId}) async {
     if (itemId <= 0) {
-      return <CommentModel>[];
+      return <ApiItemComment>[];
     }
 
     try {
@@ -27,14 +27,14 @@ class CommentRepository {
       );
 
       if (response is! Map<String, dynamic>) {
-        return <CommentModel>[];
+        return <ApiItemComment>[];
       }
 
       final rawItems = (response['comments'] as List<dynamic>? ?? const [])
           .whereType<Map>()
           .map(Map<String, dynamic>.from)
           .toList();
-      return rawItems.map(CommentModel.fromJson).toList();
+      return rawItems.map(ApiItemComment.fromJson).toList();
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[CommentRepository] Error fetching comments: $e');
@@ -76,7 +76,7 @@ class CommentRepository {
     }
   }
 
-  Future<void> postComment({
+  Future<void> addItemComment({
     required int itemId,
     required String username,
     required int rating,
@@ -119,6 +119,20 @@ class CommentRepository {
       }
       rethrow;
     }
+  }
+
+  Future<void> postComment({
+    required int itemId,
+    required String username,
+    required int rating,
+    required String comment,
+  }) {
+    return addItemComment(
+      itemId: itemId,
+      username: username,
+      rating: rating,
+      comment: comment,
+    );
   }
 
   bool _parseBool(dynamic response) {

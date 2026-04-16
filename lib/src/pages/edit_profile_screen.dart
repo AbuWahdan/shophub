@@ -3,8 +3,6 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/repositories/profile_repository.dart';
-import '../design/app_colors.dart';
-import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
 import '../state/auth_state.dart';
 import '../shared/widgets/app_button.dart';

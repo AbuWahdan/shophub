@@ -583,6 +583,7 @@ class UpdateItemDetail {
   final int detailId;
   final double itemPrice;
   final int itemQty;
+  final double itemDiscount;
   final String brand;
   final String color;
   final String modifiedBy;
@@ -593,6 +594,7 @@ class UpdateItemDetail {
     required this.detailId,
     required this.itemPrice,
     required this.itemQty,
+    this.itemDiscount = 0,
     required this.brand,
     required this.color,
     required this.modifiedBy,
@@ -600,10 +602,51 @@ class UpdateItemDetail {
     required this.isActive,
   });
 
+  factory UpdateItemDetail.fromJson(Map<String, dynamic> json) {
+    return UpdateItemDetail(
+      detailId: _asInt(_pick(json, const ['detail_id', 'DETAIL_ID'])),
+      itemPrice: _asDouble(_pick(json, const ['item_price', 'ITEM_PRICE'])),
+      itemQty: _asInt(_pick(json, const ['item_qty', 'ITEM_QTY'])),
+      itemDiscount: _asDouble(
+        _pick(json, const ['item_discount', 'ITEM_DISCOUNT']),
+      ),
+      brand: _asString(json, const ['brand', 'BRAND']),
+      color: _asString(json, const ['color', 'COLOR']),
+      modifiedBy: _asString(json, const ['modified_by', 'MODIFIED_BY']),
+      size: _asString(json, const ['size', 'SIZE', 'item_size', 'ITEM_SIZE']),
+      isActive: _asInt(_pick(json, const ['is_active', 'IS_ACTIVE'])),
+    );
+  }
+
+  UpdateItemDetail copyWith({
+    int? detailId,
+    double? itemPrice,
+    int? itemQty,
+    double? itemDiscount,
+    String? brand,
+    String? color,
+    String? modifiedBy,
+    String? size,
+    int? isActive,
+  }) {
+    return UpdateItemDetail(
+      detailId: detailId ?? this.detailId,
+      itemPrice: itemPrice ?? this.itemPrice,
+      itemQty: itemQty ?? this.itemQty,
+      itemDiscount: itemDiscount ?? this.itemDiscount,
+      brand: brand ?? this.brand,
+      color: color ?? this.color,
+      modifiedBy: modifiedBy ?? this.modifiedBy,
+      size: size ?? this.size,
+      isActive: isActive ?? this.isActive,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     'detail_id': detailId,
     'item_price': itemPrice,
     'item_qty': itemQty,
+    'item_discount': itemDiscount,
     'brand': brand,
     'color': color,
     'modified_by': modifiedBy,
@@ -611,6 +654,34 @@ class UpdateItemDetail {
     'item_size': size, // ← ADDED: others use this (matches ITEM_SIZE column)
     'is_active': isActive,
   };
+
+  static dynamic _pick(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      if (json.containsKey(key)) {
+        return json[key];
+      }
+    }
+    return null;
+  }
+
+  static String _asString(Map<String, dynamic> json, List<String> keys) {
+    final value = _pick(json, keys);
+    return (value ?? '').toString().trim();
+  }
+
+  static double _asDouble(dynamic value) {
+    if (value is num) {
+      return value.toDouble();
+    }
+    return double.tryParse((value ?? '').toString()) ?? 0.0;
+  }
+
+  static int _asInt(dynamic value) {
+    if (value is num) {
+      return value.toInt();
+    }
+    return int.tryParse((value ?? '').toString()) ?? 0;
+  }
 }
 
 // ─── REPLACED: old UpdateProductRequest was sending wrong keys ────────────

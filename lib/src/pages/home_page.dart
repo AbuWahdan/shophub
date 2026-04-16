@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../data/categories_data.dart';
 import '../l10n/app_localizations.dart';
-import '../design/app_colors.dart';
-import '../design/app_spacing.dart';
 import '../l10n/l10n.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';
