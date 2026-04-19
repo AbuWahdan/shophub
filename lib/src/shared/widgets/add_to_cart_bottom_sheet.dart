@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
 import '../../model/product_api.dart';
+import 'product_variant_widgets.dart';
 
 class AddToCartSelection {
   const AddToCartSelection(this.variant, this.qty);
@@ -30,24 +31,16 @@ class AddToCartBottomSheet extends StatefulWidget {
 class _AddToCartBottomSheetState extends State<AddToCartBottomSheet> {
   late final List<ApiProductVariant> _variants;
   late ApiProductVariant _selected;
-  int _qty = 1;
+  final Map<String, int> _quantitiesByKey = <String, int>{};
 
   @override
   void initState() {
     super.initState();
-    _variants = _resolveVariants(widget.product, widget.variants);
+    _variants = resolveProductVariants(widget.product, widget.variants);
     _selected = _variants.firstWhere(
       (variant) => variant.detId == widget.initialDetId,
       orElse: () => _variants.first,
     );
-  }
-
-  bool _hasMeaningfulValue(String? value) {
-    final normalized = (value ?? '').trim().toLowerCase();
-    return normalized.isNotEmpty &&
-        normalized != '0' &&
-        normalized != 'null' &&
-        normalized != 'n/a';
   }
 
   @override
@@ -92,7 +85,13 @@ class _AddToCartBottomSheetState extends State<AddToCartBottomSheet> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Text('Select Variant', style: AppTextStyles.titleMedium),
+                  if (widget.product.itemName.trim().isNotEmpty)
+                    Text(
+                      widget.product.itemName.trim(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.titleMedium,
+                    ),
                   const SizedBox(height: AppSpacing.sm),
                   Flexible(
                     child: ListView.separated(
@@ -103,144 +102,28 @@ class _AddToCartBottomSheetState extends State<AddToCartBottomSheet> {
                       itemBuilder: (context, index) {
                         final variant = _variants[index];
                         final isSelected = variant.detId == _selected.detId;
-                        final hasDiscount = variant.discount > 0;
-                        final discounted =
-                            variant.itemPrice * (1 - (variant.discount / 100));
-                        final showColor = _hasMeaningfulValue(variant.color);
-                        final showBrand = _hasMeaningfulValue(variant.brand);
-                        final showSize = _hasMeaningfulValue(variant.itemSize);
-                        final showDefaultVariant =
-                            !showColor && !showBrand && !showSize;
+                        final quantity = _quantityFor(variant);
 
-                        return InkWell(
-                          onTap: () => setState(() {
-                            _selected = variant;
-                            if (_qty > variant.itemQty && variant.itemQty > 0) {
-                              _qty = variant.itemQty;
-                            }
-                          }),
-                          borderRadius: BorderRadius.circular(
-                            AppSpacing.radiusMd,
-                          ),
-                          child: Container(
-                            padding: AppSpacing.insetsMd,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(
-                                AppSpacing.radiusMd,
-                              ),
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.primary
-                                    : theme.dividerColor,
-                                width: isSelected
-                                    ? AppSpacing.borderThick
-                                    : AppSpacing.borderThin,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      if (showDefaultVariant)
-                                        Text(
-                                          'Default Variant',
-                                          style: AppTextStyles.labelLarge,
-                                        ),
-                                      if (showColor)
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            bottom: AppSpacing.xs,
-                                          ),
-                                          child: Text(
-                                            'Color: ${variant.color.trim()}',
-                                            style: AppTextStyles.bodySmall,
-                                          ),
-                                        ),
-                                      if (showBrand)
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            bottom: AppSpacing.xs,
-                                          ),
-                                          child: Text(
-                                            'Brand: ${variant.brand.trim()}',
-                                            style: AppTextStyles.bodySmall,
-                                          ),
-                                        ),
-                                      if (showSize)
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            bottom: AppSpacing.xs,
-                                          ),
-                                          child: Text(
-                                            'Size: ${variant.itemSize.trim()}',
-                                            style: AppTextStyles.bodySmall,
-                                          ),
-                                        ),
-                                      const SizedBox(height: AppSpacing.xs),
-                                      Wrap(
-                                        spacing: AppSpacing.sm,
-                                        children: [
-                                          if (variant.itemPrice > 0)
-                                            Text(
-                                              '\$${(hasDiscount ? discounted : variant.itemPrice).toStringAsFixed(2)}',
-                                              style: AppTextStyles.labelLarge
-                                                  .copyWith(
-                                                    color: AppColors.primary,
-                                                  ),
-                                            ),
-                                          if (hasDiscount)
-                                            Text(
-                                              '\$${variant.itemPrice.toStringAsFixed(2)}',
-                                              style: AppTextStyles.bodySmall
-                                                  .copyWith(
-                                                    decoration: TextDecoration
-                                                        .lineThrough,
-                                                  ),
-                                            ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (isSelected)
-                                  const Icon(
-                                    Icons.check_circle,
-                                    color: AppColors.primary,
-                                  ),
-                              ],
-                            ),
-                          ),
+                        return ProductVariantOptionCard(
+                          variant: variant,
+                          isSelected: isSelected,
+                          quantity: quantity,
+                          showQuantityStepper: true,
+                          showSelectionIndicator: false,
+                          onTap: () {
+                            setState(() {
+                              _selectVariant(variant);
+                            });
+                          },
+                          onQuantityChanged: (value) {
+                            setState(() {
+                              _selectVariant(variant);
+                              _quantitiesByKey[_variantKey(variant)] = value;
+                            });
+                          },
                         );
                       },
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      Text(
-                        context.l10n.cartQuantity,
-                        style: AppTextStyles.titleSmall,
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      IconButton(
-                        onPressed: _qty > 1
-                            ? () => setState(() => _qty--)
-                            : null,
-                        icon: const Icon(Icons.remove_circle_outline),
-                      ),
-                      Text(_qty.toString(), style: AppTextStyles.labelLarge),
-                      IconButton(
-                        onPressed:
-                            (_selected.itemQty <= 0 ||
-                                _qty >= _selected.itemQty)
-                            ? null
-                            : () => setState(() => _qty++),
-                        icon: const Icon(Icons.add_circle_outline),
-                      ),
-                    ],
                   ),
                   const SizedBox(height: AppSpacing.md),
                   SizedBox(
@@ -258,9 +141,12 @@ class _AddToCartBottomSheetState extends State<AddToCartBottomSheet> {
                       ),
                       onPressed: _selected.itemQty <= 0
                           ? null
-                          : () => Navigator.of(
-                              context,
-                            ).pop(AddToCartSelection(_selected, _qty)),
+                          : () => Navigator.of(context).pop(
+                              AddToCartSelection(
+                                _selected,
+                                _quantityFor(_selected),
+                              ),
+                            ),
                       child: Text(
                         context.l10n.productAddToCart,
                         style: AppTextStyles.buttonLarge.copyWith(
@@ -277,9 +163,27 @@ class _AddToCartBottomSheetState extends State<AddToCartBottomSheet> {
       ),
     );
   }
+
+  void _selectVariant(ApiProductVariant variant) {
+    _selected = variant;
+  }
+
+  int _quantityFor(ApiProductVariant variant) {
+    final key = _variantKey(variant);
+    final stored = _quantitiesByKey[key];
+    if (stored != null) {
+      return stored;
+    }
+    _quantitiesByKey[key] = 1;
+    return 1;
+  }
+
+  String _variantKey(ApiProductVariant variant) {
+    return '${variant.detId}|${variant.brand}|${variant.color}|${variant.itemSize}|${variant.itemPrice}|${variant.itemQty}';
+  }
 }
 
-List<ApiProductVariant> _resolveVariants(
+List<ApiProductVariant> resolveProductVariants(
   ApiProduct product,
   List<ApiProductVariant>? overrides,
 ) {
@@ -294,9 +198,9 @@ List<ApiProductVariant> _resolveVariants(
   return [
     ApiProductVariant(
       detId: product.detId,
-      brand: 'Unknown',
-      color: 'Default',
-      itemSize: 'Default',
+      brand: '',
+      color: '',
+      itemSize: '',
       discount: 0,
       itemPrice: product.price,
       itemQty: product.quantity,

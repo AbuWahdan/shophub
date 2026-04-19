@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
+import '../../../data/repositories/codes_repository.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
+import '../../model/api_code_option.dart';
 import '../../model/user.dart';
 import '../../state/auth_state.dart';
 import '../../shared/validation/auth_validators.dart';
@@ -28,19 +31,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  late final CodesRepository _codesRepository;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = false;
   int? _selectedGender;
   String? _genderError;
+  String? _genderLoadError;
+  bool _isLoadingGenderOptions = false;
   String _passwordStrength = 'Weak';
   Color _passwordStrengthColor = AppColors.error;
+  List<ApiCodeOption> _genderOptions = const <ApiCodeOption>[];
 
   @override
   void initState() {
     super.initState();
+    _codesRepository = Get.find<CodesRepository>();
     _passwordController.addListener(_updatePasswordStrength);
     _updatePasswordStrength();
+    _loadGenderOptions();
   }
 
   @override
@@ -77,6 +86,80 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _passwordStrengthColor = color;
       });
     }
+  }
+
+  Future<void> _loadGenderOptions({bool forceRefresh = false}) async {
+    setState(() {
+      _isLoadingGenderOptions = true;
+      _genderLoadError = null;
+    });
+
+    try {
+      final options = await _codesRepository.getCodes(
+        majorCode: ApiCodeOption.genderMajorCode,
+        forceRefresh: forceRefresh,
+      );
+      if (!mounted) return;
+      setState(() {
+        _genderOptions = options;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _genderLoadError = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingGenderOptions = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildGenderSection() {
+    if (_isLoadingGenderOptions) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: LinearProgressIndicator(),
+      );
+    }
+
+    if (_genderLoadError != null && _genderOptions.isEmpty) {
+      return Row(
+        children: [
+          Expanded(
+            child: Text(
+              _genderLoadError!,
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
+            ),
+          ),
+          TextButton(
+            onPressed: () => _loadGenderOptions(forceRefresh: true),
+            child: const Text('Retry'),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      children: _genderOptions
+          .map(
+            (option) => RadioListTile<int>(
+              contentPadding: EdgeInsets.zero,
+              title: Text(option.label),
+              value: option.minorCode,
+              groupValue: _selectedGender,
+              onChanged: (value) {
+                setState(() {
+                  _selectedGender = value;
+                  _genderError = null;
+                });
+              },
+            ),
+          )
+          .toList(),
+    );
   }
 
   @override
@@ -121,33 +204,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 Text('Gender', style: AppTextStyles.labelMedium),
                 const SizedBox(height: AppSpacing.sm),
-                Row(
-                  children: [
-                    Radio<int>(
-                      value: 1,
-                      groupValue: _selectedGender,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedGender = value;
-                          _genderError = null;
-                        });
-                      },
-                    ),
-                    const Text('Male'),
-                    const SizedBox(width: 24),
-                    Radio<int>(
-                      value: 2,
-                      groupValue: _selectedGender,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedGender = value;
-                          _genderError = null;
-                        });
-                      },
-                    ),
-                    const Text('Female'),
-                  ],
-                ),
+                _buildGenderSection(),
                 if (_genderError != null) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(

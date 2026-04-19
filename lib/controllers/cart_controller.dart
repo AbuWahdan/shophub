@@ -7,22 +7,49 @@ class CartController extends GetxController {
   final CartRepository _repo;
   CartController(this._repo);
 
-  // ── State ────────────────────────────────────────────────────────────────
-  final RxList<ApiCartItem> items = <ApiCartItem>[].obs;
-  final RxBool isLoading = false.obs;
+  final RxList<ApiCartItem> items      = <ApiCartItem>[].obs;
+  final RxBool              isLoading  = false.obs;
+  final RxMap<int, bool>    itemLoading = <int, bool>{}.obs;
 
-  /// Per-item loading state.
-  /// Key is always [itemKey] — one single source of truth.
-  final RxMap<int, bool> itemLoading = <int, bool>{}.obs;
-
-  // ── Key Resolution ────────────────────────────────────────────────────────
-  /// THE single source of truth for identifying a cart row.
-  /// Public so the view uses the exact same logic — no duplication.
-  ///
-  /// Priority: detailId (cart line PK) → cartItemId → itemDetId (last resort)
   int itemKey(ApiCartItem item) {
-    if (item.detailId > 0) return item.detailId;
+    if (item.detailId  > 0) return item.detailId;
     return item.itemDetId;
+  }
+
+  // ── Add (called from ProductCard) ─────────────────────────────────────────
+  // If item already exists: delete old row first so BOOKED_QTY resets to 0,
+  // then insert with exact chosenQty.
+  // If item is new: insert directly.
+  Future<void> addItem({
+    required int    itemId,
+    required int    itemDetId,
+    required String username,
+    required int    chosenQty,
+  }) async {
+    // Capture existing row details BEFORE any await.
+    final existing = items.firstWhereOrNull((i) => i.itemDetId == itemDetId);
+    final existingKey = existing != null ? itemKey(existing) : 0;
+
+    if (existing != null && existingKey > 0) {
+      try {
+        await _repo.deleteFromCart(
+          detailId:   existingKey,
+          modifiedBy: username,
+        );
+        items.removeWhere((i) => itemKey(i) == existingKey);
+      } on Exception catch (e) {
+        debugPrint('[CartController] addItem pre-delete error: $e');
+        // Continue — insert will accumulate but that beats blocking the add.
+      }
+    }
+
+    // Insert with the exact qty the user chose.
+    await _repo.addToCart(AddItemToCartRequest(
+      itemId:    itemId,
+      itemDetId: itemDetId,   // always the original itemDetId, never 0
+      username:  username,
+      itemQty:   chosenQty,
+    ));
   }
 
   // ── Load ──────────────────────────────────────────────────────────────────
@@ -30,9 +57,7 @@ class CartController extends GetxController {
     isLoading.value = true;
     try {
       final fetched = await _repo.getCart(username: username);
-
-      // Clamp qty to available stock in case stock dropped since last session
-      final clamped = fetched.map((item) {
+      final corrected = fetched.map((item) {
         if (item.availableQty > 0 && item.itemQty > item.availableQty) {
           debugPrint(
             '[CartController] Clamping ${item.itemName}: '
@@ -42,8 +67,7 @@ class CartController extends GetxController {
         }
         return item;
       }).toList();
-
-      items.assignAll(clamped);
+      items.assignAll(corrected);
     } on Exception catch (e) {
       debugPrint('[CartController] loadCart error: $e');
       Get.snackbar('Error', 'Failed to load cart: $e');
@@ -55,33 +79,18 @@ class CartController extends GetxController {
   // ── Remove ────────────────────────────────────────────────────────────────
   Future<bool> removeItem({
     required ApiCartItem item,
-    required String username,
+    required String      username,
   }) async {
-    // itemKey() and deleteId are now the SAME value — no priority mismatch
     final key = itemKey(item);
-
     if (key <= 0) {
-      debugPrint(
-        '[CartController] removeItem BLOCKED — no valid ID. '
-            'itemDetId=${item.itemDetId}',
-      );
-      Get.snackbar(
-        'Error',
-        'Cannot delete: cart row ID not found. '
-            'Check that the API returns detail_id.',
-        snackPosition: SnackPosition.TOP,
-      );
+      Get.snackbar('Error', 'Cannot delete: cart row ID not found.',
+          snackPosition: SnackPosition.TOP);
       return false;
     }
-
-    // Guard against double-tap
     if (itemLoading[key] == true) return false;
     itemLoading[key] = true;
-
     try {
       await _repo.deleteFromCart(detailId: key, modifiedBy: username);
-
-      // removeWhere uses the same key — guaranteed to find the right row
       items.removeWhere((i) => itemKey(i) == key);
       return true;
     } on Exception catch (e) {
@@ -96,48 +105,41 @@ class CartController extends GetxController {
   // ── Increment ─────────────────────────────────────────────────────────────
   Future<void> incrementItem({
     required ApiCartItem item,
-    required String username,
+    required String      username,
   }) async {
     final key = itemKey(item);
     if (itemLoading[key] == true) return;
 
-    // Find index by itemKey — not by itemDetId — to handle duplicate variants
     final idx = items.indexWhere((i) => itemKey(i) == key);
     if (idx == -1) return;
 
     final current = items[idx];
-    final stock = current.availableQty > 0 ? current.availableQty : current.itemQty;
 
-    if (current.itemQty >= stock) {
+    if (current.availableQty > 0 && current.itemQty >= current.availableQty) {
       Get.snackbar(
         'Out of Stock',
-        'Only $stock unit(s) available for ${current.itemName}',
+        'Only ${current.availableQty} unit(s) available for ${current.itemName}',
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
 
     itemLoading[key] = true;
-
-    // Optimistic update
     final oldQty = current.itemQty;
     items[idx] = current.copyWith(itemQty: oldQty + 1);
 
     try {
-      await _repo.addToCart(
-        AddItemToCartRequest(
-          itemId: item.itemId,
-          itemDetId: item.itemDetId,
-          username: username,
-          itemQty: 1,
-        ),
-      );
+      // Send delta 1 — backend accumulates correctly here.
+      await _repo.addToCart(AddItemToCartRequest(
+        itemId:    item.itemId,
+        itemDetId: item.itemDetId,
+        username:  username,
+        itemQty:   1,
+      ));
     } on Exception catch (e) {
-      // Revert on failure
       items[idx] = items[idx].copyWith(itemQty: oldQty);
       debugPrint('[CartController] incrementItem error: $e');
       Get.snackbar('Error', 'Failed to update quantity: $e');
-      rethrow;
     } finally {
       itemLoading.remove(key);
     }
@@ -146,9 +148,8 @@ class CartController extends GetxController {
   // ── Decrement ─────────────────────────────────────────────────────────────
   Future<void> decrementItem({
     required ApiCartItem item,
-    required String username,
+    required String      username,
   }) async {
-    // If qty is 1, decrementing means delete the row entirely
     if (item.itemQty <= 1) {
       await removeItem(item: item, username: username);
       return;
@@ -157,31 +158,46 @@ class CartController extends GetxController {
     final key = itemKey(item);
     if (itemLoading[key] == true) return;
 
-    // Find index by itemKey — consistent with increment
     final idx = items.indexWhere((i) => itemKey(i) == key);
     if (idx == -1) return;
+
+    // ── FIX: capture ALL values needed for re-add BEFORE any await ──────────
+    // After deleteFromCart + loadCart, the `item` parameter and `items[idx]`
+    // are stale — itemDetId becomes 0 and qty becomes wrong.
+    // Capturing here guarantees the re-add uses the correct values.
+    final capturedItemId    = item.itemId;
+    final capturedItemDetId = item.itemDetId;   // never 0 at this point
+    final capturedOldQty    = item.itemQty;
+    final capturedNewQty    = capturedOldQty - 1;
+    // ─────────────────────────────────────────────────────────────────────────
 
     itemLoading[key] = true;
 
     // Optimistic update
-    final oldQty = items[idx].itemQty;
-    items[idx] = items[idx].copyWith(itemQty: oldQty - 1);
+    items[idx] = items[idx].copyWith(itemQty: capturedNewQty);
 
     try {
-      await _repo.addToCart(
-        AddItemToCartRequest(
-          itemId: item.itemId,
-          itemDetId: item.itemDetId,
-          username: username,
-          itemQty: -1,
-        ),
-      );
+      // Step 1 — delete the existing row
+      await _repo.deleteFromCart(detailId: key, modifiedBy: username);
+
+      // Step 2 — re-insert with exact new qty using captured values
+      await _repo.addToCart(AddItemToCartRequest(
+        itemId:    capturedItemId,
+        itemDetId: capturedItemDetId,   // guaranteed non-zero
+        username:  username,
+        itemQty:   capturedNewQty,      // exact qty, not a delta
+      ));
+
+      // Step 3 — release lock BEFORE reload so UI is not frozen
+      itemLoading.remove(key);
+      await loadCart(username: username);
     } on Exception catch (e) {
-      // Revert on failure
-      items[idx] = items[idx].copyWith(itemQty: oldQty);
+      final revertIdx = items.indexWhere((i) => itemKey(i) == key);
+      if (revertIdx != -1) {
+        items[revertIdx] = items[revertIdx].copyWith(itemQty: capturedOldQty);
+      }
       debugPrint('[CartController] decrementItem error: $e');
       Get.snackbar('Error', 'Failed to update quantity: $e');
-      rethrow;
     } finally {
       itemLoading.remove(key);
     }

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/widgets/empty_state_widget.dart';
 import '../../data/repositories/comment_repository.dart';
 import '../config/ui_text.dart';
-import '../design/app_text_styles.dart';
 import '../model/api_item_comment.dart';
+import '../shared/widgets/product_comment_card.dart';
 import '../themes/theme.dart';
 
 class ProductCommentsPage extends StatefulWidget {
@@ -91,63 +90,13 @@ class _ProductCommentsPageState extends State<ProductCommentsPage> {
               padding: AppTheme.padding,
               itemBuilder: (context, index) {
                 final comment = comments[index];
-                return _CommentCard(comment: comment);
+                return ProductCommentCard(comment: comment);
               },
               separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.lg),
               itemCount: comments.length,
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _CommentCard extends StatelessWidget {
-  final ApiItemComment comment;
-
-  const _CommentCard({required this.comment});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: AppSpacing.insetsMd,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  comment.username.isEmpty ? 'Anonymous' : comment.username,
-                  style: AppTextStyles.titleSmall,
-                ),
-              ),
-              if (comment.hasCreatedAt)
-                Text(
-                  DateFormat.yMMMd().format(comment.createdAt.toLocal()),
-                  style: AppTextStyles.bodySmall,
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Row(
-            children: List.generate(
-              5,
-              (index) => Icon(
-                index < comment.rating ? Icons.star : Icons.star_border,
-                size: AppSpacing.iconSm,
-                color: AppColors.accentYellow,
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(comment.commentText, style: AppTextStyles.bodyMedium),
-        ],
       ),
     );
   }

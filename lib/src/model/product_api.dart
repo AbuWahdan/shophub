@@ -42,11 +42,11 @@ class ApiProduct {
     this.discountPrice,
     List<String>? images,
     this.details = const [],
-    this.sizes = const ['Default'],
-    this.colors = const ['Default'],
+    this.sizes = const [],
+    this.colors = const [],
     this.imagesByColor,
     this.stockByVariant,
-    this.rating = 4.0,
+    this.rating = 0,
     this.reviewCount = 0,
     this.soldCount = 0,
     this.isFavorite = false,
@@ -102,6 +102,14 @@ class ApiProduct {
     final parsedPrice = _asDouble(
       _pick(json, const ['item_price', 'ITEM_PRICE']),
     );
+    final parsedAlternatePrice = _asNullableDouble(
+      _pick(json, const [
+        'discount_price',
+        'DISCOUNT_PRICE',
+        'item_old_price',
+        'ITEM_OLD_PRICE',
+      ]),
+    );
     final parsedQty = _asInt(_pick(json, const ['item_qty', 'ITEM_QTY']));
     final variantSizes = variants
         .map((variant) => variant.itemSize.trim())
@@ -127,7 +135,11 @@ class ApiProduct {
       detId: topLevelDetId > 0 ? topLevelDetId : selectedVariant.detId,
       itemName: _asString(json, const ['item_name', 'ITEM_NAME']),
       itemDesc: _asString(json, const ['item_desc', 'ITEM_DESC']),
-      itemPrice: parsedPrice > 0 ? parsedPrice : selectedVariant.itemPrice,
+      itemPrice: _resolveOriginalPrice(
+        rawPrice: parsedPrice,
+        explicitAltPrice: parsedAlternatePrice,
+        variant: selectedVariant,
+      ),
       itemQty: parsedQty > 0 ? parsedQty : selectedVariant.itemQty,
       itemImgUrl: primaryImage,
       categoryId: _asInt(
@@ -165,27 +177,38 @@ class ApiProduct {
         ]),
       ),
       isActive: _asInt(_pick(json, const ['is_active', 'IS_ACTIVE'])),
-      discountPrice: _asNullableDouble(
-        _pick(json, const [
-          'item_old_price',
-          'ITEM_OLD_PRICE',
-          'discount_price',
-          'DISCOUNT_PRICE',
-        ]),
+      discountPrice: _resolveDiscountedPrice(
+        rawPrice: parsedPrice,
+        explicitAltPrice: parsedAlternatePrice,
+        variant: selectedVariant,
       ),
       images: imageList,
       details: variants,
-      rating: _asDouble(_pick(json, const ['rating', 'RATING']), fallback: 4.0),
+      rating: _asDouble(
+        _pick(json, const [
+          'average_rating',
+          'AVERAGE_RATING',
+          'avg_rating',
+          'AVG_RATING',
+          'rating',
+          'RATING',
+        ]),
+      ),
       reviewCount: _asInt(
         _pick(json, const [
+          'comments_count',
+          'COMMENTS_COUNT',
           'reviews',
           'REVIEWS',
           'review_count',
           'REVIEW_COUNT',
         ]),
       ),
-      sizes: variantSizes.isNotEmpty ? variantSizes : const ['Default'],
-      colors: variantColors.isNotEmpty ? variantColors : const ['Default'],
+      soldCount: _asInt(
+        _pick(json, const ['sold_count', 'SOLD_COUNT', 'sold_qty', 'SOLD_QTY']),
+      ),
+      sizes: variantSizes,
+      colors: variantColors,
     );
   }
 
@@ -275,7 +298,14 @@ class ApiProduct {
       _pick(json, const ['ITEM_PRICE', 'item_price']),
     );
     final itemQty = _asInt(_pick(json, const ['ITEM_QTY', 'item_qty']));
-    final discount = _asDouble(_pick(json, const ['DISCOUNT', 'discount']));
+    final discount = _asDouble(
+      _pick(json, const [
+        'ITEM_DISCOUNT',
+        'item_discount',
+        'DISCOUNT',
+        'discount',
+      ]),
+    );
     if (detId == 0 &&
         color.trim().isEmpty &&
         brand.trim().isEmpty &&
@@ -296,6 +326,47 @@ class ApiProduct {
         itemQty: itemQty,
       ),
     ];
+  }
+
+  static double _resolveOriginalPrice({
+    required double rawPrice,
+    required double? explicitAltPrice,
+    required ApiProductVariant variant,
+  }) {
+    final variantPrice = variant.itemPrice > 0 ? variant.itemPrice : rawPrice;
+    if (variantPrice <= 0 && explicitAltPrice != null && explicitAltPrice > 0) {
+      return explicitAltPrice;
+    }
+    if (explicitAltPrice != null &&
+        explicitAltPrice > variantPrice &&
+        variantPrice > 0) {
+      return explicitAltPrice;
+    }
+    return variantPrice;
+  }
+
+  static double? _resolveDiscountedPrice({
+    required double rawPrice,
+    required double? explicitAltPrice,
+    required ApiProductVariant variant,
+  }) {
+    final variantPrice = variant.itemPrice > 0 ? variant.itemPrice : rawPrice;
+
+    if (explicitAltPrice != null &&
+        explicitAltPrice > 0 &&
+        variantPrice > 0 &&
+        explicitAltPrice != variantPrice) {
+      if (explicitAltPrice > variantPrice) {
+        return variantPrice;
+      }
+      return explicitAltPrice;
+    }
+
+    if (variant.discount > 0 && variant.discount < 100 && variantPrice > 0) {
+      return variantPrice * (1 - (variant.discount / 100));
+    }
+
+    return null;
   }
 }
 
@@ -324,7 +395,14 @@ class ApiProductVariant {
       brand: _asString(json, const ['BRAND', 'brand']),
       color: _asString(json, const ['COLOR', 'color']),
       itemSize: _asString(json, const ['ITEM_SIZE', 'item_size']),
-      discount: _asDouble(_pick(json, const ['DISCOUNT', 'discount'])),
+      discount: _asDouble(
+        _pick(json, const [
+          'ITEM_DISCOUNT',
+          'item_discount',
+          'DISCOUNT',
+          'discount',
+        ]),
+      ),
       itemPrice: _asDouble(_pick(json, const ['ITEM_PRICE', 'item_price'])),
       itemQty: _asInt(_pick(json, const ['ITEM_QTY', 'item_qty'])),
     );
@@ -430,7 +508,14 @@ class ApiProductDetails {
       itemDesc: _asString(json, const ['ITEM_DESC', 'item_desc']),
       itemPrice: _asDouble(_pick(json, const ['ITEM_PRICE', 'item_price'])),
       itemQty: _asInt(_pick(json, const ['ITEM_QTY', 'item_qty'])),
-      discount: _asDouble(_pick(json, const ['DISCOUNT', 'discount'])),
+      discount: _asDouble(
+        _pick(json, const [
+          'ITEM_DISCOUNT',
+          'item_discount',
+          'DISCOUNT',
+          'discount',
+        ]),
+      ),
       itemImgUrl: _asString(json, const ['ITEM_IMG_URL', 'item_img_url']),
       imageId: _asInt(_pick(json, const ['IMAGE_ID', 'image_id'])),
       category: _asString(json, const ['CATEGORY', 'category']),

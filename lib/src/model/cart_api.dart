@@ -34,8 +34,6 @@ class ApiCartItem {
     this.brand = '',
   });
 
-  // ── Derived helpers ───────────────────────────────────────────────────────
-
   String get displaySize  => itemSize.trim().isEmpty ? 'Default' : itemSize;
   String get displayColor => color.trim().isEmpty    ? 'Default' : color;
 
@@ -46,86 +44,72 @@ class ApiCartItem {
 
   double get total => finalPrice * itemQty;
 
-  // ── Factory ───────────────────────────────────────────────────────────────
-
   factory ApiCartItem.fromJson(Map<String, dynamic> json) {
     if (kDebugMode) {
       debugPrint('[ApiCartItem.fromJson] keys   : ${json.keys.toList()}');
       debugPrint('[ApiCartItem.fromJson] values : $json');
     }
 
-    return ApiCartItem(
-      // Cart line PK — 'detail_id' once backend is fixed, 'ID' is current fallback.
-      // WARNING: 'ID' currently returns the product ID (wrong value).
-      // Delete will work correctly only after backend returns 'detail_id'.
-      detailId: _asInt(_pick(json, const [
-        'detail_id',   'DETAIL_ID',
-        'cart_det_id', 'CART_DET_ID',
-        'ID',                          // ← current backend key (temporary fallback)
-      ])),
+    final detailId = _asInt(_pick(json, const [
+      'detail_id',   'DETAIL_ID',
+      'cart_det_id', 'CART_DET_ID',
+      'ID',
+    ]));
 
-      itemId: _asInt(_pick(json, const [
-        'item_id', 'ITEM_ID',
-      ])),
-
-      itemDetId: _asInt(_pick(json, const [
+    // FIX: GetItemCart does not return a separate DET_ID / item_det_id field.
+    // DETAIL_ID on this backend IS the cart-line key that also serves as the
+    // item-detail reference for AddItemToCart.
+    // Fall back to detailId so itemDetId is never 0 when we need to re-add.
+    final itemDetId = () {
+      final raw = _asInt(_pick(json, const [
         'item_det_id', 'ITEM_DET_ID',
         'det_id',      'DET_ID',
+      ]));
+      return raw > 0 ? raw : detailId;
+    }();
+
+    final itemQty = _clampMin(
+      _asInt(_pick(json, const [
+        'booked_qty',  'BOOKED_QTY',
+        'cart_qty',    'CART_QTY',
+        'order_qty',   'ORDER_QTY',
+        'ordered_qty', 'ORDERED_QTY',
       ])),
+      min: 1,
+    );
 
-      username: _asString(json, const [
-        'username', 'USERNAME',
-      ]),
+    final availableQty = _asInt(_pick(json, const [
+      'available_qty', 'AVAILABLE_QTY',
+      'avail_qty',     'AVAIL_QTY',
+      'stock_qty',     'STOCK_QTY',
+      'item_qty',      'ITEM_QTY',
+    ]));
 
-      // 'BOOKED_QTY' is what the backend currently returns.
-      itemQty: _clampMin(
-        _asInt(_pick(json, const [
-          'booked_qty',  'BOOKED_QTY',
-          'item_qty',    'ITEM_QTY',
-          'qty',         'QTY',
-          'quantity',    'QUANTITY',
-        ])),
-        min: 1,
-      ),
-
-      availableQty: _asInt(_pick(json, const [
-        'available_qty', 'AVAILABLE_QTY',
-        'avail_qty',     'AVAIL_QTY',
-        'stock_qty',     'STOCK_QTY',
-      ])),
-
+    return ApiCartItem(
+      detailId:     detailId,
+      itemId:       _asInt(_pick(json, const ['item_id', 'ITEM_ID'])),
+      itemDetId:    itemDetId,
+      username:     _asString(json, const ['username', 'USERNAME']),
+      itemQty:      itemQty,
+      availableQty: availableQty,
       itemName: _asString(json, const [
-        'item_name', 'ITEM_NAME',
-        'name',      'NAME',
+        'item_name', 'ITEM_NAME', 'name', 'NAME',
       ]),
-
       itemDesc: _asString(json, const [
-        'item_desc',    'ITEM_DESC',
-        'description',  'DESCRIPTION',
+        'item_desc', 'ITEM_DESC', 'description', 'DESCRIPTION',
       ]),
-
       itemPrice: _asDouble(_pick(json, const [
-        'item_price', 'ITEM_PRICE',
-        'price',      'PRICE',
+        'item_price', 'ITEM_PRICE', 'price', 'PRICE',
       ])),
-
-      discount: _asDouble(_pick(json, const [
-        'discount', 'DISCOUNT',
-      ])),
-
+      discount: _asDouble(_pick(json, const ['discount', 'DISCOUNT'])),
       itemImgUrl: _asString(json, const [
-        'item_img_url', 'ITEM_IMG_URL',
-        'images',       'IMAGES',
-        'img_url',      'IMG_URL',
+        'item_img_url', 'ITEM_IMG_URL', 'images', 'IMAGES', 'img_url', 'IMG_URL',
       ]),
-
       color:    _asString(json, const ['color',     'COLOR']),
       itemSize: _asString(json, const ['item_size', 'ITEM_SIZE', 'size', 'SIZE']),
       brand:    _asString(json, const ['brand',     'BRAND']),
     );
   }
-
-  // ── copyWith ──────────────────────────────────────────────────────────────
 
   ApiCartItem copyWith({
     int?    detailId,
@@ -161,16 +145,10 @@ class ApiCartItem {
     );
   }
 
-  // ── toProduct ─────────────────────────────────────────────────────────────
-
   ApiProduct toProduct() {
     final images = itemImgUrl.trim().isEmpty
         ? <String>[]
-        : itemImgUrl
-        .split(',')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
+        : itemImgUrl.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
 
     return ApiProduct(
       id:            itemId,
@@ -197,18 +175,14 @@ class ApiCartItem {
           itemSize:  displaySize,
           discount:  discount,
           itemPrice: itemPrice,
-          itemQty:   itemQty,
+          itemQty:   availableQty > 0 ? availableQty : itemQty,
         ),
       ],
     );
   }
 
-  // ── product getter ────────────────────────────────────────────────────────
-
   ApiProduct get product => toProduct();
 }
-
-// ── AddItemToCartRequest ──────────────────────────────────────────────────────
 
 class AddItemToCartRequest {
   final int    itemId;
@@ -234,8 +208,6 @@ class AddItemToCartRequest {
     ],
   };
 }
-
-// ── Private helpers ───────────────────────────────────────────────────────────
 
 dynamic _pick(Map<String, dynamic> json, List<String> keys) {
   for (final key in keys) {

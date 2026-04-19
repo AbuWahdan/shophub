@@ -4,11 +4,13 @@ import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/src/model/cart_api.dart';
 
 import '../../controllers/address_controller.dart';
+import '../../data/repositories/codes_repository.dart';
 import '../../data/repositories/checkout_repository.dart';
 import '../../core/utils/apex_response_helper.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/address_model.dart';
+import '../model/api_code_option.dart';
 import '../model/checkout_request.dart';
 import '../model/payment_method_model.dart';
 import 'addresses/address_selection_bottom_sheet.dart';
@@ -31,21 +33,27 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   late final AddressController _addressController;
   late final CheckoutRepository _checkoutRepository;
+  late final CodesRepository _codesRepository;
 
   bool _isSubmitting = false;
   bool _isLoadingAddresses = false;
+  bool _isLoadingPaymentMethods = false;
   AddressModel? _selectedAddress;
   int? _selectedPaymentMethodId;
   String? _addressError;
   String? _paymentMethodError;
+  String? _paymentMethodLoadError;
   String? _authError;
+  List<ApiCodeOption> _paymentMethodOptions = const <ApiCodeOption>[];
 
   @override
   void initState() {
     super.initState();
     _addressController = Get.find<AddressController>();
     _checkoutRepository = Get.find<CheckoutRepository>();
+    _codesRepository = Get.find<CodesRepository>();
     _loadUserAddresses();
+    _loadPaymentMethods();
   }
 
   double get _totalPrice {
@@ -53,24 +61,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   List<PaymentMethodModel> _paymentMethods(BuildContext context) {
-    final l10n = context.l10n;
-    return [
-      PaymentMethodModel(
-        id: 1,
-        label: l10n.checkoutPaymentCard,
-        icon: Icons.credit_card_outlined,
-      ),
-      PaymentMethodModel(
-        id: 2,
-        label: l10n.checkoutPaymentCash,
-        icon: Icons.payments_outlined,
-      ),
-      PaymentMethodModel(
-        id: 3,
-        label: l10n.checkoutPaymentWallet,
-        icon: Icons.account_balance_wallet_outlined,
-      ),
-    ];
+    return _paymentMethodOptions
+        .map(
+          (option) => PaymentMethodModel(
+            id: option.minorCode,
+            label: option.label,
+            icon: _paymentMethodIcon(option),
+          ),
+        )
+        .toList(growable: false);
   }
 
   PaymentMethodModel? _selectedPaymentMethod(BuildContext context) {
@@ -82,6 +81,60 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
     }
     return null;
+  }
+
+  Future<void> _loadPaymentMethods({bool forceRefresh = false}) async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoadingPaymentMethods = true;
+      _paymentMethodLoadError = null;
+    });
+
+    try {
+      final options = await _codesRepository.getCodes(
+        majorCode: ApiCodeOption.paymentMethodMajorCode,
+        forceRefresh: forceRefresh,
+      );
+      if (!mounted) return;
+      setState(() {
+        _paymentMethodOptions = options;
+        if (_selectedPaymentMethodId != null &&
+            !_paymentMethodOptions.any(
+              (option) => option.minorCode == _selectedPaymentMethodId,
+            )) {
+          _selectedPaymentMethodId = null;
+        }
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _paymentMethodLoadError = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingPaymentMethods = false;
+        });
+      }
+    }
+  }
+
+  IconData _paymentMethodIcon(ApiCodeOption option) {
+    switch (option.minorCode) {
+      case 1:
+        return Icons.payments_outlined;
+      case 2:
+        return Icons.qr_code_scanner_outlined;
+      case 3:
+        return Icons.credit_card_outlined;
+      case 4:
+        return Icons.account_balance_outlined;
+      case 5:
+        return Icons.account_balance_wallet_outlined;
+      default:
+        return Icons.payments_outlined;
+    }
   }
 
   Future<void> _loadUserAddresses({bool forceRefresh = false}) async {
@@ -377,6 +430,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               const SizedBox(height: AppSpacing.xl),
               Text(l10n.checkoutPaymentMethod, style: AppTextStyles.titleSmall),
               const SizedBox(height: AppSpacing.sm),
+              if (_isLoadingPaymentMethods)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                  child: LinearProgressIndicator(),
+                ),
+              if (_paymentMethodLoadError != null &&
+                  _paymentMethodOptions.isEmpty) ...[
+                Text(
+                  _paymentMethodLoadError!,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.error,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: () => _loadPaymentMethods(forceRefresh: true),
+                    child: const Text('Retry'),
+                  ),
+                ),
+              ],
               ..._paymentMethods(context).map(
                 (method) => Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),

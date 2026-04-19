@@ -31,11 +31,13 @@ class _MyHomePageState extends State<MyHomePage> {
   int? _selectedCategoryId;
   String? _errorMessage;
   List<ApiProduct> _products = [];
+  final Map<int, List<ApiProduct>> _productsByTab = <int, List<ApiProduct>>{};
+  final Map<int, String?> _errorsByTab = <int, String?>{};
+  final Set<int> _loadedTabs = <int>{};
 
   @override
   void initState() {
     super.initState();
-    _products = AppData.products;
     _loadProducts();
   }
 
@@ -57,6 +59,8 @@ class _MyHomePageState extends State<MyHomePage> {
           category.toLowerCase().contains(query);
     }).toList();
   }
+
+  int get _currentTabKey => _selectedCategoryId ?? 0;
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +143,7 @@ class _MyHomePageState extends State<MyHomePage> {
       );
     }
 
-    if (_errorMessage != null) {
+    if (_errorMessage != null && _products.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -194,7 +198,7 @@ class _MyHomePageState extends State<MyHomePage> {
         padding: AppTheme.hPadding,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.75,
+          childAspectRatio: 0.82,
           mainAxisSpacing: AppSpacing.lg,
           crossAxisSpacing: AppSpacing.lg,
         ),
@@ -225,9 +229,19 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _loadProducts({bool forceRefresh = false}) async {
+    final tabKey = _currentTabKey;
+    if (!forceRefresh && _loadedTabs.contains(tabKey)) {
+      setState(() {
+        _products = _productsByTab[tabKey] ?? const <ApiProduct>[];
+        _errorMessage = _errorsByTab[tabKey];
+        _isLoading = false;
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
+      _errorMessage = _errorsByTab[tabKey];
     });
 
     try {
@@ -240,7 +254,11 @@ class _MyHomePageState extends State<MyHomePage> {
       if (!mounted) return;
       final active = products.where((item) => item.isActive == 1).toList();
       setState(() {
+        _productsByTab[tabKey] = active;
+        _errorsByTab.remove(tabKey);
+        _loadedTabs.add(tabKey);
         _products = active;
+        _errorMessage = null;
         _isLoading = false;
       });
       if (_selectedCategoryId == null) {
@@ -249,7 +267,10 @@ class _MyHomePageState extends State<MyHomePage> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _products = _selectedCategoryId == null ? AppData.products : [];
+        _products =
+            _productsByTab[tabKey] ??
+            (_selectedCategoryId == null ? AppData.products : const []);
+        _errorsByTab[tabKey] = error.toString();
         _errorMessage = error.toString();
         _isLoading = false;
       });

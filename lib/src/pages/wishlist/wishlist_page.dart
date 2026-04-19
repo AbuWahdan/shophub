@@ -138,7 +138,7 @@ class _WishlistBody extends StatelessWidget {
         padding: AppTheme.padding,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.75,
+          childAspectRatio: 0.82,
           mainAxisSpacing: AppSpacing.lg,
           crossAxisSpacing: AppSpacing.lg,
         ),

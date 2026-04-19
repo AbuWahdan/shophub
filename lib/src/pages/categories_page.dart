@@ -169,7 +169,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
         padding: AppTheme.hPadding,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.75,
+          childAspectRatio: 0.82,
           crossAxisSpacing: AppSpacing.lg,
           mainAxisSpacing: AppSpacing.lg,
         ),

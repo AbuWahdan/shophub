@@ -34,7 +34,17 @@ class CommentRepository {
           .whereType<Map>()
           .map(Map<String, dynamic>.from)
           .toList();
-      return rawItems.map(ApiItemComment.fromJson).toList();
+      final comments = rawItems.map(ApiItemComment.fromJson).toList()
+        ..sort((a, b) {
+          if (a.hasCreatedAt && b.hasCreatedAt) {
+            return b.createdAt.compareTo(a.createdAt);
+          }
+          if (a.hasCreatedAt != b.hasCreatedAt) {
+            return b.hasCreatedAt ? 1 : -1;
+          }
+          return b.id.compareTo(a.id);
+        });
+      return comments;
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[CommentRepository] Error fetching comments: $e');

@@ -181,7 +181,7 @@ class _MyProductsPageState extends State<MyProductsPage> {
     String currentUsername,
   ) async {
     if (_isOpeningProduct) return;
-    setState(() => _isOpeningProduct = true);
+    _isOpeningProduct = true;
 
     final productService = ProductService();
 

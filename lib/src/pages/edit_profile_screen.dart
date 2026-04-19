@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/repositories/codes_repository.dart';
 import '../../data/repositories/profile_repository.dart';
 import '../design/app_text_styles.dart';
+import '../model/api_code_option.dart';
 import '../state/auth_state.dart';
 import '../shared/widgets/app_button.dart';
 import '../shared/widgets/app_text_field.dart';
@@ -23,22 +25,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _countryController = TextEditingController();
   late final ProfileRepository _profileRepository;
+  late final CodesRepository _codesRepository;
 
   int? _selectedGender;
   bool _isSubmitting = false;
   String? _genderError;
+  String? _genderLoadError;
   String? _formError;
+  bool _isLoadingGenderOptions = false;
+  List<ApiCodeOption> _genderOptions = const <ApiCodeOption>[];
 
   @override
   void initState() {
     super.initState();
     _profileRepository = Get.find<ProfileRepository>();
+    _codesRepository = Get.find<CodesRepository>();
     final user = context.read<AuthState>().user;
     _fullNameController.text = user?.fullname ?? '';
     _emailController.text = user?.email ?? '';
     _phoneController.text = user?.phone ?? '';
     _countryController.text = user?.country ?? '';
     _selectedGender = user?.gender;
+    _loadGenderOptions();
   }
 
   @override
@@ -120,6 +128,80 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  Future<void> _loadGenderOptions({bool forceRefresh = false}) async {
+    setState(() {
+      _isLoadingGenderOptions = true;
+      _genderLoadError = null;
+    });
+
+    try {
+      final options = await _codesRepository.getCodes(
+        majorCode: ApiCodeOption.genderMajorCode,
+        forceRefresh: forceRefresh,
+      );
+      if (!mounted) return;
+      setState(() {
+        _genderOptions = options;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _genderLoadError = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingGenderOptions = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildGenderSection() {
+    if (_isLoadingGenderOptions) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: LinearProgressIndicator(),
+      );
+    }
+
+    if (_genderLoadError != null && _genderOptions.isEmpty) {
+      return Row(
+        children: [
+          Expanded(
+            child: Text(
+              _genderLoadError!,
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
+            ),
+          ),
+          TextButton(
+            onPressed: () => _loadGenderOptions(forceRefresh: true),
+            child: const Text('Retry'),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      children: _genderOptions
+          .map(
+            (option) => RadioListTile<int>(
+              contentPadding: EdgeInsets.zero,
+              title: Text(option.label),
+              value: option.minorCode,
+              groupValue: _selectedGender,
+              onChanged: (value) {
+                setState(() {
+                  _selectedGender = value;
+                  _genderError = null;
+                });
+              },
+            ),
+          )
+          .toList(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthState>().user;
@@ -164,33 +246,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 Text('Gender', style: AppTextStyles.labelMedium),
                 const SizedBox(height: AppSpacing.sm),
-                Row(
-                  children: [
-                    Radio<int>(
-                      value: 1,
-                      groupValue: _selectedGender,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedGender = value;
-                          _genderError = null;
-                        });
-                      },
-                    ),
-                    const Text('Male'),
-                    const SizedBox(width: 24),
-                    Radio<int>(
-                      value: 2,
-                      groupValue: _selectedGender,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedGender = value;
-                          _genderError = null;
-                        });
-                      },
-                    ),
-                    const Text('Female'),
-                  ],
-                ),
+                _buildGenderSection(),
                 if (_genderError != null) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(

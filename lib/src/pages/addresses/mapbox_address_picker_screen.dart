@@ -33,10 +33,7 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
   bool _isResolvingAddress = false;
   bool _isLoadingInitialLocation = true;
   bool _isLocatingUser = false;
-
-  // True when GPS is unavailable and no initial coords were provided.
-  // Shows an informational message in the bottom card.
-  bool _gpsUnavailable = false;
+  bool _ignoreInitialIdleSelection = false;
 
   @override
   void initState() {
@@ -47,7 +44,6 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
   // ── Initial location ───────────────────────────────────────────────────────
 
   Future<void> _resolveInitialLocation() async {
-    // 1. Caller passed explicit coords (editing an existing address)
     final initialLat = widget.initialLatitude;
     final initialLng = widget.initialLongitude;
     if (initialLat != null && initialLng != null) {
@@ -59,22 +55,10 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
       return;
     }
 
-    // 2. Try GPS
-    final position = await _resolveDevicePosition();
-    if (position != null) {
-      await _setSelection(
-        latitude: position.latitude,
-        longitude: position.longitude,
-        reverseGeocode: true,
-      );
-      return;
-    }
-
-    // 3. GPS truly unavailable — show world view + message, no silent fallback
     if (!mounted) return;
     setState(() {
       _isLoadingInitialLocation = false;
-      _gpsUnavailable = true;
+      _ignoreInitialIdleSelection = true;
     });
   }
 
@@ -126,7 +110,6 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
         return;
       }
 
-      setState(() => _gpsUnavailable = false);
       await _setSelection(
         latitude: position.latitude,
         longitude: position.longitude,
@@ -224,6 +207,13 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
     final mapboxMap = _mapboxMap;
     if (mapboxMap == null) return;
 
+    if (_ignoreInitialIdleSelection &&
+        _selectedLatitude == null &&
+        _selectedLongitude == null) {
+      _ignoreInitialIdleSelection = false;
+      return;
+    }
+
     final cameraState = await mapboxMap.getCameraState();
     final center = cameraState.center.coordinates;
     final lat = center.lat.toDouble();
@@ -271,42 +261,9 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
             zoom: 15.5,
           )
         : CameraOptions(center: Point(coordinates: Position(0, 20)), zoom: 1.5);
+    final fabBottomOffset = MediaQuery.of(context).padding.bottom + 180;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pick location'),
-        // Back arrow silently discards — no dialog
-        actions: [
-          TextButton(
-            onPressed: hasSelection ? _confirmSelection : null,
-            child: const Text('Confirm'),
-          ),
-        ],
-      ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton.small(
-            heroTag: 'my_location_fab',
-            onPressed: _isLocatingUser ? null : _goToMyLocation,
-            tooltip: 'My location',
-            child: _isLocatingUser
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.my_location),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          FloatingActionButton.extended(
-            heroTag: 'confirm_fab',
-            onPressed: hasSelection ? _confirmSelection : null,
-            icon: const Icon(Icons.check),
-            label: const Text('Use location'),
-          ),
-        ],
-      ),
       body: _isLoadingInitialLocation
           ? const Center(child: CircularProgressIndicator())
           : Stack(
@@ -317,6 +274,16 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
                   cameraOptions: initialCamera,
                   onMapCreated: _handleMapCreated,
                   onMapIdleListener: _handleMapIdle,
+                ),
+
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + AppSpacing.md,
+                  left: AppSpacing.md,
+                  child: FloatingActionButton.small(
+                    heroTag: 'map_back_fab',
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Icon(Icons.arrow_back),
+                  ),
                 ),
 
                 // Pin — only visible when a location is selected
@@ -334,7 +301,23 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
                     ),
                   ),
 
-                // Bottom card
+                Positioned(
+                  right: AppSpacing.md,
+                  bottom: fabBottomOffset,
+                  child: FloatingActionButton.small(
+                    heroTag: 'my_location_fab',
+                    onPressed: _isLocatingUser ? null : _goToMyLocation,
+                    tooltip: 'My location',
+                    child: _isLocatingUser
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.my_location),
+                  ),
+                ),
+
                 Positioned(
                   left: AppSpacing.md,
                   right: AppSpacing.md,
@@ -348,46 +331,14 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // GPS unavailable notice
-                            if (_gpsUnavailable)
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  bottom: AppSpacing.sm,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.location_off_outlined,
-                                      size: 16,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.error,
-                                    ),
-                                    const SizedBox(width: AppSpacing.xs),
-                                    Expanded(
-                                      child: Text(
-                                        'GPS is off. Enable location services '
-                                        'or move the map to pick manually.',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.error,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
                             Text(
                               _selectedAddress.isNotEmpty
                                   ? _selectedAddress
                                   : (_isResolvingAddress
                                         ? 'Resolving address…'
                                         : 'Move the map to choose a location'),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                               style: Theme.of(context).textTheme.titleSmall,
                             ),
 
@@ -402,7 +353,7 @@ class _MapboxAddressPickerScreenState extends State<MapboxAddressPickerScreen> {
 
                             const SizedBox(height: AppSpacing.md),
                             AppButton(
-                              label: 'Use this location',
+                              label: 'Save Location',
                               onPressed: hasSelection
                                   ? _confirmSelection
                                   : null,

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../controllers/password_controller.dart';
 import '../../../data/repositories/user_repository.dart';
+import '../../config/route.dart';
 import '../../l10n/l10n.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_snackbar.dart';
@@ -11,8 +12,20 @@ import '../../shared/widgets/app_text_field.dart';
 import '../../state/auth_state.dart';
 import '../../themes/theme.dart';
 
+enum ChangePasswordFlow { changeWithCurrentPassword, resetFromOtp }
+
 class ChangePasswordScreen extends StatefulWidget {
-  const ChangePasswordScreen({super.key});
+  const ChangePasswordScreen({
+    super.key,
+    this.flow = ChangePasswordFlow.changeWithCurrentPassword,
+    this.usernameOverride,
+  });
+
+  final ChangePasswordFlow flow;
+  final String? usernameOverride;
+
+  bool get requiresCurrentPassword =>
+      flow == ChangePasswordFlow.changeWithCurrentPassword;
 
   @override
   State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
@@ -46,11 +59,18 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       return;
     }
 
-    final username = context.read<AuthState>().user?.username.trim() ?? '';
-    final changed = await _passwordController.changePassword(
-      context: context,
-      username: username,
-    );
+    final username = (widget.usernameOverride?.trim().isNotEmpty ?? false)
+        ? widget.usernameOverride!.trim()
+        : context.read<AuthState>().user?.username.trim() ?? '';
+    final changed = widget.requiresCurrentPassword
+        ? await _passwordController.changePassword(
+            context: context,
+            username: username,
+          )
+        : await _passwordController.resetPassword(
+            context: context,
+            username: username,
+          );
     if (!changed || !mounted) {
       return;
     }
@@ -64,15 +84,38 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     if (!mounted) {
       return;
     }
-    Navigator.pop(context, true);
+    if (widget.requiresCurrentPassword) {
+      Navigator.pop(context, true);
+      return;
+    }
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.passwordUpdated,
+      (route) => false,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final title = widget.requiresCurrentPassword
+        ? l10n.changePasswordTitle
+        : l10n.resetPasswordTitle;
+    final newPasswordLabel = widget.requiresCurrentPassword
+        ? l10n.resetPasswordNewLabel
+        : l10n.resetPasswordNewLabel;
+    final newPasswordHint = widget.requiresCurrentPassword
+        ? l10n.changePasswordNewHint
+        : l10n.resetPasswordNewHint;
+    final confirmLabel = widget.requiresCurrentPassword
+        ? l10n.changePasswordConfirmLabel
+        : l10n.resetPasswordConfirmLabel;
+    final confirmHint = widget.requiresCurrentPassword
+        ? l10n.changePasswordConfirmHint
+        : l10n.resetPasswordConfirmHint;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.changePasswordTitle)),
+      appBar: AppBar(title: Text(title)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: AppTheme.padding,
@@ -82,31 +125,33 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               () => Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppTextField(
-                    controller: _passwordController.currentPasswordController,
-                    label: l10n.changePasswordCurrentLabel,
-                    hintText: l10n.changePasswordCurrentHint,
-                    obscureText:
-                        _passwordController.isCurrentPasswordHidden.value,
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _passwordController.isCurrentPasswordHidden.value
-                            ? Icons.visibility_off
-                            : Icons.visibility,
+                  if (widget.requiresCurrentPassword) ...[
+                    AppTextField(
+                      controller: _passwordController.currentPasswordController,
+                      label: l10n.changePasswordCurrentLabel,
+                      hintText: l10n.changePasswordCurrentHint,
+                      obscureText:
+                          _passwordController.isCurrentPasswordHidden.value,
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _passwordController.isCurrentPasswordHidden.value
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed:
+                            _passwordController.toggleCurrentPasswordVisibility,
                       ),
-                      onPressed:
-                          _passwordController.toggleCurrentPasswordVisibility,
+                      validator: (value) => _passwordController
+                          .validateCurrentPassword(context, value),
+                      textInputAction: TextInputAction.next,
                     ),
-                    validator: (value) => _passwordController
-                        .validateCurrentPassword(context, value),
-                    textInputAction: TextInputAction.next,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
                   AppTextField(
                     controller: _passwordController.newPasswordController,
-                    label: l10n.resetPasswordNewLabel,
-                    hintText: l10n.changePasswordNewHint,
+                    label: newPasswordLabel,
+                    hintText: newPasswordHint,
                     obscureText: _passwordController.isNewPasswordHidden.value,
                     prefixIcon: const Icon(Icons.lock_outlined),
                     suffixIcon: IconButton(
@@ -125,8 +170,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   const SizedBox(height: AppSpacing.lg),
                   AppTextField(
                     controller: _passwordController.confirmPasswordController,
-                    label: l10n.changePasswordConfirmLabel,
-                    hintText: l10n.changePasswordConfirmHint,
+                    label: confirmLabel,
+                    hintText: confirmHint,
                     obscureText:
                         _passwordController.isConfirmPasswordHidden.value,
                     prefixIcon: const Icon(Icons.lock_outlined),
