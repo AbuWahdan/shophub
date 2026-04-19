@@ -11,6 +11,7 @@ import 'data/repositories/address_repository.dart';
 import 'data/repositories/cart_repository.dart';
 import 'data/repositories/checkout_repository.dart';
 import 'data/repositories/comment_repository.dart';
+import 'data/repositories/codes_repository.dart';
 import 'data/repositories/order_repository.dart';
 import 'data/repositories/profile_repository.dart';
 import 'data/repositories/product_repository.dart';
@@ -37,6 +38,10 @@ class AppBindings extends Bindings {
     );
     Get.lazyPut<CommentRepository>(
       () => CommentRepository(Get.find<ApiService>()),
+      fenix: true,
+    );
+    Get.lazyPut<CodesRepository>(
+      () => CodesRepository(Get.find<ApiService>()),
       fenix: true,
     );
     Get.lazyPut<OrderRepository>(

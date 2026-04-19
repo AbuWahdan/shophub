@@ -7,7 +7,6 @@ import 'package:sinwar_shoping/src/pages/auth/register_screen.dart';
 import 'package:sinwar_shoping/src/pages/auth/forgot_password_email_screen.dart';
 import 'package:sinwar_shoping/src/pages/auth/otp_sent_notice_screen.dart';
 import 'package:sinwar_shoping/src/pages/auth/otp_verification_screen.dart';
-import 'package:sinwar_shoping/src/pages/auth/reset_password_screen.dart';
 import 'package:sinwar_shoping/src/pages/auth/password_updated_screen.dart';
 import 'package:sinwar_shoping/src/pages/categories_page.dart';
 import 'package:sinwar_shoping/src/pages/info_page.dart';
@@ -128,7 +127,10 @@ class AppRoutes {
         final username = args?['username'] as String? ?? '';
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => ResetPasswordScreen(username: username),
+          builder: (_) => ChangePasswordScreen(
+            flow: ChangePasswordFlow.resetFromOtp,
+            usernameOverride: username,
+          ),
         );
 
       case passwordUpdated:
@@ -208,9 +210,17 @@ class AppRoutes {
         );
 
       case changePassword:
+        final flowName = args?['flow'] as String?;
+        final flow = flowName == 'reset'
+            ? ChangePasswordFlow.resetFromOtp
+            : ChangePasswordFlow.changeWithCurrentPassword;
+        final usernameOverride = args?['username'] as String?;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const ChangePasswordScreen(),
+          builder: (_) => ChangePasswordScreen(
+            flow: flow,
+            usernameOverride: usernameOverride,
+          ),
         );
 
       case privacy:

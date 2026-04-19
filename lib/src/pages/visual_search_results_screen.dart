@@ -75,7 +75,7 @@ class VisualSearchResultsScreen extends StatelessWidget {
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
-                            childAspectRatio: 0.75,
+                            childAspectRatio: 0.82,
                             mainAxisSpacing: AppSpacing.lg,
                             crossAxisSpacing: AppSpacing.lg,
                           ),

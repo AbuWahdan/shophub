@@ -47,6 +47,7 @@ class ApiConstants {
   static const String updateUserAddress = '/users/UpdateUserAddress';
   static const String deleteUserAddress = '/users/DeleteUserAddress';
   static const String updateUser = '/users/UpdateUser';
+  static const String getCodes = '/users/GetCodes';
 
   static const Duration timeout = Duration(seconds: 10);
 }

@@ -9,41 +9,33 @@ enum WishlistToggleAction { added, removed }
 
 class WishlistState extends ChangeNotifier {
   WishlistState({ProductService? productService})
-    : _productService = productService ?? ProductService();
+      : _productService = productService ?? ProductService();
 
   final ProductService _productService;
-  final Map<int, ApiProduct> _itemsById = <int, ApiProduct>{};
-  final Set<int> _togglingIds = <int>{};
+  final Map<int, ApiProduct> _itemsById   = <int, ApiProduct>{};
+  final Set<int>             _togglingIds = <int>{};
+  final Map<int, bool>       _favoriteOverrides  = {};
+  final Map<int, ApiProduct> _overrideProducts   = {};
 
-  // ── Override maps ──────────────────────────────────────────────────────────
-  // Local truth that gets re-applied on top of every API fetch.
-  // This protects optimistic changes from being wiped by API eventual-consistency lag.
-  // Cleared only on logout / username change.
-  final Map<int, bool> _favoriteOverrides = {}; // id → isFavorite
-  final Map<int, ApiProduct> _overrideProducts =
-      {}; // id → product (to re-insert)
-  // ──────────────────────────────────────────────────────────────────────────
-
-  String _username = '';
-  bool _isLoading = false;
+  String _username        = '';
+  bool   _isLoading       = false;
   String? _errorMessage;
-  bool _hasLoadedForUser = false;
+  bool   _hasLoadedForUser = false;
 
-  List<ApiProduct> get items => _itemsById.values.toList(growable: false);
-  bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
-  bool get hasLoadedForUser => _hasLoadedForUser;
+  List<ApiProduct> get items            => _itemsById.values.toList(growable: false);
+  bool             get isLoading        => _isLoading;
+  String?          get errorMessage     => _errorMessage;
+  bool             get hasLoadedForUser => _hasLoadedForUser;
 
   bool isInWishlist(int productId) => _itemsById.containsKey(productId);
-  bool isToggling(int productId) => _togglingIds.contains(productId);
+  bool isToggling(int productId)   => _togglingIds.contains(productId);
 
-  // ── Override helpers ───────────────────────────────────────────────────────
+  // ── Overrides ─────────────────────────────────────────────────────────────
 
   void _applyOverrides() {
     for (final entry in _favoriteOverrides.entries) {
       final id = entry.key;
       if (entry.value) {
-        // Should be in wishlist — re-insert if API response didn't include it
         if (!_itemsById.containsKey(id)) {
           final product = _overrideProducts[id];
           if (product != null) {
@@ -52,7 +44,6 @@ class WishlistState extends ChangeNotifier {
           }
         }
       } else {
-        // Should NOT be in wishlist — remove even if API returned it
         _itemsById.remove(id);
       }
     }
@@ -63,26 +54,27 @@ class WishlistState extends ChangeNotifier {
     _overrideProducts.clear();
   }
 
-  // ── Auth ───────────────────────────────────────────────────────────────────
+  // ── Auth ──────────────────────────────────────────────────────────────────
 
   void updateAuth(AuthState authState) {
     if (!authState.isInitialized || authState.isInitializing) return;
 
     final nextUsername = authState.user?.username.trim() ?? '';
-    final isLoggedIn = authState.isLoggedIn && nextUsername.isNotEmpty;
+    final isLoggedIn   = authState.isLoggedIn && nextUsername.isNotEmpty;
 
     if (!isLoggedIn) {
-      if (_username.isNotEmpty ||
+      final hadState = _username.isNotEmpty ||
           _itemsById.isNotEmpty ||
           _togglingIds.isNotEmpty ||
           _errorMessage != null ||
-          _hasLoadedForUser) {
-        _username = '';
-        _isLoading = false;
+          _hasLoadedForUser;
+      if (hadState) {
+        _username        = '';
+        _isLoading       = false;
+        _hasLoadedForUser = false;
+        _errorMessage    = null;
         _itemsById.clear();
         _togglingIds.clear();
-        _errorMessage = null;
-        _hasLoadedForUser = false;
         _clearOverrides();
         AppData.setWishlistProducts(const []);
         notifyListeners();
@@ -97,12 +89,16 @@ class WishlistState extends ChangeNotifier {
       return;
     }
 
-    _username = nextUsername;
-    _itemsById.clear();
-    _togglingIds.clear();
-    _errorMessage = null;
+    // Username changed: keep existing items visible while we fetch the new
+    // user's list. fetchWishlist will replace them on success.
+    // Clearing immediately would cause a blank flash and lose data if the
+    // API is slow or times out (APEX cold start).
+    _username        = nextUsername;
     _hasLoadedForUser = false;
-    _clearOverrides(); // new user = fresh state
+    _errorMessage    = null;
+    _togglingIds.clear();
+    _clearOverrides();
+    // _itemsById intentionally NOT cleared here — fetchWishlist handles it
     notifyListeners();
     Future<void>.microtask(_refreshSilently);
   }
@@ -110,22 +106,25 @@ class WishlistState extends ChangeNotifier {
   Future<void> _refreshSilently() async {
     try {
       await fetchWishlist();
-    } catch (_) {}
+    } catch (_) {
+      // Swallow — errors are stored in _errorMessage, not propagated
+    }
   }
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
+  // ── Fetch ─────────────────────────────────────────────────────────────────
 
   Future<void> fetchWishlist() async {
     if (_username.isEmpty) {
-      _isLoading = false;
-      _itemsById.clear();
-      _errorMessage = null;
+      _isLoading        = false;
+      _errorMessage     = null;
       _hasLoadedForUser = true;
+      // Do NOT clear _itemsById — there is nothing valid to show and nothing
+      // wrong to clear.
       notifyListeners();
       return;
     }
 
-    _isLoading = true;
+    _isLoading    = true;
     _errorMessage = null;
     notifyListeners();
 
@@ -134,25 +133,39 @@ class WishlistState extends ChangeNotifier {
         username: _username,
       );
 
-      _itemsById
-        ..clear()
-        ..addEntries(
-          favorites.where((p) => p.id > 0).map((p) {
-            p.isFavorite = true;
-            return MapEntry(p.id, p);
-          }),
-        );
+      // FIX: Only replace local data when the API actually returned items.
+      //
+      // An empty response on cold start (APEX warmup delay, network hiccup,
+      // or the user genuinely having no favorites) must NOT wipe a wishlist
+      // the user built in a previous session.
+      //
+      // Side-effect: if a user removes ALL favorites from another device, the
+      // list will look stale until they pull-to-refresh. This is an acceptable
+      // trade-off compared to losing the entire wishlist on every cold restart.
+      if (favorites.isNotEmpty) {
+        _itemsById
+          ..clear()
+          ..addEntries(
+            favorites.where((p) => p.id > 0).map((p) {
+              p.isFavorite = true;
+              return MapEntry(p.id, p);
+            }),
+          );
+        _applyOverrides();
+        AppData.setWishlistProducts(items);
+      } else {
+        // Empty response: keep whatever is already in _itemsById.
+        // Re-apply overrides in case a recent toggle hasn't propagated yet.
+        _applyOverrides();
+      }
 
-      // Re-apply local overrides on top of the API result.
-      // This handles the case where the API hasn't yet reflected a recent toggle.
-      _applyOverrides();
-
-      AppData.setWishlistProducts(items);
       _hasLoadedForUser = true;
     } catch (error) {
-      _errorMessage = error.toString();
+      // FIX: Do NOT rethrow. Keeping existing items is better than crashing
+      // or showing an empty screen because of a transient network error.
+      _errorMessage     = error.toString();
       _hasLoadedForUser = true;
-      rethrow;
+      // _itemsById is intentionally left as-is on error.
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -161,7 +174,7 @@ class WishlistState extends ChangeNotifier {
 
   Future<void> refresh() => fetchWishlist();
 
-  // ── Toggle ─────────────────────────────────────────────────────────────────
+  // ── Toggle ────────────────────────────────────────────────────────────────
 
   Future<WishlistToggleAction> toggleWishlist(ApiProduct product) async {
     if (_username.isEmpty) {
@@ -169,7 +182,6 @@ class WishlistState extends ChangeNotifier {
     }
 
     final productId = product.id;
-
     if (_togglingIds.contains(productId)) {
       return isInWishlist(productId)
           ? WishlistToggleAction.removed
@@ -178,7 +190,6 @@ class WishlistState extends ChangeNotifier {
 
     final wasInWishlist = isInWishlist(productId);
 
-    // ── Optimistic update ──────────────────────────────────────────────────
     _togglingIds.add(productId);
     _errorMessage = null;
 
@@ -192,15 +203,13 @@ class WishlistState extends ChangeNotifier {
       AppData.setFavorite(product, true);
     }
     notifyListeners();
-    // ──────────────────────────────────────────────────────────────────────
 
     try {
       await _productService.toggleFavorite(
-        itemId: productId,
+        itemId:   productId,
         username: _username,
       );
 
-      // Record the override so future fetchWishlist calls don't undo this.
       _favoriteOverrides[productId] = !wasInWishlist;
       if (!wasInWishlist) {
         _overrideProducts[productId] = product;
@@ -212,21 +221,18 @@ class WishlistState extends ChangeNotifier {
           ? WishlistToggleAction.removed
           : WishlistToggleAction.added;
     } catch (error) {
-      // ── Rollback ─────────────────────────────────────────────────────────
+      // Rollback
       if (wasInWishlist) {
-        product.isFavorite = true;
-        _itemsById[productId] = product;
+        product.isFavorite       = true;
+        _itemsById[productId]    = product;
         AppData.setFavorite(product, true);
       } else {
         _itemsById.remove(productId);
         AppData.setFavorite(product, false);
         product.isFavorite = false;
       }
-      // Remove override — we rolled back so local state matches pre-toggle
       _favoriteOverrides.remove(productId);
       _overrideProducts.remove(productId);
-      // ─────────────────────────────────────────────────────────────────────
-
       _errorMessage = error.toString();
       rethrow;
     } finally {

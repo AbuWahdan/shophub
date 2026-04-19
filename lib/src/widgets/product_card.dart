@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/src/config/route.dart';
 
+import '../../controllers/cart_controller.dart';
 import '../design/app_text_styles.dart';
 import '../model/data.dart';
 import '../model/product_api.dart';
@@ -10,6 +13,7 @@ import '../services/product_service.dart';
 import '../shared/widgets/add_to_cart_bottom_sheet.dart';
 import '../shared/widgets/app_image.dart';
 import '../shared/widgets/app_snackbar.dart';
+import '../shared/widgets/rating_stars.dart';
 import '../state/auth_state.dart';
 import '../state/wishlist_state.dart';
 
@@ -80,7 +84,6 @@ class _ProductCardState extends State<ProductCard> {
     }
   }
 
-  /// ✅ NEW: Handle add to cart from product card
   Future<void> _handleAddToCart() async {
     final auth = context.read<AuthState>();
     await auth.ensureInitialized();
@@ -97,11 +100,13 @@ class _ProductCardState extends State<ProductCard> {
     }
 
     if (_isAddingToCart) return;
-
     setState(() => _isAddingToCart = true);
 
     try {
-      final selection = await showModalBottomSheet<AddToCartSelection>(
+      final variants = resolveProductVariants(widget.product, null);
+      final selection = variants.length == 1
+          ? AddToCartSelection(variants.first, 1)
+          : await showModalBottomSheet<AddToCartSelection>(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
@@ -109,34 +114,36 @@ class _ProductCardState extends State<ProductCard> {
       );
 
       if (!mounted || selection == null) return;
+
       final selectedVariant = selection.variant;
       final itemDetId = selectedVariant.detId > 0
           ? selectedVariant.detId
           : widget.product.resolveDetId(
-              size: selectedVariant.itemSize,
-              color: selectedVariant.color,
-              fallback: widget.product.detId,
-            );
+        size: selectedVariant.itemSize,
+        color: selectedVariant.color,
+        fallback: widget.product.detId,
+      );
 
       if (itemDetId <= 0) {
         throw ProductException('Unable to determine selected product variant.');
       }
 
-      // Add to cart with selected options
-      await _productService.addItemToCart(
-        AddItemToCartRequest(
-          itemId: widget.product.id,
-          itemDetId: itemDetId,
-          username: username,
-          itemQty: selection.qty,
-        ),
+      // FIX: use cartController.addItem() so the chosen qty is stored in
+      // _pendingQty and loadCart() shows the right number instead of the
+      // backend's full-stock BOOKED_QTY.
+      final cartController = Get.find<CartController>();
+      await cartController.addItem(
+        itemId:    widget.product.id,
+        itemDetId: itemDetId,
+        username:  username,
+        chosenQty: selection.qty,
       );
 
       if (!mounted) return;
 
-      // Update AppData cache
+      // Keep AppData cache in sync.
       AppData.addToCart(
-        product: widget.product,
+        product:  widget.product,
         quantity: selection.qty,
         size: selectedVariant.itemSize.trim().isEmpty
             ? 'Default'
@@ -167,12 +174,9 @@ class _ProductCardState extends State<ProductCard> {
         type: AppSnackBarType.error,
       );
     } finally {
-      if (mounted) {
-        setState(() => _isAddingToCart = false);
-      }
+      if (mounted) setState(() => _isAddingToCart = false);
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
@@ -287,31 +291,44 @@ class _ProductCardState extends State<ProductCard> {
               ),
             ),
             Padding(
-              padding: AppSpacing.insetsMd,
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    product.name.isNotEmpty ? product.name : 'Unnamed Product',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.headingSmall,
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.star_rounded,
-                        size: AppSpacing.iconSm,
-                        color: AppColors.star,
-                      ),
-                      const SizedBox(width: AppSpacing.xs),
-                      Text(
-                        '${product.rating.toStringAsFixed(1)} (${product.reviewCount})',
-                        style: AppTextStyles.caption,
-                      ),
-                    ],
-                  ),
+                  if (product.name.trim().isNotEmpty)
+                    Text(
+                      product.name.trim(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.titleSmall,
+                    ),
+                  if (product.rating > 0 || product.reviewCount > 0) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Row(
+                      children: [
+                        RatingStars(
+                          rating: product.rating,
+                          size: AppSpacing.iconSm,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            product.reviewCount > 0
+                                ? '${product.rating.toStringAsFixed(1)} (${product.reviewCount})'
+                                : product.rating.toStringAsFixed(1),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.caption,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -372,8 +389,8 @@ class _ProductCardState extends State<ProductCard> {
         onTap: _isAddingToCart ? null : _handleAddToCart,
         customBorder: const CircleBorder(),
         child: Ink(
-          width: 32,
-          height: 32,
+          width: 30,
+          height: 30,
           decoration: BoxDecoration(
             color: theme.colorScheme.primary,
             shape: BoxShape.circle,

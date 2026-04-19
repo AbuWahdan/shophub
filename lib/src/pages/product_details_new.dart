@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/utils/image_converter.dart';
 import '../../core/widgets/empty_state_widget.dart';
 import '../../data/repositories/comment_repository.dart';
 import '../../features/products/models/product_image_model.dart';
+import '../config/route.dart';
 import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
 import '../model/api_item_comment.dart';
@@ -18,6 +18,9 @@ import '../services/product_service.dart';
 import '../shared/widgets/add_to_cart_bottom_sheet.dart';
 import '../shared/widgets/app_image.dart';
 import '../shared/widgets/app_snackbar.dart';
+import '../shared/widgets/product_comment_card.dart';
+import '../shared/widgets/product_variant_widgets.dart';
+import '../shared/widgets/rating_stars.dart';
 import '../state/auth_state.dart';
 import '../state/review_refresh_notifier.dart';
 import '../state/wishlist_state.dart';
@@ -56,8 +59,37 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   List<ProductImageModel> _itemImages = const [];
   List<ApiProductVariant> _drawerVariants = const [];
   bool _isAddingToCart = false;
-  List<ApiProductVariant> get _variants =>
-      _drawerVariants.isNotEmpty ? _drawerVariants : widget.product.details;
+  List<ApiProductVariant> get _variants => _drawerVariants.isNotEmpty
+      ? _drawerVariants
+      : resolveProductVariants(widget.product, null);
+  bool get _hasSingleVariant => _variants.length <= 1;
+
+  ApiProductVariant? get _selectedVariant {
+    final variants = _variants;
+    if (variants.isEmpty) {
+      return null;
+    }
+    final selectedDetId = _selectedDetId;
+    if (selectedDetId > 0) {
+      for (final variant in variants) {
+        if (variant.detId == selectedDetId) {
+          return variant;
+        }
+      }
+    }
+    final preferredSize = (_selectedSize ?? '').trim();
+    final preferredColor = (_selectedColor ?? '').trim();
+    for (final variant in variants) {
+      final matchesSize =
+          preferredSize.isEmpty || variant.itemSize.trim() == preferredSize;
+      final matchesColor =
+          preferredColor.isEmpty || variant.color.trim() == preferredColor;
+      if (matchesSize && matchesColor) {
+        return variant;
+      }
+    }
+    return variants.first;
+  }
 
   @override
   void initState() {
@@ -73,20 +105,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     _selectedColor =
         widget.initialColor ??
         (widget.product.colors.isNotEmpty ? widget.product.colors.first : null);
-    if (_variants.isNotEmpty) {
-      final firstVariant = _variants.first;
-      _selectedSize = firstVariant.itemSize;
-      _selectedColor = firstVariant.color;
-      _selectedDetId = firstVariant.detId;
-    } else {
-      final selectedSize = _selectedSize ?? '';
-      final selectedColor = _selectedColor ?? '';
-      _selectedDetId = widget.product.resolveDetId(
-        size: selectedSize,
-        color: selectedColor,
-        fallback: widget.initialDetId ?? widget.product.detId,
-      );
-    }
+    final initialVariant = _matchVariantFrom(_variants) ?? _variants.first;
+    _setSelectedVariant(initialVariant);
     _loadItemImages();
     _loadDrawerVariants();
     ReviewRefreshNotifier.updatedItemId.addListener(_handleReviewRefresh);
@@ -173,12 +193,10 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           .toList();
       setState(() {
         _drawerVariants = variants;
-        if (variants.isNotEmpty) {
-          _selectedDetId = variants.first.detId;
-          _selectedSize = variants.first.itemSize;
-          _selectedColor = variants.first.color;
-        }
+        final matched = _matchVariantFrom(variants) ?? variants.first;
+        _setSelectedVariant(matched);
       });
+      _resetImageCarousel();
     } catch (_) {
       // Keep fallback variants from grouped product if details rows fail.
     }
@@ -193,6 +211,50 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     if (_imageController.hasClients) {
       _imageController.jumpToPage(0);
     }
+  }
+
+  ApiProductVariant? _matchVariantFrom(List<ApiProductVariant> variants) {
+    if (variants.isEmpty) {
+      return null;
+    }
+
+    final preferredDetId = _selectedDetId > 0
+        ? _selectedDetId
+        : (widget.initialDetId ?? widget.product.detId);
+    if (preferredDetId > 0) {
+      for (final variant in variants) {
+        if (variant.detId == preferredDetId) {
+          return variant;
+        }
+      }
+    }
+
+    final preferredSize = (_selectedSize ?? widget.initialSize ?? '').trim();
+    final preferredColor = (_selectedColor ?? widget.initialColor ?? '').trim();
+    for (final variant in variants) {
+      final matchesSize =
+          preferredSize.isEmpty || variant.itemSize.trim() == preferredSize;
+      final matchesColor =
+          preferredColor.isEmpty || variant.color.trim() == preferredColor;
+      if (matchesSize && matchesColor) {
+        return variant;
+      }
+    }
+
+    return variants.first;
+  }
+
+  void _setSelectedVariant(ApiProductVariant variant) {
+    _selectedDetId = variant.detId;
+    _selectedSize = variant.itemSize;
+    _selectedColor = variant.color;
+  }
+
+  void _selectVariant(ApiProductVariant variant) {
+    setState(() {
+      _setSelectedVariant(variant);
+    });
+    _resetImageCarousel();
   }
 
   @override
@@ -218,6 +280,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildProductInfo(),
+                      const SizedBox(height: AppSpacing.lg),
+                      _buildVariantSection(),
                       const SizedBox(height: AppSpacing.xxl),
                       _buildRatingSection(),
                       const SizedBox(height: AppSpacing.xxl),
@@ -477,51 +541,103 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   }
 
   Widget _buildProductInfo() {
+    final selectedVariant = _selectedVariant;
+    final showSingleVariantColor =
+        _hasSingleVariant &&
+        selectedVariant != null &&
+        isMeaningfulProductValue(selectedVariant.color);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.product.name,
-          style: AppTextStyles.headlineSmall,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
+        if (widget.product.name.trim().isNotEmpty)
+          Text(
+            widget.product.name.trim(),
+            style: AppTextStyles.headlineSmall,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        if (showSingleVariantColor) ...[
+          const SizedBox(height: AppSpacing.sm),
+          ProductColorCircle(colorValue: selectedVariant.color),
+        ],
+        if (widget.product.category.trim().isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(widget.product.category.trim(), style: AppTextStyles.bodySmall),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildVariantSection() {
+    final selectedVariant = _selectedVariant;
+    if (selectedVariant == null) {
+      return const SizedBox.shrink();
+    }
+
+    if (_hasSingleVariant) {
+      return Container(
+        width: double.infinity,
+        padding: AppSpacing.insetsLg,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
         ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(widget.product.category, style: AppTextStyles.bodySmall),
+        child: ProductVariantSummary(
+          variant: selectedVariant,
+          showColor: false,
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Details', style: AppTextStyles.titleMedium),
+        const SizedBox(height: AppSpacing.md),
+        ..._variants.map(
+          (variant) => Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: ProductVariantOptionCard(
+              variant: variant,
+              isSelected: selectedVariant.detId > 0
+                  ? selectedVariant.detId == variant.detId
+                  : selectedVariant.itemSize == variant.itemSize &&
+                        selectedVariant.color == variant.color,
+              quantity: 1,
+              onTap: () => _selectVariant(variant),
+            ),
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildRatingSection() {
+    final availableQty = _selectedVariant?.itemQty ?? widget.product.itemQty;
+    final showAvailableQty = availableQty >= 0 && availableQty < 100;
+
     return Wrap(
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.xs,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(
-            5,
-            (index) => Icon(
-              index < widget.product.rating.toInt()
-                  ? Icons.star
-                  : Icons.star_border,
-              size: AppSpacing.iconSm,
-              color: AppColors.accentYellow,
-            ),
-          ),
+        RatingStars(rating: widget.product.rating, size: AppSpacing.iconSm),
+        Text(
+          widget.product.rating.toStringAsFixed(1),
+          style: AppTextStyles.labelLarge,
         ),
-        Text('${widget.product.rating}', style: AppTextStyles.labelLarge),
         Text(
           context.l10n.productReviews(widget.product.reviewCount),
           style: AppTextStyles.bodySmall,
         ),
-        Text(
-          context.l10n.productSold(widget.product.soldCount),
-          style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.accentOrange,
+        if (showAvailableQty)
+          Text(
+            'Available: $availableQty',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.accentOrange,
+            ),
           ),
-        ),
       ],
     );
   }
@@ -580,13 +696,34 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       future: _commentsFuture,
       builder: (context, snapshot) {
         final comments = snapshot.data ?? const <ApiItemComment>[];
+        final previewComments = comments.take(3).toList(growable: false);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Reviews (${comments.length})',
-              style: AppTextStyles.titleMedium,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Reviews (${comments.length})',
+                    style: AppTextStyles.titleMedium,
+                  ),
+                ),
+                if (comments.isNotEmpty)
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.productComments,
+                        arguments: {
+                          'productId': widget.product.id,
+                          'productName': widget.product.name,
+                        },
+                      );
+                    },
+                    child: const Text('View All Comments'),
+                  ),
+              ],
             ),
             const SizedBox(height: AppSpacing.md),
             if (snapshot.connectionState == ConnectionState.waiting)
@@ -664,11 +801,11 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               )
             else
               Column(
-                children: comments
+                children: previewComments
                     .map(
                       (comment) => Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                        child: _CommentReviewCard(comment: comment),
+                        child: ProductCommentCard(comment: comment),
                       ),
                     )
                     .toList(),
@@ -721,6 +858,11 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         );
       }
     }
+    final singleVariant = _selectedVariant;
+    if (_hasSingleVariant && singleVariant != null) {
+      await _addToCart(variant: singleVariant, qty: 1);
+      return;
+    }
     final selection = await showModalBottomSheet<AddToCartSelection>(
       context: context,
       isScrollControlled: true,
@@ -735,9 +877,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     );
     if (!mounted || selection == null) return;
     final variant = selection.variant;
-    _selectedDetId = variant.detId;
-    _selectedSize = variant.itemSize;
-    _selectedColor = variant.color;
+    _setSelectedVariant(variant);
     await _addToCart(variant: variant, qty: selection.qty);
   }
 
@@ -834,85 +974,6 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         });
       }
     }
-  }
-}
-
-class _CommentReviewCard extends StatelessWidget {
-  final ApiItemComment comment;
-
-  const _CommentReviewCard({required this.comment});
-
-  String get _initials {
-    final parts = comment.username
-        .split(' ')
-        .where((part) => part.trim().isNotEmpty)
-        .toList();
-    if (parts.isEmpty) {
-      return '?';
-    }
-    if (parts.length == 1) {
-      return parts.first.substring(0, 1).toUpperCase();
-    }
-    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: AppSpacing.insetsLg,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-                foregroundColor: AppColors.primary,
-                child: Text(_initials),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      comment.username.isEmpty ? 'Anonymous' : comment.username,
-                      style: AppTextStyles.titleSmall,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Row(
-                      children: List.generate(
-                        5,
-                        (index) => Icon(
-                          index < comment.rating
-                              ? Icons.star
-                              : Icons.star_border,
-                          size: AppSpacing.iconSm,
-                          color: const Color(0xFFFFB800),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (comment.hasCreatedAt)
-                Text(
-                  DateFormat.yMMMd().format(comment.createdAt.toLocal()),
-                  style: AppTextStyles.bodySmall,
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(comment.comment, style: AppTextStyles.bodyMedium),
-        ],
-      ),
-    );
   }
 }
 

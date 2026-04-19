@@ -23,6 +23,10 @@ class ProductService {
 
   final http.Client _client;
 
+
+  static final Map<int, List<ApiProduct>> _categoryCache      = {};
+  static final Map<int, DateTime>         _categoryCacheTimes = {};
+
   ProductService({http.Client? client}) : _client = client ?? ApiClient();
 
   Future<List<ApiProduct>> getMyProducts({
@@ -199,24 +203,93 @@ class ProductService {
   }
 
   Future<List<ApiProduct>> getProductsByCategory(
-    int categoryId, {
-    bool forceRefresh = false,
-  }) async {
+      int categoryId, {
+        bool forceRefresh = false,
+      }) async {
+    final now = DateTime.now();
+
+    // Layer 1 — per-category in-memory cache.
+    // Tab switches after the first load cost zero network calls.
+    if (!forceRefresh) {
+      final cached    = _categoryCache[categoryId];
+      final lastFetch = _categoryCacheTimes[categoryId];
+      if (cached != null &&
+          lastFetch != null &&
+          now.difference(lastFetch) < _cacheTtl) {
+        return cached;
+      }
+    }
+
+    // Layer 2 — filter from the all-products cache if it is warm.
+    // Avoids a second network request when the "All" tab already loaded data.
+    if (!forceRefresh &&
+        _cachedProducts.isNotEmpty &&
+        _lastProductsFetch != null &&
+        now.difference(_lastProductsFetch!) < _cacheTtl) {
+      final filtered = _filterByCategory(categoryId, _cachedProducts);
+      _categoryCache[categoryId]      = filtered;
+      _categoryCacheTimes[categoryId] = now;
+      return filtered;
+    }
+
+    // Layer 3 — targeted API call (CAT_ID filter).
+    // FIX: previously this branch fetched ALL products for main categories.
+    // Now we always try the targeted fetch first, only falling back to a full
+    // fetch when the backend returns nothing for that category.
     var category = CategoriesData.getCategoryById(categoryId);
     category ??= await loadCategoryById(categoryId);
+
+    final targeted = await getProducts(
+      forceRefresh: forceRefresh,
+      categoryId:   categoryId,
+    );
+
+    if (targeted.isNotEmpty) {
+      // If the backend supports CAT_ID filtering, the result is already
+      // scoped.  Filter defensively in case extras slipped through.
+      final filtered = category != null && category.isMainCategory
+          ? _filterByCategory(categoryId, targeted)
+          : targeted;
+      _categoryCache[categoryId]      = filtered;
+      _categoryCacheTimes[categoryId] = now;
+      return filtered;
+    }
+
+    // Layer 4 — fallback: fetch everything and filter locally.
+    // This also warms _cachedProducts so all subsequent category tabs are free.
+    final all      = await getProducts(forceRefresh: forceRefresh);
+    final filtered = _filterByCategory(categoryId, all);
+    _categoryCache[categoryId]      = filtered;
+    _categoryCacheTimes[categoryId] = now;
+    return filtered;
+  }
+
+  /// Filters [allProducts] by [categoryId] (respecting parent→children
+  /// relationships), stores the result in the per-category cache, and returns it.
+  List<ApiProduct> _filterAndCache(
+      int categoryId,
+      List<ApiProduct> allProducts,
+      DateTime now,
+      ) {
+    final category = CategoriesData.getCategoryById(categoryId);
+
+    final List<ApiProduct> filtered;
     if (category != null && category.isMainCategory) {
       final categoryIds = <int>{
         category.id,
-        ...category.children.map((child) => child.id),
+        ...category.children.map((c) => c.id),
       };
-      final allProducts = await getProducts(forceRefresh: forceRefresh);
-      return allProducts
-          .where((product) => categoryIds.contains(product.categoryId))
-          .toList();
+      filtered =
+          allProducts.where((p) => categoryIds.contains(p.categoryId)).toList();
+    } else {
+      filtered =
+          allProducts.where((p) => p.categoryId == categoryId).toList();
     }
-    return getProducts(forceRefresh: forceRefresh, categoryId: categoryId);
-  }
 
+    _categoryCache[categoryId] = filtered;
+    _categoryCacheTimes[categoryId] = now;
+    return filtered;
+  }
   Future<Category?> loadCategoryById(int id) async {
     final uri = Uri.parse(
       '$_baseUrl/loadCategory',
@@ -960,10 +1033,24 @@ class ProductService {
   }
 
   void _invalidateProductsCache() {
-    _cachedProducts = <ApiProduct>[];
+    _cachedProducts    = <ApiProduct>[];
     _lastProductsFetch = null;
+    // Also clear the per-category cache so stale slices don't survive
+    // a product insert / update / delete.
+    _categoryCache.clear();
+    _categoryCacheTimes.clear();
   }
-
+  List<ApiProduct> _filterByCategory(int categoryId, List<ApiProduct> all) {
+    final category = CategoriesData.getCategoryById(categoryId);
+    if (category != null && category.isMainCategory) {
+      final ids = <int>{
+        category.id,
+        ...category.children.map((c) => c.id),
+      };
+      return all.where((p) => ids.contains(p.categoryId)).toList();
+    }
+    return all.where((p) => p.categoryId == categoryId).toList();
+  }
   Map<String, String> _defaultHeaders() {
     return const {
       'Accept': 'application/json',
@@ -1168,7 +1255,9 @@ class ProductService {
           detId: displayVariant?.detId ?? base.detId,
           itemName: base.itemName,
           itemDesc: base.itemDesc,
-          itemPrice: displayPrice > 0 ? displayPrice : base.itemPrice,
+          itemPrice: displayVariant != null && displayVariant.itemPrice > 0
+              ? displayVariant.itemPrice
+              : base.itemPrice,
           itemQty: displayVariant?.itemQty ?? base.itemQty,
           itemImgUrl: mergedImages.isNotEmpty
               ? mergedImages.first
@@ -1179,8 +1268,14 @@ class ProductService {
           createdBy: base.createdBy,
           itemOwner: base.itemOwner,
           createdByUserId: base.createdByUserId,
-          isActive: base.isActive,
-          discountPrice: null,
+          isActive: rows.any((r) => r.isActive == 1) ? 1 : base.isActive,
+          discountPrice:
+              displayVariant != null &&
+                  displayVariant.discount > 0 &&
+                  displayVariant.discount < 100 &&
+                  displayPrice > 0
+              ? displayPrice
+              : base.discountPrice,
           details: variants,
           sizes: sizes.isNotEmpty ? sizes : base.sizes,
           colors: colors.isNotEmpty ? colors : base.colors,
@@ -1254,10 +1349,12 @@ class ProductService {
       throw ProductException('Username is required to fetch favorites.');
     }
 
+    // The backend only returns data for the 'body' key variant —
+    // put that first so we succeed on the first attempt in most cases.
     final queryAttempts = <Map<String, String>>[
+      {'body':     normalizedUsername},
       {'USERNAME': normalizedUsername},
       {'username': normalizedUsername},
-      {'body': normalizedUsername},
     ];
 
     ProductException? lastError;
@@ -1267,9 +1364,7 @@ class ProductService {
         '$_baseUrl/GetUserFavorites',
       ).replace(queryParameters: queryAttempts[i]);
 
-      if (kDebugMode) {
-        debugPrint('[GetUserFavorites] GET $uri');
-      }
+      if (kDebugMode) debugPrint('[GetUserFavorites] GET $uri');
 
       try {
         final response = await _safeGet(uri);
@@ -1285,16 +1380,11 @@ class ProductService {
           );
         }
 
-        final data = _decode(response.body);
-        final items = ApexResponseHelper.extractData(data, 'GetUserFavorites')
-            .whereType<Map>()
-            .map((item) => Map<String, dynamic>.from(item))
-            .where((item) => _extractPositiveItemId(item) > 0)
-            .toList();
+        final data  = _decode(response.body);
+        final items = _extractFavoriteItems(data);
 
-        if (items.isEmpty && i < queryAttempts.length - 1) {
-          continue;
-        }
+        // Empty on this attempt — try the next query variant.
+        if (items.isEmpty && i < queryAttempts.length - 1) continue;
 
         return items.map((item) {
           final product = ApiProduct.fromJson(item);
@@ -1303,22 +1393,50 @@ class ProductService {
         }).toList();
       } on ProductException catch (error) {
         lastError = error;
-        if (i == queryAttempts.length - 1) {
-          rethrow;
-        }
+        if (i == queryAttempts.length - 1) rethrow;
       } catch (error) {
         lastError = ProductException('Error fetching favorites: $error');
-        if (i == queryAttempts.length - 1) {
-          throw lastError;
-        }
+        if (i == queryAttempts.length - 1) throw lastError;
       }
     }
 
-    if (lastError != null) {
-      throw lastError;
+    if (lastError != null) throw lastError;
+    return const [];
+  }
+
+  // ── NEW HELPER — add this private method anywhere inside ProductService ───
+  //
+  // Handles both shapes the backend may return:
+  //   Normal:  {"favorites": [{...}, {...}]}
+  //   Nested:  {"favorites": [[{...}, {...}]]}   ← what your backend sends
+  //
+  List<Map<String, dynamic>> _extractFavoriteItems(dynamic data) {
+    if (data == null) return const [];
+
+    // Look for the 'favorites' key first, then fall back to generic extractors.
+    dynamic raw;
+    if (data is Map<String, dynamic>) {
+      raw = data['favorites'] ?? data['FAVORITES'];
+    }
+    raw ??= data; // bare list fallback
+
+    // Unwrap one level of nesting if the value is [[...]] instead of [...]
+    if (raw is List && raw.length == 1 && raw.first is List) {
+      raw = raw.first;
     }
 
-    return const [];
+    if (raw is List) {
+      return raw
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .where((item) => _extractPositiveItemId(item) > 0)
+          .toList();
+    }
+
+    // Fall back to the generic item extractor for other response shapes.
+    return _extractItems(data)
+        .where((item) => _extractPositiveItemId(item) > 0)
+        .toList();
   }
 
   Future<void> toggleFavorite({
