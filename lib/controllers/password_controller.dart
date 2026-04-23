@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../data/repositories/user_repository.dart';
-import '../src/l10n/l10n.dart';
+import '../l10n/l10n.dart';
 import '../src/shared/validation/auth_validators.dart';
 import '../src/shared/widgets/app_snackbar.dart';
 

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../data/repositories/comment_repository.dart';
-import '../src/l10n/l10n.dart';
-import '../src/model/api_item_comment.dart';
+import '../l10n/l10n.dart';
+import '../models/api_item_comment.dart';
 import '../src/shared/widgets/app_snackbar.dart';
 import '../src/state/review_refresh_notifier.dart';
 

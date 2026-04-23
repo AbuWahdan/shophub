@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:http/http.dart' as http;
-
-import '../model/user.dart';
-import '../model/forget_password_request.dart';
+import '../../models/forget_password_request.dart';
+import '../../models/user.dart';
 import 'api_client.dart';
 import 'storage_service.dart';
 
@@ -22,7 +20,63 @@ class AuthService {
     _storageService = storageService ?? StorageService();
     _client = client ?? ApiClient(storageService: _storageService);
   }
+  Future<void> sendSignupOtp({required String email}) async {
+    final emailValue = email.trim();
 
+    if (emailValue.isEmpty) {
+      throw AuthException('Email is required.');
+    }
+
+    String? lastError;
+    TimeoutException? timeoutError;
+    bool hadNetworkError = false;
+
+    // ── Primary endpoint (email-only, no FK) ──────────────────────────────
+    // Your DBA needs to create this handler. See the SQL template below.
+    final endpoint = Uri.parse('$_baseUrl/SendSignupOTP');
+    final payload = {
+      'email': emailValue,
+      'EMAIL': emailValue,
+    };
+
+    for (int attempt = 0; attempt < 2; attempt++) {
+      try {
+        final response = await _client
+            .post(
+          endpoint,
+          headers: _defaultHeaders(),
+          body: jsonEncode(payload),
+        )
+            .timeout(_timeout);
+
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          // HTTP 200 = success; ignore body (Oracle sometimes returns
+          // status:"error" even on successful inserts — same pattern as
+          // resetPassword which already uses this approach).
+          return;
+        }
+
+        lastError =
+            _extractMessage(_decode(response.body)) ??
+                'Sending OTP failed (HTTP ${response.statusCode}).';
+        continue;
+      } on TimeoutException catch (error) {
+        timeoutError = error;
+        continue;
+      } catch (_) {
+        hadNetworkError = true;
+        continue;
+      }
+    }
+
+    if (timeoutError != null) {
+      throw AuthException('Request timed out. Please try again.');
+    }
+    if (hadNetworkError && lastError == null) {
+      throw AuthException('Network error. Please try again.');
+    }
+    throw AuthException(lastError ?? 'Failed to send OTP.');
+  }
   // ========================= LOGIN =========================
 
   Future<AuthSession> login(String username, String password) async {
@@ -200,6 +254,7 @@ class AuthService {
       'role': normalizedRole,
       'country': user.country,
       if (user.gender != null) 'gender': user.gender,
+      'is_active': user.isActive,   // <-- ADD THIS
       'USERNAME': user.username,
       'PASSWORD': user.passwordHash,
       'FULL_NAME': user.fullname,
@@ -209,6 +264,7 @@ class AuthService {
       'ROLE': normalizedRole,
       'COUNTRY': user.country,
       if (user.gender != null) 'GENDER': user.gender,
+      'IS_ACTIVE': user.isActive,   // <-- ADD THIS
     };
 
     final requestMap = {
@@ -292,76 +348,72 @@ class AuthService {
     }
     throw AuthException(lastError ?? 'Registration failed.');
   }
+// ========================= ACTIVATE USER =========================
 
-  // ========================= LOGOUT =========================
+  /// Flips IS_ACTIVE from 0 → 1 after OTP verification in the signup flow.
+  /// Uses the existing UpdateUser endpoint (same as ProfileRepository).
+  Future<void> activateUser(User pendingUser) async {
+    final activeUser = pendingUser.copyWith(isActive: 1);
 
-  Future<void> logout() async {
-    await _storageService.clearAll();
-  }
-
-  // ========================= FORGOT PASSWORD =========================
-
-  Future<void> sendOtp({
-    required String username,
-    required String email,
-  }) async {
-    final usernameValue = username.trim();
-    final emailValue = email.trim();
-
-    if (usernameValue.isEmpty) {
-      throw AuthException('Username is required.');
-    }
-    if (emailValue.isEmpty) {
-      throw AuthException('Email is required.');
-    }
+    final payload = {
+      'user_id': activeUser.userId,
+      'username': activeUser.username,
+      'fullname': activeUser.fullname,
+      'full_name': activeUser.fullname,
+      'email': activeUser.email,
+      'phone': activeUser.phone,
+      'address': activeUser.address,
+      'country': activeUser.country,
+      if (activeUser.gender != null) 'gender': activeUser.gender,
+      'is_active': 1,
+      'USER_ID': activeUser.userId,
+      'USERNAME': activeUser.username,
+      'FULL_NAME': activeUser.fullname,
+      'EMAIL': activeUser.email,
+      'PHONE': activeUser.phone,
+      'ADDRESS': activeUser.address,
+      'COUNTRY': activeUser.country,
+      if (activeUser.gender != null) 'GENDER': activeUser.gender,
+      'PASSWORD_HASH': activeUser.passwordHash,
+      'ROLE': activeUser.role,
+      'IS_ACTIVE': 1,
+    };
 
     String? lastError;
     TimeoutException? timeoutError;
     bool hadNetworkError = false;
 
-    final endpoint = Uri.parse('$_baseUrl/SendOTP');
-    final payload = {
-      'username': usernameValue,
-      'email': emailValue,
-      'USERNAME': usernameValue,
-      'EMAIL': emailValue,
-    };
+    final endpoint = Uri.parse('$_baseUrl/UpdateUser');
 
-    for (int attempt = 0; attempt < 2; attempt++) {
+    // Mirror the same multi-body retry pattern used in ProfileRepository
+    final bodies = [
+      {'users': [payload]},
+      {'items': [payload]},
+      {'data':  [payload]},
+      payload,
+    ];
+
+    for (final body in bodies) {
       try {
         final response = await _client
             .post(
-              endpoint,
-              headers: _defaultHeaders(),
-              body: jsonEncode(payload),
-            )
+          endpoint,
+          headers: _defaultHeaders(),
+          body: jsonEncode(body),
+        )
             .timeout(_timeout);
 
-        if (response.statusCode < 200 || response.statusCode >= 300) {
-          lastError =
-              _extractMessage(_decode(response.body)) ??
-              'Sending OTP failed (HTTP ${response.statusCode}).';
-          continue;
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          return; // success — same rule as resetPassword: HTTP 200 = done
         }
 
-        final data = _decode(response.body);
-        final status = (data is Map<String, dynamic> ? data['status'] : null)
-            ?.toString()
-            .toLowerCase();
-
-        if (status == 'error' ||
-            (status != null && status.isNotEmpty && status != 'success')) {
-          lastError = _extractMessage(data) ?? 'Sending OTP failed.';
-          continue;
-        }
-
-        return;
-      } on TimeoutException catch (error) {
-        timeoutError = error;
-        continue;
+        lastError =
+            _extractMessage(_decode(response.body)) ??
+                'Activation failed (HTTP ${response.statusCode}).';
+      } on TimeoutException catch (e) {
+        timeoutError = e;
       } catch (_) {
         hadNetworkError = true;
-        continue;
       }
     }
 
@@ -371,6 +423,69 @@ class AuthService {
     if (hadNetworkError && lastError == null) {
       throw AuthException('Network error. Please try again.');
     }
+    throw AuthException(lastError ?? 'Failed to activate account.');
+  }
+  // ========================= LOGOUT =========================
+
+  Future<void> logout() async {
+    await _storageService.clearAll();
+  }
+
+  // ========================= FORGOT PASSWORD =========================
+
+
+  Future<void> sendOtp({
+    required String username,
+    required String email,
+  }) async {
+    final usernameValue = username.trim();
+    final emailValue    = email.trim();
+
+    if (usernameValue.isEmpty) throw AuthException('Username is required.');
+    if (emailValue.isEmpty)    throw AuthException('Email is required.');
+
+    String?          lastError;
+    TimeoutException? timeoutError;
+    bool             hadNetworkError = false;
+
+    final endpoint = Uri.parse('$_baseUrl/SendOTP');
+    final payload  = {
+      'username': usernameValue,
+      'email':    emailValue,
+      'USERNAME': usernameValue,
+      'EMAIL':    emailValue,
+    };
+
+    for (int attempt = 0; attempt < 2; attempt++) {
+      try {
+        final response = await _client
+            .post(
+          endpoint,
+          headers: _defaultHeaders(),
+          body:    jsonEncode(payload),
+        )
+            .timeout(_timeout);
+
+        // ── Same rule as resetPassword: HTTP 200 = success, ignore body ──
+        // Oracle APEX procs often return {"status":"error"} even when the
+        // OTP row was inserted correctly.
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          return;
+        }
+
+        // Non-200 is a real failure
+        lastError =
+            _extractMessage(_decode(response.body)) ??
+                'Sending OTP failed (HTTP ${response.statusCode}).';
+      } on TimeoutException catch (e) {
+        timeoutError = e;
+      } catch (_) {
+        hadNetworkError = true;
+      }
+    }
+
+    if (timeoutError != null)              throw AuthException('Request timed out. Please try again.');
+    if (hadNetworkError && lastError == null) throw AuthException('Network error. Please try again.');
     throw AuthException(lastError ?? 'Failed to send OTP.');
   }
 
@@ -380,77 +495,53 @@ class AuthService {
     required String otp,
   }) async {
     final usernameValue = username.trim();
-    final emailValue = email.trim();
-    final otpValue = otp.trim();
+    final emailValue    = email.trim();
+    final otpValue      = otp.trim();
 
-    if (usernameValue.isEmpty) {
-      throw AuthException('Username is required.');
-    }
-    if (emailValue.isEmpty) {
-      throw AuthException('Email is required.');
-    }
-    if (otpValue.isEmpty) {
-      throw AuthException('OTP is required.');
-    }
+    if (usernameValue.isEmpty) throw AuthException('Username is required.');
+    if (emailValue.isEmpty)    throw AuthException('Email is required.');
+    if (otpValue.isEmpty)      throw AuthException('OTP is required.');
 
-    String? lastError;
+    String?          lastError;
     TimeoutException? timeoutError;
-    bool hadNetworkError = false;
+    bool             hadNetworkError = false;
 
     final endpoint = Uri.parse('$_baseUrl/VerifyOTP');
-    final payload = {
+    final payload  = {
       'username': usernameValue,
-      'email': emailValue,
-      'otp': otpValue,
+      'email':    emailValue,
+      'otp':      otpValue,
       'USERNAME': usernameValue,
-      'EMAIL': emailValue,
-      'OTP': otpValue,
+      'EMAIL':    emailValue,
+      'OTP':      otpValue,
     };
 
     for (int attempt = 0; attempt < 2; attempt++) {
       try {
         final response = await _client
             .post(
-              endpoint,
-              headers: _defaultHeaders(),
-              body: jsonEncode(payload),
-            )
+          endpoint,
+          headers: _defaultHeaders(),
+          body:    jsonEncode(payload),
+        )
             .timeout(_timeout);
 
-        if (response.statusCode < 200 || response.statusCode >= 300) {
-          lastError =
-              _extractMessage(_decode(response.body)) ??
-              'OTP verification failed (HTTP ${response.statusCode}).';
-          continue;
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          return; // HTTP 200 = OTP accepted, ignore body
         }
 
-        final data = _decode(response.body);
-        final status = (data is Map<String, dynamic> ? data['status'] : null)
-            ?.toString()
-            .toLowerCase();
-
-        if (status == 'error' ||
-            (status != null && status.isNotEmpty && status != 'success')) {
-          lastError = _extractMessage(data) ?? 'OTP verification failed.';
-          continue;
-        }
-
-        return;
-      } on TimeoutException catch (error) {
-        timeoutError = error;
-        continue;
+        lastError =
+            _extractMessage(_decode(response.body)) ??
+                'OTP verification failed (HTTP ${response.statusCode}).';
+      } on TimeoutException catch (e) {
+        timeoutError = e;
       } catch (_) {
         hadNetworkError = true;
-        continue;
       }
     }
 
-    if (timeoutError != null) {
-      throw AuthException('Request timed out. Please try again.');
-    }
-    if (hadNetworkError && lastError == null) {
-      throw AuthException('Network error. Please try again.');
-    }
+    if (timeoutError != null)              throw AuthException('Request timed out. Please try again.');
+    if (hadNetworkError && lastError == null) throw AuthException('Network error. Please try again.');
     throw AuthException(lastError ?? 'OTP verification failed.');
   }
 

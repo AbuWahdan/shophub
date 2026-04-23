@@ -5,12 +5,12 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/src/config/route.dart';
 import 'package:sinwar_shoping/src/config/mapbox_config.dart';
-import 'package:sinwar_shoping/src/l10n/app_localizations.dart';
 import 'package:sinwar_shoping/src/state/app_settings.dart';
 import 'package:sinwar_shoping/src/state/auth_state.dart';
 import 'package:sinwar_shoping/src/themes/theme.dart';
 import 'package:sinwar_shoping/src/state/wishlist_state.dart';
 import 'app_bindings.dart';
+import 'l10n/app_localizations.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

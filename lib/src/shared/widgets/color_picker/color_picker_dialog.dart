@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart' hide colorToHex;
 import 'package:get/get.dart';
 
+import '../../../../l10n/l10n.dart';
 import '../../../design/app_spacing.dart';
-import '../../../l10n/l10n.dart';
 import '../app_button.dart';
 import 'color_utils.dart';
 

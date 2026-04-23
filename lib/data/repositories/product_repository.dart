@@ -3,8 +3,8 @@ import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
 import '../../core/exceptions/app_exception.dart';
 import '../../core/utils/apex_response_helper.dart';
-import '../../features/products/models/product_image_model.dart';
-import '../../src/model/product_api.dart';
+import '../../models/product_image_model.dart';
+import '../../models/product_api.dart';
 
 class ProductRepository {
   final ApiService _apiService;

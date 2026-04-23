@@ -1,32 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:sinwar_shoping/src/pages/about_page.dart';
-import 'package:sinwar_shoping/src/pages/addresses/addresses_page.dart';
-import 'package:sinwar_shoping/src/pages/auth/login_screen.dart';
-import 'package:sinwar_shoping/src/pages/auth/otp_screen.dart';
-import 'package:sinwar_shoping/src/pages/auth/register_screen.dart';
-import 'package:sinwar_shoping/src/pages/auth/forgot_password_email_screen.dart';
-import 'package:sinwar_shoping/src/pages/auth/otp_sent_notice_screen.dart';
-import 'package:sinwar_shoping/src/pages/auth/otp_verification_screen.dart';
-import 'package:sinwar_shoping/src/pages/auth/password_updated_screen.dart';
-import 'package:sinwar_shoping/src/pages/categories_page.dart';
-import 'package:sinwar_shoping/src/pages/info_page.dart';
-import 'package:sinwar_shoping/src/pages/main_page.dart';
-import 'package:sinwar_shoping/src/pages/my_products_page.dart';
-import 'package:sinwar_shoping/src/pages/onboarding_screen.dart';
-import 'package:sinwar_shoping/src/pages/order_confirmation_screen.dart';
-import 'package:sinwar_shoping/src/pages/orders_page.dart';
-import 'package:sinwar_shoping/src/pages/products/insert_product_page.dart';
-import 'package:sinwar_shoping/src/pages/product_comments_page.dart';
-import 'package:sinwar_shoping/src/pages/product_details_new.dart';
-import 'package:sinwar_shoping/src/pages/profile/change_password_screen.dart';
-import 'package:sinwar_shoping/src/pages/profile_settings_page.dart';
-import 'package:sinwar_shoping/src/pages/search_filter_page.dart';
-import 'package:sinwar_shoping/src/pages/splash_screen.dart';
-import 'package:sinwar_shoping/src/pages/edit_profile_screen.dart';
-import 'package:sinwar_shoping/src/pages/wishlist/wishlist_page.dart';
-import 'package:sinwar_shoping/src/pages/rate_product_screen.dart';
-import 'package:sinwar_shoping/src/model/product_api.dart';
-import '../l10n/app_localizations.dart';
+import 'package:sinwar_shoping/models/product_api.dart';
+import '../../l10n/app_localizations.dart';
+import '../../models/user.dart';
+import '../../presentation/auth/forgot_password_email_screen.dart';
+import '../../presentation/auth/login_screen.dart';
+import '../../presentation/auth/otp_sent_notice_screen.dart';
+import '../../presentation/auth/otp_verification_screen.dart';
+import '../../presentation/auth/password_updated_screen.dart';
+import '../../presentation/auth/register_screen.dart';
+import '../../presentation/auth/signup_otp_verification_screen.dart';
+import '../../presentation/categories_tab/categories_page.dart';
+import '../../presentation/home_tab/main_page.dart';
+import '../../presentation/home_tab/search_filter_page.dart';
+import '../../presentation/profile/settings/widgets/info_page.dart';
+import '../../presentation/product_details_new.dart';
+import '../../presentation/profile/addresses/addresses_page.dart';
+import '../../presentation/profile/edit_profile/edit_profile_screen.dart';
+import '../../presentation/profile/orders/order_confirmation_screen.dart';
+import '../../presentation/profile/orders/orders_page.dart';
+import '../../presentation/profile/orders/rate_items/rate_product_screen.dart';
+import '../../presentation/profile/products/insert_product_page.dart';
+import '../../presentation/profile/products/my_products_page.dart';
+import '../../presentation/profile/settings/about/about_page.dart';
+import '../../presentation/profile/settings/change_password/change_password_screen.dart';
+import '../../presentation/profile/settings/profile_settings_page.dart';
+import '../../presentation/profile/wishlist/wishlist_page.dart';
+import '../../presentation/splash/onboarding_screen.dart';
+import '../../presentation/splash/splash_screen.dart';
 
 class AppRoutes {
   // Route names
@@ -65,6 +65,8 @@ class AppRoutes {
   static const String passwordUpdated = '/password-updated';
   static const String deliveryLocation = '/delivery-location';
   static const String rateProduct = '/rate-product';
+
+  static const String signupOtpVerification = '/signup-otp-verification';
   // ... add other route constants
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -81,7 +83,16 @@ class AppRoutes {
           settings: settings,
           builder: (_) => const OnboardingScreen(),
         );
-
+      case signupOtpVerification:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const SignupOtpVerificationScreen(),
+        );
+      case onboarding:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const OnboardingScreen(),
+        );
       case login:
         return MaterialPageRoute(
           settings: settings,
@@ -94,11 +105,11 @@ class AppRoutes {
           builder: (_) => const RegisterScreen(),
         );
 
-      case otp:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => const OTPVerificationScreen(),
-        );
+      // case otp:
+      //   return MaterialPageRoute(
+      //     settings: settings,
+      //     builder: (_) => const OTPVerificationScreen(),
+      //   );
 
       case forgotPassword:
         return MaterialPageRoute(
@@ -107,20 +118,27 @@ class AppRoutes {
         );
 
       case otpSent:
-        final username = args?['username'] as String? ?? '';
-        final email = args?['email'] as String? ?? '';
+        final args = settings.arguments as Map<String, dynamic>? ?? {};
         return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => OtpSentNoticeScreen(username: username, email: email),
+          builder: (_) => OTPVerificationScreen(
+            username:    args['username']    as String? ?? '',
+            email:       args['email']       as String? ?? '',
+            flow:        args['flow']        as String? ?? 'forgot_password',
+            pendingUser: args['pendingUser'] as User?,  // <-- must be here
+          ),
         );
 
       case otpVerification:
         final username = args?['username'] as String? ?? '';
-        final email = args?['email'] as String? ?? '';
+        final email    = args?['email']    as String? ?? '';
+        final flow     = args?['flow']     as String? ?? 'forgot_password';
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) =>
-              OtpVerificationScreen(username: username, email: email),
+          builder: (_) => OTPVerificationScreen(
+            username: username,
+            email:    email,
+            flow:     flow,
+          ),
         );
 
       case resetPassword:
@@ -290,16 +308,16 @@ class AppRoutes {
           builder: (_) => const MyProductsPage(),
         );
 
-      case productComments:
-        final productId = args?['productId'] as int? ?? 0;
-        final productName = args?['productName'] as String? ?? '';
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => ProductCommentsPage(
-            productId: productId,
-            productName: productName,
-          ),
-        );
+      // case productComments:
+      //   final productId = args?['productId'] as int? ?? 0;
+      //   final productName = args?['productName'] as String? ?? '';
+      //   return MaterialPageRoute(
+      //     settings: settings,
+      //     builder: (_) => ProductCommentsPage(
+      //       productId: productId,
+      //       productName: productName,
+      //     ),
+      //   );
 
       case productDetails:
         final product = args?['product'] as ApiProduct?;

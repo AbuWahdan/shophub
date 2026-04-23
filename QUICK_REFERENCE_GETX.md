@@ -45,7 +45,7 @@ await cartCtrl.loadCart(username: 'username');
 
 // Listen to changes
 Obx(() {
-  print('${cartCtrl.items.length} items in cart');
+  print('${cartCtrl.items.length} items in cart_tab');
 })
 ```
 
@@ -158,10 +158,10 @@ await repo.toggleFavorite(itemId: 42, username: 'user');
 ```dart
 final cartRepo = Get.find<CartRepository>();
 
-// Get cart
+// Get cart_tab
 final items = await cartRepo.getCart(username: 'user');
 
-// Add to cart
+// Add to cart_tab
 await cartRepo.addToCart(AddItemToCartRequest(
   itemId: 123,
   itemDetId: 456,
@@ -169,7 +169,7 @@ await cartRepo.addToCart(AddItemToCartRequest(
   itemQty: 1,
 ));
 
-// Remove from cart
+// Remove from cart_tab
 await cartRepo.deleteFromCart(
   detailId: 456,
   modifiedBy: 'user',

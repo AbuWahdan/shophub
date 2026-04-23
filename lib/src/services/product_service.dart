@@ -1,16 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
-
 import '../../data/categories_data.dart';
+import '../../models/api_order.dart';
 import '../../models/category.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:http/http.dart' as http;
-
 import '../../core/utils/apex_response_helper.dart';
-import '../../features/products/models/product_image_model.dart';
-import '../model/api_order.dart';
-import '../model/cart_api.dart';
-import '../model/product_api.dart';
+import '../../models/product_image_model.dart';
+import '../../models/cart_api.dart';
+import '../../models/product_api.dart';
 import 'api_client.dart';
 
 class ProductService {
@@ -603,7 +601,7 @@ class ProductService {
   Future<List<ApiCartItem>> getItemCart({required String username}) async {
     final normalizedUsername = username.trim();
     if (normalizedUsername.isEmpty) {
-      throw ProductException('Unable to load cart: username is missing.');
+      throw ProductException('Unable to load cart_tab: username is missing.');
     }
 
     final uri = Uri.parse(
@@ -614,7 +612,7 @@ class ProductService {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ProductException(
         _extractMessage(data) ??
-            'Fetching cart failed (HTTP ${response.statusCode}).',
+            'Fetching cart_tab failed (HTTP ${response.statusCode}).',
       );
     }
 
@@ -642,7 +640,7 @@ class ProductService {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ProductException(
         _extractMessage(data) ??
-            'Adding item to cart failed (HTTP ${response.statusCode}).',
+            'Adding item to cart_tab failed (HTTP ${response.statusCode}).',
       );
     }
     final status = (data is Map<String, dynamic> ? data['status'] : null)
@@ -650,7 +648,7 @@ class ProductService {
         .toLowerCase();
     if (status == 'error') {
       throw ProductException(
-        _extractMessage(data) ?? 'Adding item to cart failed.',
+        _extractMessage(data) ?? 'Adding item to cart_tab failed.',
       );
     }
   }
@@ -661,7 +659,7 @@ class ProductService {
   }) async {
     final normalizedModifiedBy = modifiedBy.trim();
     if (detailId <= 0) {
-      throw ProductException('Invalid cart detail id: $detailId');
+      throw ProductException('Invalid cart_tab detail id: $detailId');
     }
     if (normalizedModifiedBy.isEmpty) {
       throw ProductException('User not authenticated.');

@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
-import '../../src/model/forget_password_request.dart';
+import '../../models/forget_password_request.dart';
 
 class UserRepository {
   final ApiService _apiService;
@@ -114,7 +114,7 @@ class UserRepository {
         throw Exception(message);
       }
     }
-    // ─────────────────────────────────────────────────────────────────────
+    // ────────────────z─────────────────────────────────────────────────────
 
     if (kDebugMode) debugPrint('[UserRepository] Password updated successfully');
   }

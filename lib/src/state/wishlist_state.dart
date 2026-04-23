@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
-import '../model/data.dart';
-import '../model/product_api.dart';
+import '../../models/data.dart';
+import '../../models/product_api.dart';
 import '../services/product_service.dart';
 import 'auth_state.dart';
 

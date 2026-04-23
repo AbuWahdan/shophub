@@ -10,7 +10,7 @@
 **Files Modified**:
 - [lib/data/repositories/product_repository.dart](lib/data/repositories/product_repository.dart) - Better logging
 - [lib/controllers/my_products_controller.dart](lib/controllers/my_products_controller.dart) - Comprehensive error handling
-- [lib/src/pages/my_products_page.dart](lib/src/pages/my_products_page.dart) - Error UI + initialization fix
+- [lib/src/pages/my_products_page.dart](lib/presentation/profile/products/my_products_page.dart) - Error UI + initialization fix
 
 **How to Test**:
 1. Navigate to "My Products"
@@ -222,8 +222,8 @@ DATA (External Resources)
 ### Key Files
 - [AddressController](lib/controllers/address_controller.dart) - State management
 - [AddressRepositoryImpl](lib/data/repositories/address_repository_impl.dart) - Business logic
-- [AddressesListScreen](lib/src/pages/addresses/addresses_list_screen.dart) - List UI
-- [AddEditAddressScreen](lib/src/pages/addresses/add_edit_address_screen.dart) - Form UI
+- [AddressesListScreen](lib/presentation/profile/addresses/addresses_list_screen.dart) - List UI
+- [AddEditAddressScreen](lib/presentation/profile/addresses/add_edit_address_screen.dart) - Form UI
 
 ---
 

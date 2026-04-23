@@ -1,9 +1,8 @@
 import 'package:flutter/foundation.dart';
-import 'package:sinwar_shoping/src/model/user.dart';
-
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
 import '../../core/utils/apex_response_helper.dart';
+import '../../models/user.dart';
 
 class ProfileRepository {
   final ApiService _apiService;

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
+import '../../../models/api_item_comment.dart';
 import '../../design/app_text_styles.dart';
-import '../../model/api_item_comment.dart';
 import '../../themes/theme.dart';
 import 'rating_stars.dart';
 

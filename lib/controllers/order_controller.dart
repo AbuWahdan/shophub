@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
 import '../data/repositories/order_repository.dart';
-import '../src/model/api_order.dart';
+import '../models/api_order.dart';
 
 class OrderController extends GetxController {
   final OrderRepository _repo;

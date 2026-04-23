@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import '../../../../l10n/l10n.dart';
 import '../../../design/app_text_styles.dart';
-import '../../../l10n/l10n.dart';
 import 'color_picker_dialog.dart';
 import 'color_utils.dart';
 

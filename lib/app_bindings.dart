@@ -81,6 +81,6 @@ class AppBindings extends Bindings {
       () => AddressController(Get.find<AddressRepository>()),
       fenix: true,
     );
-    Get.lazyPut<AuthController>(() => AuthController(), fenix: true);
+   // Get.lazyPut<AuthController>(() => AuthController(), fenix: true);
   }
 }

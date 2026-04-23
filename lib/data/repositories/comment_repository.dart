@@ -1,9 +1,8 @@
 import 'package:flutter/foundation.dart';
-
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
 import '../../core/utils/apex_response_helper.dart';
-import '../../src/model/api_item_comment.dart';
+import '../../models/api_item_comment.dart';
 
 class CommentRepository {
   final ApiService _apiService;

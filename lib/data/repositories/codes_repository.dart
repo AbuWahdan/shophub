@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
-import '../../src/model/api_code_option.dart';
+import '../../models/api_code_option.dart';
 
 class CodesRepository {
   CodesRepository(this._apiService);

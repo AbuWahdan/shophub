@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../design/app_text_styles.dart';
-import '../../model/product_api.dart';
+import '../../../models/product_api.dart';
 import '../../themes/theme.dart';
 import 'color_picker/color_utils.dart';
 import 'quantity_stepper.dart';
@@ -27,47 +27,44 @@ class ProductColorCircle extends StatelessWidget {
   const ProductColorCircle({
     super.key,
     required this.colorValue,
-    this.size = 18,
-    this.label,
+    this.showLabel = false,   // default false: circle only
+    this.size      = 20.0,
   });
 
   final String colorValue;
+  final bool   showLabel;
   final double size;
-  final String? label;
+
+  Color _parseColor(String value) {
+    final hex = value.replaceAll('#', '').trim();
+    if (hex.length == 6) {
+      return Color(int.tryParse('FF$hex', radix: 16) ?? 0xFFCCCCCC);
+    }
+    if (hex.length == 8) {
+      return Color(int.tryParse(hex, radix: 16) ?? 0xFFCCCCCC);
+    }
+    // Named color or unknown → neutral gray fallback
+    return AppColors.border;
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (!isMeaningfulProductValue(colorValue)) {
-      return const SizedBox.shrink();
-    }
-
-    final resolvedColor = parseApiColor(colorValue) ?? Colors.grey;
-    final normalizedLabel = (label ?? colorValue).trim();
-
+    final color = _parseColor(colorValue);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: size,
+          width:  size,
           height: size,
           decoration: BoxDecoration(
-            color: resolvedColor,
             shape: BoxShape.circle,
-            border: Border.all(
-              color: Theme.of(context).dividerColor,
-              width: AppSpacing.borderThin,
-            ),
+            color: color,
+            border: Border.all(color: AppColors.border, width: 1),
           ),
         ),
-        if (normalizedLabel.isNotEmpty) ...[
+        if (showLabel) ...[
           const SizedBox(width: AppSpacing.xs),
-          Flexible(
-            child: Text(
-              normalizedLabel,
-              style: AppTextStyles.bodySmall,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          Text(colorValue, style: AppTextStyles.bodySmall),
         ],
       ],
     );
@@ -130,14 +127,14 @@ class ProductVariantSummary extends StatelessWidget {
             crossAxisAlignment: priceAlignment,
             children: [
               Text(
-                '\$${(hasDiscount ? discountedPrice : variant.itemPrice).toStringAsFixed(2)}',
+                (hasDiscount ? discountedPrice : variant.itemPrice).toStringAsFixed(2),
                 style: AppTextStyles.labelLarge.copyWith(
                   color: AppColors.primary,
                 ),
               ),
               if (hasDiscount)
                 Text(
-                  '\$${variant.itemPrice.toStringAsFixed(2)}',
+                  variant.itemPrice.toStringAsFixed(2),
                   style: AppTextStyles.bodySmall.copyWith(
                     decoration: TextDecoration.lineThrough,
                   ),

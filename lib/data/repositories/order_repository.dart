@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart';
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
 import '../../core/utils/apex_response_helper.dart';
-import '../../src/model/api_order.dart';
-import '../../src/model/order_detail_item_model.dart';
+import '../../models/api_order.dart';
+import '../../models/order_detail_item_model.dart';
 
 class OrderRepository {
   final ApiService _apiService;

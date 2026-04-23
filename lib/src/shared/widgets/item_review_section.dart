@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-
 import '../../../controllers/item_review_controller.dart';
 import '../../../data/repositories/comment_repository.dart';
+import '../../../l10n/l10n.dart';
+import '../../../models/api_item_comment.dart';
 import '../../design/app_text_styles.dart';
-import '../../l10n/l10n.dart';
-import '../../model/api_item_comment.dart';
 import 'app_button.dart';
 
 class ItemReviewSection extends StatefulWidget {

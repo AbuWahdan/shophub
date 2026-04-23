@@ -17,10 +17,10 @@ Fixed 6 critical issues in the Flutter e-commerce app following Clean Architectu
 **File**: `lib/src/pages/shopping_cart_page.dart`
 
 ```dart
-// After successful deletion, immediately refresh cart from API
+// After successful deletion, immediately refresh cart_tab from API
 WidgetsBinding.instance.addPostFrameCallback((_) {
   if (mounted) {
-    _loadCartFromApi();  // Fetches fresh cart from backend
+    _loadCartFromApi();  // Fetches fresh cart_tab from backend
   }
 });
 ```
@@ -141,7 +141,7 @@ Future<void> _handleToggleFavorite() async {
    class _AddToCartBottomSheet extends StatefulWidget {
      // Shows product variants (color, size)
      // Quantity selector
-     // Add to cart confirmation
+     // Add to cart_tab confirmation
    }
    ```
 
@@ -149,7 +149,7 @@ Future<void> _handleToggleFavorite() async {
    ```dart
    Future<void> _handleAddToCart() async {
      // Show variant selection bottom sheet
-     // Call API to add to cart
+     // Call API to add to cart_tab
      // Update AppData cache
      // Show success snackbar
    }

@@ -1,9 +1,7 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
-
-import '../model/data.dart';
-import '../model/user.dart';
+import '../../models/data.dart';
+import '../../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/product_service.dart';
 import '../services/storage_service.dart';

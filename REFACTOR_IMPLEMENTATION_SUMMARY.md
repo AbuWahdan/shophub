@@ -5,7 +5,7 @@
 ### PART A — BUG FIXES (COMPLETED)
 
 #### Bug 1 ✅ Fixed: MyProducts Refresh Null Username
-**Location:** [lib/src/pages/my_products_page.dart](lib/src/pages/my_products_page.dart)
+**Location:** [lib/src/pages/my_products_page.dart](lib/presentation/profile/products/my_products_page.dart)
 
 **Solution:**
 - Read username and userId **ONCE** in the build method and store them in the controller
@@ -220,7 +220,7 @@ GetMaterialApp(
 
 ### Step 7 ✅ — MyProductsPage Refactored
 
-**[lib/src/pages/my_products_page.dart](lib/src/pages/my_products_page.dart)**
+**[lib/src/pages/my_products_page.dart](lib/presentation/profile/products/my_products_page.dart)**
 - Converted to **StatelessWidget** using GetX controller
 - Uses both **GetX** (for products) + **Provider** (for auth) as specified
 - Wraps product list in `Obx()` for reactivity

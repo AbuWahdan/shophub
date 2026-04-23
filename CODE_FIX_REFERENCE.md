@@ -218,7 +218,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remove Item'),
-        content: const Text('Remove this item from your cart?'),
+        content: const Text('Remove this item from your cart_tab?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -230,7 +230,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
               _removeItem(index);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Item removed from cart'),
+                  content: const Text('Item removed from cart_tab'),
                   duration: const Duration(seconds: 2),
                 ),
               );

@@ -4,7 +4,7 @@ import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
 import '../../core/exceptions/app_exception.dart';
 import '../../core/utils/apex_response_helper.dart';
-import '../../src/model/checkout_request.dart';
+import '../../models/checkout_request.dart';
 
 class CheckoutRepository {
   final ApiService _apiService;

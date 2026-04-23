@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/l10n.dart';
 import '../../design/app_text_styles.dart';
-import '../../l10n/l10n.dart';
-import '../../model/product_api.dart';
+import '../../../models/product_api.dart';
 import 'product_variant_widgets.dart';
 
 class AddToCartSelection {
