@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../../controllers/password_controller.dart';
 import '../../../data/repositories/user_repository.dart';
 import '../../src/config/route.dart';
-import '../../src/core/theme/app_theme.dart';
+import '../../core/app/app_theme.dart';
 import '../../l10n/l10n.dart';
 import '../../src/shared/widgets/app_button.dart';
 import '../../src/shared/widgets/app_snackbar.dart';

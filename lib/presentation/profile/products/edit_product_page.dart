@@ -9,7 +9,7 @@ import '../../../../models/product_api.dart';
 import '../../../../models/product_image_model.dart';
 import '../../../l10n/l10n.dart';
 import '../../../src/config/size_options.dart';
-import '../../../src/core/theme/app_theme.dart';
+import '../../../core/app/app_theme.dart';
 import '../../../src/services/product_service.dart';
 import '../../../src/shared/widgets/app_button.dart';
 import '../../../src/shared/widgets/app_snackbar.dart';

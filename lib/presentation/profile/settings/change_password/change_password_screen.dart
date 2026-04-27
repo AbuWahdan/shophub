@@ -6,7 +6,7 @@ import '../../../../../controllers/password_controller.dart';
 import '../../../../../data/repositories/user_repository.dart';
 import '../../../../l10n/l10n.dart';
 import '../../../../src/config/route.dart';
-import '../../../../src/core/theme/app_theme.dart';
+import '../../../../core/app/app_theme.dart';
 import '../../../../src/shared/widgets/app_button.dart';
 import '../../../../src/shared/widgets/app_snackbar.dart';
 import '../../../../src/shared/widgets/app_text_field.dart';

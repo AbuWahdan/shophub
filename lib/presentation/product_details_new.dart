@@ -12,7 +12,7 @@ import '../../models/product_api.dart';
 import '../../models/cart_api.dart';
 import '../l10n/l10n.dart';
 import '../src/config/route.dart';
-import '../src/core/theme/app_theme.dart';
+import '../core/app/app_theme.dart';
 import '../src/services/product_service.dart';
 import '../src/shared/widgets/add_to_cart_bottom_sheet.dart';
 import '../src/shared/widgets/app_image.dart';

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../design/app_text_styles.dart';
 import '../../../models/product_api.dart';
-import '../../themes/theme.dart';
-import 'color_picker/color_utils.dart';
 import 'quantity_stepper.dart';
 
 bool isMeaningfulProductValue(String? value) {

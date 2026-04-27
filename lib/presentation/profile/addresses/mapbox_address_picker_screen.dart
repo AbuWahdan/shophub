@@ -4,7 +4,7 @@ import 'package:geolocator/geolocator.dart' as geo;
 import 'package:http/http.dart' as http;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../../../src/config/mapbox_config.dart';
-import '../../../src/core/theme/app_theme.dart';
+import '../../../core/app/app_theme.dart';
 import '../../../src/shared/widgets/app_button.dart';
 import 'map_picker_result.dart';
 

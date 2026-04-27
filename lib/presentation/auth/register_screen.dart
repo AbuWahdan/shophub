@@ -5,7 +5,7 @@ import '../../../models/api_code_option.dart';
 import '../../../models/user.dart';
 import '../../src/config/app_constants.dart';
 import '../../src/config/route.dart';
-import '../../src/core/theme/app_theme.dart';
+import '../../core/app/app_theme.dart';
 import '../../l10n/l10n.dart';
 import '../../src/services/auth_service.dart';
 import '../../src/shared/validation/auth_validators.dart';
@@ -149,73 +149,61 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     final username = _usernameController.text.trim();
-    final email    = _emailController.text.trim();
+    final email = _emailController.text.trim();
 
     final pendingUser = User(
-      username:     username,
+      username: username,
       passwordHash: _passwordController.text.trim(),
-      fullname:     _nameController.text.trim(),
-      email:        email,
-      phone:        _phoneController.text.trim(),
-      address:      _addressController.text.trim(),
-      role:         'customer',
-      country:      AppConstants.defaultCountry,
-      gender:       _selectedGender,
-      userId:       0,
-      createdAt:    '',
-      updatedAt:    '',
-      isActive:     0,
+      fullname: _nameController.text.trim(),
+      email: email,
+      phone: _phoneController.text.trim(),
+      address: _addressController.text.trim(),
+      role: 'customer',
+      country: AppConstants.defaultCountry,
+      gender: _selectedGender,
+      userId: 0,
+      createdAt: '',
+      updatedAt: '',
+      isActive: 0,
     );
 
     try {
-      // STEP 1 — Create user as inactive (IS_ACTIVE = 0)
-      final result = await _authService.register(pendingUser);
-      final realUserId = int.tryParse(result.userId) ?? 0;
+      // STEP 1 — Register
+      await _authService.register(pendingUser);
+      if (!mounted) return;
 
-      // STEP 2 — Wait for Oracle to commit the row, then retry sendOtp
-      // with exponential back-off until the FK is satisfied.
+      // STEP 2 — Send OTP (retry for FK commit delay)
       AuthException? lastOtpError;
+      bool otpSent = false;
 
-      for (int attempt = 1; attempt <= 5; attempt++) {
-        // Wait longer on each attempt: 2s, 3s, 4s, 5s, 6s
-        await Future.delayed(Duration(seconds: attempt + 1));
+      for (int attempt = 0; attempt < 5; attempt++) {
+        await Future.delayed(const Duration(seconds: 3));
         if (!mounted) return;
 
         try {
-          await _authService.sendOtp(username: username, email: email);
-          lastOtpError = null;
-          break; // success — exit retry loop
+          await _authService.sendOtpByEmail(email: email);
+          otpSent = true;
+          break;
         } on AuthException catch (e) {
           lastOtpError = e;
-          // If it's not an FK / "not found" error stop retrying immediately
           final msg = e.message.toLowerCase();
-          final isCommitDelay = msg.contains('parent key not found') ||
-              msg.contains('integrity constraint') ||
-              msg.contains('not found') ||
-              msg.contains('fk_') ||
-              msg.contains('ora-02291');
-          if (!isCommitDelay) break;
-        } catch (e) {
-          lastOtpError = AuthException(e.toString());
-          break;
+          if (msg.contains('network') || msg.contains('timeout')) rethrow;
         }
       }
 
-      if (lastOtpError != null) throw lastOtpError;
+      if (!otpSent) {
+        throw lastOtpError ?? AuthException('Failed to send verification code.');
+      }
+
       if (!mounted) return;
 
-      // STEP 3 — Navigate to OTP screen
+      // ✅ Fix #1 — navigate to the correct signup OTP screen
       Navigator.pushNamed(
         context,
-        AppRoutes.otpSent,
+        AppRoutes.signupOtpVerification,   // was: AppRoutes.otpSent ❌
         arguments: {
-          'username': username,
-          'email':    email,
-          'flow':     'signup',
-          'pendingUser': pendingUser.copyWith(
-            userId:   realUserId,
-            isActive: 1,
-          ),
+          'email': email,
+          // username omitted — SignupOtpVerificationScreen doesn't need it
         },
       );
     } on AuthException catch (e) {

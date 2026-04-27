@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../models/data.dart';
 import '../../../src/config/app_constants.dart';
 import '../../../src/config/route.dart';
-import '../../../src/core/theme/app_theme.dart';
+import '../../../core/app/app_theme.dart';
 import '../../home_tab/main_page.dart';
 
 class OrderConfirmationScreen extends StatelessWidget {

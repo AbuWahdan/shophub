@@ -7,7 +7,7 @@ import '../../../../models/product_image_model.dart';
 import '../../../../models/product_api.dart';
 import '../../../l10n/l10n.dart';
 import '../../../src/config/route.dart';
-import '../../../src/core/theme/app_theme.dart';
+import '../../../core/app/app_theme.dart';
 import '../../../src/services/product_service.dart';
 import '../../../src/shared/widgets/empty_state.dart';
 import '../../../src/state/auth_state.dart';

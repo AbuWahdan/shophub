@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../src/core/theme/app_theme.dart';
+import '../../core/app/app_theme.dart';
 import '../../src/services/auth_service.dart';
 import '../../src/shared/widgets/app_button.dart';
 import '../../src/shared/widgets/app_snackbar.dart';
 
-/// OTP verification screen for the sign-up flow.
-///
-/// By the time the user reaches this screen, their account already exists
-/// in the DB (register() was called and succeeded in RegisterScreen).
-/// This screen only needs to verify the OTP — no registration data needed.
 class SignupOtpVerificationScreen extends StatefulWidget {
   const SignupOtpVerificationScreen({super.key});
 
@@ -24,20 +19,22 @@ class _SignupOtpVerificationScreenState
   List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
+  // ✅ Fix #3 — single shared instance for the lifetime of this screen
+  final _authService = AuthService();
+
   bool _isVerifying = false;
   bool _isResending = false;
   int _resendCooldown = 0;
 
   late final String _email;
-  late final String _username;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
     final map = (args is Map<String, dynamic>) ? args : <String, dynamic>{};
-    _email    = (map['email']    as String? ?? '').trim();
-    _username = (map['username'] as String? ?? '').trim();
+    _email = (map['email'] as String? ?? '').trim();
+    // username is not needed — signup OTP is email-only
   }
 
   @override
@@ -47,8 +44,9 @@ class _SignupOtpVerificationScreenState
     super.dispose();
   }
 
-  String get _otpValue => _digitControllers.map((c) => c.text.trim()).join();
-  bool   get _otpComplete => _otpValue.length == 6;
+  String get _otpValue =>
+      _digitControllers.map((c) => c.text.trim()).join();
+  bool get _otpComplete => _otpValue.length == 6;
 
   void _onDigitChanged(int index, String value) {
     if (value.isNotEmpty && index < 5) {
@@ -64,11 +62,11 @@ class _SignupOtpVerificationScreenState
     setState(() => _isVerifying = true);
 
     try {
-      final authService = AuthService();
-      await authService.verifyOtp(
-        username: _username,
-        email:    _email,
-        otp:      _otpValue,
+      // ✅ email-only verify — matches how sendOtpByEmail sent it
+      await _authService.verifyOtp(
+        email: _email,
+        otp: _otpValue,
+        // no username — Oracle OTP was sent by email only
       );
 
       if (!mounted) return;
@@ -79,14 +77,14 @@ class _SignupOtpVerificationScreenState
         type: AppSnackBarType.success,
       );
 
-      // Clear entire signup stack and go to login.
       Navigator.of(context).pushNamedAndRemoveUntil(
         '/login',
             (route) => false,
       );
     } on AuthException catch (error) {
       if (!mounted) return;
-      AppSnackBar.show(context, message: error.message, type: AppSnackBarType.error);
+      AppSnackBar.show(
+          context, message: error.message, type: AppSnackBarType.error);
     } catch (_) {
       if (!mounted) return;
       AppSnackBar.show(
@@ -104,9 +102,8 @@ class _SignupOtpVerificationScreenState
     setState(() => _isResending = true);
 
     try {
-      final authService = AuthService();
-      // User exists at this point — standard sendOtp works fine.
-      await authService.sendOtp(username: _username, email: _email);
+      // ✅ Fix #2 — use sendOtpByEmail, not sendOtp (which is forgot-password only)
+      await _authService.sendOtpByEmail(email: _email);
 
       if (!mounted) return;
 
@@ -120,7 +117,8 @@ class _SignupOtpVerificationScreenState
       _tickCooldown();
     } on AuthException catch (error) {
       if (!mounted) return;
-      AppSnackBar.show(context, message: error.message, type: AppSnackBarType.error);
+      AppSnackBar.show(
+          context, message: error.message, type: AppSnackBarType.error);
     } catch (_) {
       if (!mounted) return;
       AppSnackBar.show(

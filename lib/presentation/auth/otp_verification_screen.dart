@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import '../../l10n/l10n.dart';
 import '../../models/user.dart';
 import '../../src/config/route.dart';
-import '../../src/core/theme/app_theme.dart';
+import '../../core/app/app_theme.dart';
 import '../../src/services/auth_service.dart';
 import '../../src/shared/widgets/app_button.dart';
 import '../../src/shared/widgets/app_snackbar.dart';

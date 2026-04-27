@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../../models/product_api.dart';
-import '../../../../src/core/theme/app_theme.dart';
+import '../../../../core/app/app_theme.dart';
 import '../../../../src/services/product_service.dart';
 import '../../../../src/shared/widgets/app_button.dart';
 import '../../../../src/shared/widgets/app_image.dart';

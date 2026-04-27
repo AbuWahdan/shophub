@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/l10n.dart';
 import '../../src/config/route.dart';
-import '../../src/core/theme/app_theme.dart';
+import '../../core/app/app_theme.dart';
 import '../../src/services/auth_service.dart';
 import '../../src/shared/validation/auth_validators.dart';
 import '../../src/shared/widgets/app_button.dart';

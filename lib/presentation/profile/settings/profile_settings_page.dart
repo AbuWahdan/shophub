@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../../src/config/route.dart';
-import '../../../src/core/theme/app_theme.dart';
+import '../../../core/app/app_theme.dart';
 import '../../../src/shared/widgets/section_header.dart';
 import '../../../src/state/app_settings.dart';
 import '../../../src/state/auth_state.dart';

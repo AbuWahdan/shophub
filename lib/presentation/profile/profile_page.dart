@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/src/config/app_images.dart';
 import 'package:sinwar_shoping/src/config/route.dart';
 
-import '../../src/core/theme/app_theme.dart';
+import '../../core/app/app_theme.dart';
 import '../../l10n/l10n.dart';
 import '../../src/shared/dialogs/app_dialogs.dart';
 import '../../src/shared/widgets/app_image.dart';

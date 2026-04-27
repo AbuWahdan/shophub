@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/data.dart';
 import '../../../models/product_api.dart';
-import '../../src/core/theme/app_theme.dart';
+import '../../core/app/app_theme.dart';
 import '../../l10n/l10n.dart';
 import '../../src/services/product_service.dart';
 import '../../src/shared/widgets/product_search_bar.dart';

@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../../data/repositories/order_repository.dart';
 import '../../../../models/api_order.dart';
 import '../../../l10n/l10n.dart';
-import '../../../src/core/theme/app_theme.dart';
+import '../../../core/app/app_theme.dart';
 import '../../../src/state/auth_state.dart';
 import 'order_details_screen.dart';
 

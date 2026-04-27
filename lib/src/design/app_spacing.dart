@@ -1,1 +1,1 @@
-export '../core/theme/app_theme.dart' show AppRadius, AppShadows, AppSpacing;
+export '../../core/app/app_theme.dart' show AppRadius, AppShadows, AppSpacing;

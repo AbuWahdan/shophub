@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../data/repositories/visual_search_repository.dart';
-import '../../src/core/theme/app_theme.dart';
+import '../../core/app/app_theme.dart';
 import 'visual_search_results_screen.dart';
 
 class VisualSearchLoadingScreen extends StatefulWidget {

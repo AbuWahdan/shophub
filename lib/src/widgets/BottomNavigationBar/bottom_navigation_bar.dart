@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../controllers/cart_controller.dart';
 import '../../../l10n/l10n.dart';
-import '../../core/theme/app_theme.dart';
+import '../../../core/app/app_theme.dart';
 
 // FIX: The badge must read from CartController's reactive RxList, NOT from a
 // plain int parameter. When items are deleted the plain int param does not

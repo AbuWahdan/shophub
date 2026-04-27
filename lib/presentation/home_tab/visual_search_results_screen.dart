@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../models/product_api.dart';
-import '../../src/core/theme/app_theme.dart';
+import '../../core/app/app_theme.dart';
 import '../../src/widgets/product_card.dart';
 
 class VisualSearchResultsScreen extends StatelessWidget {

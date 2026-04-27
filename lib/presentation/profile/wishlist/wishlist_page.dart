@@ -7,7 +7,7 @@ import '../../../core/widgets/empty_state_widget.dart';
 import '../../../l10n/l10n.dart';
 import '../../../models/data.dart';
 import '../../../models/product_api.dart';
-import '../../../src/core/theme/app_theme.dart';
+import '../../../core/app/app_theme.dart';
 import '../../../src/services/product_service.dart';
 import '../../../src/shared/widgets/add_to_cart_bottom_sheet.dart';
 import '../../../src/shared/widgets/app_snackbar.dart';

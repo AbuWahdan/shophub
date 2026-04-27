@@ -8,7 +8,7 @@ import '../../l10n/l10n.dart';
 import '../../models/cart_api.dart';
 import '../../src/config/app_constants.dart';
 import '../../src/config/route.dart';
-import '../../src/core/theme/app_theme.dart';
+import '../../core/app/app_theme.dart';
 import '../../src/shared/dialogs/app_dialogs.dart';
 import '../../src/shared/widgets/app_button.dart';
 import '../../src/shared/widgets/app_image.dart';

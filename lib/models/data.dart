@@ -295,4 +295,5 @@ class AppData {
         image: AppImages.clothing,
         isSelected: false),
   ];
+
 }
