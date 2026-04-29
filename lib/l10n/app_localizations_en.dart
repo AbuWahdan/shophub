@@ -7,7 +7,14 @@ import 'app_localizations.dart';
 /// The translations for English (`en`).
 class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
+  @override
+  String? get totalLabel => 'Total';
 
+  @override
+  String? get noOrdersYet => 'No orders yet';
+
+  @override
+  String? get errorLoadingOrders => 'Error loading orders';
   @override
   String get productUpdateAction => 'Update action';
 

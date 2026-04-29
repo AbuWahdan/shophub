@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-import '../../src/config/route.dart';
+import '../../core/config/route.dart';
 import '../../core/app/app_theme.dart';
+import '../../design/app_colors.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
-import '../../src/shared/widgets/app_button.dart';
+import '../../widgets/widgets/app_button.dart';
 
 class PasswordUpdatedScreen extends StatefulWidget {
   const PasswordUpdatedScreen({super.key});
@@ -65,13 +68,13 @@ class _PasswordUpdatedScreenState extends State<PasswordUpdatedScreen> {
       child: Scaffold(
         body: SafeArea(
           child: Padding(
-            padding: AppTheme.padding,
+            padding: AppSpacing.insetsMd,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   Icons.check_circle_outline,
-                  size: AppSpacing.iconXl * 1.5,
+                  size: AppSpacing.iconLg * 1.5,
                   color: AppColors.success,
                 ),
                 const SizedBox(height: AppSpacing.xxl),

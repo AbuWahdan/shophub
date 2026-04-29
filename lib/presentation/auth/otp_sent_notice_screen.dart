@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../design/app_colors.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
-import '../../src/config/route.dart';
+import '../../core/config/route.dart';
 import '../../core/app/app_theme.dart';
-import '../../src/shared/widgets/app_button.dart';
+import '../../widgets/widgets/app_button.dart';
 
 class OtpSentNoticeScreen extends StatefulWidget {
   final String username;
@@ -60,13 +63,13 @@ class _OtpSentNoticeScreenState extends State<OtpSentNoticeScreen> {
       child: Scaffold(
         body: SafeArea(
           child: Padding(
-            padding: AppTheme.padding,
+            padding: AppSpacing.insetsMd,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   Icons.mark_email_read_outlined,
-                  size: AppSpacing.iconXl * 1.5,
+                  size: AppSpacing.iconLg * 1.5,
                   color: AppColors.primary,
                 ),
                 const SizedBox(height: AppSpacing.xxl),

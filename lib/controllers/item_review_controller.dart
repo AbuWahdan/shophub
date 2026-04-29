@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../core/state/review_refresh_notifier.dart';
 import '../data/repositories/comment_repository.dart';
 import '../l10n/l10n.dart';
 import '../models/api_item_comment.dart';
-import '../src/shared/widgets/app_snackbar.dart';
-import '../src/state/review_refresh_notifier.dart';
+import '../widgets/widgets/app_snackbar.dart';
 
 class ItemReviewController extends GetxController {
   ItemReviewController(this._commentRepository);

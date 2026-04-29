@@ -3,8 +3,8 @@ import 'package:get/get.dart';
 
 import '../data/repositories/user_repository.dart';
 import '../l10n/l10n.dart';
-import '../src/shared/validation/auth_validators.dart';
-import '../src/shared/widgets/app_snackbar.dart';
+import '../widgets/validation/auth_validators.dart';
+import '../widgets/widgets/app_snackbar.dart';
 
 class PasswordController extends GetxController {
   PasswordController(this._userRepository);

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/config/route.dart';
+import '../../../core/state/app_settings.dart';
+import '../../../design/app_colors.dart';
+import '../../../design/app_spacing.dart';
+import '../../../design/app_text_styles.dart';
 import '../../../l10n/l10n.dart';
-import '../../../src/config/route.dart';
 import '../../../core/app/app_theme.dart';
-import '../../../src/shared/widgets/section_header.dart';
-import '../../../src/state/app_settings.dart';
-import '../../../src/state/auth_state.dart';
+import '../../../core/state/auth_state.dart';
+import '../../../widgets/widgets/section_header.dart';
 
 
 class ProfileSettingsPage extends StatefulWidget {
@@ -36,7 +39,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
       body: ListView(
-        padding: AppTheme.padding,
+        padding: AppSpacing.insetsMd,
         children: [
           _buildSection(
             title: l10n.settingsDisplay,

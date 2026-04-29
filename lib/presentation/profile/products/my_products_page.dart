@@ -5,12 +5,16 @@ import 'package:provider/provider.dart';
 import '../../../../controllers/my_products_controller.dart';
 import '../../../../models/product_image_model.dart';
 import '../../../../models/product_api.dart';
+import '../../../core/config/route.dart';
+import '../../../design/app_colors.dart';
+import '../../../design/app_radius.dart';
+import '../../../design/app_spacing.dart';
+import '../../../design/app_text_styles.dart';
 import '../../../l10n/l10n.dart';
-import '../../../src/config/route.dart';
 import '../../../core/app/app_theme.dart';
-import '../../../src/services/product_service.dart';
-import '../../../src/shared/widgets/empty_state.dart';
-import '../../../src/state/auth_state.dart';
+import '../../../core/state/auth_state.dart';
+import '../../../services/product_service.dart';
+import '../../../widgets/widgets/empty_state.dart';
 import 'edit_product_page.dart';
 
 class MyProductsPage extends StatefulWidget {
@@ -149,8 +153,8 @@ class _MyProductsPageState extends State<MyProductsPage> {
                   physics: const AlwaysScrollableScrollPhysics(
                     parent: BouncingScrollPhysics(),
                   ),
-                  padding: AppTheme.padding,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  padding: AppSpacing.insetsMd,
+                  gridDelegate:  SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     childAspectRatio: 0.72,
                     mainAxisSpacing: AppSpacing.lg,
@@ -249,7 +253,7 @@ class _MyProductCard extends StatelessWidget {
 
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         // Muted border for inactive products
         side: isInactive
             ? BorderSide(
@@ -259,7 +263,7 @@ class _MyProductCard extends StatelessWidget {
             : BorderSide.none,
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: onTap,
         child: Padding(
           padding: AppSpacing.insetsSm,
@@ -272,7 +276,7 @@ class _MyProductCard extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                       child: ColorFiltered(
                         // Desaturate the image for inactive products
                         colorFilter: isInactive

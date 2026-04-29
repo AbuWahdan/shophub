@@ -4,13 +4,14 @@ import 'package:provider/provider.dart';
 
 import '../../../../../controllers/password_controller.dart';
 import '../../../../../data/repositories/user_repository.dart';
+import '../../../../core/config/route.dart';
+import '../../../../design/app_spacing.dart';
 import '../../../../l10n/l10n.dart';
-import '../../../../src/config/route.dart';
 import '../../../../core/app/app_theme.dart';
-import '../../../../src/shared/widgets/app_button.dart';
-import '../../../../src/shared/widgets/app_snackbar.dart';
-import '../../../../src/shared/widgets/app_text_field.dart';
-import '../../../../src/state/auth_state.dart';
+import '../../../../core/state/auth_state.dart';
+import '../../../../widgets/widgets/app_button.dart';
+import '../../../../widgets/widgets/app_snackbar.dart';
+import '../../../../widgets/widgets/app_text_field.dart';
 
 enum ChangePasswordFlow { changeWithCurrentPassword, resetFromOtp }
 
@@ -118,7 +119,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       appBar: AppBar(title: Text(title)),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: AppTheme.padding,
+          padding: AppSpacing.insetsMd,
           child: Form(
             key: _formKey,
             child: Obx(

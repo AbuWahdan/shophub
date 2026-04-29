@@ -6,9 +6,13 @@ import '../../../../data/repositories/codes_repository.dart';
 import '../../../../data/repositories/profile_repository.dart';
 import '../../../../models/api_code_option.dart';
 import '../../../core/app/app_theme.dart';
-import '../../../src/shared/widgets/app_button.dart';
-import '../../../src/shared/widgets/app_text_field.dart';
-import '../../../src/state/auth_state.dart';
+import '../../../design/app_colors.dart';
+import '../../../design/app_radius.dart';
+import '../../../design/app_spacing.dart';
+import '../../../design/app_text_styles.dart';
+import '../../../widgets/widgets/app_button.dart';
+import '../../../widgets/widgets/app_text_field.dart';
+import '../../../core/state/auth_state.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -209,7 +213,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       appBar: AppBar(title: const Text('Edit Profile')),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: AppTheme.padding,
+          padding: AppSpacing.insetsMd,
           child: Form(
             key: _formKey,
             child: Column(
@@ -222,7 +226,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   padding: AppSpacing.insetsMd,
                   decoration: BoxDecoration(
                     color: AppColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Text(
                     user?.username ?? '',

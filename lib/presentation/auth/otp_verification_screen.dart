@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sinwar_shoping/design/app_radius.dart';
 
+import '../../design/app_colors.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
 import '../../models/user.dart';
-import '../../src/config/route.dart';
+import '../../core/config/route.dart';
 import '../../core/app/app_theme.dart';
-import '../../src/services/auth_service.dart';
-import '../../src/shared/widgets/app_button.dart';
-import '../../src/shared/widgets/app_snackbar.dart';
+import '../../services/auth_service.dart';
+import '../../services/auth_service.dart';
+import '../../widgets/widgets/app_button.dart';
+import '../../widgets/widgets/app_snackbar.dart';
 
 /// Shared OTP verification screen for both flows:
 ///   - forgot_password → navigates to ResetPasswordScreen on success
@@ -176,13 +181,13 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
       appBar: AppBar(title: Text(l10n.otpTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: AppTheme.padding,
+          padding: AppSpacing.insetsMd,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: AppSpacing.xxl),
               Text(l10n.otpEnterCode,
-                  style: AppTextStyles.headlineSmall,
+                  style: AppTextStyles.headingLarge,
                   textAlign: TextAlign.center),
               const SizedBox(height: AppSpacing.md),
               Text(l10n.otpSubtitle,
@@ -198,7 +203,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                   textAlign: TextAlign.center,
                 ),
               ],
-              const SizedBox(height: AppSpacing.jumbo),
+              const SizedBox(height: AppSpacing.xxxl),
 
               Wrap(
                 spacing: AppSpacing.sm,
@@ -207,7 +212,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                 children: List.generate(6, (index) {
                   return SizedBox(
                     width: AppSpacing.buttonMd,
-                    height: AppSpacing.buttonLg,
+                    height: AppSpacing.lg,
                     child: TextField(
                       controller: _otpControllers[index],
                       focusNode: _focusNodes[index],
@@ -219,13 +224,13 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
                       decoration: InputDecoration(
                         counterText: '',
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                          borderSide: const BorderSide(
+                          borderRadius: BorderRadius.circular(AppSpacing.lg),
+                          borderSide:  BorderSide(
                             color: AppColors.primary,
-                            width: AppSpacing.borderThick,
+                            width: AppSpacing.buttonMd,
                           ),
                         ),
                       ),

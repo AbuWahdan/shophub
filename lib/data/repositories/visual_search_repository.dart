@@ -8,7 +8,7 @@ import 'package:http/http.dart' as http;
 import '../../core/api/api_constants.dart';
 import '../../core/exceptions/app_exception.dart';
 import '../../models/product_api.dart';
-import '../../src/services/api_client.dart';
+import '../../services/api_client.dart';
 
 class VisualSearchRepository {
   final http.Client _client;

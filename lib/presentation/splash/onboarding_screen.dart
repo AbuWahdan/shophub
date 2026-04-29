@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../design/app_colors.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
 import '../../core/app/app_theme.dart';
 
@@ -32,7 +35,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: context.l10n.onboardingSecureTitle,
       subtitle: context.l10n.onboardingSecureSubtitle,
       icon: Icons.lock,
-      color: AppColors.accentOrange,
+      color: AppColors.accent,
     ),
     OnboardingPage(
       title: context.l10n.onboardingDealsTitle,
@@ -100,7 +103,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
           Positioned(
-            bottom: AppSpacing.jumbo,
+            bottom: AppSpacing.xxxl,
             left: 0,
             right: 0,
             child: Column(
@@ -114,10 +117,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ? AppSpacing.xxl
                           : AppSpacing.sm,
                       height: AppSpacing.sm,
-                      margin: AppSpacing.symmetric(horizontal: AppSpacing.xs),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusSm,
+                          AppSpacing.sm,
                         ),
                         color: _currentPage == index
                             ? AppColors.primary
@@ -168,19 +170,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             height: AppSpacing.imageLg,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.textOnPrimary.withOpacity(0.2),
+              color: AppColors.primary.withOpacity(0.2),
             ),
             child: Icon(
               page.icon,
-              size: AppSpacing.iconXl,
-              color: AppColors.textOnPrimary,
+              size: AppSpacing.iconLg,
+              color: AppColors.primary,
             ),
           ),
-          const SizedBox(height: AppSpacing.giant),
+          const SizedBox(height: AppSpacing.xxxl),
           Text(
             page.title,
-            style: AppTextStyles.headlineLarge.copyWith(
-              color: AppColors.textOnPrimary,
+            style: AppTextStyles.headingLarge.copyWith(
+              color: AppColors.primary,
             ),
             textAlign: TextAlign.center,
           ),
@@ -190,7 +192,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Text(
               page.subtitle,
               style: AppTextStyles.bodyLarge.copyWith(
-                color: AppColors.textOnPrimary.withOpacity(0.9),
+                color: AppColors.primary.withOpacity(0.9),
               ),
               textAlign: TextAlign.center,
             ),

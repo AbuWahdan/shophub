@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import '../../../data/categories_data.dart';
 import '../../../models/data.dart';
 import '../../../models/product_api.dart';
+import '../../design/app_colors.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/app/app_theme.dart';
 import '../../l10n/l10n.dart';
-import '../../src/services/product_service.dart';
-import '../../src/shared/widgets/product_search_bar.dart';
-import '../../src/widgets/product_card.dart';
+import '../../services/product_service.dart';
+import '../../widgets/widgets/product_search_bar.dart';
+import '../../widgets/product_card.dart';
 import 'camera_picker_screen.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -69,7 +72,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Column(
       children: [
         Container(
-          margin: AppTheme.padding,
+          margin: AppSpacing.insetsMd,
           child: ProductSearchBar(
             controller: _searchController,
             hintText: l10n.homeSearchHint,
@@ -97,7 +100,7 @@ class _MyHomePageState extends State<MyHomePage> {
           height: 50,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: AppTheme.hPadding,
+            padding:AppSpacing.insetsMd,
             itemCount: mainCategories.length + 1,
             separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
             itemBuilder: (context, index) {
@@ -194,7 +197,7 @@ class _MyHomePageState extends State<MyHomePage> {
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
-        padding: AppTheme.hPadding,
+        padding:AppSpacing.insetsMd,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 0.82,

@@ -3,27 +3,32 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import '../../core/utils/image_converter.dart';
-import '../../core/widgets/empty_state_widget.dart';
 import '../../data/repositories/comment_repository.dart';
 import '../../models/api_item_comment.dart';
 import '../../models/data.dart';
 import '../../models/product_image_model.dart';
 import '../../models/product_api.dart';
 import '../../models/cart_api.dart';
+import '../core/config/route.dart';
+import '../core/state/auth_state.dart';
+import '../core/state/review_refresh_notifier.dart';
+import '../core/state/wishlist_state.dart';
+import '../design/app_colors.dart';
+import '../design/app_radius.dart';
+import '../design/app_shadows.dart';
+import '../design/app_spacing.dart';
+import '../design/app_text_styles.dart';
 import '../l10n/l10n.dart';
-import '../src/config/route.dart';
 import '../core/app/app_theme.dart';
-import '../src/services/product_service.dart';
-import '../src/shared/widgets/add_to_cart_bottom_sheet.dart';
-import '../src/shared/widgets/app_image.dart';
-import '../src/shared/widgets/app_snackbar.dart';
-import '../src/shared/widgets/product_comment_card.dart';
-import '../src/shared/widgets/product_variant_widgets.dart';
-import '../src/shared/widgets/rating_stars.dart';
-import '../src/state/auth_state.dart';
-import '../src/state/review_refresh_notifier.dart';
-import '../src/state/wishlist_state.dart';
-import '../src/widgets/gallery_section/gallery_viewer.dart';
+import '../services/product_service.dart';
+import '../widgets/empty_state_widget.dart';
+import '../widgets/gallery_section/gallery_viewer.dart';
+import '../widgets/widgets/add_to_cart_bottom_sheet.dart';
+import '../widgets/widgets/app_image.dart';
+import '../widgets/widgets/app_snackbar.dart';
+import '../widgets/widgets/product_comment_card.dart';
+import '../widgets/widgets/product_variant_widgets.dart';
+import '../widgets/widgets/rating_stars.dart';
 
 class ProductDetailsPage extends StatefulWidget {
   final ApiProduct product;
@@ -274,7 +279,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               children: [
                 _buildImageCarousel(),
                 Padding(
-                  padding: AppTheme.padding,
+                  padding: AppSpacing.insetsMd,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -328,7 +333,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           padding: AppSpacing.insetsLg,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            boxShadow: const [AppShadows.topBarShadow],
+            boxShadow:  [AppShadows.subtleShadow],
           ),
           child: SizedBox(
             width: double.infinity,
@@ -336,9 +341,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.textOnPrimary,
+                foregroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
               ),
               onPressed: (_isAddingToCart || isAuthLoading)
@@ -358,7 +363,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   Text(
                     context.l10n.productAddToCart,
                     style: AppTextStyles.buttonLarge.copyWith(
-                      color: AppColors.textOnPrimary,
+                      color: AppColors.primary,
                     ),
                   ),
                 ],
@@ -373,7 +378,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   Widget _buildImageCarousel() {
     if (_imageCount == 0) {
       return Container(
-        height: AppSpacing.imageHero,
+        height: AppSpacing.imageLg,
         color: Theme.of(context).colorScheme.surface,
         alignment: Alignment.center,
         child: const Icon(Icons.broken_image_outlined, size: 56),
@@ -385,7 +390,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         Stack(
           children: [
             Container(
-              height: AppSpacing.imageHero,
+              height: AppSpacing.imageLg,
               color: Theme.of(context).colorScheme.surface,
               child: PageView.builder(
                 controller: _imageController,
@@ -419,9 +424,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                         ? AppSpacing.xxl
                         : AppSpacing.sm,
                     height: AppSpacing.sm,
-                    margin: AppSpacing.symmetric(horizontal: AppSpacing.xs),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                      borderRadius: BorderRadius.circular(AppSpacing.sm),
                       color: _currentImageIndex == index
                           ? AppColors.primary
                           : Theme.of(
@@ -436,7 +440,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         ),
         if (_imageCount > 1)
           Padding(
-            padding: AppSpacing.symmetric(vertical: AppSpacing.md),
+            padding: AppSpacing.insetsMd,
             child: SizedBox(
               height: AppSpacing.imageSm,
               child: ListView.separated(
@@ -460,10 +464,10 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                     },
                     onDoubleTap: () => _openImageViewer(index),
                     child: Container(
-                      padding: AppSpacing.all(AppSpacing.xs),
+                      padding: AppSpacing.insetsSm,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusSm,
+                          AppSpacing.sm,
                         ),
                         border: Border.all(
                           color: isActive
@@ -567,7 +571,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         if (widget.product.name.trim().isNotEmpty)
           Text(
             widget.product.name.trim(),
-            style: AppTextStyles.headlineSmall,
+            style: AppTextStyles.headingSmall,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -598,7 +602,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         padding: AppSpacing.insetsLg,
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         child: ProductVariantSummary(
           variant: selectedVariant,
@@ -652,7 +656,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           Text(
             'Available: $availableQty',
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.accentOrange,
+              color: AppColors.accent,
             ),
           ),
       ],
@@ -753,7 +757,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                     padding: AppSpacing.insetsLg,
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

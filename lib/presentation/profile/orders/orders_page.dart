@@ -4,9 +4,13 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../../data/repositories/order_repository.dart';
 import '../../../../models/api_order.dart';
+import '../../../design/app_colors.dart';
+import '../../../design/app_radius.dart';
+import '../../../design/app_spacing.dart';
+import '../../../design/app_text_styles.dart';
 import '../../../l10n/l10n.dart';
 import '../../../core/app/app_theme.dart';
-import '../../../src/state/auth_state.dart';
+import '../../../core/state/auth_state.dart';
 import 'order_details_screen.dart';
 
 class OrdersPage extends StatefulWidget {
@@ -57,23 +61,13 @@ class _OrdersPageState extends State<OrdersPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                  const Icon(Icons.error_outline, size: 64, color: AppColors.error),
                   const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    'Failed to load orders',
-                    style: AppTextStyles.titleMedium,
-                  ),
+                  Text(context.l10n.errorLoadingOrders ?? 'Failed to load orders', style: AppTextStyles.titleMedium),
                   const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    snapshot.error.toString(),
-                    style: AppTextStyles.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
+                  Text(snapshot.error.toString(), style: AppTextStyles.bodySmall, textAlign: TextAlign.center),
                   const SizedBox(height: AppSpacing.lg),
-                  ElevatedButton(
-                    onPressed: _onRefresh,
-                    child: const Text('Retry'),
-                  ),
+                  ElevatedButton(onPressed: _onRefresh, child: Text(context.l10n.retry ?? 'Retry')),
                 ],
               ),
             );
@@ -86,18 +80,9 @@ class _OrdersPageState extends State<OrdersPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.shopping_bag_outlined,
-                    size: 64,
-                    color: AppColors.neutral400,
-                  ),
+                  const Icon(Icons.shopping_bag_outlined, size: 64, color: AppColors.neutral400),
                   const SizedBox(height: AppSpacing.lg),
-                  Text('No orders yet', style: AppTextStyles.titleMedium),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    'You haven\'t placed any orders',
-                    style: AppTextStyles.bodySmall,
-                  ),
+                  Text(context.l10n.noOrdersYet ?? 'No orders yet', style: AppTextStyles.titleMedium),
                 ],
               ),
             );
@@ -106,11 +91,10 @@ class _OrdersPageState extends State<OrdersPage> {
           return RefreshIndicator(
             onRefresh: _onRefresh,
             child: ListView.builder(
-              padding: AppTheme.padding,
+              padding: AppSpacing.insetsMd,
               itemCount: orders.length,
               itemBuilder: (context, index) {
-                final order = orders[index];
-                return _buildOrderCard(context, order);
+                return _buildOrderCard(context, orders[index]);
               },
             ),
           );
@@ -122,6 +106,7 @@ class _OrdersPageState extends State<OrdersPage> {
   Widget _buildOrderCard(BuildContext context, ApiOrder order) {
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -151,35 +136,30 @@ class _OrdersPageState extends State<OrdersPage> {
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Container(
-                    padding: AppSpacing.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.xs,
-                    ),
+                    padding: AppSpacing.insetsMd,
                     decoration: BoxDecoration(
                       color: order.getStatusColor().withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
                     ),
                     child: Text(
                       order.getStatusLabel(),
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: order.getStatusColor(),
-                      ),
+                      style: AppTextStyles.labelSmall.copyWith(color: order.getStatusColor()),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Date: ${DateFormat.yMMMd().format(order.orderDate)}',
+                DateFormat.yMMMd().format(order.orderDate),
                 style: AppTextStyles.bodySmall,
               ),
               const SizedBox(height: AppSpacing.md),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Total:', style: AppTextStyles.bodySmall),
+                  Text(context.l10n.totalLabel ?? 'Total:', style: AppTextStyles.bodySmall),
                   Text(
-                    '\$${order.netAmount.toStringAsFixed(2)}',
+                    order.totalAmount.toStringAsFixed(2),
                     style: AppTextStyles.titleMedium,
                   ),
                 ],

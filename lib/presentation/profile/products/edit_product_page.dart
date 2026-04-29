@@ -7,15 +7,16 @@ import '../../../../data/categories_data.dart';
 import '../../../../models/category.dart';
 import '../../../../models/product_api.dart';
 import '../../../../models/product_image_model.dart';
+import '../../../core/config/size_options.dart';
+import '../../../design/app_spacing.dart';
 import '../../../l10n/l10n.dart';
-import '../../../src/config/size_options.dart';
 import '../../../core/app/app_theme.dart';
-import '../../../src/services/product_service.dart';
-import '../../../src/shared/widgets/app_button.dart';
-import '../../../src/shared/widgets/app_snackbar.dart';
-import '../../../src/shared/widgets/app_text_field.dart';
-import '../../../src/shared/widgets/color_picker/color_hex_field.dart';
-import '../../../src/widgets/gallery_section/gallery_viewer.dart';
+import '../../../services/product_service.dart';
+import '../../../widgets/gallery_section/gallery_viewer.dart';
+import '../../../widgets/widgets/app_button.dart';
+import '../../../widgets/widgets/app_snackbar.dart';
+import '../../../widgets/widgets/app_text_field.dart';
+import '../../../widgets/widgets/color_picker/color_hex_field.dart';
 
 class EditProductPage extends StatefulWidget {
   const EditProductPage({

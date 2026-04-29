@@ -222,7 +222,7 @@ DATA (External Resources)
 ### Key Files
 - [AddressController](lib/controllers/address_controller.dart) - State management
 - [AddressRepositoryImpl](lib/data/repositories/address_repository_impl.dart) - Business logic
-- [AddressesListScreen](lib/presentation/profile/addresses/addresses_list_screen.dart) - List UI
+- [AddressesListScreen](lib/presentation/profile/addresses/widgets/addresses_list_screen.dart) - List UI
 - [AddEditAddressScreen](lib/presentation/profile/addresses/add_edit_address_screen.dart) - Form UI
 
 ---

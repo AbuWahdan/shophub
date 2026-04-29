@@ -6,18 +6,20 @@ import 'package:provider/provider.dart';
 
 import '../../../../data/categories_data.dart';
 import '../../../../models/product_api.dart';
+import '../../../core/config/route.dart';
+import '../../../core/config/size_options.dart';
+import '../../../design/app_colors.dart';
+import '../../../design/app_spacing.dart';
+import '../../../design/app_text_styles.dart';
 import '../../../l10n/l10n.dart';
-import '../../../src/config/route.dart';
-import '../../../src/config/size_options.dart';
 import '../../../core/app/app_theme.dart';
-import '../../../src/services/product_service.dart';
-import '../../../src/shared/widgets/app_button.dart';
-import '../../../src/shared/widgets/app_snackbar.dart';
-import '../../../src/shared/widgets/app_text_field.dart';
-import '../../../src/shared/widgets/color_picker/color_hex_field.dart';
-// FIX: import GalleryViewer — adjust this path to match your project layout
-import '../../../src/state/auth_state.dart';
-import '../../../src/widgets/gallery_section/gallery_viewer.dart';
+import '../../../services/product_service.dart';
+import '../../../widgets/gallery_section/gallery_viewer.dart';
+import '../../../widgets/widgets/app_button.dart';
+import '../../../widgets/widgets/app_snackbar.dart';
+import '../../../widgets/widgets/app_text_field.dart';
+import '../../../core/state/auth_state.dart';
+import '../../../widgets/widgets/color_picker/color_hex_field.dart';
 
 class InsertProductPage extends StatefulWidget {
   const InsertProductPage({super.key});
@@ -338,7 +340,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
       appBar: AppBar(title: Text(l10n.insertProductMenu)),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: AppTheme.padding,
+          padding: AppSpacing.insetsMd,
           child: Form(
             key: _formKey,
             child: Column(
@@ -395,7 +397,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
     return Container(
       decoration: BoxDecoration(
         border:       Border.all(color: Theme.of(context).dividerColor),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        borderRadius: BorderRadius.circular(AppSpacing.sm),
       ),
       child: Column(
         children: [
@@ -479,9 +481,9 @@ class _InsertProductPageState extends State<InsertProductPage> {
     return Container(
       decoration: BoxDecoration(
         border:       Border.all(color: Theme.of(context).dividerColor),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        borderRadius: BorderRadius.circular(AppSpacing.sm),
       ),
-      padding: AppSpacing.all(AppSpacing.md),
+      padding: AppSpacing.insetsMd,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -512,9 +514,9 @@ class _InsertProductPageState extends State<InsertProductPage> {
     return Container(
       decoration: BoxDecoration(
         border:       Border.all(color: Theme.of(context).dividerColor),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        borderRadius: BorderRadius.circular(AppSpacing.sm),
       ),
-      padding: AppSpacing.all(AppSpacing.md),
+      padding: AppSpacing.insetsMd,
       child: Column(
         children: [
           Row(
@@ -783,7 +785,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
                       height: 88,
                       decoration: BoxDecoration(
                         color:        AppColors.surfaceVariant,
-                        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                        borderRadius: BorderRadius.circular(AppSpacing.sm),
                         border: Border.all(
                             color: AppColors.neutral400, width: 1.5),
                       ),
@@ -825,7 +827,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
                         height: 88,
                         decoration: BoxDecoration(
                           borderRadius:
-                          BorderRadius.circular(AppSpacing.radiusSm),
+                          BorderRadius.circular(AppSpacing.sm),
                           border: Border.all(
                             color: isDefault
                                 ? AppColors.primary
@@ -835,7 +837,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(
-                              AppSpacing.radiusSm - 1),
+                              AppSpacing.sm - 1),
                           child: Image.file(
                             File(_images[index].path),
                             fit: BoxFit.cover,

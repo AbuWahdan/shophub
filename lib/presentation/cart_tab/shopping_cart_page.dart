@@ -2,20 +2,24 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:get/get.dart';
+import 'package:sinwar_shoping/design/app_radius.dart';
 
 import '../../controllers/cart_controller.dart';
+import '../../design/app_colors.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
 import '../../models/cart_api.dart';
-import '../../src/config/app_constants.dart';
-import '../../src/config/route.dart';
+import '../../core/config/app_constants.dart';
+import '../../core/config/route.dart';
 import '../../core/app/app_theme.dart';
-import '../../src/shared/dialogs/app_dialogs.dart';
-import '../../src/shared/widgets/app_button.dart';
-import '../../src/shared/widgets/app_image.dart';
-import '../../src/shared/widgets/app_snackbar.dart';
-import '../../src/shared/widgets/empty_state.dart';
-import '../../src/shared/widgets/quantity_stepper.dart';
-import '../../src/state/auth_state.dart';
+import '../../widgets/dialogs/app_dialogs.dart';
+import '../../widgets/widgets/app_button.dart';
+import '../../widgets/widgets/app_image.dart';
+import '../../widgets/widgets/app_snackbar.dart';
+import '../../core/state/auth_state.dart';
+import '../../widgets/widgets/empty_state.dart';
+import '../../widgets/widgets/quantity_stepper.dart';
 import '../home_tab/main_page.dart';
 import 'checkout/checkout_screen.dart';
 
@@ -121,11 +125,11 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
 
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: isUpdating ? null : () => _openProductDetails(item),
         child: Padding(
           padding: AppSpacing.insetsMd,
@@ -203,7 +207,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                           Text(
                             'Only $availableStock left',
                             style: AppTextStyles.caption.copyWith(
-                              color: AppColors.accentOrange,
+                              color: AppColors.accent,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -377,7 +381,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                 constraints:
                 BoxConstraints(minHeight: constraints.maxHeight),
                 child: Padding(
-                  padding: AppTheme.padding,
+                  padding: AppSpacing.insetsMd,
                   child: Column(
                     children: [
                       // FIX: each card is wrapped in its own Obx so only
@@ -385,7 +389,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                       ...cartController.items.map(
                             (item) => Obx(() => _buildCartItemCard(item)),
                       ),
-                      const SizedBox(height: AppSpacing.hero),
+                      const SizedBox(height: AppSpacing.lg),
                     ],
                   ),
                 ),
@@ -401,7 +405,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
 
         return SafeArea(
           child: Container(
-            padding: AppTheme.padding,
+            padding: AppSpacing.insetsMd,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               border: Border(
@@ -445,10 +449,10 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
-                            foregroundColor: AppColors.textOnPrimary,
+                            foregroundColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
-                                  AppSpacing.radiusLg),
+                                  AppRadius.lg),
                             ),
                           ),
                           onPressed: () {
@@ -466,7 +470,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                             style: Theme.of(context)
                                 .textTheme
                                 .labelLarge
-                                ?.copyWith(color: AppColors.textOnPrimary),
+                                ?.copyWith(color: AppColors.primary),
                           ),
                         ),
                       ),
@@ -496,11 +500,11 @@ class _CartItemImage extends StatelessWidget {
       width: AppSpacing.imageMd,
       height: AppSpacing.imageMd,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         color: Theme.of(context).colorScheme.surface,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: imageUrl.isEmpty
             ? const _ImagePlaceholder()
             : AppImage(
@@ -565,7 +569,7 @@ class _VariantChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: AppColors.border),
       ),
       child: Row(

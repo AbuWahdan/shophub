@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../../core/config/route.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
-import '../../src/config/route.dart';
+import '../../core/config/route.dart';
 import '../../core/app/app_theme.dart';
-import '../../src/services/auth_service.dart';
-import '../../src/shared/validation/auth_validators.dart';
-import '../../src/shared/widgets/app_button.dart';
-import '../../src/shared/widgets/app_snackbar.dart';
-import '../../src/shared/widgets/app_text_field.dart';
+import '../../services/auth_service.dart';
+import '../../widgets/validation/auth_validators.dart';
+import '../../widgets/widgets/app_button.dart';
+import '../../widgets/widgets/app_snackbar.dart';
+import '../../widgets/widgets/app_text_field.dart';
 
 
 class ForgotPasswordEmailScreen extends StatefulWidget {
@@ -101,7 +104,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: AppTheme.padding,
+          padding: AppSpacing.insetsMd,
           child: Form(
             key: _formKey,
             child: Column(
@@ -112,7 +115,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
                   l10n.forgotPasswordSubtitle,
                   style: AppTextStyles.bodyMedium,
                 ),
-                const SizedBox(height: AppSpacing.xxxl),
+                SizedBox(height: AppSpacing.xxxl),
                 AppTextField(
                   controller: _usernameController,
                   label: 'Username',

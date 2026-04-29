@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../models/address_model.dart';
+import '../../../models/addresses/address_model.dart';
 
 class AddEditAddressScreen extends StatefulWidget {
   final String username;

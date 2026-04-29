@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:sinwar_shoping/design/app_radius.dart';
 import 'package:sinwar_shoping/models/cart_api.dart';
 import '../../../../controllers/address_controller.dart';
 import '../../../../data/repositories/codes_repository.dart';
 import '../../../../data/repositories/checkout_repository.dart';
 import '../../../../core/utils/apex_response_helper.dart';
 import '../../../../models/payment_method_model.dart';
-import '../../../../models/address_model.dart';
+import '../../../design/app_colors.dart';
+import '../../../design/app_spacing.dart';
+import '../../../design/app_text_styles.dart';
+import '../../../models/addresses/address_model.dart';
 import '../../../../models/api_code_option.dart';
 import '../../../../models/checkout_request.dart';
+import '../../../core/state/auth_state.dart';
 import '../../../l10n/l10n.dart';
 import '../../../core/app/app_theme.dart';
-import '../../../src/shared/widgets/app_button.dart';
-import '../../../src/shared/widgets/app_snackbar.dart';
-import '../../../src/state/auth_state.dart';
-import '../../profile/addresses/address_selection_bottom_sheet.dart';
+import '../../../widgets/widgets/app_button.dart';
+import '../../../widgets/widgets/app_snackbar.dart';
+import '../../profile/addresses/widgets/address_selection_bottom_sheet.dart';
 import '../../profile/addresses/addresses_page.dart';
-import '../../profile/orders/order_confirmation_screen.dart';
+import 'order_confirmation_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key, required this.cartItems});
@@ -302,7 +306,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       appBar: AppBar(title: Text(l10n.checkoutTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: AppTheme.padding,
+          padding: AppSpacing.insetsMd,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -347,7 +351,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           : Colors.grey[300]!,
                       width: 1.5,
                     ),
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                     color: _selectedAddress != null
                         ? AppColors.primary.withValues(alpha: 0.05)
                         : Colors.transparent,
@@ -454,7 +458,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 (method) => Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                     onTap: () {
                       setState(() {
                         _selectedPaymentMethodId = method.id;
@@ -465,7 +469,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       padding: AppSpacing.insetsMd,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusMd,
+                          AppRadius.md,
                         ),
                         border: Border.all(
                           color: _selectedPaymentMethodId == method.id

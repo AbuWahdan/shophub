@@ -8,11 +8,6 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
-import '../../src/config/mapbox_config.dart';
-import '../../src/state/app_settings.dart';
-import '../../src/state/auth_state.dart';
-import '../../src/state/wishlist_state.dart';
-
 // Core
 import '../api/api_service.dart';
 
@@ -34,6 +29,10 @@ import '../../controllers/cart_controller.dart';
 import '../../controllers/my_products_controller.dart';
 import '../../controllers/order_controller.dart';
 import '../../controllers/product_controller.dart';
+import '../config/mapbox_config.dart';
+import '../state/app_settings.dart';
+import '../state/auth_state.dart';
+import '../state/wishlist_state.dart';
 
 class AppInitializer {
   AppInitializer._(); // prevent instantiation

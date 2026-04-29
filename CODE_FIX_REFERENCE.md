@@ -108,7 +108,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
         children: [
           Expanded(
             child: SingleChildScrollView(
-              padding: AppTheme.padding,
+              padding: AppSpacing.insetsMd,
               child: _cartItems(),  // ❌ Crashes on items removal
             ),
           ),
@@ -451,13 +451,13 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
             child: cartItems.isEmpty
                 ? _buildEmptyCart()
                 : SingleChildScrollView(
-                    padding: AppTheme.padding,
+                    padding: AppSpacing.insetsMd,
                     child: _cartItems(),
                   ),
           ),
           if (cartItems.isNotEmpty)
             Container(
-              padding: AppTheme.padding,
+              padding: AppSpacing.insetsMd,
               decoration: BoxDecoration(
                 color: Theme.of(context).scaffoldBackgroundColor,
                 border: Border(

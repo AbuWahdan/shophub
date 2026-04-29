@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import '../../../models/data.dart';
 import '../../../models/product_api.dart';
 import '../../core/app/app_theme.dart';
+import '../../design/app_colors.dart';
+import '../../design/app_radius.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
-import '../../src/services/product_service.dart';
-import '../../src/shared/widgets/product_search_bar.dart';
-import '../../src/widgets/product_card.dart';
+import '../../services/product_service.dart';
+import '../../widgets/widgets/product_search_bar.dart';
+import '../../widgets/product_card.dart';
 import 'camera_picker_screen.dart';
 
 class SearchFilterPage extends StatefulWidget {
@@ -109,7 +113,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
       body: Column(
         children: [
           Padding(
-            padding: AppTheme.padding,
+            padding: AppSpacing.insetsMd,
             child: ProductSearchBar(
               controller: _searchController,
               hintText: context.l10n.searchFilterHint,
@@ -173,9 +177,9 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.search_off,
-                          size: AppSpacing.giant,
+                          size: AppSpacing.xxxl,
                           color: AppColors.neutral500,
                         ),
                         const SizedBox(height: AppSpacing.lg),
@@ -228,7 +232,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
       context: context,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusLg),
+          top: Radius.circular(AppRadius.lg),
         ),
       ),
       builder: (context) {
@@ -275,7 +279,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
       context: context,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusLg),
+          top: Radius.circular(AppRadius.lg),
         ),
       ),
       builder: (context) {
@@ -332,7 +336,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
       context: context,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusLg),
+          top: Radius.circular(AppRadius.lg),
         ),
       ),
       builder: (context) {
@@ -356,7 +360,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
                       (i) => Icon(
                         Icons.star,
                         size: AppSpacing.iconSm,
-                        color: AppColors.accentYellow,
+                        color: AppColors.accent,
                       ),
                     ),
                   ),
@@ -394,7 +398,7 @@ class _SearchFilterPageState extends State<SearchFilterPage> {
       context: context,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusLg),
+          top: Radius.circular(AppRadius.lg),
         ),
       ),
       builder: (context) {

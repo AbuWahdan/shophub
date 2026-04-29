@@ -2,10 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import '../../../core/widgets/empty_state_widget.dart';
 import '../../../models/product_api.dart';
 import '../../core/app/app_theme.dart';
-import '../../src/widgets/product_card.dart';
+import '../../design/app_radius.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
+import '../../widgets/empty_state_widget.dart';
+import '../../widgets/product_card.dart';
 
 class VisualSearchResultsScreen extends StatelessWidget {
   final File imageFile;
@@ -34,12 +37,12 @@ class VisualSearchResultsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: AppTheme.padding,
+                    padding: AppSpacing.insetsMd,
                     child: Row(
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(
-                            AppSpacing.radiusMd,
+                            AppRadius.md,
                           ),
                           child: Image.file(
                             imageFile,
@@ -70,7 +73,7 @@ class VisualSearchResultsScreen extends StatelessWidget {
                   ),
                   Expanded(
                     child: GridView.builder(
-                      padding: AppTheme.hPadding,
+                      padding:AppSpacing.insetsMd,
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../core/app/app_theme.dart';
-import '../../src/shared/widgets/app_button.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
+import '../../widgets/widgets/app_button.dart';
 import 'visual_search_loading_screen.dart';
 
 class CameraPickerScreen extends StatefulWidget {
@@ -127,7 +129,7 @@ class _CameraPickerScreenState extends State<CameraPickerScreen> {
       appBar: AppBar(title: const Text('Visual Search')),
       body: SafeArea(
         child: Padding(
-          padding: AppTheme.padding,
+          padding: AppSpacing.insetsMd,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

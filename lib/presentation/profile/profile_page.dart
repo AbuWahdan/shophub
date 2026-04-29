@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sinwar_shoping/src/config/app_images.dart';
-import 'package:sinwar_shoping/src/config/route.dart';
+import '../../core/config/app_images.dart';
+import '../../core/config/route.dart';
 
 import '../../core/app/app_theme.dart';
+import '../../design/app_colors.dart';
+import '../../design/app_radius.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
-import '../../src/shared/dialogs/app_dialogs.dart';
-import '../../src/shared/widgets/app_image.dart';
-import '../../src/state/auth_state.dart';
+import '../../widgets/dialogs/app_dialogs.dart';
+import '../../widgets/widgets/app_image.dart';
+import '../../core/state/auth_state.dart';
 
 
 class ProfilePage extends StatelessWidget {
@@ -23,7 +27,7 @@ class ProfilePage extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: AppTheme.padding,
+        padding: AppSpacing.insetsMd,
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: constraints.maxHeight),
           child: Column(
@@ -32,8 +36,8 @@ class ProfilePage extends StatelessWidget {
               ClipOval(
                 child: AppImage(
                   path: AppImages.userProfilePlaceholder,
-                  width: AppSpacing.hero,
-                  height: AppSpacing.hero,
+                  width: AppSpacing.lg,
+                  height: AppSpacing.lg,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -127,7 +131,7 @@ class ProfilePage extends StatelessWidget {
   ) {
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: ListTile(

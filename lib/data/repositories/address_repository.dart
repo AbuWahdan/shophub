@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-import '../../models/address_model.dart';
+import '../../models/addresses/address_model.dart';
 
 class AddressRepository {
   final http.Client _client;

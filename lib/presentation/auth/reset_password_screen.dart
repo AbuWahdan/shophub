@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/password_controller.dart';
 import '../../../data/repositories/user_repository.dart';
-import '../../src/config/route.dart';
+import '../../core/config/route.dart';
 import '../../core/app/app_theme.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
-import '../../src/shared/widgets/app_button.dart';
-import '../../src/shared/widgets/app_snackbar.dart';
-import '../../src/shared/widgets/app_text_field.dart';
+import '../../widgets/widgets/app_button.dart';
+import '../../widgets/widgets/app_snackbar.dart';
+import '../../widgets/widgets/app_text_field.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String username;
@@ -83,7 +85,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         ),
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: AppTheme.padding,
+            padding: AppSpacing.insetsMd,
             child: Form(
               key: _formKey,
               child: Obx(

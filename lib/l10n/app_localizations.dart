@@ -1858,6 +1858,12 @@ abstract class AppLocalizations {
   /// **'Show More'**
   String get productShowMore;
 
+  String? get totalLabel ;
+
+  String? get noOrdersYet ;
+
+  String? get errorLoadingOrders ;
+
   /// No description provided for @productAddedToCart.
   ///
   /// In en, this message translates to:

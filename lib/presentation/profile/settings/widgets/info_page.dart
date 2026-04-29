@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/app/app_theme.dart';
+import '../../../../design/app_spacing.dart';
+import '../../../../design/app_text_styles.dart';
 
 
 class InfoPage extends StatelessWidget {
@@ -14,7 +16,7 @@ class InfoPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: SingleChildScrollView(
-        padding: AppTheme.padding,
+        padding: AppSpacing.insetsMd,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -3,17 +3,19 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import '../../../controllers/cart_controller.dart';
-import '../../../core/widgets/empty_state_widget.dart';
+import '../../../core/state/wishlist_state.dart';
+import '../../../design/app_colors.dart';
+import '../../../design/app_spacing.dart';
+import '../../../services/product_service.dart';
+import '../../../widgets/empty_state_widget.dart';
 import '../../../l10n/l10n.dart';
 import '../../../models/data.dart';
 import '../../../models/product_api.dart';
 import '../../../core/app/app_theme.dart';
-import '../../../src/services/product_service.dart';
-import '../../../src/shared/widgets/add_to_cart_bottom_sheet.dart';
-import '../../../src/shared/widgets/app_snackbar.dart';
-import '../../../src/state/auth_state.dart';
-import '../../../src/state/wishlist_state.dart';
-import '../../../src/widgets/product_card.dart';
+import '../../../widgets/product_card.dart';
+import '../../../widgets/widgets/add_to_cart_bottom_sheet.dart';
+import '../../../widgets/widgets/app_snackbar.dart';
+import '../../../core/state/auth_state.dart';
 
 class WishlistPage extends StatefulWidget {
   const WishlistPage({super.key});
@@ -175,12 +177,12 @@ class _WishlistBody extends StatelessWidget {
     if (errorMessage.isNotEmpty && wishlistState.items.isEmpty) {
       return Center(
         child: Padding(
-          padding: AppTheme.padding,
+          padding: AppSpacing.insetsMd,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.error_outline,
-                  size: AppSpacing.iconXl, color: AppColors.error),
+                  size: AppSpacing.iconLg, color: AppColors.error),
               const SizedBox(height: AppSpacing.md),
               Text(errorMessage, textAlign: TextAlign.center),
               const SizedBox(height: AppSpacing.md),
@@ -221,7 +223,7 @@ class _WishlistBody extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
-        padding: AppTheme.padding,
+        padding: AppSpacing.insetsMd,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 0.82,

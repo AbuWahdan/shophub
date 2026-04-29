@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/app/app_theme.dart';
-import '../../src/services/auth_service.dart';
-import '../../src/shared/widgets/app_button.dart';
-import '../../src/shared/widgets/app_snackbar.dart';
+import '../../design/app_colors.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
+import '../../services/auth_service.dart';
+import '../../widgets/widgets/app_button.dart';
+import '../../widgets/widgets/app_snackbar.dart';
 
 class SignupOtpVerificationScreen extends StatefulWidget {
   const SignupOtpVerificationScreen({super.key});
@@ -144,7 +147,7 @@ class _SignupOtpVerificationScreenState
       appBar: AppBar(title: const Text('Verify Email'), centerTitle: true),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: AppTheme.padding,
+          padding: AppSpacing.insetsMd,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -164,7 +167,7 @@ class _SignupOtpVerificationScreenState
 
               const SizedBox(height: AppSpacing.xl),
               Text('Check your email',
-                  style: AppTextStyles.headlineMedium,
+                  style: AppTextStyles.headingMedium,
                   textAlign: TextAlign.center),
               const SizedBox(height: AppSpacing.sm),
               Text('We sent a 6-digit verification code to',
@@ -199,7 +202,7 @@ class _SignupOtpVerificationScreenState
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly
                         ],
-                        style: AppTextStyles.headlineSmall,
+                        style: AppTextStyles.headingSmall,
                         decoration: InputDecoration(
                           counterText: '',
                           contentPadding: EdgeInsets.zero,

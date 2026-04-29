@@ -1,8 +1,8 @@
 import 'package:sinwar_shoping/models/product_api.dart';
-import 'package:sinwar_shoping/src/config/app_images.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sinwar_shoping/models/cart_api.dart';
-import '../src/model/category.dart';
+import '../core/config/app_images.dart';
+import 'category_xx.dart';
 import 'category.dart';
 
 class AppData {

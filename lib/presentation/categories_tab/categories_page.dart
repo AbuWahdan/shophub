@@ -4,9 +4,14 @@ import '../../../data/categories_data.dart';
 import '../../../models/category.dart';
 import '../../../models/product_api.dart';
 import '../../core/app/app_theme.dart';
+import '../../design/app_colors.dart';
+import '../../design/app_radius.dart';
+import '../../design/app_shadows.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
-import '../../src/services/product_service.dart';
-import '../../src/widgets/product_card.dart';
+import '../../services/product_service.dart';
+import '../../widgets/product_card.dart';
 
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
@@ -38,7 +43,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
           height: 120,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: AppTheme.padding,
+            padding: AppSpacing.insetsMd,
             itemCount: mainCategories.length,
             separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
             itemBuilder: (context, index) {
@@ -53,7 +58,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                     color: selected
                         ? Theme.of(context).colorScheme.primary
                         : Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                     boxShadow: const [AppShadows.subtleShadow],
                   ),
                   child: Column(
@@ -63,12 +68,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
                         _getCategoryIcon(category.id),
                         size: 36,
                         color: selected
-                            ? AppColors.textOnPrimary
+                            ? AppColors.primary
                             : AppColors.textHint,
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Padding(
-                        padding: AppSpacing.insetsXs,
+                        padding: AppSpacing.insetsSm,
                         child: Text(
                           category.name,
                           maxLines: 2,
@@ -76,7 +81,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
                           overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.labelMedium.copyWith(
                             color: selected
-                                ? AppColors.textOnPrimary
+                                ? AppColors.primary
                                 : AppColors.textSecondary,
                           ),
                         ),
@@ -94,7 +99,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
             height: 40,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
-              padding: AppTheme.hPadding,
+              padding:AppSpacing.insetsMd,
               itemCount: subcategories.length,
               separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
               itemBuilder: (context, index) {
@@ -165,7 +170,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
-        padding: AppTheme.hPadding,
+        padding:AppSpacing.insetsMd,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 0.82,

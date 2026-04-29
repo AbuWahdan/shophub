@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../core/app/app_theme.dart';
+import '../../design/app_colors.dart';
+import '../../design/app_spacing.dart';
+import '../../design/app_text_styles.dart';
 import '../../l10n/l10n.dart';
-import '../../src/services/storage_service.dart';
+import '../../services/storage_service.dart';
 
 
 /// Splash Screen with fade animation
@@ -77,12 +80,12 @@ class _SplashScreenState extends State<SplashScreen>
                     height: AppSpacing.imageLg,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.textOnPrimary.withOpacity(0.2),
+                      color: AppColors.primary.withOpacity(0.2),
                     ),
                     child: Icon(
                       Icons.shopping_bag,
-                      size: AppSpacing.iconXl,
-                      color: AppColors.textOnPrimary,
+                      size: AppSpacing.iconLg,
+                      color: AppColors.primary,
                     ),
                   ),
                 ),
@@ -90,14 +93,14 @@ class _SplashScreenState extends State<SplashScreen>
                 Text(
                   context.l10n.splashTitle,
                   style: AppTextStyles.displayMedium.copyWith(
-                    color: AppColors.textOnPrimary,
+                    color: AppColors.primary,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   context.l10n.splashSubtitle,
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textOnPrimary.withOpacity(0.8),
+                    color: AppColors.primary.withOpacity(0.8),
                   ),
                 ),
               ],
