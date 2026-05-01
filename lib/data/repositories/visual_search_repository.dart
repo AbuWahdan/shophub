@@ -6,8 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/api/api_constants.dart';
-import '../../core/exceptions/app_exception.dart';
-import '../../models/product_api.dart';
+import '../../core/api/app_exception.dart';
+import '../../models/product_model.dart';
 import '../../services/api_client.dart';
 
 class VisualSearchRepository {
@@ -16,7 +16,7 @@ class VisualSearchRepository {
   VisualSearchRepository({http.Client? client})
     : _client = client ?? ApiClient();
 
-  Future<List<ApiProduct>> searchByImage(File imageFile) async {
+  Future<List<ProductModel>> searchByImage(File imageFile) async {
     try {
       final request = http.MultipartRequest(
         'POST',
@@ -52,7 +52,7 @@ class VisualSearchRepository {
       }
 
       final rawItems = _extractItems(_decode(response.body));
-      return rawItems.map(ApiProduct.fromJson).toList();
+      return rawItems.map(ProductModel.fromJson).toList();
     } on TimeoutException {
       throw TimeoutException('Visual search timed out. Please try again.');
     } catch (e) {

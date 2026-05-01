@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../data/repositories/user_repository.dart';
-import '../l10n/l10n.dart';
+import '../l10n/app_localizations.dart';
 import '../widgets/validation/auth_validators.dart';
 import '../widgets/widgets/app_snackbar.dart';
 
@@ -35,7 +35,7 @@ class PasswordController extends GetxController {
   String? validateCurrentPassword(BuildContext context, String? value) {
     final trimmed = value?.trim() ?? '';
     if (trimmed.isEmpty) {
-      return context.l10n.changePasswordCurrentRequired;
+      return AppLocalizations.of(context).changePasswordCurrentRequired;
     }
     return null;
   }
@@ -43,8 +43,8 @@ class PasswordController extends GetxController {
   String? validateResetPassword(BuildContext context, String? value) {
     return AuthValidators.password(
       value,
-      emptyMessage: context.l10n.validationPasswordRequired,
-      tooShortMessage: context.l10n.validationPasswordTooShort,
+      emptyMessage: AppLocalizations.of(context).validationPasswordRequired,
+      tooShortMessage: AppLocalizations.of(context).validationPasswordTooShort,
       minLength: 8,
     );
   }
@@ -52,8 +52,8 @@ class PasswordController extends GetxController {
   String? validateStrongPassword(BuildContext context, String? value) {
     final baseValidation = AuthValidators.password(
       value,
-      emptyMessage: context.l10n.validationPasswordRequired,
-      tooShortMessage: context.l10n.validationPasswordTooShort,
+      emptyMessage: AppLocalizations.of(context).validationPasswordRequired,
+      tooShortMessage: AppLocalizations.of(context).validationPasswordTooShort,
       minLength: 8,
     );
     if (baseValidation != null) {
@@ -67,8 +67,8 @@ class PasswordController extends GetxController {
     return AuthValidators.confirmPassword(
       value,
       original: newPasswordController.text.trim(),
-      emptyMessage: context.l10n.validationConfirmPasswordRequired,
-      mismatchMessage: context.l10n.validationConfirmPasswordMismatch,
+      emptyMessage: AppLocalizations.of(context).validationConfirmPasswordRequired,
+      mismatchMessage: AppLocalizations.of(context).validationConfirmPasswordMismatch,
     );
   }
 
@@ -91,7 +91,7 @@ class PasswordController extends GetxController {
     if (currentPassword.isEmpty) {
       AppSnackBar.show(
         context,
-        message: context.l10n.changePasswordCurrentRequired,
+        message: AppLocalizations.of(context).changePasswordCurrentRequired,
         type: AppSnackBarType.error,
       );
       return false;
@@ -113,7 +113,7 @@ class PasswordController extends GetxController {
     if (normalizedUsername.isEmpty) {
       AppSnackBar.show(
         context,
-        message: context.l10n.productAccountUnavailable,
+        message: AppLocalizations.of(context).productAccountUnavailable,
         type: AppSnackBarType.error,
       );
       return false;
@@ -155,7 +155,7 @@ class PasswordController extends GetxController {
   String _resolveErrorMessage(BuildContext context, Object error) {
     final message = error.toString().replaceFirst('Exception: ', '').trim();
     if (message.isEmpty) {
-      return context.l10n.resetPasswordFailed;
+      return AppLocalizations.of(context).resetPasswordFailed;
     }
     return message;
   }

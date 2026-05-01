@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/config/route.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
-import '../../l10n/l10n.dart';
-import '../../core/config/route.dart';
-import '../../core/app/app_theme.dart';
+import '../../l10n/app_localizations.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/validation/auth_validators.dart';
 import '../../widgets/widgets/app_button.dart';
@@ -92,7 +90,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(

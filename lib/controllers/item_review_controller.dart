@@ -3,8 +3,8 @@ import 'package:get/get.dart';
 
 import '../core/state/review_refresh_notifier.dart';
 import '../data/repositories/comment_repository.dart';
-import '../l10n/l10n.dart';
-import '../models/api_item_comment.dart';
+import '../l10n/app_localizations.dart';
+import '../models/item_comment_model.dart';
 import '../widgets/widgets/app_snackbar.dart';
 
 class ItemReviewController extends GetxController {
@@ -12,7 +12,7 @@ class ItemReviewController extends GetxController {
 
   final CommentRepository _commentRepository;
 
-  final comments = <ApiItemComment>[].obs;
+  final comments = <ItemCommentModel>[].obs;
   final isLoading = false.obs;
   final isSubmitting = false.obs;
   final errorMessage = RxnString();
@@ -40,7 +40,7 @@ class ItemReviewController extends GetxController {
     }
   }
 
-  ApiItemComment? userReview(String username) {
+  ItemCommentModel? userReview(String username) {
     final normalizedUsername = username.trim().toLowerCase();
     if (normalizedUsername.isEmpty) {
       return null;
@@ -67,7 +67,7 @@ class ItemReviewController extends GetxController {
     if (normalizedUsername.isEmpty) {
       AppSnackBar.show(
         context,
-        message: context.l10n.itemReviewLoginRequired,
+        message:  AppLocalizations.of(context).itemReviewLoginRequired,
         type: AppSnackBarType.error,
       );
       return;
@@ -76,7 +76,7 @@ class ItemReviewController extends GetxController {
     if (userReview(normalizedUsername) != null) {
       AppSnackBar.show(
         context,
-        message: context.l10n.itemReviewAlreadyRated,
+        message: AppLocalizations.of(context).itemReviewAlreadyRated,
         type: AppSnackBarType.warning,
       );
       return;
@@ -85,7 +85,7 @@ class ItemReviewController extends GetxController {
     if (rating < 1 || rating > 5) {
       AppSnackBar.show(
         context,
-        message: context.l10n.itemReviewRatingRequired,
+        message: AppLocalizations.of(context).itemReviewRatingRequired,
         type: AppSnackBarType.warning,
       );
       return;
@@ -94,7 +94,7 @@ class ItemReviewController extends GetxController {
     if (normalizedComment.isEmpty) {
       AppSnackBar.show(
         context,
-        message: context.l10n.itemReviewCommentRequired,
+        message: AppLocalizations.of(context).itemReviewCommentRequired,
         type: AppSnackBarType.warning,
       );
       return;
@@ -121,7 +121,7 @@ class ItemReviewController extends GetxController {
       }
       AppSnackBar.show(
         context,
-        message: context.l10n.itemReviewSubmittedSuccess,
+        message: AppLocalizations.of(context).itemReviewSubmittedSuccess,
         type: AppSnackBarType.success,
       );
     } catch (error) {
@@ -131,7 +131,7 @@ class ItemReviewController extends GetxController {
       AppSnackBar.show(
         context,
         message: _resolveErrorMessage(error).isEmpty
-            ? context.l10n.itemReviewLoadFailed
+            ? AppLocalizations.of(context).itemReviewLoadFailed
             : _resolveErrorMessage(error),
         type: AppSnackBarType.error,
       );

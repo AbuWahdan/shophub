@@ -1,4 +1,4 @@
-import '../exceptions/app_exception.dart';
+import '../api/app_exception.dart';
 
 class ApexResponseHelper {
   const ApexResponseHelper._();

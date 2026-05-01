@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
 import '../../core/utils/apex_response_helper.dart';
-import '../../models/api_order.dart';
+import '../../models/orders_model.dart';
 import '../../models/order_detail_item_model.dart';
 
 class OrderRepository {
@@ -11,10 +11,10 @@ class OrderRepository {
   OrderRepository(this._apiService);
 
   /// Get all orders for a specific user
-  Future<List<ApiOrder>> getOrders({required String username}) async {
+  Future<List<OrdersModel>> getOrders({required String username}) async {
     final normalizedUsername = username.trim();
     if (normalizedUsername.isEmpty) {
-      return <ApiOrder>[];
+      return <OrdersModel>[];
     }
 
     try {
@@ -83,11 +83,11 @@ class OrderRepository {
   // Private parsing and utility methods
   // ═══════════════════════════════════════════════════════════════════════════
 
-  List<ApiOrder> _parseOrders(List<dynamic> response) {
-    final groupedOrders = <int, ApiOrder>{};
+  List<OrdersModel> _parseOrders(List<dynamic> response) {
+    final groupedOrders = <int, OrdersModel>{};
     for (final item in response) {
       if (item is! Map<String, dynamic>) continue;
-      final order = ApiOrder.fromJson(item);
+      final order = OrdersModel.fromJson(item);
       final existing = groupedOrders[order.orderId];
       if (existing == null) {
         groupedOrders[order.orderId] = order;

@@ -4,7 +4,7 @@ import '../../core/app/app_theme.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
-import '../../l10n/l10n.dart';
+import '../../l10n/app_localizations.dart';
 import '../../services/storage_service.dart';
 
 
@@ -91,14 +91,14 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 const SizedBox(height: AppSpacing.xxxl),
                 Text(
-                  context.l10n.splashTitle,
+                  AppLocalizations.of(context).splashTitle,
                   style: AppTextStyles.displayMedium.copyWith(
                     color: AppColors.primary,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  context.l10n.splashSubtitle,
+                  AppLocalizations.of(context).splashSubtitle,
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.primary.withOpacity(0.8),
                   ),

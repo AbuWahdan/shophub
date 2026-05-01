@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'app_localizations_ar.dart';
 import 'app_localizations_en.dart';
 
 // ignore_for_file: type=lint
@@ -1863,6 +1864,38 @@ abstract class AppLocalizations {
   String? get noOrdersYet ;
 
   String? get errorLoadingOrders ;
+//
+  String get productVariants ;
+
+  String get productAddVariant ;
+
+  String get productNoVariantsYet ;
+
+  String get productBasicInfo ;
+
+  String get productImagePickFailed ;
+
+  String get productImageUploadSuccess ;
+
+  String get productImageProcessFailed ;
+
+  String get productDefaultImageUpdateFailed ;
+
+  String get productDefaultImageUpdated ;
+
+  String get productUpdateSuccess ;
+
+  get productVariantPriceMustBePositive ;
+
+  String get variantWillBeRemovedOnSave ;
+
+  String get productUploading ;
+
+  String get productAddImage ;
+
+  String get productNoImagesYet ;
+
+  String get productImages ;
 
   /// No description provided for @productAddedToCart.
   ///
@@ -1882,7 +1915,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en'].contains(locale.languageCode);
+      <String>['ar', 'en'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -1891,14 +1924,16 @@ class _AppLocalizationsDelegate
 AppLocalizations lookupAppLocalizations(Locale locale) {
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'ar':
+      return AppLocalizationsAr();
     case 'en':
       return AppLocalizationsEn();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
+        'an issue with the localizations generation tool. Please file an issue '
+        'on GitHub with a reproducible sample app and the gen-l10n configuration '
+        'that was used.',
   );
 }

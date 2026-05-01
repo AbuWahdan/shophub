@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../data/repositories/codes_repository.dart';
 import '../../../../data/repositories/profile_repository.dart';
-import '../../../../models/api_code_option.dart';
+import '../../../../models/get_code_option_model.dart';
 import '../../../core/app/app_theme.dart';
 import '../../../design/app_colors.dart';
 import '../../../design/app_radius.dart';
@@ -36,7 +36,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _genderLoadError;
   String? _formError;
   bool _isLoadingGenderOptions = false;
-  List<ApiCodeOption> _genderOptions = const <ApiCodeOption>[];
+  List<GetCodeOptionModel> _genderOptions = const <GetCodeOptionModel>[];
 
   @override
   void initState() {
@@ -139,7 +139,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     try {
       final options = await _codesRepository.getCodes(
-        majorCode: ApiCodeOption.genderMajorCode,
+        majorCode: GetCodeOptionModel.genderMajorCode,
         forceRefresh: forceRefresh,
       );
       if (!mounted) return;

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../models/user.dart';
+import '../../models/user_model.dart';
 
 class StorageService {
   static const String _tokenKey = 'auth_token';
@@ -20,7 +20,7 @@ class StorageService {
     return prefs.getString(_tokenKey);
   }
 
-  Future<void> saveUser(User user) async {
+  Future<void> saveUser(UserModel user) async {
     final prefs = await SharedPreferences.getInstance();
     final safeJson = {
       'user_id': user.userId,
@@ -40,7 +40,7 @@ class StorageService {
     await prefs.setString(_userKey, jsonEncode(safeJson));
   }
 
-  Future<User?> getUser() async {
+  Future<UserModel?> getUser() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_userKey);
     if (raw == null || raw.isEmpty) return null;
@@ -54,7 +54,7 @@ class StorageService {
       final parsedIsActive = rawIsActive is num
           ? rawIsActive.toInt()
           : int.tryParse((rawIsActive ?? '').toString()) ?? 1;
-      return User(
+      return UserModel(
         userId: parsedUserId,
         username: (data['username'] ?? '').toString(),
         passwordHash: (data['password_hash'] ?? '').toString(),

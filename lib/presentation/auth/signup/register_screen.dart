@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../data/repositories/codes_repository.dart';
-import '../../../../models/api_code_option.dart';
-import '../../../../models/user.dart';
-import '../../../core/config/app_constants.dart';
-import '../../../core/config/app_constants.dart';
+import '../../../../models/get_code_option_model.dart';
+import '../../../../models/user_model.dart';
 import '../../../core/config/route.dart';
-import '../../../core/app/app_theme.dart';
 import '../../../design/app_colors.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
-import '../../../l10n/l10n.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../services/auth_service.dart';
 import '../../../widgets/validation/auth_validators.dart';
 import '../../../widgets/widgets/app_button.dart';
@@ -47,7 +44,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool   _isLoadingGenderOptions = false;
   String _passwordStrength       = 'Weak';
   Color  _passwordStrengthColor  = AppColors.error;
-  List<ApiCodeOption> _genderOptions = const [];
+  List<GetCodeOptionModel> _genderOptions = const [];
+  static const String defaultCountry = 'Jordan';
 
   @override
   void initState() {
@@ -95,7 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() { _isLoadingGenderOptions = true; _genderLoadError = null; });
     try {
       final options = await _codesRepository.getCodes(
-        majorCode:    ApiCodeOption.genderMajorCode,
+        majorCode:    GetCodeOptionModel.genderMajorCode,
         forceRefresh: forceRefresh,
       );
       if (!mounted) return;
@@ -155,7 +153,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final username = _usernameController.text.trim();
     final email = _emailController.text.trim();
 
-    final pendingUser = User(
+    final pendingUser = UserModel(
       username: username,
       passwordHash: _passwordController.text.trim(),
       fullname: _nameController.text.trim(),
@@ -163,7 +161,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       phone: _phoneController.text.trim(),
       address: _addressController.text.trim(),
       role: 'customer',
-      country: AppConstants.defaultCountry,
+      country: defaultCountry,
       gender: _selectedGender,
       userId: 0,
       createdAt: '',
@@ -222,7 +220,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.registerTitle)),
@@ -324,7 +322,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       const Icon(Icons.flag_outlined, color: AppColors.textHint),
                       const SizedBox(width: AppSpacing.md),
-                      Text(AppConstants.defaultCountry, style: AppTextStyles.bodyMedium),
+                      Text(defaultCountry, style: AppTextStyles.bodyMedium),
                     ],
                   ),
                 ),

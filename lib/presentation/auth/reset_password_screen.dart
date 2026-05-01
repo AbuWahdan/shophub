@@ -6,7 +6,7 @@ import '../../core/config/route.dart';
 import '../../core/app/app_theme.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
-import '../../l10n/l10n.dart';
+import '../../l10n/app_localizations.dart';
 import '../../widgets/widgets/app_button.dart';
 import '../../widgets/widgets/app_snackbar.dart';
 import '../../widgets/widgets/app_text_field.dart';
@@ -58,7 +58,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     AppSnackBar.show(
       context,
-      message: context.l10n.passwordUpdateSuccess,
+      message: AppLocalizations.of(context).passwordUpdateSuccess,
       type: AppSnackBarType.success,
     );
     await Future.delayed(const Duration(seconds: 1));
@@ -74,7 +74,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final l10n = AppLocalizations.of(context);
 
     return WillPopScope(
       onWillPop: () async => false,

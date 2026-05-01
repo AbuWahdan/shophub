@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
 import '../../core/utils/apex_response_helper.dart';
-import '../../models/cart_api.dart';
+import '../../models/cart_item_model.dart';
 
 class CartRepository {
   final ApiService _apiService;
@@ -10,11 +10,11 @@ class CartRepository {
   CartRepository(this._apiService);
 
   /// Get shopping cart_tab items for a user
-  Future<List<ApiCartItem>> getCart({required String username}) async {
+  Future<List<CartItemModel>> getCart({required String username}) async {
     try {
       final normalizedUsername = username.trim();
       if (normalizedUsername.isEmpty) {
-        return <ApiCartItem>[];
+        return <CartItemModel>[];
       }
 
       if (kDebugMode) {
@@ -116,10 +116,10 @@ class CartRepository {
   // Private parsing methods
   // ═══════════════════════════════════════════════════════════════════════════
 
-  List<ApiCartItem> _parseCartItems(List<dynamic> response) {
+  List<CartItemModel> _parseCartItems(List<dynamic> response) {
     return [
       for (final item in response)
-        if (item is Map<String, dynamic>) ApiCartItem.fromJson(item),
+        if (item is Map<String, dynamic>) CartItemModel.fromJson(item),
     ];
   }
 }

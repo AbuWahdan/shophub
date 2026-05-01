@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import '../exceptions/app_exception.dart';
+import 'app_exception.dart';
 import 'api_constants.dart';
 
 class ApiService {

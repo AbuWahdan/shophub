@@ -2,14 +2,14 @@ import 'package:flutter/foundation.dart';
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
 import '../../core/utils/apex_response_helper.dart';
-import '../../models/user.dart';
+import '../../models/user_model.dart';
 
 class ProfileRepository {
   final ApiService _apiService;
 
   ProfileRepository(this._apiService);
 
-  Future<void> updateUser(User request) async {
+  Future<void> updateUser(UserModel request) async {
     final normalizedUser = request.copyWith(
       userId: request.userId,
       fullname: request.fullname.trim(),
@@ -62,7 +62,7 @@ class ProfileRepository {
     throw lastError ?? Exception('Failed to update profile.');
   }
 
-  Map<String, dynamic> _buildUserPayload(User user) {
+  Map<String, dynamic> _buildUserPayload(UserModel user) {
     return {
       'user_id': user.userId,
       'username': user.username,

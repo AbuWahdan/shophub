@@ -96,7 +96,7 @@ flutter run
 # 4. Manual testing
 # - Navigate to MyProducts page
 # - Pull-to-refresh
-# - Verify inactive products display
+# - Verify inactive my_products display
 # - Check debug console for logs
 ```
 

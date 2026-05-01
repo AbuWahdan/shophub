@@ -1,14 +1,14 @@
 import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
 import '../data/repositories/product_repository.dart';
-import '../models/product_api.dart';
+import '../models/product_model.dart';
 
 class ProductController extends GetxController {
   final ProductRepository _repo;
 
   ProductController(this._repo);
 
-  final allProducts = <ApiProduct>[].obs;
+  final allProducts = <ProductModel>[].obs;
   final isLoading = false.obs;
   final error = ''.obs;
 

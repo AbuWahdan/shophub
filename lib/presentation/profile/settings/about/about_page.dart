@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../design/app_spacing.dart';
 import '../../../../design/app_text_styles.dart';
-import '../../../../l10n/l10n.dart';
 import '../../../../core/app/app_theme.dart';
+import '../../../../l10n/app_localizations.dart';
 
 
 class AboutPage extends StatelessWidget {
@@ -11,7 +11,7 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsAboutApp)),
       body: SingleChildScrollView(

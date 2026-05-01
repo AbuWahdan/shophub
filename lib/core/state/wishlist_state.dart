@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/data.dart';
-import '../../models/product_api.dart';
+import '../../models/product_model.dart';
 import '../../services/product_service.dart';
 import 'auth_state.dart';
 
@@ -11,17 +11,17 @@ class WishlistState extends ChangeNotifier {
       : _productService = productService ?? ProductService();
 
   final ProductService _productService;
-  final Map<int, ApiProduct> _itemsById   = <int, ApiProduct>{};
+  final Map<int, ProductModel> _itemsById   = <int, ProductModel>{};
   final Set<int>             _togglingIds = <int>{};
   final Map<int, bool>       _favoriteOverrides  = {};
-  final Map<int, ApiProduct> _overrideProducts   = {};
+  final Map<int, ProductModel> _overrideProducts   = {};
 
   String _username        = '';
   bool   _isLoading       = false;
   String? _errorMessage;
   bool   _hasLoadedForUser = false;
 
-  List<ApiProduct> get items            => _itemsById.values.toList(growable: false);
+  List<ProductModel> get items            => _itemsById.values.toList(growable: false);
   bool             get isLoading        => _isLoading;
   String?          get errorMessage     => _errorMessage;
   bool             get hasLoadedForUser => _hasLoadedForUser;
@@ -175,7 +175,7 @@ class WishlistState extends ChangeNotifier {
 
   // ── Toggle ────────────────────────────────────────────────────────────────
 
-  Future<WishlistToggleAction> toggleWishlist(ApiProduct product) async {
+  Future<WishlistToggleAction> toggleWishlist(ProductModel product) async {
     if (_username.isEmpty) {
       throw ProductException('Please log in to manage favorites');
     }

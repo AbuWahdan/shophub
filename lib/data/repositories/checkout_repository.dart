@@ -2,16 +2,16 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
-import '../../core/exceptions/app_exception.dart';
+import '../../core/api/app_exception.dart';
 import '../../core/utils/apex_response_helper.dart';
-import '../../models/checkout_request.dart';
+import '../../models/checkout_request_model.dart';
 
 class CheckoutRepository {
   final ApiService _apiService;
 
   CheckoutRepository(this._apiService);
 
-  Future<Map<String, dynamic>> placeOrder(CheckoutRequest request) async {
+  Future<Map<String, dynamic>> placeOrder(CheckoutRequestModel request) async {
     try {
       if (kDebugMode) {
         debugPrint(

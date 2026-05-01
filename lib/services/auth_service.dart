@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import '../../models/forget_password_request.dart';
-import '../../models/user.dart';
+import '../../models/forget_password_request_model.dart';
+import '../../models/user_model.dart';
 import 'api_client.dart';
 import 'storage_service.dart';
 
@@ -112,7 +112,7 @@ class AuthService {
         }
 
         final token = _extractToken(data, payload);
-        final user = User(
+        final user = UserModel(
           userId: _readInt(userData, const ['user_id', 'USER_ID']),
           username: _readString(userData, const ['username', 'USERNAME']),
           passwordHash: _readString(userData, const [
@@ -175,7 +175,7 @@ class AuthService {
 
   // ========================= REGISTER =========================
 
-  Future<RegisterResult> register(User user) async {
+  Future<RegisterResult> register(UserModel user) async {
     final normalizedRole = _normalizeRoleForApi(user.role);
     final registerPayload = {
       'username': user.username,
@@ -276,7 +276,7 @@ class AuthService {
 
   // ========================= ACTIVATE USER =========================
 
-  Future<void> activateUser(User pendingUser) async {
+  Future<void> activateUser(UserModel pendingUser) async {
     final activeUser = pendingUser.copyWith(isActive: 1);
 
     final payload = {
@@ -530,7 +530,7 @@ class AuthService {
     TimeoutException? timeoutError;
     bool hadNetworkError = false;
 
-    final payload = ForgetPasswordRequest(
+    final payload = ForgetPasswordRequestModel(
       username: usernameValue,
       newPassword: passwordValue,
       oldPassword:
@@ -735,7 +735,7 @@ class AuthService {
 
 class AuthSession {
   final String token;
-  final User user;
+  final UserModel user;
   final int userId;
 
   const AuthSession({

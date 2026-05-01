@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:provider/provider.dart';
-import 'package:sinwar_shoping/widgets/widgets/add_to_cart_bottom_sheet.dart';
+import 'package:sinwar_shoping/widgets/widgets/add_to_cart_bottom_sheet/add_to_cart_bottom_sheet.dart';
 import 'package:sinwar_shoping/widgets/widgets/app_image.dart';
 import 'package:sinwar_shoping/widgets/widgets/app_snackbar.dart';
 import 'package:sinwar_shoping/widgets/widgets/rating_stars.dart';
@@ -10,7 +10,7 @@ import '../../core/config/route.dart';
 
 import '../../controllers/cart_controller.dart';
 import '../../models/data.dart';
-import '../../models/product_api.dart';
+import '../../models/product_model.dart';
 import '../core/state/auth_state.dart';
 import '../core/state/wishlist_state.dart';
 import '../design/app_colors.dart';
@@ -21,8 +21,8 @@ import '../design/app_text_styles.dart';
 import '../services/product_service.dart';
 
 class ProductCard extends StatefulWidget {
-  final ApiProduct product;
-  final ValueChanged<ApiProduct>? onSelected;
+  final ProductModel product;
+  final ValueChanged<ProductModel>? onSelected;
 
   // FIX: optional override for the cart-button tap — used by WishlistPage
   // to open the bottom drawer within the wishlist context.
@@ -118,7 +118,9 @@ class _ProductCardState extends State<ProductCard> {
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (_) => AddToCartBottomSheet(product: widget.product),
+        builder: (_) => AddToCartBottomSheet(product: widget.product,
+          initialDetId: widget.product.detId,
+        ),
       );
 
       if (!mounted || selection == null) return;
@@ -184,7 +186,7 @@ class _ProductCardState extends State<ProductCard> {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: AppColors.secondary,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         boxShadow: const [AppShadows.cardShadow],
       ),

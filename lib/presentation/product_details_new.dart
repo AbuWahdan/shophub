@@ -4,11 +4,11 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import '../../core/utils/image_converter.dart';
 import '../../data/repositories/comment_repository.dart';
-import '../../models/api_item_comment.dart';
+import '../../models/item_comment_model.dart';
 import '../../models/data.dart';
 import '../../models/product_image_model.dart';
-import '../../models/product_api.dart';
-import '../../models/cart_api.dart';
+import '../../models/product_model.dart';
+import '../../models/cart_item_model.dart';
 import '../core/config/route.dart';
 import '../core/state/auth_state.dart';
 import '../core/state/review_refresh_notifier.dart';
@@ -18,20 +18,20 @@ import '../design/app_radius.dart';
 import '../design/app_shadows.dart';
 import '../design/app_spacing.dart';
 import '../design/app_text_styles.dart';
-import '../l10n/l10n.dart';
+import '../l10n/app_localizations.dart';
 import '../core/app/app_theme.dart';
 import '../services/product_service.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/gallery_section/gallery_viewer.dart';
-import '../widgets/widgets/add_to_cart_bottom_sheet.dart';
+import '../widgets/widgets/add_to_cart_bottom_sheet/add_to_cart_bottom_sheet.dart';
 import '../widgets/widgets/app_image.dart';
 import '../widgets/widgets/app_snackbar.dart';
 import '../widgets/widgets/product_comment_card.dart';
-import '../widgets/widgets/product_variant_widgets.dart';
+import '../widgets/widgets/add_to_cart_bottom_sheet/widgets/product_variant_widgets.dart';
 import '../widgets/widgets/rating_stars.dart';
 
 class ProductDetailsPage extends StatefulWidget {
-  final ApiProduct product;
+  final ProductModel product;
   final String? initialSize;
   final String? initialColor;
   final int? initialDetId;
@@ -52,7 +52,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   final ProductService _productService = ProductService();
   late final CommentRepository _commentRepository;
   late PageController _imageController;
-  late Future<List<ApiItemComment>> _commentsFuture;
+  late Future<List<ItemCommentModel>> _commentsFuture;
   int _currentImageIndex = 0;
   String? _selectedSize;
   String? _selectedColor;
@@ -66,6 +66,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   List<ApiProductVariant> get _variants => _drawerVariants.isNotEmpty
       ? _drawerVariants
       : resolveProductVariants(widget.product, null);
+
   bool get _hasSingleVariant => _variants.length <= 1;
 
   ApiProductVariant? get _selectedVariant {
@@ -361,9 +362,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   if (_isAddingToCart || isAuthLoading)
                     const SizedBox(width: AppSpacing.sm),
                   Text(
-                    context.l10n.productAddToCart,
+                    AppLocalizations.of(context).productAddToCart,
                     style: AppTextStyles.buttonLarge.copyWith(
-                      color: AppColors.primary,
+                      color: AppColors.black,
                     ),
                   ),
                 ],
@@ -649,7 +650,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           style: AppTextStyles.labelLarge,
         ),
         Text(
-          context.l10n.productReviews(widget.product.reviewCount),
+          AppLocalizations.of(context).productReviews(widget.product.reviewCount),
           style: AppTextStyles.bodySmall,
         ),
         if (showAvailableQty)
@@ -671,7 +672,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           children: [
             Expanded(
               child: Text(
-                context.l10n.productDescription,
+                AppLocalizations.of(context).productDescription,
                 style: AppTextStyles.titleMedium,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -685,8 +686,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               },
               child: Text(
                 _isExpanded
-                    ? context.l10n.productShowLess
-                    : context.l10n.productShowMore,
+                    ? AppLocalizations.of(context).productShowLess
+                    : AppLocalizations.of(context).productShowMore,
               ),
             ),
           ],
@@ -713,10 +714,10 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   }
 
   Widget _buildReviewsSection() {
-    return FutureBuilder<List<ApiItemComment>>(
+    return FutureBuilder<List<ItemCommentModel>>(
       future: _commentsFuture,
       builder: (context, snapshot) {
-        final comments = snapshot.data ?? const <ApiItemComment>[];
+        final comments = snapshot.data ?? const <ItemCommentModel>[];
         final previewComments = comments.take(3).toList(growable: false);
 
         return Column(
@@ -846,7 +847,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     if (username.isEmpty) {
       AppSnackBar.show(
         context,
-        message: context.l10n.productAccountUnavailable,
+        message: AppLocalizations.of(context).productAccountUnavailable,
         type: AppSnackBarType.error,
       );
       return;
@@ -915,7 +916,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     if (username.isEmpty) {
       AppSnackBar.show(
         context,
-        message: context.l10n.productAccountUnavailable,
+        message: AppLocalizations.of(context).productAccountUnavailable,
         type: AppSnackBarType.error,
       );
       return;
@@ -973,7 +974,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       );
       AppSnackBar.show(
         context,
-        message: context.l10n.productAddedToCart(widget.product.name),
+        message: AppLocalizations.of(context).productAddedToCart(widget.product.name),
         type: AppSnackBarType.success,
       );
     } on ProductException catch (error) {

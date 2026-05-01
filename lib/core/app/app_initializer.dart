@@ -1,8 +1,6 @@
-import 'dart:developer' as AppLogger;
-import 'dart:async';
+import 'dart:developer' as logger;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:provider/provider.dart';
@@ -30,63 +28,84 @@ import '../../controllers/my_products_controller.dart';
 import '../../controllers/order_controller.dart';
 import '../../controllers/product_controller.dart';
 import '../config/mapbox_config.dart';
-import '../state/app_settings.dart';
+import '../../presentation/profile/settings/app_settings.dart';
 import '../state/auth_state.dart';
 import '../state/wishlist_state.dart';
 
-class AppInitializer {
-  AppInitializer._(); // prevent instantiation
-
+/// Initializes all app-level dependencies before [runApp].
+///
+/// ZONE MISMATCH FIX:
+/// The original code wrapped initialization in [runZonedGuarded], which created
+/// a new zone. [WidgetsFlutterBinding.ensureInitialized] then ran inside that
+/// zone, but [runApp] was called outside it — Flutter detects this mismatch and
+/// throws. The fix is simple: do NOT use [runZonedGuarded] here. Instead, set up
+/// [FlutterError.onError] directly and let errors propagate normally.
+/// If you need zone-level error catching, wrap the entire [main] body — including
+/// [runApp] — inside the same [runZonedGuarded] call.
+abstract final class AppInitializer {
+  /// Returns the Provider list to pass to [MultiProvider] in [MyApp].
   static Future<List<SingleChildWidget>> initialize() async {
-    await runZonedGuarded(
-          () async {
-        _setupErrorHandling();
-        await _loadEnvironment();
-        await _initializeServices();
-      },
-          (error, stack) {
-        AppLogger.log('[AppInit] Uncaught zoned error: $error\n$stack');
-      },
-    );
-
-    return _initializeProviders();
+    _setupErrorHandling();
+    await _loadEnvironment();
+    _registerDependencies();
+    return _buildProviders();
   }
 
-  // ─── Error Handling ────────────────────────────────────────────────────────
+  // ── Error handling ─────────────────────────────────────────────────────────
 
   static void _setupErrorHandling() {
     FlutterError.onError = (FlutterErrorDetails details) {
       FlutterError.presentError(details);
-      AppLogger.log('[AppInit] Flutter error: ${details.exceptionAsString()}');
+      logger.log(
+        '[AppInit] Flutter error: ${details.exceptionAsString()}',
+        name: 'AppInit',
+      );
     };
   }
 
-  // ─── Environment ──────────────────────────────────────────────────────────
+  // ── Environment ────────────────────────────────────────────────────────────
 
   static Future<void> _loadEnvironment() async {
     try {
+      // ensureInitialized is called here, in the SAME zone as runApp in main().
+      // Do NOT move this inside a runZonedGuarded block unless runApp is also
+      // inside that same block.
       WidgetsFlutterBinding.ensureInitialized();
       MapboxOptions.setAccessToken(MapboxConfig.accessToken);
       await AppSettings.load();
-      AppLogger.log('[AppInit] Environment loaded.');
-    } catch (e) {
-      AppLogger.log('[AppInit] Failed to load environment: $e');
+      logger.log('[AppInit] Environment loaded.', name: 'AppInit');
+    } catch (e, stack) {
+      logger.log(
+        '[AppInit] Failed to load environment: $e\n$stack',
+        name: 'AppInit',
+      );
+      // Re-throw so main() can decide whether to abort or continue.
+      rethrow;
     }
   }
 
-  // ─── Services & DI ────────────────────────────────────────────────────────
+  // ── Dependency registration ────────────────────────────────────────────────
   //
-  // WHY ORDER MATTERS:
-  //   ApiService must be registered FIRST. All repositories depend on it.
-  //   Controllers are registered LAST — they may call repos in onInit().
+  // Order matters:
+  //   1. ApiService  — no dependencies
+  //   2. Repositories — depend on ApiService
+  //   3. Controllers  — depend on repositories, may call repos in onInit()
 
-  static Future<void> _initializeServices() async {
-    // Step 1 — Core service
-    final apiService = ApiService();
-    Get.put(apiService, permanent: true);
-    AppLogger.log('[AppInit] ApiService registered.');
+  static void _registerDependencies() {
+    // 1 — Core service
+    Get.put(ApiService(), permanent: true);
+    logger.log('[AppInit] ApiService registered.', name: 'AppInit');
 
-    // Step 2 — Repositories (depend on ApiService)
+    // 2 — Repositories
+    _registerRepositories();
+    logger.log('[AppInit] Repositories registered.', name: 'AppInit');
+
+    // 3 — Controllers
+    _registerControllers();
+    logger.log('[AppInit] Controllers registered.', name: 'AppInit');
+  }
+
+  static void _registerRepositories() {
     Get.lazyPut<AddressRepository>(() => AddressRepository(), fenix: true);
     Get.lazyPut<ProductRepository>(
           () => ProductRepository(Get.find<ApiService>()),
@@ -124,9 +143,9 @@ class AppInitializer {
           () => VisualSearchRepository(),
       fenix: true,
     );
-    AppLogger.log('[AppInit] Repositories registered.');
+  }
 
-    // Step 3 — Controllers (depend on repositories)
+  static void _registerControllers() {
     Get.lazyPut<ProductController>(
           () => ProductController(Get.find<ProductRepository>()),
       fenix: true,
@@ -147,16 +166,15 @@ class AppInitializer {
           () => AddressController(Get.find<AddressRepository>()),
       fenix: true,
     );
-    AppLogger.log('[AppInit] Controllers registered.');
   }
 
-  // ─── Providers ────────────────────────────────────────────────────────────
+  // ── Providers ──────────────────────────────────────────────────────────────
 
-  static List<SingleChildWidget> _initializeProviders() {
+  static List<SingleChildWidget> _buildProviders() {
     final authState = AuthState()..initialize();
     final wishlistState = WishlistState()..updateAuth(authState);
 
-    AppLogger.log('[AppInit] Providers initialized.');
+    logger.log('[AppInit] Providers built.', name: 'AppInit');
 
     return [
       ChangeNotifierProvider<AuthState>.value(value: authState),

@@ -9,6 +9,66 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get productVariants => 'Product Variants';
+
+  @override
+  String get productAddVariant => 'Add Variant';
+
+  @override
+  String get productNoVariantsYet => 'No variants yet';
+
+  @override
+  String get productBasicInfo => 'Basic Product Information';
+
+  @override
+  String get productImagePickFailed => 'Failed to pick image';
+
+  @override
+  String get productImageUploadSuccess => 'Image uploaded successfully';
+
+  @override
+  String get productImageProcessFailed => 'Failed to process image';
+
+  @override
+  String get productDefaultImageUpdateFailed =>
+      'Failed to update default image';
+
+  @override
+  String get productDefaultImageUpdated => 'Default image updated successfully';
+
+  @override
+  String get productUpdateSuccess => 'Product updated successfully';
+
+  @override
+  String get productVariantPriceMustBePositive =>
+      'Variant price must be greater than zero';
+
+  @override
+  String get variantWillBeRemovedOnSave =>
+      'This variant will be removed after saving';
+
+  @override
+  String get productUploading => 'Uploading product...';
+
+  @override
+  String get productAddImage => 'Add Image';
+
+  @override
+  String get productNoImagesYet => 'No images yet';
+
+  @override
+  String get productImages => 'Product Images';
+
+  @override
+  String get totalLabel => 'Total';
+
+  @override
+  String get noOrdersYet => 'No orders yet';
+
+  @override
+  String get errorLoadingOrders => 'Error loading orders';
+
+  @override
   String get productUpdateAction => 'Update action';
 
   @override

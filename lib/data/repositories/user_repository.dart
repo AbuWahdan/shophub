@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
-import '../../models/forget_password_request.dart';
+import '../../models/forget_password_request_model.dart';
 
 class UserRepository {
   final ApiService _apiService;
@@ -64,7 +64,7 @@ class UserRepository {
     String? oldPassword,
   }) async {
     final normalizedOld = oldPassword?.trim();
-    final request = ForgetPasswordRequest(
+    final request = ForgetPasswordRequestModel(
       username:    username.trim(),
       newPassword: newPassword.trim(),
       oldPassword: (normalizedOld != null && normalizedOld.isNotEmpty)

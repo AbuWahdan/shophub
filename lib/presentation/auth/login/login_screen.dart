@@ -5,7 +5,7 @@ import '../../../core/config/route.dart';
 import '../../../core/state/auth_state.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
-import '../../../l10n/l10n.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../widgets/validation/auth_validators.dart';
 import '../../../widgets/widgets/app_button.dart';
 import '../../../widgets/widgets/app_snackbar.dart';
@@ -34,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final l10n = AppLocalizations.of(context);
     final authState = context.watch<AuthState>();
     return Scaffold(
       body: SafeArea(

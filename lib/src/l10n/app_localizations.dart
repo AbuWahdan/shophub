@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'app_localizations_ar.dart';
 import 'app_localizations_en.dart';
 
 // ignore_for_file: type=lint
@@ -92,7 +93,124 @@ abstract class AppLocalizations {
       ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[Locale('en')];
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('ar'),
+    Locale('en'),
+  ];
+
+  /// No description provided for @productVariants.
+  ///
+  /// In en, this message translates to:
+  /// **'Product Variants'**
+  String get productVariants;
+
+  /// No description provided for @productAddVariant.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Variant'**
+  String get productAddVariant;
+
+  /// No description provided for @productNoVariantsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No variants yet'**
+  String get productNoVariantsYet;
+
+  /// No description provided for @productBasicInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic Product Information'**
+  String get productBasicInfo;
+
+  /// No description provided for @productImagePickFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to pick image'**
+  String get productImagePickFailed;
+
+  /// No description provided for @productImageUploadSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Image uploaded successfully'**
+  String get productImageUploadSuccess;
+
+  /// No description provided for @productImageProcessFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to process image'**
+  String get productImageProcessFailed;
+
+  /// No description provided for @productDefaultImageUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update default image'**
+  String get productDefaultImageUpdateFailed;
+
+  /// No description provided for @productDefaultImageUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Default image updated successfully'**
+  String get productDefaultImageUpdated;
+
+  /// No description provided for @productUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Product updated successfully'**
+  String get productUpdateSuccess;
+
+  /// No description provided for @productVariantPriceMustBePositive.
+  ///
+  /// In en, this message translates to:
+  /// **'Variant price must be greater than zero'**
+  String get productVariantPriceMustBePositive;
+
+  /// No description provided for @variantWillBeRemovedOnSave.
+  ///
+  /// In en, this message translates to:
+  /// **'This variant will be removed after saving'**
+  String get variantWillBeRemovedOnSave;
+
+  /// No description provided for @productUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading product...'**
+  String get productUploading;
+
+  /// No description provided for @productAddImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Image'**
+  String get productAddImage;
+
+  /// No description provided for @productNoImagesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No images yet'**
+  String get productNoImagesYet;
+
+  /// No description provided for @productImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Product Images'**
+  String get productImages;
+
+  /// No description provided for @totalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get totalLabel;
+
+  /// No description provided for @noOrdersYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No orders yet'**
+  String get noOrdersYet;
+
+  /// No description provided for @errorLoadingOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading orders'**
+  String get errorLoadingOrders;
 
   /// No description provided for @productUpdateAction.
   ///
@@ -1876,7 +1994,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en'].contains(locale.languageCode);
+      <String>['ar', 'en'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -1885,6 +2003,8 @@ class _AppLocalizationsDelegate
 AppLocalizations lookupAppLocalizations(Locale locale) {
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'ar':
+      return AppLocalizationsAr();
     case 'en':
       return AppLocalizationsEn();
   }

@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
-import '../../core/exceptions/app_exception.dart';
+import '../../core/api/app_exception.dart';
 import '../../core/utils/apex_response_helper.dart';
 import '../../models/product_image_model.dart';
-import '../../models/product_api.dart';
+import '../../models/product_model.dart';
 
 class ProductRepository {
   final ApiService _apiService;
-  static List<ApiProduct> _cachedProducts = <ApiProduct>[];
+  static List<ProductModel> _cachedProducts = <ProductModel>[];
   static DateTime? _lastProductsFetch;
   static const Duration _cacheTtl = Duration(minutes: 2);
 
@@ -19,7 +19,7 @@ class ProductRepository {
   // ═══════════════════════════════════════════════════════════════════════════
 
   /// Get all products with optional caching (cache for 2 minutes)
-  Future<List<ApiProduct>> getProducts({bool forceRefresh = false}) async {
+  Future<List<ProductModel>> getProducts({bool forceRefresh = false}) async {
     final now = DateTime.now();
 
     if (!forceRefresh &&
@@ -117,7 +117,7 @@ class ProductRepository {
       // Parse items to models
       final parsed = rawItems.map((item) {
         try {
-          return ApiProduct.fromJson(item);
+          return ProductModel.fromJson(item);
         } catch (parseError) {
           if (kDebugMode) {
             debugPrint(
@@ -181,7 +181,7 @@ class ProductRepository {
 
   /// Get products belonging to the current user (seller).
   /// Returns all products (active and inactive) for the user.
-  Future<List<ApiProduct>> getMyProducts({
+  Future<List<ProductModel>> getMyProducts({
     required String username,
     required int userId,
     bool forceRefresh = false,
@@ -201,7 +201,7 @@ class ProductRepository {
           '[ProductRepository.getMyProducts] ⚠️ Both username and userId are invalid - returning empty list',
         );
       }
-      return <ApiProduct>[];
+      return <ProductModel>[];
     }
 
     try {
@@ -260,7 +260,7 @@ class ProductRepository {
             '[ProductRepository.getMyProducts] Endpoint issue - returning empty list',
           );
         }
-        return <ApiProduct>[];
+        return <ProductModel>[];
       }
 
       _invalidateCache();
@@ -559,11 +559,11 @@ class ProductRepository {
   }
 
   /// Get user favorites.
-  Future<List<ApiProduct>> getUserFavorites({required String username}) async {
+  Future<List<ProductModel>> getUserFavorites({required String username}) async {
     try {
       final normalizedUsername = username.trim();
       if (normalizedUsername.isEmpty) {
-        return <ApiProduct>[];
+        return <ProductModel>[];
       }
 
       if (kDebugMode) {
@@ -578,7 +578,7 @@ class ProductRepository {
         isReadOperation: true,
       );
 
-      if (response == null) return <ApiProduct>[];
+      if (response == null) return <ProductModel>[];
 
       final rawItems = _extractItems(response).where((item) {
         final rawId =
@@ -587,7 +587,7 @@ class ProductRepository {
         return int.tryParse('${rawId ?? ''}') != null &&
             int.parse('${rawId ?? ''}') > 0;
       });
-      return rawItems.map((item) => ApiProduct.fromJson(item)).toList();
+      return rawItems.map((item) => ProductModel.fromJson(item)).toList();
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[ProductRepository] Error fetching favorites: $e');
@@ -662,7 +662,7 @@ class ProductRepository {
   // ═══════════════════════════════════════════════════════════════════════════
 
   void _invalidateCache() {
-    _cachedProducts = <ApiProduct>[];
+    _cachedProducts = <ProductModel>[];
     _lastProductsFetch = null;
   }
 
@@ -726,15 +726,15 @@ class ProductRepository {
 
   /// Groups flat product rows (one row per variant) into one ApiProduct per
   /// item ID — identical to ProductService._groupProductsByItemId.
-  List<ApiProduct> _groupProductsByItemId(List<ApiProduct> flatProducts) {
+  List<ProductModel> _groupProductsByItemId(List<ProductModel> flatProducts) {
     if (flatProducts.isEmpty) return const [];
 
-    final grouped = <int, List<ApiProduct>>{};
+    final grouped = <int, List<ProductModel>>{};
     for (final product in flatProducts) {
-      grouped.putIfAbsent(product.id, () => <ApiProduct>[]).add(product);
+      grouped.putIfAbsent(product.id, () => <ProductModel>[]).add(product);
     }
 
-    final result = <ApiProduct>[];
+    final result = <ProductModel>[];
 
     for (final entry in grouped.entries) {
       final rows = entry.value;
@@ -806,7 +806,7 @@ class ProductRepository {
           : displayVariant.itemPrice * (1 - displayVariant.discount / 100);
 
       result.add(
-        ApiProduct(
+        ProductModel(
           id: base.id,
           detId: displayVariant?.detId ?? base.detId,
           itemName: base.itemName,

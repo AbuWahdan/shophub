@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../models/data.dart';
-import '../../core/config/app_constants.dart';
 import '../../widgets/BottomNavigationBar/bottom_navigation_bar.dart';
 import '../cart_tab/shopping_cart_page.dart';
 import 'home_page.dart';
@@ -26,8 +25,10 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   late int currentIndex;
-
+  
+  static const int accountTabIndex = 3;
   late List<Widget> pages;
+  static const int homeTabIndex = 0;
 
   @override
   void initState() {
@@ -37,10 +38,10 @@ class _MainPageState extends State<MainPage> {
   }
 
   int _normalizeTabIndex(int? index) {
-    final candidate = index ?? AppConstants.homeTabIndex;
-    if (candidate < AppConstants.homeTabIndex ||
-        candidate > AppConstants.accountTabIndex) {
-      return AppConstants.homeTabIndex;
+    final candidate = index ?? homeTabIndex;
+    if (candidate < homeTabIndex ||
+        candidate > accountTabIndex) {
+      return homeTabIndex;
     }
     return candidate;
   }

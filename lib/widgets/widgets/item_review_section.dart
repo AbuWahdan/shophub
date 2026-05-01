@@ -3,8 +3,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../controllers/item_review_controller.dart';
 import '../../../data/repositories/comment_repository.dart';
-import '../../../l10n/l10n.dart';
-import '../../../models/api_item_comment.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../models/item_comment_model.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_radius.dart';
 import '../../design/app_spacing.dart';
@@ -68,7 +68,7 @@ class _ItemReviewSectionState extends State<ItemReviewSection> {
   Widget build(BuildContext context) {
     if (widget.currentUsername.trim().isEmpty) {
       return Text(
-        context.l10n.itemReviewLoginRequired,
+        AppLocalizations.of(context).itemReviewLoginRequired,
         style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
       );
     }
@@ -87,7 +87,7 @@ class _ItemReviewSectionState extends State<ItemReviewSection> {
       if (errorMessage != null && _controller.comments.isEmpty) {
         final resolvedErrorMessage = errorMessage.isNotEmpty
             ? errorMessage
-            : context.l10n.itemReviewLoadFailed;
+            : AppLocalizations.of(context).itemReviewLoadFailed;
         return Container(
           width: double.infinity,
           padding: AppSpacing.insetsMd,
@@ -105,7 +105,7 @@ class _ItemReviewSectionState extends State<ItemReviewSection> {
               const SizedBox(height: AppSpacing.sm),
               TextButton(
                 onPressed: () => _controller.loadComments(widget.itemId),
-                child: Text(context.l10n.retry),
+                child: Text(AppLocalizations.of(context).retry),
               ),
             ],
           ),
@@ -153,19 +153,19 @@ class _ItemReviewSectionState extends State<ItemReviewSection> {
                 maxLines: 4,
                 validator: (value) {
                   if ((value ?? '').trim().isEmpty) {
-                    return context.l10n.itemReviewCommentRequired;
+                    return AppLocalizations.of(context).itemReviewCommentRequired;
                   }
                   return null;
                 },
                 decoration: InputDecoration(
-                  labelText: context.l10n.itemReviewCommentLabel,
-                  hintText: context.l10n.itemReviewCommentHint,
+                  labelText: AppLocalizations.of(context).itemReviewCommentLabel,
+                  hintText: AppLocalizations.of(context).itemReviewCommentHint,
                   alignLabelWithHint: true,
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
               AppButton(
-                label: context.l10n.itemReviewSubmitButton,
+                label: AppLocalizations.of(context).itemReviewSubmitButton,
                 onPressed: _controller.isSubmitting.value
                     ? null
                     : _handleSubmit,
@@ -188,7 +188,7 @@ class _ItemReviewSectionState extends State<ItemReviewSection> {
 class _ReadOnlyReviewCard extends StatelessWidget {
   const _ReadOnlyReviewCard({required this.review});
 
-  final ApiItemComment review;
+  final ItemCommentModel review;
 
   @override
   Widget build(BuildContext context) {
@@ -207,7 +207,7 @@ class _ReadOnlyReviewCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            context.l10n.itemReviewYourReview,
+            AppLocalizations.of(context).itemReviewYourReview,
             style: AppTextStyles.titleSmall,
           ),
           const SizedBox(height: AppSpacing.sm),

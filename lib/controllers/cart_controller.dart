@@ -1,13 +1,13 @@
 import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
 import '../data/repositories/cart_repository.dart';
-import '../models/cart_api.dart';
+import '../models/cart_item_model.dart';
 
 class CartController extends GetxController {
   final CartRepository _repo;
   CartController(this._repo);
 
-  final RxList<ApiCartItem> items       = <ApiCartItem>[].obs;
+  final RxList<CartItemModel> items       = <CartItemModel>[].obs;
   final RxBool              isLoading   = false.obs;
   // FIX: use RxMap with explicit bool values.
   // Removing a key directly (itemLoading.remove(key)) does NOT always trigger
@@ -25,7 +25,7 @@ class CartController extends GetxController {
   int get totalQuantity =>
       items.fold(0, (sum, item) => sum + item.itemQty);
 
-  int itemKey(ApiCartItem item) {
+  int itemKey(CartItemModel item) {
     if (item.detailId > 0) return item.detailId;
     return item.itemDetId;
   }
@@ -104,7 +104,7 @@ class CartController extends GetxController {
   // ── Remove ────────────────────────────────────────────────────────────────
 
   Future<bool> removeItem({
-    required ApiCartItem item,
+    required CartItemModel item,
     required String      username,
   }) async {
     final key = itemKey(item);
@@ -132,7 +132,7 @@ class CartController extends GetxController {
   // ── Increment ─────────────────────────────────────────────────────────────
 
   Future<void> incrementItem({
-    required ApiCartItem item,
+    required CartItemModel item,
     required String      username,
   }) async {
     final key = itemKey(item);
@@ -188,7 +188,7 @@ class CartController extends GetxController {
   // ── Decrement ─────────────────────────────────────────────────────────────
 
   Future<void> decrementItem({
-    required ApiCartItem item,
+    required CartItemModel item,
     required String      username,
   }) async {
     if (item.itemQty <= 1) {

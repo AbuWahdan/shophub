@@ -11,7 +11,7 @@ final ctrl = Get.find<MyProductsController>();
 ctrl.username = auth.user?.username ?? '';
 ctrl.userId = auth.user?.userId ?? 0;
 
-// Load products
+// Load my_products
 await ctrl.loadProducts();
 
 // Observe changes (in build method)
@@ -135,10 +135,10 @@ Obx(() {
 ```dart
 final repo = Get.find<ProductRepository>();
 
-// Get all products
+// Get all my_products
 final products = await repo.getProducts();
 
-// Get my products
+// Get my my_products
 final myProducts = await repo.getMyProducts(
   username: 'seller_username',
   userId: 123,

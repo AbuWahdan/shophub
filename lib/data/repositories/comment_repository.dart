@@ -2,16 +2,16 @@ import 'package:flutter/foundation.dart';
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
 import '../../core/utils/apex_response_helper.dart';
-import '../../models/api_item_comment.dart';
+import '../../models/item_comment_model.dart';
 
 class CommentRepository {
   final ApiService _apiService;
 
   CommentRepository(this._apiService);
 
-  Future<List<ApiItemComment>> getItemComments({required int itemId}) async {
+  Future<List<ItemCommentModel>> getItemComments({required int itemId}) async {
     if (itemId <= 0) {
-      return <ApiItemComment>[];
+      return <ItemCommentModel>[];
     }
 
     try {
@@ -26,14 +26,14 @@ class CommentRepository {
       );
 
       if (response is! Map<String, dynamic>) {
-        return <ApiItemComment>[];
+        return <ItemCommentModel>[];
       }
 
       final rawItems = (response['comments'] as List<dynamic>? ?? const [])
           .whereType<Map>()
           .map(Map<String, dynamic>.from)
           .toList();
-      final comments = rawItems.map(ApiItemComment.fromJson).toList()
+      final comments = rawItems.map(ItemCommentModel.fromJson).toList()
         ..sort((a, b) {
           if (a.hasCreatedAt && b.hasCreatedAt) {
             return b.createdAt.compareTo(a.createdAt);

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/design/app_radius.dart';
-import 'package:sinwar_shoping/models/cart_api.dart';
+import 'package:sinwar_shoping/models/cart_item_model.dart';
 import '../../../../controllers/address_controller.dart';
 import '../../../../data/repositories/codes_repository.dart';
 import '../../../../data/repositories/checkout_repository.dart';
@@ -11,22 +11,22 @@ import '../../../../models/payment_method_model.dart';
 import '../../../design/app_colors.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/addresses/address_model.dart';
-import '../../../../models/api_code_option.dart';
-import '../../../../models/checkout_request.dart';
+import '../../../../models/get_code_option_model.dart';
+import '../../../../models/checkout_request_model.dart';
 import '../../../core/state/auth_state.dart';
-import '../../../l10n/l10n.dart';
 import '../../../core/app/app_theme.dart';
 import '../../../widgets/widgets/app_button.dart';
 import '../../../widgets/widgets/app_snackbar.dart';
 import '../../profile/addresses/widgets/address_selection_bottom_sheet.dart';
 import '../../profile/addresses/addresses_page.dart';
-import 'order_confirmation_screen.dart';
+import 'order_confirmation/order_confirmation_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key, required this.cartItems});
 
-  final List<ApiCartItem> cartItems;
+  final List<CartItemModel> cartItems;
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -46,7 +46,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String? _paymentMethodError;
   String? _paymentMethodLoadError;
   String? _authError;
-  List<ApiCodeOption> _paymentMethodOptions = const <ApiCodeOption>[];
+  List<GetCodeOptionModel> _paymentMethodOptions = const <GetCodeOptionModel>[];
 
   @override
   void initState() {
@@ -95,7 +95,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     try {
       final options = await _codesRepository.getCodes(
-        majorCode: ApiCodeOption.paymentMethodMajorCode,
+        majorCode: GetCodeOptionModel.paymentMethodMajorCode,
         forceRefresh: forceRefresh,
       );
       if (!mounted) return;
@@ -122,7 +122,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  IconData _paymentMethodIcon(ApiCodeOption option) {
+  IconData _paymentMethodIcon(GetCodeOptionModel option) {
     switch (option.minorCode) {
       case 1:
         return Icons.payments_outlined;
@@ -264,7 +264,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     try {
       final response = await _checkoutRepository.placeOrder(
-        CheckoutRequest(
+        CheckoutRequestModel(
           username: username!,
           shippingAddress: addressId!,
           paymentMethod: paymentMethodId!,
@@ -300,7 +300,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.checkoutTitle)),
@@ -553,7 +553,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 class _OrderSummaryRow extends StatelessWidget {
   const _OrderSummaryRow({required this.item});
 
-  final ApiCartItem item;
+  final CartItemModel item;
 
   @override
   Widget build(BuildContext context) {
@@ -571,7 +571,7 @@ class _OrderSummaryRow extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                '${context.l10n.checkoutQuantity(item.itemQty)} • ${item.displayColor} • ${item.displaySize}',
+                '${AppLocalizations.of(context).checkoutQuantity(item.itemQty)} • ${item.displayColor} • ${item.displaySize}',
                 style: AppTextStyles.bodySmall,
               ),
             ],

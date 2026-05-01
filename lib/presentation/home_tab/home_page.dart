@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+
 import '../../../data/categories_data.dart';
 import '../../../models/data.dart';
-import '../../../models/product_api.dart';
+import '../../../models/product_model.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/app_localizations.dart';
-import '../../core/app/app_theme.dart';
-import '../../l10n/l10n.dart';
 import '../../services/product_service.dart';
 import '../../widgets/widgets/product_search_bar.dart';
 import '../../widgets/product_card.dart';
-import 'camera_picker_screen.dart';
+import 'camera_picker/camera_picker_screen.dart';
 
+/// Root widget for the Home tab.
+/// Owns all state; delegates rendering to focused sub-widgets.
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, this.title});
 
@@ -28,19 +29,16 @@ class _MyHomePageState extends State<MyHomePage> {
   final PageController _pageController = PageController();
 
   bool _hasSearchText = false;
-  bool _isLoading = false;
   int _currentCategoryIndex = 0;
   int? _selectedCategoryId;
-  String? _errorMessage;
-  List<ApiProduct> _products = [];
-  final Map<int, List<ApiProduct>> _productsByTab = <int, List<ApiProduct>>{};
-  final Map<int, String?> _errorsByTab = <int, String?>{};
-  final Set<int> _loadedTabs = <int>{};
+
+  /// Per-tab state — keyed by category id (null = "All").
+  final Map<int, _TabState> _tabStates = {};
 
   @override
   void initState() {
     super.initState();
-    _loadProducts();
+    _loadTab();
   }
 
   @override
@@ -50,167 +48,82 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  List<ApiProduct> get _filteredProducts {
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  /// Stable key for the currently visible tab.
+  int get _tabKey => _selectedCategoryId ?? 0;
+
+  _TabState get _currentTab => _tabStates[_tabKey] ?? const _TabState();
+
+  List<ProductModel> get _filteredProducts {
     final query = _searchController.text.trim().toLowerCase();
-    return _products.where((product) {
-      if (query.isEmpty) return true;
-      final category =
-          CategoriesData.getCategoryById(product.categoryId)?.name ??
-          product.category;
-      return product.itemName.toLowerCase().contains(query) ||
-          category.toLowerCase().contains(query);
+    if (query.isEmpty) return _currentTab.products;
+    return _currentTab.products.where((p) {
+      final categoryName =
+          CategoriesData.getCategoryById(p.categoryId)?.name ?? p.category;
+      return p.itemName.toLowerCase().contains(query) ||
+          categoryName.toLowerCase().contains(query);
     }).toList();
   }
 
-  int get _currentTabKey => _selectedCategoryId ?? 0;
+  // ── Data loading ──────────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final mainCategories = CategoriesData.getMainCategories();
+  Future<void> _loadTab({bool forceRefresh = false}) async {
+    final tabKey = _tabKey;
+    final existing = _tabStates[tabKey];
 
-    return Column(
-      children: [
-        Container(
-          margin: AppSpacing.insetsMd,
-          child: ProductSearchBar(
-            controller: _searchController,
-            hintText: l10n.homeSearchHint,
-            hasSearchText: _hasSearchText,
-            onClear: () {
-              _searchController.clear();
-              setState(() {
-                _hasSearchText = false;
-              });
-            },
-            onChanged: (value) {
-              setState(() {
-                _hasSearchText = value.trim().isNotEmpty;
-              });
-            },
-            onCameraTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CameraPickerScreen()),
-              );
-            },
-          ),
-        ),
-        SizedBox(
-          height: 50,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding:AppSpacing.insetsMd,
-            itemCount: mainCategories.length + 1,
-            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return FilterChip(
-                  label: Text(l10n.categoryAll),
-                  selected: _currentCategoryIndex == 0,
-                  onSelected: (_) {
-                    _jumpToCategoryIndex(0);
-                  },
-                );
-              }
+    // Return cached data unless a forced refresh is requested.
+    if (!forceRefresh && (existing?.isLoaded ?? false)) {
+      setState(() {}); // repaint with cached data
+      return;
+    }
 
-              final category = mainCategories[index - 1];
-              return FilterChip(
-                label: Text(category.name),
-                selected: _selectedCategoryId == category.id,
-                onSelected: (_) {
-                  _jumpToCategoryIndex(index);
-                },
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Expanded(
-          child: PageView.builder(
-            controller: _pageController,
-            itemCount: mainCategories.length + 1,
-            onPageChanged: _onPageChanged,
-            itemBuilder: (context, index) => _buildProductsContent(l10n),
-          ),
-        ),
-      ],
-    );
+    setState(() {
+      _tabStates[tabKey] = (existing ?? const _TabState()).copyWith(
+        isLoading: true,
+        // FIX: clear the previous error BEFORE showing the loading state
+        // so the error view never flashes while a new request is in-flight.
+        error: null,
+      );
+    });
+
+    try {
+      final raw = _selectedCategoryId == null
+          ? await _productService.getProducts(forceRefresh: forceRefresh)
+          : await _productService.getProductsByCategory(
+        _selectedCategoryId!,
+        forceRefresh: forceRefresh,
+      );
+      if (!mounted) return;
+
+      final active = raw.where((p) => p.isActive == 1).toList();
+
+      if (_selectedCategoryId == null) {
+        AppData.setProducts(active);
+      }
+
+      setState(() {
+        _tabStates[tabKey] = _TabState(
+          products: active,
+          isLoaded: true,
+          isLoading: false,
+        );
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _tabStates[tabKey] = _TabState(
+          // Keep stale data visible if we already had some.
+          products: existing?.products ?? const [],
+          isLoaded: existing?.isLoaded ?? false,
+          isLoading: false,
+          error: error.toString(),
+        );
+      });
+    }
   }
 
-  Widget _buildProductsContent(AppLocalizations l10n) {
-    if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
-    }
-
-    if (_errorMessage != null && _products.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppColors.textHint,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              l10n.errorLoadingProducts,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            ElevatedButton(onPressed: _loadProducts, child: Text(l10n.retry)),
-          ],
-        ),
-      );
-    }
-
-    if (_filteredProducts.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.inventory_2_outlined,
-              size: 64,
-              color: AppColors.textHint,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              l10n.noProductsInCategory,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: () => _loadProducts(forceRefresh: true),
-      child: GridView.builder(
-        physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
-        ),
-        padding:AppSpacing.insetsMd,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.82,
-          mainAxisSpacing: AppSpacing.lg,
-          crossAxisSpacing: AppSpacing.lg,
-        ),
-        itemCount: _filteredProducts.length,
-        itemBuilder: (context, index) {
-          return ProductCard(product: _filteredProducts[index]);
-        },
-      ),
-    );
-  }
+  // ── Category / page navigation ────────────────────────────────────────────
 
   void _jumpToCategoryIndex(int index) {
     if (_currentCategoryIndex == index) return;
@@ -227,55 +140,272 @@ class _MyHomePageState extends State<MyHomePage> {
       _currentCategoryIndex = index;
       _selectedCategoryId = index == 0 ? null : categories[index - 1].id;
     });
-    _loadProducts();
+    _loadTab();
   }
 
-  Future<void> _loadProducts({bool forceRefresh = false}) async {
-    final tabKey = _currentTabKey;
-    if (!forceRefresh && _loadedTabs.contains(tabKey)) {
-      setState(() {
-        _products = _productsByTab[tabKey] ?? const <ApiProduct>[];
-        _errorMessage = _errorsByTab[tabKey];
-        _isLoading = false;
-      });
-      return;
-    }
+  // ── Build ─────────────────────────────────────────────────────────────────
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = _errorsByTab[tabKey];
-    });
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final mainCategories = CategoriesData.getMainCategories();
 
-    try {
-      final products = _selectedCategoryId == null
-          ? await _productService.getProducts(forceRefresh: forceRefresh)
-          : await _productService.getProductsByCategory(
-              _selectedCategoryId!,
-              forceRefresh: forceRefresh,
+    return Column(
+      children: [
+        _SearchRow(
+          controller: _searchController,
+          hasSearchText: _hasSearchText,
+          onChanged: (value) =>
+              setState(() => _hasSearchText = value.trim().isNotEmpty),
+          onClear: () {
+            _searchController.clear();
+            setState(() => _hasSearchText = false);
+          },
+          onCameraTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CameraPickerScreen()),
+          ),
+        ),
+        _CategoryTabBar(
+          categories: mainCategories,
+          currentIndex: _currentCategoryIndex,
+          selectedCategoryId: _selectedCategoryId,
+          onTabSelected: _jumpToCategoryIndex,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Expanded(
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: mainCategories.length + 1,
+            onPageChanged: _onPageChanged,
+            itemBuilder: (_, __) => _ProductTabContent(
+              tabState: _currentTab,
+              products: _filteredProducts,
+              onRefresh: () => _loadTab(forceRefresh: true),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Per-tab immutable state container
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Immutable snapshot of a single category tab's loading state.
+class _TabState {
+  const _TabState({
+    this.products = const [],
+    this.isLoading = false,
+    this.isLoaded = false,
+    this.error,
+  });
+
+  final List<ProductModel> products;
+  final bool isLoading;
+  final bool isLoaded;
+  final String? error;
+
+  _TabState copyWith({
+    List<ProductModel>? products,
+    bool? isLoading,
+    bool? isLoaded,
+    String? error,
+    bool clearError = false,
+  }) {
+    return _TabState(
+      products: products ?? this.products,
+      isLoading: isLoading ?? this.isLoading,
+      isLoaded: isLoaded ?? this.isLoaded,
+      error: clearError ? null : (error ?? this.error),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sub-widgets — each owns exactly one concern
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SearchRow extends StatelessWidget {
+  const _SearchRow({
+    required this.controller,
+    required this.hasSearchText,
+    required this.onChanged,
+    required this.onClear,
+    required this.onCameraTap,
+  });
+
+  final TextEditingController controller;
+  final bool hasSearchText;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+  final VoidCallback onCameraTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Container(
+      margin: AppSpacing.insetsMd,
+      child: ProductSearchBar(
+        controller: controller,
+        hintText: l10n.homeSearchHint,
+        hasSearchText: hasSearchText,
+        onClear: onClear,
+        onChanged: onChanged,
+        onCameraTap: onCameraTap,
+      ),
+    );
+  }
+}
+
+class _CategoryTabBar extends StatelessWidget {
+  const _CategoryTabBar({
+    required this.categories,
+    required this.currentIndex,
+    required this.selectedCategoryId,
+    required this.onTabSelected,
+  });
+
+  final List<dynamic> categories; // List<CategoryModel>
+  final int currentIndex;
+  final int? selectedCategoryId;
+  final ValueChanged<int> onTabSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return SizedBox(
+      height: AppSpacing.tabHeight,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: AppSpacing.insetsMd,
+        itemCount: categories.length + 1,
+        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+        itemBuilder: (_, index) {
+          if (index == 0) {
+            return FilterChip(
+              label: Text(l10n.categoryAll),
+              selected: currentIndex == 0,
+              onSelected: (_) => onTabSelected(0),
             );
-      if (!mounted) return;
-      final active = products.where((item) => item.isActive == 1).toList();
-      setState(() {
-        _productsByTab[tabKey] = active;
-        _errorsByTab.remove(tabKey);
-        _loadedTabs.add(tabKey);
-        _products = active;
-        _errorMessage = null;
-        _isLoading = false;
-      });
-      if (_selectedCategoryId == null) {
-        AppData.setProducts(active);
-      }
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _products =
-            _productsByTab[tabKey] ??
-            (_selectedCategoryId == null ? AppData.products : const []);
-        _errorsByTab[tabKey] = error.toString();
-        _errorMessage = error.toString();
-        _isLoading = false;
-      });
+          }
+          final category = categories[index - 1];
+          return FilterChip(
+            label: Text(category.name as String),
+            selected: selectedCategoryId == category.id,
+            onSelected: (_) => onTabSelected(index),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ProductTabContent extends StatelessWidget {
+  const _ProductTabContent({
+    required this.tabState,
+    required this.products,
+    required this.onRefresh,
+  });
+
+  final _TabState tabState;
+  final List<ProductModel> products;
+  final Future<void> Function() onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    if (tabState.isLoading && products.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
     }
+
+    // FIX: only show error when there is an error AND no products to show.
+    // Previously _errorMessage was set while loading, causing a flash.
+    if (tabState.error != null && products.isEmpty) {
+      return _ErrorView(onRetry: onRefresh);
+    }
+
+    if (products.isEmpty) {
+      return _EmptyView();
+    }
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: GridView.builder(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        padding: AppSpacing.insetsMd,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.82,
+          mainAxisSpacing: AppSpacing.lg,
+          crossAxisSpacing: AppSpacing.lg,
+        ),
+        itemCount: products.length,
+        itemBuilder: (_, index) => ProductCard(product: products[index]),
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 64, color: AppColors.textHint),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            l10n.errorLoadingProducts,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          ElevatedButton(
+            onPressed: onRetry,
+            child: Text(l10n.retry),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyView extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.inventory_2_outlined,
+            size: 64,
+            color: AppColors.textHint,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            l10n.noProductsInCategory,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

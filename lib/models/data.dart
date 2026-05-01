@@ -1,22 +1,19 @@
-import 'package:sinwar_shoping/models/product_api.dart';
+import 'package:sinwar_shoping/models/product_model.dart';
 import 'package:flutter/foundation.dart';
-import 'package:sinwar_shoping/models/cart_api.dart';
-import '../core/config/app_images.dart';
-import 'category_xx.dart';
-import 'category.dart';
+import 'package:sinwar_shoping/models/cart_item_model.dart';
 
 class AppData {
-  static final List<ApiProduct> _products = <ApiProduct>[];
+  static final List<ProductModel> _products = <ProductModel>[];
   static final Set<int> _wishlistIds = <int>{};
-  static final Map<int, ApiProduct> _wishlistProducts = <int, ApiProduct>{};
-  static final List<ApiCartItem> _cartItems = <ApiCartItem>[];
+  static final Map<int, ProductModel> _wishlistProducts = <int, ProductModel>{};
+  static final List<CartItemModel> _cartItems = <CartItemModel>[];
   static final ValueNotifier<int> cartCountNotifier = ValueNotifier<int>(0);
 
   // ── Products ──────────────────────────────────────────────────────────────
 
-  static List<ApiProduct> get products => List.unmodifiable(_products);
+  static List<ProductModel> get products => List.unmodifiable(_products);
 
-  static void setProducts(List<ApiProduct> products) {
+  static void setProducts(List<ProductModel> products) {
     _products
       ..clear()
       ..addAll(products);
@@ -40,12 +37,12 @@ class AppData {
 
   // ── Wishlist ──────────────────────────────────────────────────────────────
 
-  static List<ApiProduct> get wishlistProducts =>
+  static List<ProductModel> get wishlistProducts =>
       _wishlistProducts.values.toList();
 
   static bool isFavorite(int productId) => _wishlistIds.contains(productId);
 
-  static void syncFavoriteFor(ApiProduct product) {
+  static void syncFavoriteFor(ProductModel product) {
     product.isFavorite = isFavorite(product.id);
   }
 
@@ -72,7 +69,7 @@ class AppData {
 
   /// Called after a successful getUserFavorites() with the full product list.
   /// Replaces the wishlist state entirely.
-  static void setWishlistProducts(List<ApiProduct> products) {
+  static void setWishlistProducts(List<ProductModel> products) {
     _wishlistIds
       ..clear()
       ..addAll(products.map((p) => p.id));
@@ -91,7 +88,7 @@ class AppData {
   }
 
   /// Adds or removes a single product from the in-memory wishlist.
-  static void setFavorite(ApiProduct product, bool isFavorite) {
+  static void setFavorite(ProductModel product, bool isFavorite) {
     final id = product.id;
     if (isFavorite) {
       _wishlistIds.add(id);
@@ -109,15 +106,15 @@ class AppData {
     }
   }
 
-  static void toggleFavorite(ApiProduct product) {
+  static void toggleFavorite(ProductModel product) {
     setFavorite(product, !_wishlistIds.contains(product.id));
   }
 
   // ── Cart ──────────────────────────────────────────────────────────────────
 
-  static List<ApiCartItem> get cartItems => List.unmodifiable(_cartItems);
+  static List<CartItemModel> get cartItems => List.unmodifiable(_cartItems);
 
-  static void setCartItems(List<ApiCartItem> items) {
+  static void setCartItems(List<CartItemModel> items) {
     _cartItems
       ..clear()
       ..addAll(items);
@@ -125,7 +122,7 @@ class AppData {
   }
 
   static void addToCart({
-    required ApiProduct product,
+    required ProductModel product,
     required int quantity,
     required String size,
     required String color,
@@ -174,7 +171,7 @@ class AppData {
     }
 
     _cartItems.add(
-      ApiCartItem(
+      CartItemModel(
         detailId: resolvedDetId,
         itemId: product.id,
         itemDetId: resolvedDetId,
@@ -200,100 +197,6 @@ class AppData {
         _cartItems.fold<int>(0, (sum, item) => sum + item.itemQty);
   }
 
-  // ── Category list ─────────────────────────────────────────────────────────
 
-  static List<Categories> categoryList = [
-    Categories(id: 0, name: 'All', image: AppImages.all, isSelected: true),
-    Categories(
-        id: 1, name: 'Women', image: AppImages.clothing, isSelected: false),
-    Categories(
-        id: 2, name: 'Men', image: AppImages.clothing, isSelected: false),
-    Categories(
-        id: 3, name: 'Kids', image: AppImages.clothing, isSelected: false),
-    Categories(
-        id: 4, name: 'Jewelry', image: AppImages.watch, isSelected: false),
-    Categories(
-        id: 5,
-        name: 'Beauty & Health',
-        image: AppImages.placeholder,
-        isSelected: false),
-    Categories(
-        id: 6, name: 'Home', image: AppImages.placeholder, isSelected: false),
-    Categories(
-        id: 7,
-        name: 'Kitchen',
-        image: AppImages.placeholder,
-        isSelected: false),
-    Categories(
-        id: 8,
-        name: 'Electronics',
-        image: AppImages.electronics,
-        isSelected: false),
-    Categories(
-        id: 9, name: 'Shoes', image: AppImages.shoeThumb2, isSelected: false),
-    Categories(
-        id: 10, name: 'Bags', image: AppImages.placeholder, isSelected: false),
-    Categories(
-        id: 11,
-        name: 'Accessories',
-        image: AppImages.placeholder,
-        isSelected: false),
-    Categories(
-        id: 12, name: 'Toys', image: AppImages.placeholder, isSelected: false),
-    Categories(
-        id: 13,
-        name: 'Sports & Outdoors',
-        image: AppImages.placeholder,
-        isSelected: false),
-    Categories(
-        id: 14,
-        name: 'Pet Supplies',
-        image: AppImages.placeholder,
-        isSelected: false),
-    Categories(
-        id: 15,
-        name: 'Automotive',
-        image: AppImages.placeholder,
-        isSelected: false),
-    Categories(
-        id: 16,
-        name: 'Tools & Home Improvement',
-        image: AppImages.placeholder,
-        isSelected: false),
-    Categories(
-        id: 17,
-        name: 'Office & School Supplies',
-        image: AppImages.placeholder,
-        isSelected: false),
-    Categories(
-        id: 18,
-        name: 'Furniture',
-        image: AppImages.placeholder,
-        isSelected: false),
-    Categories(
-        id: 19,
-        name: 'Appliances',
-        image: AppImages.placeholder,
-        isSelected: false),
-    Categories(
-        id: 20,
-        name: 'Arts, Crafts & Sewing',
-        image: AppImages.placeholder,
-        isSelected: false),
-    Categories(
-        id: 21,
-        name: 'Sneakers',
-        image: AppImages.shoeThumb2,
-        isSelected: false),
-    Categories(
-        id: 22, name: 'Jackets', image: AppImages.jacket, isSelected: false),
-    Categories(
-        id: 23, name: 'Watches', image: AppImages.watch, isSelected: false),
-    Categories(
-        id: 24,
-        name: 'Clothing',
-        image: AppImages.clothing,
-        isSelected: false),
-  ];
 
 }

@@ -2,21 +2,21 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
-import '../../models/api_code_option.dart';
+import '../../models/get_code_option_model.dart';
 
 class CodesRepository {
   CodesRepository(this._apiService);
 
   final ApiService _apiService;
 
-  static final Map<int, List<ApiCodeOption>> _cache =
-  <int, List<ApiCodeOption>>{};
+  static final Map<int, List<GetCodeOptionModel>> _cache =
+  <int, List<GetCodeOptionModel>>{};
 
-  Future<List<ApiCodeOption>> getCodes({
+  Future<List<GetCodeOptionModel>> getCodes({
     required int majorCode,
     bool forceRefresh = false,
   }) async {
-    if (majorCode <= 0) return const <ApiCodeOption>[];
+    if (majorCode <= 0) return const <GetCodeOptionModel>[];
 
     if (!forceRefresh && _cache.containsKey(majorCode)) {
       return _cache[majorCode]!;
@@ -74,17 +74,17 @@ class CodesRepository {
     }
 
     if (lastError != null) throw lastError;
-    return const <ApiCodeOption>[];
+    return const <GetCodeOptionModel>[];
   }
 
   // ── Parsing ───────────────────────────────────────────────────────────────
 
-  List<ApiCodeOption> _extractOptions(dynamic response) {
+  List<GetCodeOptionModel> _extractOptions(dynamic response) {
     final rows       = _extractRows(response);
     final seenMinors = <int>{};
 
     return rows
-        .map(ApiCodeOption.fromJson)
+        .map(GetCodeOptionModel.fromJson)
         .where((o) => o.isRenderable)               // filters out minorCode==0 header
         .where((o) => seenMinors.add(o.minorCode))  // deduplicate
         .toList()

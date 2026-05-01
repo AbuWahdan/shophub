@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:get/get.dart';
@@ -8,11 +7,9 @@ import '../../controllers/cart_controller.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
-import '../../l10n/l10n.dart';
-import '../../models/cart_api.dart';
-import '../../core/config/app_constants.dart';
+import '../../l10n/app_localizations.dart';
+import '../../models/cart_item_model.dart';
 import '../../core/config/route.dart';
-import '../../core/app/app_theme.dart';
 import '../../widgets/dialogs/app_dialogs.dart';
 import '../../widgets/widgets/app_button.dart';
 import '../../widgets/widgets/app_image.dart';
@@ -32,6 +29,8 @@ class ShoppingCartPage extends StatefulWidget {
 
 class _ShoppingCartPageState extends State<ShoppingCartPage> {
   final CartController cartController = Get.find<CartController>();
+
+  static const int homeTabIndex = 0;
 
   @override
   void initState() {
@@ -55,7 +54,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     }
   }
 
-  void _openProductDetails(ApiCartItem cartItem) {
+  void _openProductDetails(CartItemModel cartItem) {
     Navigator.pushNamed(
       context,
       AppRoutes.productDetails,
@@ -71,8 +70,8 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   double get totalPrice =>
       cartController.items.fold(0, (sum, item) => sum + item.total);
 
-  void _showRemoveConfirmation(ApiCartItem cartItem) {
-    final l10n = context.l10n;
+  void _showRemoveConfirmation(CartItemModel cartItem) {
+    final l10n = AppLocalizations.of(context);
     AppDialogs.showConfirmation(
       context: context,
       title:   l10n.cartRemoveItemTitle,
@@ -84,7 +83,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
         if (username.isEmpty) {
           AppSnackBar.show(
             context,
-            message: context.l10n.productAccountUnavailable,
+            message: AppLocalizations.of(context).productAccountUnavailable,
             type: AppSnackBarType.error,
           );
           return;
@@ -105,7 +104,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
 
   // ── Cart item card ─────────────────────────────────────────────────────────
 
-  Widget _buildCartItemCard(ApiCartItem item) {
+  Widget _buildCartItemCard(CartItemModel item) {
     final isUpdating =
         cartController.itemLoading[cartController.itemKey(item)] == true;
 
@@ -125,11 +124,11 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
 
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         onTap: isUpdating ? null : () => _openProductDetails(item),
         child: Padding(
           padding: AppSpacing.insetsMd,
@@ -166,7 +165,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                             Text(
                               '\$${finalPrice.toStringAsFixed(2)}',
                               style: AppTextStyles.labelLarge.copyWith(
-                                color: AppColors.primary,
+                                color: AppColors.black,
                               ),
                             ),
                             if (hasDiscount)
@@ -234,7 +233,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(context.l10n.cartQuantity,
+                  Text(AppLocalizations.of(context).cartQuantity,
                       style: AppTextStyles.bodyMedium),
 
                   // FIX: spinner shown only when THIS item is loading,
@@ -261,7 +260,8 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                           );
                         }
                       },
-                      onIncrement: item.itemQty < AppConstants.checkoutMaxQuantity
+
+                      onIncrement: item.itemQty < item.availableQty
                           ? () async {
                         final username = await _getUsername();
                         if (username.isNotEmpty) {
@@ -281,7 +281,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(context.l10n.cartItemTotal,
+                  Text(AppLocalizations.of(context).cartItemTotal,
                       style: AppTextStyles.bodySmall),
                   Text(
                     '\$${itemTotal.toStringAsFixed(2)}',
@@ -297,7 +297,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   }
 
   /// Shows size / color / brand as small chips.
-  Widget _buildVariantChips(ApiCartItem item) {
+  Widget _buildVariantChips(CartItemModel item) {
     final chips = <_ChipData>[];
 
     final size = item.itemSize.trim();
@@ -331,19 +331,19 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   Widget _buildEmptyCart() {
     return EmptyState(
       icon: Icons.shopping_cart_outlined,
-      title: context.l10n.cartEmptyTitle,
-      message: context.l10n.cartEmptyMessage,
+      title: AppLocalizations.of(context).cartEmptyTitle,
+      message: AppLocalizations.of(context).cartEmptyMessage,
       action: AppButton(
-        label: context.l10n.cartStartShopping,
+        label: AppLocalizations.of(context).cartStartShopping,
         onPressed: () {
           final switched =
-          MainPage.switchToTab(context, AppConstants.homeTabIndex);
+          MainPage.switchToTab(context, homeTabIndex);
           if (switched) return;
           Navigator.pushNamedAndRemoveUntil(
             context,
             AppRoutes.main,
                 (route) => false,
-            arguments: {'initialTabIndex': AppConstants.homeTabIndex},
+            arguments: {'initialTabIndex': homeTabIndex},
           );
         },
         leading: const Icon(Icons.shopping_bag),
@@ -356,7 +356,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(context.l10n.cartTitle),
+        title: Text(AppLocalizations.of(context).cartTitle),
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
@@ -435,7 +435,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                           ),
                         ),
                         Text(
-                          '${context.l10n.cartShipping}: ${context.l10n.cartShippingFree}',
+                          '${AppLocalizations.of(context).cartShipping}: ${AppLocalizations.of(context).cartShippingFree}',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Theme.of(context).colorScheme.tertiary,
                           ),
@@ -452,7 +452,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                             foregroundColor: AppColors.primary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
-                                  AppRadius.lg),
+                                  AppRadius.sm),
                             ),
                           ),
                           onPressed: () {
@@ -466,11 +466,11 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
                             );
                           },
                           child: Text(
-                            context.l10n.cartCheckout,
+                            AppLocalizations.of(context).cartCheckout,
                             style: Theme.of(context)
                                 .textTheme
                                 .labelLarge
-                                ?.copyWith(color: AppColors.primary),
+                                ?.copyWith(color: AppColors.black),
                           ),
                         ),
                       ),
@@ -500,11 +500,11 @@ class _CartItemImage extends StatelessWidget {
       width: AppSpacing.imageMd,
       height: AppSpacing.imageMd,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         color: Theme.of(context).colorScheme.surface,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         child: imageUrl.isEmpty
             ? const _ImagePlaceholder()
             : AppImage(

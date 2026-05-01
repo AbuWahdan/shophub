@@ -6,9 +6,9 @@ import '../../../../../controllers/password_controller.dart';
 import '../../../../../data/repositories/user_repository.dart';
 import '../../../../core/config/route.dart';
 import '../../../../design/app_spacing.dart';
-import '../../../../l10n/l10n.dart';
 import '../../../../core/app/app_theme.dart';
 import '../../../../core/state/auth_state.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../widgets/widgets/app_button.dart';
 import '../../../../widgets/widgets/app_snackbar.dart';
 import '../../../../widgets/widgets/app_text_field.dart';
@@ -78,7 +78,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     AppSnackBar.show(
       context,
-      message: context.l10n.passwordUpdateSuccess,
+      message: AppLocalizations.of(context).passwordUpdateSuccess,
       type: AppSnackBarType.success,
     );
     await Future.delayed(const Duration(milliseconds: 600));
@@ -98,7 +98,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final l10n = AppLocalizations.of(context);
     final title = widget.requiresCurrentPassword
         ? l10n.changePasswordTitle
         : l10n.resetPasswordTitle;

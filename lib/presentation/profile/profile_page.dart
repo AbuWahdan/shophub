@@ -8,7 +8,7 @@ import '../../design/app_colors.dart';
 import '../../design/app_radius.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
-import '../../l10n/l10n.dart';
+import '../../l10n/app_localizations.dart';
 import '../../widgets/dialogs/app_dialogs.dart';
 import '../../widgets/widgets/app_image.dart';
 import '../../core/state/auth_state.dart';
@@ -19,7 +19,7 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final l10n = AppLocalizations.of(context);
     final auth = context.watch<AuthState>();
     final user = auth.user;
     final isLoggedIn = auth.isLoggedIn && user != null;
@@ -101,14 +101,6 @@ class ProfilePage extends StatelessWidget {
               _buildMenuItem(context, Icons.settings, l10n.profileSettings, () {
                 Navigator.pushNamed(context, AppRoutes.settings);
               }),
-              _buildMenuItem(
-                context,
-                Icons.add_business,
-                l10n.insertProductMenu,
-                () {
-                  Navigator.pushNamed(context, AppRoutes.insertProduct);
-                },
-              ),
               _buildMenuItem(context, Icons.favorite, l10n.accountWishlist, () {
                 Navigator.pushNamed(context, AppRoutes.wishlist);
               }),
@@ -144,7 +136,7 @@ class ProfilePage extends StatelessWidget {
   }
 
   void _showLogoutDialog(BuildContext context) {
-    final l10n = context.l10n;
+    final l10n = AppLocalizations.of(context);
     AppDialogs.showConfirmation(
       context: context,
       title: l10n.settingsLogoutConfirmTitle,

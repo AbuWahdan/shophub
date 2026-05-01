@@ -1,5 +1,25 @@
 {
-  "productUpdateAction" :"Update action",
+  "productVariants": "Product Variants",
+  "productAddVariant": "Add Variant",
+  "productNoVariantsYet": "No variants yet",
+  "productBasicInfo": "Basic Product Information",
+  "productImagePickFailed": "Failed to pick image",
+  "productImageUploadSuccess": "Image uploaded successfully",
+  "productImageProcessFailed": "Failed to process image",
+  "productDefaultImageUpdateFailed": "Failed to update default image",
+  "productDefaultImageUpdated": "Default image updated successfully",
+  "productUpdateSuccess": "Product updated successfully",
+  "productVariantPriceMustBePositive": "Variant price must be greater than zero",
+  "variantWillBeRemovedOnSave": "This variant will be removed after saving",
+  "productUploading": "Uploading product...",
+  "productAddImage": "Add Image",
+  "productNoImagesYet": "No images yet",
+  "productImages": "Product Images",
+  "@@locale": "en",
+  "totalLabel": "Total",
+  "noOrdersYet": "No orders yet",
+  "errorLoadingOrders": "Error loading orders",
+  "productUpdateAction": "Update action",
   "appTitle": "ShopHub",
   "appVersion": "1.0.0",
   "appLegalese": "© 2024 ShopHub. All rights reserved.",
@@ -40,6 +60,11 @@
   "otpResendQuestion": "Didn't receive the code?",
   "otpResend": "Resend",
   "otpResendCountdown": "Resend in {seconds} seconds",
+  "@otpResendCountdown": {
+    "placeholders": {
+      "seconds": { "type": "Object" }
+    }
+  },
   "forgotPasswordTitle": "Forgot Password",
   "forgotPasswordSubtitle": "Enter your email to reset your password",
   "forgotPasswordSendOtp": "Send OTP",
@@ -103,12 +128,22 @@
   "passwordUpdatedSubtitle": "Your password has been successfully updated",
   "passwordUpdatedBackToLogin": "Back to Login",
   "passwordUpdatedAutoRedirect": "Redirecting to login in {seconds} seconds",
+  "@passwordUpdatedAutoRedirect": {
+    "placeholders": {
+      "seconds": { "type": "Object" }
+    }
+  },
   "otpTitle": "Verify OTP",
   "otpEnterCode": "Enter the OTP code",
   "otpSubtitle": "Enter the 6-digit code sent to your email",
   "validationOtpRequired": "OTP is required",
   "validationOtpInvalid": "Please enter a valid OTP",
   "otpResendIn": "Resend in {seconds} seconds",
+  "@otpResendIn": {
+    "placeholders": {
+      "seconds": { "type": "Object" }
+    }
+  },
   "otpVerify": "Verify",
   "validationOtpInvalidLength": "OTP must be 6 digits",
   "onboardingWelcomeTitle": "Welcome to ShopHub",
@@ -223,6 +258,11 @@
   "checkoutPaymentMethod": "Payment Method",
   "checkoutTotal": "Total",
   "checkoutQuantity": "Qty: {quantity}",
+  "@checkoutQuantity": {
+    "placeholders": {
+      "quantity": { "type": "Object" }
+    }
+  },
   "accountMyProducts": "My Products",
   "myProductsEmptyMessage": "No products yet",
   "stockIn": "In Stock",
@@ -281,6 +321,11 @@
   "commonRemove": "Remove",
   "cartItemRemoved": "Item removed from cart",
   "cartAvailableStock": "Available: {stock}",
+  "@cartAvailableStock": {
+    "placeholders": {
+      "stock": { "type": "Object" }
+    }
+  },
   "cartItemTotal": "Total",
   "cartEmptyTitle": "Your cart is empty",
   "cartStartShopping": "Start Shopping",
@@ -289,9 +334,24 @@
   "cartShippingFree": "Free",
   "cartCheckout": "Proceed to Checkout",
   "productReviews": "{count} Reviews",
+  "@productReviews": {
+    "placeholders": {
+      "count": { "type": "Object" }
+    }
+  },
   "productSold": "{count} Sold",
+  "@productSold": {
+    "placeholders": {
+      "count": { "type": "Object" }
+    }
+  },
   "productDescription": "Description",
   "productShowLess": "Show Less",
   "productShowMore": "Show More",
-  "productAddedToCart": "{name} added to cart"
+  "productAddedToCart": "{name} added to cart",
+  "@productAddedToCart": {
+    "placeholders": {
+      "name": { "type": "Object" }
+    }
+  }
 }

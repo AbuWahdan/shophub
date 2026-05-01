@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../models/data.dart';
-import '../../models/user.dart';
+import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
 import '../../services/storage_service.dart';
@@ -21,7 +21,7 @@ class AuthState extends ChangeNotifier {
   Future<void>? _initializationFuture;
   bool _isLoggedIn = false;
   String? _errorMessage;
-  User? _user;
+  UserModel? _user;
   int _userId = 0;
 
   bool get isLoading => _isLoading;
@@ -29,7 +29,7 @@ class AuthState extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   bool get isLoggedIn => _isLoggedIn;
   String? get errorMessage => _errorMessage;
-  User? get user => _user;
+  UserModel? get user => _user;
   int get userId => _userId;
 
   Future<void> initialize() async {
@@ -103,7 +103,7 @@ class AuthState extends ChangeNotifier {
     }
   }
 
-  Future<bool> register(User user) async {
+  Future<bool> register(UserModel user) async {
     _setLoading(true);
     _errorMessage = null;
     notifyListeners();
@@ -132,7 +132,7 @@ class AuthState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateCurrentUser(User user) async {
+  Future<void> updateCurrentUser(UserModel user) async {
     final resolvedUser = user.copyWith(
       userId: user.userId > 0 ? user.userId : _userId,
     );

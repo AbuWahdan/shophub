@@ -36,7 +36,10 @@ dependencies:
   http: ^1.1.0
   provider: ^6.1.2
   get: ^4.6.6
-
+  crop_your_image: ^1.0.0
+  image: ^4.1.7
+  path_provider: ^2.1.2      # already in most Flutter projects
+  path: ^1.9.0               # already in most Flutter projects
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8

@@ -1,14 +1,14 @@
 import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
 import '../data/repositories/order_repository.dart';
-import '../models/api_order.dart';
+import '../models/orders_model.dart';
 
 class OrderController extends GetxController {
   final OrderRepository _repo;
 
   OrderController(this._repo);
 
-  final orders = <ApiOrder>[].obs;
+  final orders = <OrdersModel>[].obs;
   final isLoading = false.obs;
   final error = ''.obs;
 

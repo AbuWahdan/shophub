@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../controllers/cart_controller.dart';
-import '../../../l10n/l10n.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../core/app/app_theme.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_radius.dart';
@@ -43,7 +43,7 @@ class _CustomBottomNavigationBarState
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final l10n = AppLocalizations.of(context);
     final items = [
       (Icons.home_rounded, l10n.navHome),
       (Icons.category_rounded, l10n.navCategories),
@@ -171,7 +171,7 @@ class _CustomBottomNavigationBarState
 //
 //
 //
-// import '../../../l10n/l10n.dart';
+// import '../../../l10n/app_localizations.dart';
 // import '../../design/app_text_styles.dart';
 //
 // class CustomBottomNavigationBar extends StatefulWidget {
@@ -194,7 +194,7 @@ class _CustomBottomNavigationBarState
 //
 //   @override
 //   Widget build(BuildContext context) {
-//     final l10n = context.l10n;
+//     final l10n = AppLocalizations.of(context);
 //     final items = [
 //       (Icons.home_rounded, l10n.navHome),
 //       (Icons.category_rounded, l10n.navCategories),

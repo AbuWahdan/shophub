@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../models/api_item_comment.dart';
+import '../../../models/item_comment_model.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_radius.dart';
 import '../../design/app_spacing.dart';
@@ -14,7 +14,7 @@ class ProductCommentCard extends StatefulWidget {
     this.collapsedMaxLines = 3,
   });
 
-  final ApiItemComment comment;
+  final ItemCommentModel comment;
   final int collapsedMaxLines;
 
   @override

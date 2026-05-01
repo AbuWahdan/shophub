@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../../data/categories_data.dart';
-import '../../../models/category.dart';
-import '../../../models/product_api.dart';
+import '../../../models/category_model.dart';
+import '../../../models/product_model.dart';
 import '../../core/app/app_theme.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_radius.dart';
 import '../../design/app_shadows.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
-import '../../l10n/l10n.dart';
+import '../../l10n/app_localizations.dart';
 import '../../services/product_service.dart';
 import '../../widgets/product_card.dart';
 
@@ -27,14 +27,14 @@ class _CategoriesPageState extends State<CategoriesPage> {
   int? _selectedCategoryId;
   bool _isLoading = false;
   String? _errorMessage;
-  List<ApiProduct> _products = [];
+  List<ProductModel> _products = [];
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final l10n = AppLocalizations.of(context);
     final mainCategories = CategoriesData.getMainCategories();
     final subcategories = _selectedMainCategoryId == null
-        ? <Category>[]
+        ? <CategoryModel>[]
         : CategoriesData.getSubcategories(_selectedMainCategoryId!);
 
     return Column(

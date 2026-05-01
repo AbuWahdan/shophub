@@ -1,36 +1,33 @@
-import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
-import '../data/repositories/product_repository.dart';
-import '../models/product_api.dart';
+import 'package:get/get.dart';
 
+import '../data/repositories/product_repository.dart';
+import '../models/product_model.dart';
+
+/// Manages a **seller's own product listings** — both active and inactive.
+///
+/// Requires [username] and [userId] to be set before calling [loadProducts].
+/// These are set from [MyProductsPage] once the auth state is available.
+///
+/// Separate from [ProductController] which handles the public catalog.
 class MyProductsController extends GetxController {
-  final ProductRepository _repo;
-  
   MyProductsController(this._repo);
 
-  final products = <ApiProduct>[].obs;
+  final ProductRepository _repo;
+
+  final products = <ProductModel>[].obs;
   final isLoading = false.obs;
   final error = ''.obs;
 
-  // Set ONCE from the UI before calling load
+  /// Must be set before calling [loadProducts].
   String username = '';
   int userId = 0;
 
-  /// Load products for the current user (seller)
-  /// All products (active and inactive) are shown
-  Future<void> loadProducts({bool forceRefresh = false}) async {
-    if (kDebugMode) {
-      debugPrint(
-        '[MyProductsController.loadProducts] START - username="$username", userId=$userId, forceRefresh=$forceRefresh',
-      );
-    }
+  // ── Public API ────────────────────────────────────────────────────────────
 
-    if (username.isEmpty && userId <= 0) {
-      if (kDebugMode) {
-        debugPrint(
-          '[MyProductsController.loadProducts] ⚠️ No valid username/userId - clearing products',
-        );
-      }
+  Future<void> loadProducts({bool forceRefresh = false}) async {
+    if (!_hasValidCredentials) {
+      _log('No valid credentials — clearing list');
       products.clear();
       error.value = '';
       return;
@@ -38,68 +35,39 @@ class MyProductsController extends GetxController {
 
     isLoading.value = true;
     error.value = '';
-    
-    try {
-      if (kDebugMode) {
-        debugPrint(
-          '[MyProductsController.loadProducts] Calling repository.getMyProducts()',
-        );
-      }
 
-      // getMyProducts does NOT filter by isActive — returns all user's products
+    try {
+      _log('Loading for username="$username", userId=$userId');
       final result = await _repo.getMyProducts(
         username: username,
         userId: userId,
         forceRefresh: forceRefresh,
       );
-      
-      if (kDebugMode) {
-        debugPrint(
-          '[MyProductsController.loadProducts] Repository returned ${result.length} products',
-        );
-      }
-
       products.assignAll(result);
-      
-      if (kDebugMode) {
-        debugPrint(
-          '[MyProductsController.loadProducts] ✅ Successfully assigned ${result.length} products to reactive list',
-        );
-      }
+      _log('Loaded ${result.length} products');
     } on Exception catch (e) {
       error.value = e.toString();
-      if (kDebugMode) {
-        debugPrint(
-          '[MyProductsController.loadProducts] ❌ Exception caught: ${e.runtimeType} - $e',
-        );
-      }
+      _log('Error: $e');
     } catch (e) {
-      // Catch non-Exception types too
-      final errorMsg = 'Unexpected error: ${e.runtimeType} - $e';
-      error.value = errorMsg;
-      if (kDebugMode) {
-        debugPrint(
-          '[MyProductsController.loadProducts] ❌ Unexpected error: $errorMsg',
-        );
-      }
+      error.value = 'Unexpected error: $e';
+      _log('Unexpected error: $e');
     } finally {
       isLoading.value = false;
-      if (kDebugMode) {
-        debugPrint(
-          '[MyProductsController.loadProducts] END - products.length=${products.length}, hasError=${error.isNotEmpty}',
-        );
-      }
     }
   }
 
-  /// Clear all products and cached data
   void clearProducts() {
     products.clear();
     error.value = '';
     username = '';
     userId = 0;
-    if (kDebugMode) {
-      debugPrint('[MyProductsController.clearProducts] Cleared all products and credentials');
-    }
+  }
+
+  // ── Private ───────────────────────────────────────────────────────────────
+
+  bool get _hasValidCredentials => username.isNotEmpty || userId > 0;
+
+  void _log(String message) {
+    if (kDebugMode) debugPrint('[MyProductsController] $message');
   }
 }

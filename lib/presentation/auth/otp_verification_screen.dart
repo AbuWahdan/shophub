@@ -5,8 +5,8 @@ import 'package:sinwar_shoping/design/app_radius.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
-import '../../l10n/l10n.dart';
-import '../../models/user.dart';
+import '../../l10n/app_localizations.dart';
+import '../../models/user_model.dart';
 import '../../core/config/route.dart';
 import '../../core/app/app_theme.dart';
 import '../../services/auth_service.dart';
@@ -21,7 +21,7 @@ class OTPVerificationScreen extends StatefulWidget {
   final String username;
   final String email;
   final String flow;           // 'forgot_password' | 'signup'
-  final User?  pendingUser;    // only set for signup flow
+  final UserModel?  pendingUser;    // only set for signup flow
 
   const OTPVerificationScreen({
     required this.username,
@@ -175,7 +175,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.otpTitle)),

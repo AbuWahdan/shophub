@@ -8,12 +8,12 @@ import '../../../design/app_colors.dart';
 import '../../../design/app_spacing.dart';
 import '../../../services/product_service.dart';
 import '../../../widgets/empty_state_widget.dart';
-import '../../../l10n/l10n.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/data.dart';
-import '../../../models/product_api.dart';
+import '../../../models/product_model.dart';
 import '../../../core/app/app_theme.dart';
 import '../../../widgets/product_card.dart';
-import '../../../widgets/widgets/add_to_cart_bottom_sheet.dart';
+import '../../../widgets/widgets/add_to_cart_bottom_sheet/add_to_cart_bottom_sheet.dart';
 import '../../../widgets/widgets/app_snackbar.dart';
 import '../../../core/state/auth_state.dart';
 
@@ -53,7 +53,7 @@ class _WishlistPageState extends State<WishlistPage> {
     final isLoggedIn   = authState.isLoggedIn && authState.user != null;
 
     return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.accountWishlist)),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).accountWishlist)),
       body: !isLoggedIn
           ? const Center(
           child: Text('Please log in to manage your wishlist'))
@@ -76,7 +76,7 @@ class _WishlistBody extends StatelessWidget {
   // FIX: Open the AddToCartBottomSheet and then use CartController to add
   // the item — exactly the same path as the home tab ProductCard.
   Future<void> _openAddToCartSheet(
-      BuildContext context, ApiProduct product) async {
+      BuildContext context, ProductModel product) async {
     final authState = context.read<AuthState>();
     await authState.ensureInitialized();
     if (!context.mounted) return;
@@ -189,7 +189,7 @@ class _WishlistBody extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: _refresh,
                 icon: const Icon(Icons.refresh),
-                label: Text(context.l10n.retry),
+                label: Text(AppLocalizations.of(context).retry),
               ),
             ],
           ),

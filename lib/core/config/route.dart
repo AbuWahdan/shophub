@@ -1,26 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:sinwar_shoping/models/product_api.dart';
+import 'package:sinwar_shoping/models/product_model.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/user.dart';
+import '../../models/user_model.dart';
 import '../../presentation/auth/forgot_password_email_screen.dart';
 import '../../presentation/auth/login/login_screen.dart';
-import '../../presentation/auth/otp_sent_notice_screen.dart';
 import '../../presentation/auth/otp_verification_screen.dart';
 import '../../presentation/auth/password_updated_screen.dart';
 import '../../presentation/auth/signup/register_screen.dart';
-import '../../presentation/auth/signup_otp_verification_screen.dart';
+import '../../presentation/auth/signup/signup_otp_verification_screen.dart';
 import '../../presentation/categories_tab/categories_page.dart';
 import '../../presentation/home_tab/main_page.dart';
-import '../../presentation/home_tab/search_filter_page.dart';
+import '../../presentation/profile/my_products/my_products_page.dart';
 import '../../presentation/profile/settings/widgets/info_page.dart';
 import '../../presentation/product_details_new.dart';
 import '../../presentation/profile/addresses/addresses_page.dart';
 import '../../presentation/profile/edit_profile/edit_profile_screen.dart';
-import '../../presentation/cart_tab/checkout/order_confirmation_screen.dart';
+import '../../presentation/cart_tab/checkout/order_confirmation/order_confirmation_screen.dart';
 import '../../presentation/profile/orders/orders_page.dart';
-import '../../presentation/profile/orders/rate_items/rate_product_screen.dart';
-import '../../presentation/profile/products/insert_product_page.dart';
-import '../../presentation/profile/products/my_products_page.dart';
 import '../../presentation/profile/settings/about/about_page.dart';
 import '../../presentation/profile/settings/change_password/change_password_screen.dart';
 import '../../presentation/profile/settings/profile_settings_page.dart';
@@ -37,7 +33,6 @@ class AppRoutes {
   static const String otp = '/otp';
   static const String main = '/main';
   static const String categories = '/categories';
-  static const String search = '/search';
   static const String orders = '/orders';
   static const String addresses = '/addresses';
   static const String checkout = '/checkout';
@@ -56,8 +51,7 @@ class AppRoutes {
   static const String scheduleService = '/schedule-service';
   static const String serviceDetails = '/service-details';
   static const String categoryList = '/category-list';
-  static const String insertProduct = '/products/insert';
-  static const String myProducts = '/products/my';
+  static const String myProducts = '/my_products/my';
   static const String forgotPassword = '/forgot-password';
   static const String otpSent = '/otp-sent';
   static const String otpVerification = '/otp-verification';
@@ -67,7 +61,6 @@ class AppRoutes {
   static const String rateProduct = '/rate-product';
 
   static const String signupOtpVerification = '/signup-otp-verification';
-  // ... add other route constants
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     final args = settings.arguments as Map<String, dynamic>?;
@@ -105,11 +98,6 @@ class AppRoutes {
           builder: (_) => const RegisterScreen(),
         );
 
-      // case otp:
-      //   return MaterialPageRoute(
-      //     settings: settings,
-      //     builder: (_) => const OTPVerificationScreen(),
-      //   );
 
       case forgotPassword:
         return MaterialPageRoute(
@@ -124,7 +112,7 @@ class AppRoutes {
             username:    args['username']    as String? ?? '',
             email:       args['email']       as String? ?? '',
             flow:        args['flow']        as String? ?? 'forgot_password',
-            pendingUser: args['pendingUser'] as User?,  // <-- must be here
+            pendingUser: args['pendingUser'] as UserModel?,  // <-- must be here
           ),
         );
 
@@ -170,11 +158,6 @@ class AppRoutes {
           builder: (_) => const CategoriesPage(),
         );
 
-      case search:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => const SearchFilterPage(),
-        );
 
       case orders:
         return MaterialPageRoute(
@@ -188,13 +171,6 @@ class AppRoutes {
           builder: (_) => const AddressesPage(),
         );
 
-      // case checkout:
-      //   final cartItems =
-      //       (args?['cartItems'] as List<CartItem>?) ?? AppData.cartItems;
-      //   return MaterialPageRoute(
-      //     settings: settings,
-      //     builder: (_) => CheckoutScreen(cartItems: cartItems),
-      //   );
 
       case orderConfirmation:
         final receipt = (args?['receipt'] as Map<String, dynamic>?) ?? const {};
@@ -296,11 +272,11 @@ class AppRoutes {
           },
         );
 
-      case insertProduct:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => const InsertProductPage(),
-        );
+      // case insertProduct:
+      //   return MaterialPageRoute(
+      //     settings: settings,
+      //     builder: (_) => const InsertProductPage(),
+      //   );
 
       case myProducts:
         return MaterialPageRoute(
@@ -308,19 +284,10 @@ class AppRoutes {
           builder: (_) => const MyProductsPage(),
         );
 
-      // case productComments:
-      //   final productId = args?['productId'] as int? ?? 0;
-      //   final productName = args?['productName'] as String? ?? '';
-      //   return MaterialPageRoute(
-      //     settings: settings,
-      //     builder: (_) => ProductCommentsPage(
-      //       productId: productId,
-      //       productName: productName,
-      //     ),
-      //   );
+
 
       case productDetails:
-        final product = args?['product'] as ApiProduct?;
+        final product = args?['product'] as ProductModel?;
         if (product == null) {
           return MaterialPageRoute(
             settings: settings,
@@ -345,62 +312,6 @@ class AppRoutes {
           ),
         );
 
-      // case scheduleService:
-      //   final serviceName = args?['serviceName'] as String?;
-      //   final service = args?['service'];
-      //   final appointmentId = args?['appointmentId'] as String?;
-
-      //   return MaterialPageRoute(
-      //     settings: settings,
-      //     builder: (_) => ScheduleServiceScreen(
-      //       serviceName: serviceName,
-      //       service: service,
-      //       appointmentId: appointmentId,
-      //     ),
-      //   );
-
-      // case serviceDetails:
-      //   final service = args?['service'];
-
-      //   return MaterialPageRoute(
-      //     settings: settings,
-      //     builder: (_) => ServiceDetailsScreen(service: service!),
-      //   );
-
-      // case categoryList:
-      //   final categoryName = args?['categoryName'] as String? ?? 'All';
-
-      //   return MaterialPageRoute(
-      //     settings: settings,
-      //     builder: (_) => CategoryListScreen(categoryName: categoryName),
-      //   );
-
-      // case deliveryLocation:
-      //   final savedAddresses =
-      //       (args?['savedAddresses'] as List<DeliveryLocation>?) ?? const [];
-      //   return MaterialPageRoute(
-      //     settings: settings,
-      //     builder: (_) =>
-      //         DeliveryLocationScreen(savedAddresses: savedAddresses),
-      //   );
-
-      // case rateProduct:
-      //   final product = args?['product'] as ApiProduct?;
-      //   if (product == null) {
-      //     return MaterialPageRoute(
-      //       settings: settings,
-      //       builder: (_) => Scaffold(
-      //         appBar: AppBar(title: const Text('Error')),
-      //         body: const Center(
-      //           child: Text('Product not found. Please go back and try again.'),
-      //         ),
-      //       ),
-      //     );
-      //   }
-      //   return MaterialPageRoute(
-      //     settings: settings,
-      //     builder: (_) => RateProductScreen(product: product),
-      //   );
 
       default:
         return MaterialPageRoute(

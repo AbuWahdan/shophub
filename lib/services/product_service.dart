@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import '../../data/categories_data.dart';
-import '../../models/api_order.dart';
-import '../../models/category.dart';
+import '../../models/orders_model.dart';
+import '../../models/category_model.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:http/http.dart' as http;
 import '../../core/utils/apex_response_helper.dart';
 import '../../models/product_image_model.dart';
-import '../../models/cart_api.dart';
-import '../../models/product_api.dart';
+import '../../models/cart_item_model.dart';
+import '../../models/product_model.dart';
 import 'api_client.dart';
 
 class ProductService {
@@ -16,18 +16,18 @@ class ProductService {
   static const String _getProductsUrl = '$_baseUrl/GetProducts';
   static const Duration _timeout = Duration(seconds: 6);
   static const Duration _cacheTtl = Duration(minutes: 2);
-  static List<ApiProduct> _cachedProducts = <ApiProduct>[];
+  static List<ProductModel> _cachedProducts = <ProductModel>[];
   static DateTime? _lastProductsFetch;
 
   final http.Client _client;
 
 
-  static final Map<int, List<ApiProduct>> _categoryCache      = {};
+  static final Map<int, List<ProductModel>> _categoryCache      = {};
   static final Map<int, DateTime>         _categoryCacheTimes = {};
 
   ProductService({http.Client? client}) : _client = client ?? ApiClient();
 
-  Future<List<ApiProduct>> getMyProducts({
+  Future<List<ProductModel>> getMyProducts({
     required int currentUserId,
     required String currentUsername,
     bool forceRefresh = false,
@@ -35,7 +35,7 @@ class ProductService {
     final normalizedUsername = currentUsername.trim().toLowerCase();
     final normalizedUserId = currentUserId > 0 ? currentUserId : 0;
     if (normalizedUsername.isEmpty && normalizedUserId == 0) {
-      return <ApiProduct>[];
+      return <ProductModel>[];
     }
 
     try {
@@ -63,7 +63,7 @@ class ProductService {
     }
   }
 
-  Future<List<ApiProduct>> getProducts({
+  Future<List<ProductModel>> getProducts({
     bool forceRefresh = false,
     String? createdBy,
     int? categoryId,
@@ -150,7 +150,7 @@ class ProductService {
         final data = _decode(response.body);
         if (response.statusCode == 404 || response.statusCode == 405) {
           hasRecoverableEmpty = true;
-          return <ApiProduct>[];
+          return <ProductModel>[];
         }
         if (response.statusCode < 200 || response.statusCode >= 300) {
           lastError =
@@ -163,10 +163,10 @@ class ProductService {
         final items = _extractItems(data);
         if (items.isEmpty) {
           hasRecoverableEmpty = true;
-          return <ApiProduct>[];
+          return <ProductModel>[];
         }
         var products = _groupProductsByItemId(
-          items.map(ApiProduct.fromJson).toList(),
+          items.map(ProductModel.fromJson).toList(),
         );
         if (hasCreatedByFilter) {
           final name = normalizedCreatedBy.toLowerCase().trim();
@@ -192,7 +192,7 @@ class ProductService {
     }
 
     if (hasRecoverableEmpty) {
-      return <ApiProduct>[];
+      return <ProductModel>[];
     }
 
     throw ProductException(
@@ -200,7 +200,7 @@ class ProductService {
     );
   }
 
-  Future<List<ApiProduct>> getProductsByCategory(
+  Future<List<ProductModel>> getProductsByCategory(
       int categoryId, {
         bool forceRefresh = false,
       }) async {
@@ -264,14 +264,14 @@ class ProductService {
 
   /// Filters [allProducts] by [categoryId] (respecting parent→children
   /// relationships), stores the result in the per-category cache, and returns it.
-  List<ApiProduct> _filterAndCache(
+  List<ProductModel> _filterAndCache(
       int categoryId,
-      List<ApiProduct> allProducts,
+      List<ProductModel> allProducts,
       DateTime now,
       ) {
     final category = CategoriesData.getCategoryById(categoryId);
 
-    final List<ApiProduct> filtered;
+    final List<ProductModel> filtered;
     if (category != null && category.isMainCategory) {
       final categoryIds = <int>{
         category.id,
@@ -288,7 +288,7 @@ class ProductService {
     _categoryCacheTimes[categoryId] = now;
     return filtered;
   }
-  Future<Category?> loadCategoryById(int id) async {
+  Future<CategoryModel?> loadCategoryById(int id) async {
     final uri = Uri.parse(
       '$_baseUrl/loadCategory',
     ).replace(queryParameters: {'id': id.toString()});
@@ -316,7 +316,7 @@ class ProductService {
     }
     final mapped = Map<String, dynamic>.from(first);
     final level = _asInt(mapped['LEVEL']);
-    final category = Category.fromJson(mapped);
+    final category = CategoryModel.fromJson(mapped);
     CategoriesData.upsertCategoryFromApi(level: level, category: category);
     return category;
   }
@@ -598,7 +598,7 @@ class ProductService {
     _invalidateProductsCache();
   }
 
-  Future<List<ApiCartItem>> getItemCart({required String username}) async {
+  Future<List<CartItemModel>> getItemCart({required String username}) async {
     final normalizedUsername = username.trim();
     if (normalizedUsername.isEmpty) {
       throw ProductException('Unable to load cart_tab: username is missing.');
@@ -621,7 +621,7 @@ class ProductService {
       'GetItemCart',
     ).whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
     if (items.isEmpty) return const [];
-    return items.map(ApiCartItem.fromJson).toList();
+    return items.map(CartItemModel.fromJson).toList();
   }
 
   Future<void> addItemToCart(AddItemToCartRequest request) async {
@@ -1031,14 +1031,14 @@ class ProductService {
   }
 
   void _invalidateProductsCache() {
-    _cachedProducts    = <ApiProduct>[];
+    _cachedProducts    = <ProductModel>[];
     _lastProductsFetch = null;
     // Also clear the per-category cache so stale slices don't survive
     // a product insert / update / delete.
     _categoryCache.clear();
     _categoryCacheTimes.clear();
   }
-  List<ApiProduct> _filterByCategory(int categoryId, List<ApiProduct> all) {
+  List<ProductModel> _filterByCategory(int categoryId, List<ProductModel> all) {
     final category = CategoriesData.getCategoryById(categoryId);
     if (category != null && category.isMainCategory) {
       final ids = <int>{
@@ -1082,7 +1082,7 @@ class ProductService {
         data['ITEMS'],
         data['product'],
         data['PRODUCT'],
-        data['products'],
+        data['my_products'],
         data['Products'],
         data['PRODUCTS'],
         data['data'],
@@ -1172,15 +1172,15 @@ class ProductService {
     );
   }
 
-  List<ApiProduct> _groupProductsByItemId(List<ApiProduct> flatProducts) {
+  List<ProductModel> _groupProductsByItemId(List<ProductModel> flatProducts) {
     if (flatProducts.isEmpty) return const [];
 
-    final grouped = <int, List<ApiProduct>>{};
+    final grouped = <int, List<ProductModel>>{};
     for (final product in flatProducts) {
-      grouped.putIfAbsent(product.id, () => <ApiProduct>[]).add(product);
+      grouped.putIfAbsent(product.id, () => <ProductModel>[]).add(product);
     }
 
-    final result = <ApiProduct>[];
+    final result = <ProductModel>[];
     for (final entry in grouped.entries) {
       final rows = entry.value;
       final base = rows.first;
@@ -1248,7 +1248,7 @@ class ProductService {
           : (displayVariant.itemPrice * (1 - (displayVariant.discount / 100)));
 
       result.add(
-        ApiProduct(
+        ProductModel(
           id: base.id,
           detId: displayVariant?.detId ?? base.detId,
           itemName: base.itemName,
@@ -1291,7 +1291,7 @@ class ProductService {
     return result;
   }
 
-  Future<List<ApiOrder>> getOrders({required String username}) async {
+  Future<List<OrdersModel>> getOrders({required String username}) async {
     final normalizedUsername = username.trim();
     if (normalizedUsername.isEmpty) {
       throw ProductException('Username is required to fetch orders.');
@@ -1341,7 +1341,7 @@ class ProductService {
 
   // ========================= FAVORITES =========================
 
-  Future<List<ApiProduct>> getUserFavorites({required String username}) async {
+  Future<List<ProductModel>> getUserFavorites({required String username}) async {
     final normalizedUsername = username.trim();
     if (normalizedUsername.isEmpty) {
       throw ProductException('Username is required to fetch favorites.');
@@ -1385,7 +1385,7 @@ class ProductService {
         if (items.isEmpty && i < queryAttempts.length - 1) continue;
 
         return items.map((item) {
-          final product = ApiProduct.fromJson(item);
+          final product = ProductModel.fromJson(item);
           product.isFavorite = true;
           return product;
         }).toList();

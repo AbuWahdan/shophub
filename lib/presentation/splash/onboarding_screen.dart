@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
-import '../../l10n/l10n.dart';
+import '../../l10n/app_localizations.dart';
 import '../../core/app/app_theme.dart';
 
 /// Onboarding flow with page indicators
@@ -20,26 +20,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   List<OnboardingPage> _pages(BuildContext context) => [
     OnboardingPage(
-      title: context.l10n.onboardingWelcomeTitle,
-      subtitle: context.l10n.onboardingWelcomeSubtitle,
+      title: AppLocalizations.of(context).onboardingWelcomeTitle,
+      subtitle: AppLocalizations.of(context).onboardingWelcomeSubtitle,
       icon: Icons.shopping_bag,
       color: AppColors.primary,
     ),
     OnboardingPage(
-      title: context.l10n.onboardingDeliveryTitle,
-      subtitle: context.l10n.onboardingDeliverySubtitle,
+      title: AppLocalizations.of(context).onboardingDeliveryTitle,
+      subtitle: AppLocalizations.of(context).onboardingDeliverySubtitle,
       icon: Icons.local_shipping,
       color: AppColors.secondary,
     ),
     OnboardingPage(
-      title: context.l10n.onboardingSecureTitle,
-      subtitle: context.l10n.onboardingSecureSubtitle,
+      title: AppLocalizations.of(context).onboardingSecureTitle,
+      subtitle: AppLocalizations.of(context).onboardingSecureSubtitle,
       icon: Icons.lock,
       color: AppColors.accent,
     ),
     OnboardingPage(
-      title: context.l10n.onboardingDealsTitle,
-      subtitle: context.l10n.onboardingDealsSubtitle,
+      title: AppLocalizations.of(context).onboardingDealsTitle,
+      subtitle: AppLocalizations.of(context).onboardingDealsSubtitle,
       icon: Icons.local_offer,
       color: AppColors.primary,
     ),
@@ -95,7 +95,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Navigator.of(context).pushReplacementNamed('/login');
               },
               child: Text(
-                context.l10n.onboardingSkip,
+                AppLocalizations.of(context).onboardingSkip,
                 style: AppTextStyles.labelLarge.copyWith(
                   color: AppColors.primary,
                 ),
@@ -138,8 +138,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       onPressed: _goToNextPage,
                       child: Text(
                         _currentPage == pages.length - 1
-                            ? context.l10n.onboardingGetStarted
-                            : context.l10n.onboardingNext,
+                            ? AppLocalizations.of(context).onboardingGetStarted
+                            : AppLocalizations.of(context).onboardingNext,
                         style: AppTextStyles.labelLarge,
                       ),
                     ),

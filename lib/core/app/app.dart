@@ -6,7 +6,7 @@ import 'package:provider/single_child_widget.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../config/route.dart';
-import '../state/app_settings.dart';
+import '../../presentation/profile/settings/app_settings.dart';
 import 'app_theme.dart';
 
 class MyApp extends StatelessWidget {
