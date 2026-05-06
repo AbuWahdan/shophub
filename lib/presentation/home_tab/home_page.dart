@@ -8,8 +8,8 @@ import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/product_service.dart';
-import '../../widgets/widgets/product_search_bar.dart';
-import '../../widgets/product_card.dart';
+import '../../widgets/custom_search_bar/custom_search_bar.dart';
+import '../../widgets/product_card/product_card.dart';
 import 'camera_picker/camera_picker_screen.dart';
 
 /// Root widget for the Home tab.
@@ -248,7 +248,7 @@ class _SearchRow extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return Container(
       margin: AppSpacing.insetsMd,
-      child: ProductSearchBar(
+      child: CustomSearchBar(
         controller: controller,
         hintText: l10n.homeSearchHint,
         hasSearchText: hasSearchText,

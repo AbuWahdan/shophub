@@ -10,7 +10,7 @@ import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/dialogs/app_dialogs.dart';
-import '../../widgets/widgets/app_image.dart';
+import '../../widgets/custom_image.dart';
 import '../../core/state/auth_state.dart';
 
 
@@ -34,7 +34,7 @@ class ProfilePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               ClipOval(
-                child: AppImage(
+                child: CustomImage(
                   path: AppImages.userProfilePlaceholder,
                   width: AppSpacing.lg,
                   height: AppSpacing.lg,

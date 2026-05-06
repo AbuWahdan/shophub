@@ -7,6 +7,7 @@ import 'app_localizations.dart';
 /// The translations for Arabic (`ar`).
 class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
+
   @override
   String get productVariants => 'خيارات المنتج';
 
@@ -33,8 +34,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'فشل في تحديث الصورة الافتراضية';
 
   @override
-  String get productDefaultImageUpdated =>
-      'تم تحديث الصورة الافتراضية بنجاح';
+  String get productDefaultImageUpdated => 'تم تحديث الصورة الافتراضية بنجاح';
 
   @override
   String get productUpdateSuccess => 'تم تحديث المنتج بنجاح';
@@ -44,8 +44,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'يجب أن يكون سعر الخيار أكبر من صفر';
 
   @override
-  String get variantWillBeRemovedOnSave =>
-      'سيتم حذف هذا الخيار بعد الحفظ';
+  String get variantWillBeRemovedOnSave => 'سيتم حذف هذا الخيار بعد الحفظ';
 
   @override
   String get productUploading => 'جارٍ رفع المنتج...';
@@ -58,14 +57,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get productImages => 'صور المنتج';
-  @override
-  String? get totalLabel => 'الإجمالي';
 
   @override
-  String? get noOrdersYet => 'لا توجد طلبات بعد';
+  String get totalLabel => 'الإجمالي';
 
   @override
-  String? get errorLoadingOrders => 'خطأ في تحميل الطلبات';
+  String get noOrdersYet => 'لا توجد طلبات بعد';
+
+  @override
+  String get errorLoadingOrders => 'خطأ في تحميل الطلبات';
 
   @override
   String get productUpdateAction => 'إجراء التحديث';
@@ -176,7 +176,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get otpVerificationTitle => 'التحقق من رمز OTP';
 
   @override
-  String get otpVerificationSubtitle => 'أدخل الرمز المرسل إلى بريدك الإلكتروني';
+  String get otpVerificationSubtitle =>
+      'أدخل الرمز المرسل إلى بريدك الإلكتروني';
 
   @override
   String get otpVerificationVerify => 'تحقق';
@@ -196,7 +197,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get forgotPasswordTitle => 'نسيت كلمة المرور';
 
   @override
-  String get forgotPasswordSubtitle => 'أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور';
+  String get forgotPasswordSubtitle =>
+      'أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور';
 
   @override
   String get forgotPasswordSendOtp => 'إرسال الرمز';
@@ -256,7 +258,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get validationPasswordRequired => 'كلمة المرور مطلوبة';
 
   @override
-  String get validationPasswordTooShort => 'يجب أن تكون كلمة المرور 8 أحرف على الأقل';
+  String get validationPasswordTooShort =>
+      'يجب أن تكون كلمة المرور 8 أحرف على الأقل';
 
   @override
   String get registerConfirmPasswordLabel => 'تأكيد كلمة المرور';
@@ -334,7 +337,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get resetPasswordUpdateButton => 'تحديث كلمة المرور';
 
   @override
-  String get resetPasswordFailed => 'فشل إعادة تعيين كلمة المرور. حاول مرة أخرى.';
+  String get resetPasswordFailed =>
+      'فشل إعادة تعيين كلمة المرور. حاول مرة أخرى.';
 
   @override
   String get passwordUpdateSuccess => 'تم تحديث كلمة المرور بنجاح';
@@ -367,7 +371,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsChangePasswordSubtitle => 'تحديث كلمة مرور حسابك';
 
   @override
-  String get validationPasswordPolicy => 'يجب أن تتكون كلمة المرور من 8 أحرف على الأقل وتشمل حرفًا كبيرًا ورقمًا ورمزًا خاصًا';
+  String get validationPasswordPolicy =>
+      'يجب أن تتكون كلمة المرور من 8 أحرف على الأقل وتشمل حرفًا كبيرًا ورقمًا ورمزًا خاصًا';
 
   @override
   String get passwordUpdatedTitle => 'تم تحديث كلمة المرور';
@@ -431,7 +436,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboardingDealsTitle => 'عروض حصرية';
 
   @override
-  String get onboardingDealsSubtitle => 'احصل على خصومات رائعة على منتجاتك المفضلة';
+  String get onboardingDealsSubtitle =>
+      'احصل على خصومات رائعة على منتجاتك المفضلة';
 
   @override
   String get onboardingSkip => 'تخطي';
@@ -524,7 +530,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsLogoutConfirmTitle => 'تسجيل الخروج';
 
   @override
-  String get accountLogoutConfirmMessage => 'هل أنت متأكد أنك تريد تسجيل الخروج؟';
+  String get accountLogoutConfirmMessage =>
+      'هل أنت متأكد أنك تريد تسجيل الخروج؟';
 
   @override
   String get commonLogout => 'خروج';
@@ -578,7 +585,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsDeleteAccountConfirmTitle => 'حذف الحساب';
 
   @override
-  String get settingsDeleteAccountConfirmMessage => 'هل أنت متأكد؟ لا يمكن التراجع عن هذا الإجراء.';
+  String get settingsDeleteAccountConfirmMessage =>
+      'هل أنت متأكد؟ لا يمكن التراجع عن هذا الإجراء.';
 
   @override
   String get commonDelete => 'حذف';
@@ -790,7 +798,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get productDiscountInvalidRange => 'الخصم يجب أن يكون بين 0 و 100';
 
   @override
-  String get productVariantRequired => 'يرجى إضافة خيار منتج واحد صالح على الأقل.';
+  String get productVariantRequired =>
+      'يرجى إضافة خيار منتج واحد صالح على الأقل.';
 
   @override
   String get colorPickerHexHint => 'RRGGBB';

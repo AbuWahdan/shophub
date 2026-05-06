@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../../models/order_detail_item_model.dart';
-import '../../../core/app/app_theme.dart';
-import '../../../core/exceptions/color_parsing_extension.dart';
+import '../../products/widgets/item_review_section.dart';
+import '../my_products/color_picker/color_parsing_extension.dart';
 import '../../../design/app_colors.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
-import '../../../widgets/widgets/item_review_section.dart';
 
 class SingleOrderedItemScreen extends StatelessWidget {
   final OrderDetailItemModel item;
@@ -23,154 +22,295 @@ class SingleOrderedItemScreen extends StatelessWidget {
     final itemColor = item.color.toColor();
     final hasDiscount = item.itemDiscount > 0;
 
-    // Calculates the base subtotal assuming unitPrice is the final price and itemDiscount is applied.
-    // Adjust math based on your exact API definitions if necessary.
-    final subTotal = item.unitPrice * item.qty;
+    final unitPrice = item.unitPrice;
+    final quantity = item.qty;
+
+    final subtotal = unitPrice * quantity;
+    final totalAfterDiscount =
+        subtotal -  item.itemDiscount/100*item.unitPrice*item.qty;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Item Details'),
+        title: Text(item.itemName),
       ),
+
       body: SingleChildScrollView(
         padding: AppSpacing.insetsMd,
+
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment:
+          CrossAxisAlignment.stretch,
+
           children: [
-            // Item Header Card
+
+
             Card(
               child: Padding(
                 padding: AppSpacing.insetsLg,
+
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
+
                   children: [
-                    Text(item.itemName, style: AppTextStyles.titleMedium),
+
+                    Text(
+                      item.itemName,
+                      style: AppTextStyles.titleMedium,
+                    ),
+
                     const SizedBox(height: AppSpacing.md),
 
-                    _buildDetailRow('Brand', item.brand),
-                    if (item.itemSize != null && item.itemSize != '0')
-                      _buildDetailRow('Size', item.itemSize!),
+                    _row('Item ID', item.itemId.toString()),
+                    _row('Detail ID', item.itemDetId.toString()),
 
+                    if (item.brand.isNotEmpty)
+                      _row('Brand', item.brand),
+
+
+                      _row('Size', item.itemSize ?? ''),
+
+                    _row('Quantity', item.qty.toString()),
+
+                    const SizedBox(height: AppSpacing.sm),
+
+                    /// COLOR
                     if (itemColor != null)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Color', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500)),
-                            Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: itemColor,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: AppColors.neutral300),
+                      Row(
+                        mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
+
+                        children: [
+                          Text(
+                            'Color',
+                            style: AppTextStyles.bodyMedium
+                                .copyWith(
+                              color: AppColors.neutral500,
+                            ),
+                          ),
+
+                          Container(
+                            width: 22,
+                            height: 22,
+
+                            decoration: BoxDecoration(
+                              color: itemColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color:
+                                AppColors.neutral300,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                   ],
                 ),
               ),
             ),
+
             const SizedBox(height: AppSpacing.lg),
 
-            // Pricing Breakdown Card
+            /// =========================
+            /// PRICING SECTION
+            /// =========================
             Card(
               child: Padding(
                 padding: AppSpacing.insetsLg,
+
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
+
                   children: [
-                    Text('Payment Summary', style: AppTextStyles.titleSmall),
-                    const Divider(height: AppSpacing.xl),
+                    Text(
+                      'Pricing Breakdown',
+                      style:
+                      AppTextStyles.titleSmall,
+                    ),
 
-                    _buildPriceRow('Unit Price', item.unitPrice),
-                    _buildPriceRow('Quantity', item.qty.toDouble(), isCurrency: false),
+                    const Divider(),
 
-                    if (hasDiscount) ...[
-                      const SizedBox(height: AppSpacing.sm),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Discount Applied', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error)),
-                          Text(
-                            '- ${item.itemDiscount.toStringAsFixed(2)}',
-                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error),
-                          ),
-                        ],
+                    _priceRow(
+                      'Unit Price',
+                      unitPrice,
+                    ),
+
+                    _priceRow(
+                      'Quantity',
+                      quantity.toDouble(),
+                      isCurrency: false,
+                    ),
+
+                    _priceRow(
+                      'Subtotal',
+                      subtotal,
+                      highlight: true,
+                    ),
+
+                    if (hasDiscount)
+                      _priceRow(
+                        'Discount',
+                        item.itemDiscount/100*item.unitPrice*item.qty,
+                        isNegative: true,
                       ),
-                    ],
 
-                    const Divider(height: AppSpacing.xl),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Total Amount', style: AppTextStyles.titleMedium),
-                        Text(
-                          item.totalPrice.toStringAsFixed(2),
-                          style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary),
-                        ),
-                      ],
+                    const Divider(),
+
+                    _priceRow(
+                      'Total',
+                      totalAfterDiscount,
+                      highlight: true,
+                      isBold: true,
                     ),
                   ],
                 ),
               ),
             ),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            /// =========================
+            /// STATUS
+            /// =========================
+            Container(
+              padding: AppSpacing.insetsLg,
+
+              decoration: BoxDecoration(
+                color: (isDelivered
+                    ? Colors.green
+                    : Colors.orange)
+                    .withOpacity(0.1),
+
+                borderRadius: BorderRadius.circular(12),
+              ),
+
+              child: Row(
+                mainAxisAlignment:
+                MainAxisAlignment.spaceBetween,
+
+                children: [
+                  Text(
+                    'Status',
+                    style: AppTextStyles.bodyMedium,
+                  ),
+
+                  Text(
+                    isDelivered
+                        ? 'Delivered'
+                        : 'Pending',
+
+                    style: AppTextStyles.bodyMedium
+                        .copyWith(
+                      color: isDelivered
+                          ? Colors.green
+                          : Colors.orange,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             const SizedBox(height: AppSpacing.xl),
 
-            // Rating Section (Only shown if delivered)
-            if (isDelivered) ...[
-              Text('Rate Your Item', style: AppTextStyles.titleSmall),
-              const SizedBox(height: AppSpacing.sm),
+            /// =========================
+            /// REVIEW SECTION
+            /// =========================
+            if (isDelivered)
               Card(
                 child: Padding(
                   padding: AppSpacing.insetsLg,
                   child: ItemReviewSection(
                     itemId: item.itemId,
-                    currentUsername: currentUsername,
+                    currentUsername:
+                    currentUsername,
+                  ),
+                ),
+              )
+            else
+              Center(
+                child: Text(
+                  'You can review this item after delivery.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodySmall
+                      .copyWith(
+                    color:
+                    AppColors.neutral500,
                   ),
                 ),
               ),
-            ] else ...[
-              Center(
-                child: Text(
-                  'Rating will be available once the item is delivered.',
-                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.neutral500),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ]
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    if (value.isEmpty) return const SizedBox.shrink();
+  Widget _row(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(
+        vertical: 4,
+      ),
+
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment:
+        MainAxisAlignment.spaceBetween,
+
         children: [
-          Text(label, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500)),
-          Text(value, style: AppTextStyles.bodyMedium),
+          Text(
+            label,
+            style: AppTextStyles.bodySmall
+                .copyWith(
+              color: AppColors.neutral500,
+            ),
+          ),
+
+          Text(
+            value,
+            style: AppTextStyles.bodyMedium,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPriceRow(String label, double value, {bool isCurrency = true}) {
+  Widget _priceRow(
+      String label,
+      double value, {
+        bool isCurrency = true,
+        bool isBold = false,
+        bool isNegative = false,
+        bool highlight = false,
+      }) {
+    final textColor = isNegative
+        ? Colors.red
+        : (highlight ? Colors.black : AppColors.neutral600);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(
+        vertical: 4,
+      ),
+
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment:
+        MainAxisAlignment.spaceBetween,
+
         children: [
-          Text(label, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.neutral500)),
           Text(
-            isCurrency ? value.toStringAsFixed(2) : value.toInt().toString(),
+            label,
             style: AppTextStyles.bodyMedium,
+          ),
+
+          Text(
+            isCurrency
+                ? '${isNegative ? "-" : ""}${value.toStringAsFixed(2)} JOD'
+                : value.toInt().toString(),
+
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: textColor,
+              fontWeight:
+              isBold ? FontWeight.bold : FontWeight.w600,
+            ),
           ),
         ],
       ),

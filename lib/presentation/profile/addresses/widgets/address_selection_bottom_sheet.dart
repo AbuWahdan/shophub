@@ -5,7 +5,7 @@ import '../../../../design/app_radius.dart';
 import '../../../../design/app_spacing.dart';
 import '../../../../design/app_text_styles.dart';
 import '../../../../models/addresses/address_model.dart';
-import '../../../../widgets/empty_state_widget.dart';
+import '../../../../widgets/custom_empty_state/custom_empty_state.dart';
 
 class AddressSelectionBottomSheet extends StatelessWidget {
   const AddressSelectionBottomSheet({
@@ -82,7 +82,7 @@ class AddressSelectionBottomSheet extends StatelessWidget {
 
               // Empty state
               if (savedAddresses.isEmpty)
-                EmptyStateWidget(
+                CustomEmptyState(
                   icon: Icons.location_off_outlined,
                   title: 'No saved addresses',
                   subtitle:

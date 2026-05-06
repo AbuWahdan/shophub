@@ -1,21 +1,17 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/presentation/profile/my_products/widgets/product_image_cropper.dart';
 import 'package:sinwar_shoping/presentation/profile/my_products/widgets/variant_card.dart';
 
 import '../../../../models/product_model.dart';
-import '../../../core/config/route.dart';
 import '../../../core/config/size_options.dart';
 import '../../../design/app_spacing.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/product_service.dart';
-import '../../../core/state/auth_state.dart';
-import '../../../widgets/widgets/app_button.dart';
-import '../../../widgets/widgets/app_snackbar.dart';
-import '../../../widgets/widgets/app_text_field.dart';
+import '../../../widgets/custom_button/custom_button.dart';
+import '../../../widgets/custom__snack_bar/custom_snack_bar.dart';
+import '../../../widgets/custom_text_field/custom_text_field.dart';
 import 'models/variant_form_entry.dart';
 import 'utils/product_validators.dart';
 import 'widgets/product_category_picker.dart';
@@ -56,7 +52,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
     super.initState();
     _variantEntries.add(VariantFormEntry());
     WidgetsBinding.instance.addPostFrameCallback(
-          (_) => FocusManager.instance.primaryFocus?.unfocus(),
+      (_) => FocusManager.instance.primaryFocus?.unfocus(),
     );
   }
 
@@ -103,15 +99,15 @@ class _InsertProductPageState extends State<InsertProductPage> {
 
   Future<void> _pickImage(ImageSource source) async {
     final picked = await _imagePicker.pickImage(source: source);
-// No imageQuality here — we handle compression ourselves.
+    // No imageQuality here — we handle compression ourselves.
     if (picked == null || !mounted) return;
-// Open interactive square crop screen.
+    // Open interactive square crop screen.
     final result = await ProductImageCropper.show(
       context,
       sourceFile: File(picked.path),
     );
-    if (result == null || !mounted) return;  // user cancelled
-// result.file is the processed 1200×1200 JPEG temp file.
+    if (result == null || !mounted) return; // user cancelled
+    // result.file is the processed 1200×1200 JPEG temp file.
     setState(() {
       _images.add(XFile(result.file.path));
       if (_images.length == 1) _defaultImageIndex = 0;
@@ -151,24 +147,27 @@ class _InsertProductPageState extends State<InsertProductPage> {
       final v = _variantEntries[i];
       final price = double.tryParse(v.priceController.text.trim());
       final qty = int.tryParse(v.qtyController.text.trim()) ?? 1;
-      final discount =
-          double.tryParse(v.discountController.text.trim()) ?? 0.0;
+      final discount = double.tryParse(v.discountController.text.trim()) ?? 0.0;
+      final tax = double.tryParse(v.taxController.text.trim()) ?? 0.0;
 
       if (price == null || price <= 0 || qty < 1) return const [];
 
-      details.add(CreateProductDetail(
-        brand: v.brandController.text.trim().isEmpty
-            ? 'N/A'
-            : v.brandController.text.trim(),
-        color: v.colorController.text.trim().isEmpty
-            ? 'N/A'
-            : v.colorController.text.trim(),
-        itemSize: (v.sizeId ?? 0).toString(),
-        discount: discount < 0 ? 0.0 : discount,
-        itemPrice: price,
-        itemQty: qty,
-        isActive: 1, // Always active on insert.
-      ));
+      details.add(
+        CreateProductDetail(
+          brand: v.brandController.text.trim().isEmpty
+              ? 'N/A'
+              : v.brandController.text.trim(),
+          color: v.colorController.text.trim().isEmpty
+              ? 'N/A'
+              : v.colorController.text.trim(),
+          itemSize: (v.sizeId ?? 0).toString(),
+          discount: discount < 0 ? 0.0 : discount,
+          tax: tax < 0 ? 0.0 : tax,
+          itemPrice: price,
+          itemQty: qty,
+          isActive: 1, // Always active on insert.
+        ),
+      );
     }
     return details;
   }
@@ -180,34 +179,41 @@ class _InsertProductPageState extends State<InsertProductPage> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final l10n = AppLocalizations.of(context);
-    final validators = ProductValidators.of(context);
 
     if (_selectedSubCategoryId == null) {
-      AppSnackBar.show(context,
-          message: l10n.productSelectCategoryValidation,
-          type: AppSnackBarType.warning);
+      CustomSnackBar.show(
+        context,
+        message: l10n.productSelectCategoryValidation,
+        type: AppSnackBarType.warning,
+      );
       return;
     }
     if (_images.isEmpty) {
-      AppSnackBar.show(context,
-          message: l10n.productAddImageValidation,
-          type: AppSnackBarType.warning);
+      CustomSnackBar.show(
+        context,
+        message: l10n.productAddImageValidation,
+        type: AppSnackBarType.warning,
+      );
       return;
     }
 
     final orderedPaths = _orderedImagePaths();
     if (orderedPaths.isEmpty) {
-      AppSnackBar.show(context,
-          message: l10n.productAddImageValidation,
-          type: AppSnackBarType.warning);
+      CustomSnackBar.show(
+        context,
+        message: l10n.productAddImageValidation,
+        type: AppSnackBarType.warning,
+      );
       return;
     }
 
     final details = _buildVariantPayload();
     if (details.isEmpty) {
-      AppSnackBar.show(context,
-          message: l10n.productVariantRequired,
-          type: AppSnackBarType.warning);
+      CustomSnackBar.show(
+        context,
+        message: l10n.productVariantRequired,
+        type: AppSnackBarType.warning,
+      );
       return;
     }
 
@@ -230,18 +236,26 @@ class _InsertProductPageState extends State<InsertProductPage> {
       );
 
       if (!mounted) return;
-      AppSnackBar.show(context,
-          message: l10n.productInsertSuccess, type: AppSnackBarType.success);
+      CustomSnackBar.show(
+        context,
+        message: l10n.productInsertSuccess,
+        type: AppSnackBarType.success,
+      );
       Navigator.pop(context, true);
     } on ProductException catch (error) {
       if (!mounted) return;
-      AppSnackBar.show(context,
-          message: error.message, type: AppSnackBarType.error);
+      CustomSnackBar.show(
+        context,
+        message: error.message,
+        type: AppSnackBarType.error,
+      );
     } catch (_) {
       if (!mounted) return;
-      AppSnackBar.show(context,
-          message: AppLocalizations.of(context).productInsertFailed,
-          type: AppSnackBarType.error);
+      CustomSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).productInsertFailed,
+        type: AppSnackBarType.error,
+      );
     } finally {
       _submitLocked = false;
       if (mounted) setState(() => _isSubmitting = false);
@@ -266,7 +280,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ── Basic info ────────────────────────────────────────────
-                AppTextField(
+                CustomTextField(
                   controller: _nameController,
                   label: l10n.productItemName,
                   hintText: l10n.productItemNameHint,
@@ -275,7 +289,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                AppTextField(
+                CustomTextField(
                   controller: _descController,
                   label: l10n.productDescriptionLabel,
                   hintText: l10n.productDescriptionHint,
@@ -288,9 +302,8 @@ class _InsertProductPageState extends State<InsertProductPage> {
                 _InsertVariantsSection(
                   entries: _variantEntries,
                   isSubmitting: _isSubmitting,
-                  onAdd: () => setState(
-                        () => _variantEntries.add(VariantFormEntry()),
-                  ),
+                  onAdd: () =>
+                      setState(() => _variantEntries.add(VariantFormEntry())),
                   onRemove: (i) {
                     if (_variantEntries.length == 1) return;
                     setState(() {
@@ -301,8 +314,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
                     final e = _variantEntries[i];
                     e.sizeGroupId = val;
                     final options = sizeOptions[val] ?? const [];
-                    if (val == null ||
-                        options.every((o) => o.id != e.sizeId)) {
+                    if (val == null || options.every((o) => o.id != e.sizeId)) {
                       e.sizeId = null;
                     }
                   }),
@@ -317,8 +329,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
                   defaultImageIndex: _defaultImageIndex,
                   isSubmitting: _isSubmitting,
                   onAddPressed: _showImageSourcePicker,
-                  onSetDefault: (i) =>
-                      setState(() => _defaultImageIndex = i),
+                  onSetDefault: (i) => setState(() => _defaultImageIndex = i),
                   onRemove: _removeImageAt,
                 ),
                 const SizedBox(height: AppSpacing.lg),
@@ -339,14 +350,14 @@ class _InsertProductPageState extends State<InsertProductPage> {
                 const SizedBox(height: AppSpacing.xl),
 
                 // ── Actions ───────────────────────────────────────────────
-                AppButton(
+                CustomButton(
                   label: l10n.productInsertAction,
                   leading: _isSubmitting
                       ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : null,
                   onPressed: _isSubmitting ? null : _submit,
                 ),
@@ -412,7 +423,7 @@ class _InsertVariantsSection extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: entries.length,
               separatorBuilder: (_, __) =>
-              const SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.md),
               itemBuilder: (_, i) => VariantCard(
                 index: i,
                 entry: entries[i],

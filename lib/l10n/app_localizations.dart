@@ -93,7 +93,124 @@ abstract class AppLocalizations {
       ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[Locale('en')];
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('ar'),
+    Locale('en'),
+  ];
+
+  /// No description provided for @productVariants.
+  ///
+  /// In en, this message translates to:
+  /// **'Product Variants'**
+  String get productVariants;
+
+  /// No description provided for @productAddVariant.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Variant'**
+  String get productAddVariant;
+
+  /// No description provided for @productNoVariantsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No variants yet'**
+  String get productNoVariantsYet;
+
+  /// No description provided for @productBasicInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic Product Information'**
+  String get productBasicInfo;
+
+  /// No description provided for @productImagePickFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to pick image'**
+  String get productImagePickFailed;
+
+  /// No description provided for @productImageUploadSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Image uploaded successfully'**
+  String get productImageUploadSuccess;
+
+  /// No description provided for @productImageProcessFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to process image'**
+  String get productImageProcessFailed;
+
+  /// No description provided for @productDefaultImageUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update default image'**
+  String get productDefaultImageUpdateFailed;
+
+  /// No description provided for @productDefaultImageUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Default image updated successfully'**
+  String get productDefaultImageUpdated;
+
+  /// No description provided for @productUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Product updated successfully'**
+  String get productUpdateSuccess;
+
+  /// No description provided for @productVariantPriceMustBePositive.
+  ///
+  /// In en, this message translates to:
+  /// **'Variant price must be greater than zero'**
+  String get productVariantPriceMustBePositive;
+
+  /// No description provided for @variantWillBeRemovedOnSave.
+  ///
+  /// In en, this message translates to:
+  /// **'This variant will be removed after saving'**
+  String get variantWillBeRemovedOnSave;
+
+  /// No description provided for @productUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading product...'**
+  String get productUploading;
+
+  /// No description provided for @productAddImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Image'**
+  String get productAddImage;
+
+  /// No description provided for @productNoImagesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No images yet'**
+  String get productNoImagesYet;
+
+  /// No description provided for @productImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Product Images'**
+  String get productImages;
+
+  /// No description provided for @totalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get totalLabel;
+
+  /// No description provided for @noOrdersYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No orders yet'**
+  String get noOrdersYet;
+
+  /// No description provided for @errorLoadingOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading orders'**
+  String get errorLoadingOrders;
 
   /// No description provided for @productUpdateAction.
   ///
@@ -1412,7 +1529,7 @@ abstract class AppLocalizations {
   /// No description provided for @cartEmptyMessage.
   ///
   /// In en, this message translates to:
-  /// **'Your cart_tab is empty'**
+  /// **'Your cart is empty'**
   String get cartEmptyMessage;
 
   /// No description provided for @checkoutDeliveryAddress.
@@ -1778,7 +1895,7 @@ abstract class AppLocalizations {
   /// No description provided for @cartItemRemoved.
   ///
   /// In en, this message translates to:
-  /// **'Item removed from cart_tab'**
+  /// **'Item removed from cart'**
   String get cartItemRemoved;
 
   /// No description provided for @cartAvailableStock.
@@ -1796,7 +1913,7 @@ abstract class AppLocalizations {
   /// No description provided for @cartEmptyTitle.
   ///
   /// In en, this message translates to:
-  /// **'Your cart_tab is empty'**
+  /// **'Your cart is empty'**
   String get cartEmptyTitle;
 
   /// No description provided for @cartStartShopping.
@@ -1859,48 +1976,10 @@ abstract class AppLocalizations {
   /// **'Show More'**
   String get productShowMore;
 
-  String? get totalLabel ;
-
-  String? get noOrdersYet ;
-
-  String? get errorLoadingOrders ;
-//
-  String get productVariants ;
-
-  String get productAddVariant ;
-
-  String get productNoVariantsYet ;
-
-  String get productBasicInfo ;
-
-  String get productImagePickFailed ;
-
-  String get productImageUploadSuccess ;
-
-  String get productImageProcessFailed ;
-
-  String get productDefaultImageUpdateFailed ;
-
-  String get productDefaultImageUpdated ;
-
-  String get productUpdateSuccess ;
-
-  get productVariantPriceMustBePositive ;
-
-  String get variantWillBeRemovedOnSave ;
-
-  String get productUploading ;
-
-  String get productAddImage ;
-
-  String get productNoImagesYet ;
-
-  String get productImages ;
-
   /// No description provided for @productAddedToCart.
   ///
   /// In en, this message translates to:
-  /// **'{name} added to cart_tab'**
+  /// **'{name} added to cart'**
   String productAddedToCart(Object name);
 }
 
@@ -1932,8 +2011,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-        'an issue with the localizations generation tool. Please file an issue '
-        'on GitHub with a reproducible sample app and the gen-l10n configuration '
-        'that was used.',
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
   );
 }

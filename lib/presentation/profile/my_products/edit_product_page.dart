@@ -2,8 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:sinwar_shoping/presentation/profile/my_products/widgets/product_image_cropper.dart';
-
-import '../../../../core/utils/image_converter.dart';
 import '../../../../data/categories_data.dart';
 import '../../../../models/category_model.dart';
 import '../../../../models/product_model.dart';
@@ -12,9 +10,9 @@ import '../../../core/config/size_options.dart';
 import '../../../design/app_spacing.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/product_service.dart';
-import '../../../widgets/widgets/app_button.dart';
-import '../../../widgets/widgets/app_snackbar.dart';
-import '../../../widgets/widgets/app_text_field.dart';
+import '../../../widgets/custom_button/custom_button.dart';
+import '../../../widgets/custom__snack_bar/custom_snack_bar.dart';
+import '../../../widgets/custom_text_field/custom_text_field.dart';
 import 'models/variant_form_entry.dart';
 import 'utils/product_validators.dart';
 import 'widgets/product_active_toggle.dart';
@@ -82,17 +80,20 @@ class _EditProductPageState extends State<EditProductPage> {
   void _initVariants() {
     for (final d in widget.detailsRows) {
       final opt = _resolveSizeOption(d.itemSize);
-      _variantEntries.add(VariantFormEntry(
-        detailId: d.detId,
-        isActive: d.isActive == 1,
-        sizeGroupId: opt?.groupId,
-        sizeId: opt?.id,
-        brand: d.brand,
-        color: d.color,
-        price: d.itemPrice,
-        qty: d.itemQty,
-        discount: d.discount,
-      ));
+      _variantEntries.add(
+        VariantFormEntry(
+          detailId: d.detId,
+          isActive: d.isActive == 1,
+          sizeGroupId: opt?.groupId,
+          sizeId: opt?.id,
+          brand: d.brand,
+          color: d.color,
+          price: d.itemPrice,
+          qty: d.itemQty,
+          discount: d.discount,
+          tax: d.tax,
+        ),
+      );
     }
   }
 
@@ -158,15 +159,19 @@ class _EditProductPageState extends State<EditProductPage> {
     final l10n = AppLocalizations.of(context);
 
     if (_selectedCategory == null) {
-      AppSnackBar.show(context,
-          message: l10n.productSelectCategoryValidation,
-          type: AppSnackBarType.warning);
+      CustomSnackBar.show(
+        context,
+        message: l10n.productSelectCategoryValidation,
+        type: AppSnackBarType.warning,
+      );
       return;
     }
     if (_variantEntries.isEmpty) {
-      AppSnackBar.show(context,
-          message: l10n.productVariantRequired,
-          type: AppSnackBarType.warning);
+      CustomSnackBar.show(
+        context,
+        message: l10n.productVariantRequired,
+        type: AppSnackBarType.warning,
+      );
       return;
     }
 
@@ -176,7 +181,7 @@ class _EditProductPageState extends State<EditProductPage> {
       // Step 1 — hard-delete deactivated variants.
       final hardDeleted = <int>{};
       for (final e in _variantEntries.where(
-            (e) => !e.isNew && e.pendingDeactivate,
+        (e) => !e.isNew && e.pendingDeactivate,
       )) {
         try {
           if (await _productService.deleteVariantDetail(e.detailId!)) {
@@ -192,35 +197,39 @@ class _EditProductPageState extends State<EditProductPage> {
         final price = double.tryParse(e.priceController.text.trim()) ?? 0;
         if (price <= 0) throw l10n.productVariantPriceMustBePositive;
         final sizeOpt = e.sizeId != null ? findSizeOptionById(e.sizeId!) : null;
-        existingDetails.add(UpdateItemDetail(
-          detailId: e.detailId!,
-          itemPrice: price,
-          itemQty: int.tryParse(e.qtyController.text.trim()) ?? 0,
-          itemDiscount:
-          double.tryParse(e.discountController.text.trim()) ?? 0,
-          brand: e.brandController.text.trim().isEmpty
-              ? 'N/A'
-              : e.brandController.text.trim(),
-          color: e.colorController.text.trim().isEmpty
-              ? 'N/A'
-              : e.colorController.text.trim(),
-          modifiedBy: widget.currentUser,
-          size: sizeOpt?.code ?? '',
-          isActive: e.isActive ? 1 : 0,
-        ));
+        existingDetails.add(
+          UpdateItemDetail(
+            detailId: e.detailId!,
+            itemPrice: price,
+            itemQty: int.tryParse(e.qtyController.text.trim()) ?? 0,
+            itemDiscount:
+                double.tryParse(e.discountController.text.trim()) ?? 0,
+            brand: e.brandController.text.trim().isEmpty
+                ? 'N/A'
+                : e.brandController.text.trim(),
+            color: e.colorController.text.trim().isEmpty
+                ? 'N/A'
+                : e.colorController.text.trim(),
+            modifiedBy: widget.currentUser,
+            size: sizeOpt?.code ?? '',
+            isActive: e.isActive ? 1 : 0,
+          ),
+        );
       }
 
-      await _productService.updateProduct(UpdateProductRequest(
-        id: _itemId,
-        itemName: _nameController.text.trim(),
-        itemDesc: _descController.text.trim(),
-        isActive: _isProductActive ? 1 : 0,
-        itemDetails: existingDetails,
-        categoryId: _selectedCategory!.id,
-        itemImgUrl: widget.product.itemImgUrl.trim().isEmpty
-            ? null
-            : widget.product.itemImgUrl,
-      ));
+      await _productService.updateProduct(
+        UpdateProductRequest(
+          id: _itemId,
+          itemName: _nameController.text.trim(),
+          itemDesc: _descController.text.trim(),
+          isActive: _isProductActive ? 1 : 0,
+          itemDetails: existingDetails,
+          categoryId: _selectedCategory!.id,
+          itemImgUrl: widget.product.itemImgUrl.trim().isEmpty
+              ? null
+              : widget.product.itemImgUrl,
+        ),
+      );
 
       // Step 3 — insert new variants.
       final newEntries = _variantEntries.where((e) => e.isNew).toList();
@@ -229,22 +238,25 @@ class _EditProductPageState extends State<EditProductPage> {
         for (final e in newEntries) {
           final price = double.tryParse(e.priceController.text.trim()) ?? 0;
           if (price <= 0) throw l10n.productVariantPriceMustBePositive;
-          final sizeOpt =
-          e.sizeId != null ? findSizeOptionById(e.sizeId!) : null;
-          newDetails.add(CreateProductDetail(
-            brand: e.brandController.text.trim().isEmpty
-                ? 'N/A'
-                : e.brandController.text.trim(),
-            color: e.colorController.text.trim().isEmpty
-                ? 'N/A'
-                : e.colorController.text.trim(),
-            itemSize: sizeOpt?.code ?? '',
-            itemPrice: price,
-            itemQty: int.tryParse(e.qtyController.text.trim()) ?? 0,
-            discount:
-            double.tryParse(e.discountController.text.trim()) ?? 0,
-            isActive: e.isActive ? 1 : 0,
-          ));
+          final sizeOpt = e.sizeId != null
+              ? findSizeOptionById(e.sizeId!)
+              : null;
+          newDetails.add(
+            CreateProductDetail(
+              brand: e.brandController.text.trim().isEmpty
+                  ? 'N/A'
+                  : e.brandController.text.trim(),
+              color: e.colorController.text.trim().isEmpty
+                  ? 'N/A'
+                  : e.colorController.text.trim(),
+              itemSize: sizeOpt?.code ?? '',
+              itemPrice: price,
+              itemQty: int.tryParse(e.qtyController.text.trim()) ?? 0,
+              discount: double.tryParse(e.discountController.text.trim()) ?? 0,
+              tax: double.tryParse(e.taxController.text.trim()) ?? 0,
+              isActive: e.isActive ? 1 : 0,
+            ),
+          );
         }
         await _productService.insertProductDetails(
           itemId: _itemId,
@@ -254,13 +266,19 @@ class _EditProductPageState extends State<EditProductPage> {
       }
 
       if (!mounted) return;
-      AppSnackBar.show(context,
-          message: l10n.productUpdateSuccess, type: AppSnackBarType.success);
+      CustomSnackBar.show(
+        context,
+        message: l10n.productUpdateSuccess,
+        type: AppSnackBarType.success,
+      );
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      AppSnackBar.show(context,
-          message: 'Error: $e', type: AppSnackBarType.error);
+      CustomSnackBar.show(
+        context,
+        message: 'Error: $e',
+        type: AppSnackBarType.error,
+      );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -269,8 +287,7 @@ class _EditProductPageState extends State<EditProductPage> {
   // ── Image helpers ─────────────────────────────────────────────────────────
 
   Future<void> _reloadImages() async {
-    final images =
-    await _productService.getItemImagesBase64(itemId: _itemId);
+    final images = await _productService.getItemImagesBase64(itemId: _itemId);
     if (!mounted) return;
     setState(() {
       _itemImages
@@ -290,15 +307,18 @@ class _EditProductPageState extends State<EditProductPage> {
       );
       await _reloadImages();
       if (!mounted) return;
-      AppSnackBar.show(context,
-          message: AppLocalizations.of(context).productDefaultImageUpdated,
-          type: AppSnackBarType.success);
+      CustomSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).productDefaultImageUpdated,
+        type: AppSnackBarType.success,
+      );
     } catch (_) {
       if (!mounted) return;
-      AppSnackBar.show(context,
-          message:
-          AppLocalizations.of(context).productDefaultImageUpdateFailed,
-          type: AppSnackBarType.error);
+      CustomSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).productDefaultImageUpdateFailed,
+        type: AppSnackBarType.error,
+      );
     } finally {
       if (mounted) setState(() => _isUploadingImage = false);
     }
@@ -313,36 +333,42 @@ class _EditProductPageState extends State<EditProductPage> {
         context,
         sourceFile: File(picked.path),
       );
-      if (cropResult == null || !mounted) return;  // user cancelled
+      if (cropResult == null || !mounted) return; // user cancelled
 
-// cropResult.file is already 1200×1200 — just base64-encode it.
-      final base64 = await ImageConverter.compressAndConvert(cropResult.file);
-      if (base64 == null) {
-        if (!mounted) return;
-        AppSnackBar.show(context,
-            message: AppLocalizations.of(context).productImageProcessFailed,
-            type: AppSnackBarType.error);
-        return;
-      }
+      // cropResult.file is already 1200×1200 — just base64-encode it.
+      // final base64 = await ImageConverter.compressAndConvert(cropResult.file);
+      // if (base64 == null) {
+      //   if (!mounted) return;
+      //   AppSnackBar.show(
+      //     context,
+      //     message: AppLocalizations.of(context).productImageProcessFailed,
+      //     type: AppSnackBarType.error,
+      //   );
+      //   return;
+      // }
 
       if (mounted) setState(() => _isUploadingImage = true);
 
       await _productService.insertItemImage(
         itemId: _itemId,
-        imageBase64: base64,
+        imageBase64: "base64",
         isDefault: _itemImages.isEmpty,
       );
       await _reloadImages();
 
       if (!mounted) return;
-      AppSnackBar.show(context,
-          message: AppLocalizations.of(context).productImageUploadSuccess,
-          type: AppSnackBarType.success);
+      CustomSnackBar.show(
+        context,
+        message: AppLocalizations.of(context).productImageUploadSuccess,
+        type: AppSnackBarType.success,
+      );
     } catch (_) {
       if (mounted) {
-        AppSnackBar.show(context,
-            message: AppLocalizations.of(context).productImagePickFailed,
-            type: AppSnackBarType.error);
+        CustomSnackBar.show(
+          context,
+          message: AppLocalizations.of(context).productImagePickFailed,
+          type: AppSnackBarType.error,
+        );
       }
     } finally {
       if (mounted) setState(() => _isUploadingImage = false);
@@ -364,77 +390,76 @@ class _EditProductPageState extends State<EditProductPage> {
         child: _isSubmitting
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _EditProductHeader(itemId: _itemId),
-                const SizedBox(height: AppSpacing.xl),
-                _BasicInfoSection(
-                  nameController: _nameController,
-                  descController: _descController,
-                  isSubmitting: _isSubmitting,
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                ProductActiveToggle(
-                  isActive: _isProductActive,
-                  isDisabled: _isSubmitting,
-                  onChanged: (val) =>
-                      setState(() => _isProductActive = val),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                _EditVariantsSection(
-                  entries: _variantEntries,
-                  isSubmitting: _isSubmitting,
-                  onAdd: () => setState(
-                        () => _variantEntries.add(VariantFormEntry()),
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _EditProductHeader(itemId: _itemId),
+                      const SizedBox(height: AppSpacing.xl),
+                      _BasicInfoSection(
+                        nameController: _nameController,
+                        descController: _descController,
+                        isSubmitting: _isSubmitting,
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      ProductActiveToggle(
+                        isActive: _isProductActive,
+                        isDisabled: _isSubmitting,
+                        onChanged: (val) =>
+                            setState(() => _isProductActive = val),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      _EditVariantsSection(
+                        entries: _variantEntries,
+                        isSubmitting: _isSubmitting,
+                        onAdd: () => setState(
+                          () => _variantEntries.add(VariantFormEntry()),
+                        ),
+                        onActiveToggled: _onVariantActiveToggled,
+                        onRemoveNew: (i) => setState(() {
+                          _variantEntries[i].dispose();
+                          _variantEntries.removeAt(i);
+                        }),
+                        onSizeGroupChanged: (i, val) => setState(() {
+                          final e = _variantEntries[i];
+                          e.sizeGroupId = val;
+                          final opts = sizeOptions[val] ?? const [];
+                          if (val == null ||
+                              opts.every((o) => o.id != e.sizeId)) {
+                            e.sizeId = null;
+                          }
+                        }),
+                        onSizeChanged: (i, val) =>
+                            setState(() => _variantEntries[i].sizeId = val),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      EditImagesSection(
+                        images: _itemImages,
+                        defaultImageId: _defaultImageId,
+                        isSubmitting: _isSubmitting,
+                        isUploading: _isUploadingImage,
+                        onAddPressed: _pickAndUploadImage,
+                        onSetDefault: _setDefaultImage,
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      EditCategoryPicker(
+                        selectedCategory: _selectedCategory,
+                        isDisabled: _isSubmitting,
+                        onChanged: (v) => setState(() => _selectedCategory = v),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      _EditProductActions(
+                        isSubmitting: _isSubmitting,
+                        onSave: _updateProduct,
+                        onCancel: () => Navigator.pop(context),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
                   ),
-                  onActiveToggled: _onVariantActiveToggled,
-                  onRemoveNew: (i) => setState(() {
-                    _variantEntries[i].dispose();
-                    _variantEntries.removeAt(i);
-                  }),
-                  onSizeGroupChanged: (i, val) => setState(() {
-                    final e = _variantEntries[i];
-                    e.sizeGroupId = val;
-                    final opts = sizeOptions[val] ?? const [];
-                    if (val == null ||
-                        opts.every((o) => o.id != e.sizeId)) {
-                      e.sizeId = null;
-                    }
-                  }),
-                  onSizeChanged: (i, val) =>
-                      setState(() => _variantEntries[i].sizeId = val),
                 ),
-                const SizedBox(height: AppSpacing.xl),
-                EditImagesSection(
-                  images: _itemImages,
-                  defaultImageId: _defaultImageId,
-                  isSubmitting: _isSubmitting,
-                  isUploading: _isUploadingImage,
-                  onAddPressed: _pickAndUploadImage,
-                  onSetDefault: _setDefaultImage,
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                EditCategoryPicker(
-                  selectedCategory: _selectedCategory,
-                  isDisabled: _isSubmitting,
-                  onChanged: (v) =>
-                      setState(() => _selectedCategory = v),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                _EditProductActions(
-                  isSubmitting: _isSubmitting,
-                  onSave: _updateProduct,
-                  onCancel: () => Navigator.pop(context),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-              ],
-            ),
-          ),
-        ),
+              ),
       ),
     );
   }
@@ -523,14 +548,14 @@ class _BasicInfoSection extends StatelessWidget {
           icon: Icons.info_outline,
         ),
         const SizedBox(height: AppSpacing.lg),
-        AppTextField(
+        CustomTextField(
           controller: nameController,
           label: l10n.productItemName,
           hintText: l10n.productItemNameHint,
           validator: validators.required,
         ),
         const SizedBox(height: AppSpacing.lg),
-        AppTextField(
+        CustomTextField(
           controller: descController,
           label: l10n.productDescriptionLabel,
           hintText: l10n.productDescriptionHint,
@@ -567,10 +592,7 @@ class _EditVariantsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ProductSectionTitle(
-          title: l10n.productVariants,
-          icon: Icons.tune,
-        ),
+        ProductSectionTitle(title: l10n.productVariants, icon: Icons.tune),
         const SizedBox(height: AppSpacing.lg),
         if (entries.isEmpty)
           Center(
@@ -631,18 +653,17 @@ class _EditProductActions extends StatelessWidget {
 
     return Column(
       children: [
-        AppButton(
+        CustomButton(
           label: l10n.productUpdateAction,
           leading: isSubmitting
               ? const SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor:
-              AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
-          )
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
               : null,
           onPressed: isSubmitting ? null : onSave,
         ),

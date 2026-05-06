@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:sinwar_shoping/presentation/auth/validation/auth_validators.dart';
 
 import '../../core/config/route.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/auth_service.dart';
-import '../../widgets/validation/auth_validators.dart';
-import '../../widgets/widgets/app_button.dart';
-import '../../widgets/widgets/app_snackbar.dart';
-import '../../widgets/widgets/app_text_field.dart';
+import '../../widgets/custom_button/custom_button.dart';
+import '../../widgets/custom__snack_bar/custom_snack_bar.dart';
+import '../../widgets/custom_text_field/custom_text_field.dart';
 
 
 class ForgotPasswordEmailScreen extends StatefulWidget {
@@ -68,7 +68,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
         _isLoading = false;
       });
 
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message: error.message,
         type: AppSnackBarType.error,
@@ -80,7 +80,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
         _isLoading = false;
       });
 
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message: 'Failed to send OTP. Please try again.',
         type: AppSnackBarType.error,
@@ -114,7 +114,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
                   style: AppTextStyles.bodyMedium,
                 ),
                 SizedBox(height: AppSpacing.xxxl),
-                AppTextField(
+                CustomTextField(
                   controller: _usernameController,
                   label: 'Username',
                   hintText: 'Enter your username',
@@ -128,7 +128,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                AppTextField(
+                CustomTextField(
                   controller: _emailController,
                   label: 'Email',
                   hintText: 'Enter your email',
@@ -144,7 +144,7 @@ class _ForgotPasswordEmailScreenState extends State<ForgotPasswordEmailScreen> {
                 const SizedBox(height: AppSpacing.xxl),
                 SizedBox(
                   width: double.infinity,
-                  child: AppButton(
+                  child: CustomButton(
                     label: l10n.forgotPasswordSendOtp,
                     onPressed: _isLoading ? null : _handleSendOtp,
                     leading: _isLoading

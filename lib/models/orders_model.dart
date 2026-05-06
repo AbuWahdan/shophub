@@ -252,17 +252,19 @@ class ApiOrderItem {
   final int itemId;
   final int itemDetId;
   final String productName;
-  final String productImage;
+  // final String productImage;
   final int quantity;
   final double price;
+  final int deliveryStatus;
 
   const ApiOrderItem({
     required this.itemId,
     required this.itemDetId,
     required this.productName,
-    required this.productImage,
+    //required this.productImage,
     required this.quantity,
     required this.price,
+    this.deliveryStatus = 0,
   });
 
   factory ApiOrderItem.fromJson(Map<String, dynamic> json) {
@@ -286,13 +288,13 @@ class ApiOrderItem {
                   json['product_name'] ??
                   '')
               .toString(),
-      productImage:
-          (json['ITEM_IMG_URL'] ??
-                  json['item_img_url'] ??
-                  json['PRODUCT_IMAGE'] ??
-                  json['product_image'] ??
-                  '')
-              .toString(),
+      // productImage:
+      //     (json['ITEM_IMG_URL'] ??
+      //             json['item_img_url'] ??
+      //             json['PRODUCT_IMAGE'] ??
+      //             json['product_image'] ??
+      //             '')
+      //         .toString(),
       quantity: _parseInt(
         json['ITEM_QTY'] ?? json['item_qty'] ?? json['QTY'] ?? json['qty'] ?? 1,
       ),
@@ -302,6 +304,13 @@ class ApiOrderItem {
             json['PRICE'] ??
             json['price'],
       ),
+      deliveryStatus: _parseInt(
+        json['DELIVARY_STATUS'] ??
+            json['DELIVERY_STATUS'] ??
+            json['delivery_status'] ??
+            json['STATUS'] ??
+            json['status'],
+      ),
     );
   }
 
@@ -310,9 +319,10 @@ class ApiOrderItem {
       'ITEM_ID': itemId,
       'ITEM_DET_ID': itemDetId,
       'ITEM_NAME': productName,
-      'ITEM_IMG_URL': productImage,
+      //'ITEM_IMG_URL': productImage,
       'ITEM_QTY': quantity,
       'ITEM_PRICE': price,
+      'DELIVARY_STATUS': deliveryStatus,
     };
   }
 }

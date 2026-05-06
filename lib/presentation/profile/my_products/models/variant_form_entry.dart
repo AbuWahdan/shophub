@@ -13,18 +13,22 @@ class VariantFormEntry {
     double price = 0,
     int qty = 0,
     double discount = 0,
-  })  : pendingDeactivate = false,
-        brandController = TextEditingController(text: brand),
-        colorController = TextEditingController(text: color),
-        priceController = TextEditingController(
-          text: price > 0 ? price.toString() : '',
-        ),
-        qtyController = TextEditingController(
-          text: qty > 0 ? qty.toString() : '',
-        ),
-        discountController = TextEditingController(
-          text: discount > 0 ? discount.toString() : '',
-        );
+    double tax = 0,
+  }) : pendingDeactivate = false,
+       brandController = TextEditingController(text: brand),
+       colorController = TextEditingController(text: color),
+       priceController = TextEditingController(
+         text: price > 0 ? price.toString() : '',
+       ),
+       qtyController = TextEditingController(
+         text: qty > 0 ? qty.toString() : '',
+       ),
+       discountController = TextEditingController(
+         text: discount > 0 ? discount.toString() : '',
+       ),
+       taxController = TextEditingController(
+         text: tax > 0 ? tax.toString() : '',
+       );
 
   /// Null or <= 0 means this is a brand-new (unsaved) variant.
   final int? detailId;
@@ -42,6 +46,7 @@ class VariantFormEntry {
   final TextEditingController priceController;
   final TextEditingController qtyController;
   final TextEditingController discountController;
+  final TextEditingController taxController;
 
   bool get isNew => detailId == null || detailId! <= 0;
 
@@ -51,5 +56,6 @@ class VariantFormEntry {
     priceController.dispose();
     qtyController.dispose();
     discountController.dispose();
+    taxController.dispose();
   }
 }

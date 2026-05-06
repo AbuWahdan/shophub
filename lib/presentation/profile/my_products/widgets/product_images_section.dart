@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import '../../../../core/utils/image_converter.dart';
 import '../../../../design/app_colors.dart';
 import '../../../../design/app_spacing.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -467,20 +466,20 @@ class _ServerImageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bytes = ImageConverter.base64ToBytes(image.imageBase64);
-
-    Widget imageWidget;
-    if (bytes != null) {
-      imageWidget = Image.memory(bytes, fit: BoxFit.cover);
-    } else if (image.imagePath.trim().isNotEmpty) {
-      imageWidget = Image.network(
-        image.imagePath,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _BrokenImage(),
-      );
-    } else {
-      imageWidget = _BrokenImage();
-    }
+    // final bytes = ImageConverter.base64ToBytes(image.imageBase64);
+    //
+    // Widget imageWidget;
+    // if (bytes != null) {
+    //   imageWidget = Image.memory(bytes, fit: BoxFit.cover);
+    // } else if (image.imagePath.trim().isNotEmpty) {
+    //   imageWidget = Image.network(
+    //     image.imagePath,
+    //     fit: BoxFit.cover,
+    //     errorBuilder: (_, __, ___) => _BrokenImage(),
+    //   );
+    // } else {
+    //   imageWidget = _BrokenImage();
+    // }
 
     return Stack(
       fit: StackFit.expand,
@@ -489,7 +488,7 @@ class _ServerImageTile extends StatelessWidget {
           onTap: isSubmitting ? null : onTap,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: imageWidget,
+            child: Container(),
           ),
         ),
         Positioned(

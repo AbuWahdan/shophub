@@ -5,10 +5,10 @@
 // import '../../../../core/app/app_theme.dart';
 // import '../../../../services/product_service.dart';
 // import '../../../../core/state/auth_state.dart';
-// import '../../../../widgets/widgets/app_button.dart';
-// import '../../../../widgets/widgets/app_image.dart';
-// import '../../../../widgets/widgets/app_snackbar.dart';
-// import '../../../../widgets/widgets/app_text_field.dart';
+// import '../../../../widgets/widgets/custom_button.dart';
+// import '../../../../widgets/widgets/custom_image.dart';
+// import '../../../../widgets/widgets/custom_snack_bar.dart';
+// import '../../../../widgets/widgets/custom_text_field.dart';
 //
 // class RateProductScreen extends StatefulWidget {
 //   final ApiProduct product;

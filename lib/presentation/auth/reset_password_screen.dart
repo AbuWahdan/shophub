@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/password_controller.dart';
-import '../../../data/repositories/user_repository.dart';
 import '../../core/config/route.dart';
-import '../../core/app/app_theme.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/app_localizations.dart';
-import '../../widgets/widgets/app_button.dart';
-import '../../widgets/widgets/app_snackbar.dart';
-import '../../widgets/widgets/app_text_field.dart';
+import '../../repositories/user_repository.dart';
+import '../../widgets/custom_button/custom_button.dart';
+import '../../widgets/custom__snack_bar/custom_snack_bar.dart';
+import '../../widgets/custom_text_field/custom_text_field.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String username;
@@ -56,7 +55,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
 
-    AppSnackBar.show(
+    CustomSnackBar.show(
       context,
       message: AppLocalizations.of(context).passwordUpdateSuccess,
       type: AppSnackBarType.success,
@@ -98,7 +97,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       style: AppTextStyles.bodyMedium,
                     ),
                     const SizedBox(height: AppSpacing.xxxl),
-                    AppTextField(
+                    CustomTextField(
                       controller: _passwordController.newPasswordController,
                       label: l10n.resetPasswordNewLabel,
                       hintText: l10n.resetPasswordNewHint,
@@ -119,7 +118,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    AppTextField(
+                    CustomTextField(
                       controller: _passwordController.confirmPasswordController,
                       label: l10n.resetPasswordConfirmLabel,
                       hintText: l10n.resetPasswordConfirmHint,
@@ -142,7 +141,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     const SizedBox(height: AppSpacing.xxl),
                     SizedBox(
                       width: double.infinity,
-                      child: AppButton(
+                      child: CustomButton(
                         label: l10n.resetPasswordUpdateButton,
                         onPressed: _passwordController.isSubmitting.value
                             ? null

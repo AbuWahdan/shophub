@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/config/size_options.dart';
 import '../../../../design/app_spacing.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../../../widgets/widgets/app_text_field.dart';
+import '../../../../widgets/custom_text_field/custom_text_field.dart';
 import '../color_picker/color_hex_field.dart';
 import '../models/variant_form_entry.dart';
 import '../utils/product_validators.dart';
@@ -47,7 +47,7 @@ class VariantCard extends StatelessWidget {
 
     final borderColor = entry.isActive
         ? Theme.of(context).dividerColor
-        : colorScheme.error.withOpacity(0.5);
+        : colorScheme.error.withValues(alpha: 0.5);
 
     return Card(
       elevation: 0,
@@ -74,9 +74,9 @@ class VariantCard extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                 child: Text(
                   l10n.variantWillBeRemovedOnSave,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: colorScheme.error,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelSmall?.copyWith(color: colorScheme.error),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -84,7 +84,7 @@ class VariantCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: AppTextField(
+                  child: CustomTextField(
                     controller: entry.brandController,
                     label: l10n.productBrand,
                     hintText: l10n.productBrandHint,
@@ -115,10 +115,11 @@ class VariantCard extends StatelessWidget {
               onChanged: onSizeChanged,
             ),
             const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: AppTextField(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isCompact = constraints.maxWidth < 520;
+                final fields = [
+                  CustomTextField(
                     controller: entry.priceController,
                     label: l10n.productPriceLabel,
                     hintText: l10n.productPriceHint,
@@ -129,10 +130,7 @@ class VariantCard extends StatelessWidget {
                     showRequiredAsterisk: true,
                     textInputAction: TextInputAction.next,
                   ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: AppTextField(
+                  CustomTextField(
                     controller: entry.qtyController,
                     label: l10n.productQuantityLabel,
                     hintText: l10n.productQuantityHint,
@@ -141,10 +139,7 @@ class VariantCard extends StatelessWidget {
                     showRequiredAsterisk: true,
                     textInputAction: TextInputAction.next,
                   ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: AppTextField(
+                  CustomTextField(
                     controller: entry.discountController,
                     label: l10n.productDiscountLabel,
                     hintText: l10n.productDiscountHint,
@@ -152,10 +147,42 @@ class VariantCard extends StatelessWidget {
                       decimal: true,
                     ),
                     validator: validators.optionalDiscount,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  CustomTextField(
+                    controller: entry.taxController,
+                    label: 'Tax',
+                    hintText: 'Tax percentage',
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: validators.optionalDiscount,
                     textInputAction: TextInputAction.done,
                   ),
-                ),
-              ],
+                ];
+
+                if (isCompact) {
+                  return Column(
+                    children: [
+                      for (var i = 0; i < fields.length; i++) ...[
+                        fields[i],
+                        if (i != fields.length - 1)
+                          const SizedBox(height: AppSpacing.md),
+                      ],
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    for (var i = 0; i < fields.length; i++) ...[
+                      Expanded(child: fields[i]),
+                      if (i != fields.length - 1)
+                        const SizedBox(width: AppSpacing.md),
+                    ],
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -196,10 +223,9 @@ class _VariantCardHeader extends StatelessWidget {
         Expanded(
           child: Text(
             'Variant ${index + 1}${entry.isNew ? ' (new)' : ''}',
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -218,9 +244,7 @@ class _VariantCardHeader extends StatelessWidget {
                 child: Text(
                   entry.isActive ? 'Active' : 'Inactive',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: entry.isActive
-                        ? Colors.green
-                        : colorScheme.error,
+                    color: entry.isActive ? Colors.green : colorScheme.error,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -270,10 +294,10 @@ class _SizeGroupDropdown extends StatelessWidget {
       items: sizeGroups
           .map(
             (g) => DropdownMenuItem<int>(
-          value: g.id,
-          child: Text(g.name, overflow: TextOverflow.ellipsis, maxLines: 1),
-        ),
-      )
+              value: g.id,
+              child: Text(g.name, overflow: TextOverflow.ellipsis, maxLines: 1),
+            ),
+          )
           .toList(),
       onChanged: isSubmitting ? null : onChanged,
     );
@@ -317,10 +341,10 @@ class _SizeDropdown extends StatelessWidget {
       items: groupSizes
           .map(
             (s) => DropdownMenuItem<int>(
-          value: s.id,
-          child: Text(s.name, overflow: TextOverflow.ellipsis, maxLines: 1),
-        ),
-      )
+              value: s.id,
+              child: Text(s.name, overflow: TextOverflow.ellipsis, maxLines: 1),
+            ),
+          )
           .toList(),
       onChanged: (isSubmitting || entry.sizeGroupId == null) ? null : onChanged,
     );

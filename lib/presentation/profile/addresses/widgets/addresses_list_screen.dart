@@ -8,9 +8,9 @@ import '../../../../design/app_spacing.dart';
 import '../../../../design/app_text_styles.dart';
 import '../../../../models/addresses/address_model.dart';
 import '../../../../models/addresses/map_picker_result_model.dart';
-import '../../../../widgets/empty_state_widget.dart';
-import '../../../../widgets/widgets/app_snackbar.dart';
-import '../../../../widgets/widgets/custom_fab/custom_fab.dart';
+import '../../../../widgets/custom_empty_state/custom_empty_state.dart';
+import '../../../../widgets/custom__snack_bar/custom_snack_bar.dart';
+import '../../../../widgets/custom_fab/custom_fab.dart';
 import '../mapbox_address_picker_screen.dart';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -103,7 +103,7 @@ class _AddressesListScreenState extends State<AddressesListScreen> {
     final username = auth.user?.username.trim() ?? _controller.username.trim();
 
     if (username.isEmpty) {
-      AppSnackBar.show(context, message: 'Please log in to manage addresses.', type: AppSnackBarType.error);
+      CustomSnackBar.show(context, message: 'Please log in to manage addresses.', type: AppSnackBarType.error);
       return;
     }
 
@@ -122,7 +122,7 @@ class _AddressesListScreenState extends State<AddressesListScreen> {
     );
 
     if (saved == true && mounted) {
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message: existing == null ? 'Address added' : 'Address updated',
         type: AppSnackBarType.success,
@@ -147,9 +147,9 @@ class _AddressesListScreenState extends State<AddressesListScreen> {
 
     try {
       await _controller.deleteAddress(address.addressId!);
-      if (mounted) AppSnackBar.show(context, message: 'Address deleted', type: AppSnackBarType.success);
+      if (mounted) CustomSnackBar.show(context, message: 'Address deleted', type: AppSnackBarType.success);
     } catch (_) {
-      if (mounted) AppSnackBar.show(context, message: _controller.error.value, type: AppSnackBarType.error);
+      if (mounted) CustomSnackBar.show(context, message: _controller.error.value, type: AppSnackBarType.error);
     }
   }
 
@@ -178,7 +178,7 @@ class _AddressesListScreenState extends State<AddressesListScreen> {
         if (addresses.isEmpty) {
           return _RefreshableCenter(
             onRefresh: () => _controller.loadAddresses(forceRefresh: true),
-            child: const EmptyStateWidget(
+            child: const CustomEmptyState(
               icon: Icons.location_off_outlined,
               title: 'No saved addresses',
               subtitle: 'Tap + to add your first delivery address',

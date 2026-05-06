@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../core/state/review_refresh_notifier.dart';
-import '../data/repositories/comment_repository.dart';
 import '../l10n/app_localizations.dart';
 import '../models/item_comment_model.dart';
-import '../widgets/widgets/app_snackbar.dart';
+import '../repositories/comment_repository.dart';
+import '../widgets/custom__snack_bar/custom_snack_bar.dart';
 
 class ItemReviewController extends GetxController {
   ItemReviewController(this._commentRepository);
@@ -65,7 +64,7 @@ class ItemReviewController extends GetxController {
     final normalizedComment = comment.trim();
 
     if (normalizedUsername.isEmpty) {
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message:  AppLocalizations.of(context).itemReviewLoginRequired,
         type: AppSnackBarType.error,
@@ -74,7 +73,7 @@ class ItemReviewController extends GetxController {
     }
 
     if (userReview(normalizedUsername) != null) {
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message: AppLocalizations.of(context).itemReviewAlreadyRated,
         type: AppSnackBarType.warning,
@@ -83,7 +82,7 @@ class ItemReviewController extends GetxController {
     }
 
     if (rating < 1 || rating > 5) {
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message: AppLocalizations.of(context).itemReviewRatingRequired,
         type: AppSnackBarType.warning,
@@ -92,7 +91,7 @@ class ItemReviewController extends GetxController {
     }
 
     if (normalizedComment.isEmpty) {
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message: AppLocalizations.of(context).itemReviewCommentRequired,
         type: AppSnackBarType.warning,
@@ -119,7 +118,7 @@ class ItemReviewController extends GetxController {
       if (!context.mounted) {
         return;
       }
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message: AppLocalizations.of(context).itemReviewSubmittedSuccess,
         type: AppSnackBarType.success,
@@ -128,7 +127,7 @@ class ItemReviewController extends GetxController {
       if (!context.mounted) {
         return;
       }
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message: _resolveErrorMessage(error).isEmpty
             ? AppLocalizations.of(context).itemReviewLoadFailed

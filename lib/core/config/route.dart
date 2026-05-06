@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sinwar_shoping/models/product_model.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/item_comment_model.dart';
 import '../../models/user_model.dart';
 import '../../presentation/auth/forgot_password_email_screen.dart';
 import '../../presentation/auth/login/login_screen.dart';
@@ -10,9 +11,12 @@ import '../../presentation/auth/signup/register_screen.dart';
 import '../../presentation/auth/signup/signup_otp_verification_screen.dart';
 import '../../presentation/categories_tab/categories_page.dart';
 import '../../presentation/home_tab/main_page.dart';
+import '../../presentation/products/comments/comments_screen.dart';
 import '../../presentation/profile/my_products/my_products_page.dart';
+import '../../presentation/profile/settings/change_email/change_email_screen.dart';
+import '../../presentation/profile/settings/change_email/verify_new_email_screen.dart';
 import '../../presentation/profile/settings/widgets/info_page.dart';
-import '../../presentation/product_details_new.dart';
+import '../../presentation/products/product_details_new.dart';
 import '../../presentation/profile/addresses/addresses_page.dart';
 import '../../presentation/profile/edit_profile/edit_profile_screen.dart';
 import '../../presentation/cart_tab/checkout/order_confirmation/order_confirmation_screen.dart';
@@ -26,6 +30,8 @@ import '../../presentation/splash/splash_screen.dart';
 
 class AppRoutes {
   // Route names
+  static const String verifyNewEmail = '/verify-new-email';
+  static const String changeEmail = '/change-email';
   static const String splash = '/';
   static const String onboarding = '/onboarding';
   static const String login = '/login';
@@ -171,6 +177,18 @@ class AppRoutes {
           builder: (_) => const AddressesPage(),
         );
 
+      case AppRoutes.productComments:
+        final args = settings.arguments as Map<String, dynamic>;
+
+        return MaterialPageRoute(
+          builder: (_) => CommentsScreen(
+            productId: args['productId'],
+            productName: args['productName'],
+            comments: List<ItemCommentModel>.from(
+              args['comments'] ?? [],
+            ),
+          ),
+        );
 
       case orderConfirmation:
         final receipt = (args?['receipt'] as Map<String, dynamic>?) ?? const {};
@@ -203,6 +221,19 @@ class AppRoutes {
           builder: (_) => const EditProfileScreen(),
         );
 
+
+      case changeEmail:
+        return MaterialPageRoute(
+          settings: settings,
+          builder:  (_) => const ChangeEmailScreen(),
+        );
+
+      case verifyNewEmail:
+        final newEmail = settings.arguments as String? ?? '';
+        return MaterialPageRoute(
+          settings: settings,
+          builder:  (_) => VerifyNewEmailScreen(newEmail: newEmail),
+        );
       case changePassword:
         final flowName = args?['flow'] as String?;
         final flow = flowName == 'reset'

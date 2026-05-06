@@ -5,8 +5,8 @@ import '../../../design/app_colors.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
 import '../../../services/auth_service.dart';
-import '../../../widgets/widgets/app_button.dart';
-import '../../../widgets/widgets/app_snackbar.dart';
+import '../../../widgets/custom_button/custom_button.dart';
+import '../../../widgets/custom__snack_bar/custom_snack_bar.dart';
 
 class SignupOtpVerificationScreen extends StatefulWidget {
   const SignupOtpVerificationScreen({super.key});
@@ -74,7 +74,7 @@ class _SignupOtpVerificationScreenState
 
       if (!mounted) return;
 
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message: 'Email verified! You can now log in.',
         type: AppSnackBarType.success,
@@ -86,11 +86,11 @@ class _SignupOtpVerificationScreenState
       );
     } on AuthException catch (error) {
       if (!mounted) return;
-      AppSnackBar.show(
+      CustomSnackBar.show(
           context, message: error.message, type: AppSnackBarType.error);
     } catch (_) {
       if (!mounted) return;
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message: 'Verification failed. Please try again.',
         type: AppSnackBarType.error,
@@ -110,7 +110,7 @@ class _SignupOtpVerificationScreenState
 
       if (!mounted) return;
 
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message: 'A new code has been sent to $_email',
         type: AppSnackBarType.success,
@@ -120,11 +120,11 @@ class _SignupOtpVerificationScreenState
       _tickCooldown();
     } on AuthException catch (error) {
       if (!mounted) return;
-      AppSnackBar.show(
+      CustomSnackBar.show(
           context, message: error.message, type: AppSnackBarType.error);
     } catch (_) {
       if (!mounted) return;
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message: 'Failed to resend code. Please try again.',
         type: AppSnackBarType.error,
@@ -229,7 +229,7 @@ class _SignupOtpVerificationScreenState
               const SizedBox(height: AppSpacing.xxl),
 
               // ── Verify button ─────────────────────────────────────────────
-              AppButton(
+              CustomButton(
                 label: _isVerifying ? 'Verifying...' : 'Verify Email',
                 leading: _isVerifying
                     ? const SizedBox(

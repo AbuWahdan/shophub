@@ -6,10 +6,10 @@ import '../../../core/state/auth_state.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../widgets/validation/auth_validators.dart';
-import '../../../widgets/widgets/app_button.dart';
-import '../../../widgets/widgets/app_snackbar.dart';
-import '../../../widgets/widgets/app_text_field.dart';
+import '../../../widgets/custom_button/custom_button.dart';
+import '../../../widgets/custom__snack_bar/custom_snack_bar.dart';
+import '../../../widgets/custom_text_field/custom_text_field.dart';
+import '../validation/auth_validators.dart';
 
 
 class LoginScreen extends StatefulWidget {
@@ -48,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: AppSpacing.xxl),
                 Text(l10n.loginSubtitle, style: AppTextStyles.bodyMedium),
                 SizedBox(height: AppSpacing.xxl),
-                AppTextField(
+                CustomTextField(
                   controller: _usernameController,
                   label: 'Username',
                   hintText: 'Enter your username',
@@ -62,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                AppTextField(
+                CustomTextField(
                   controller: _passwordController,
                   label: l10n.loginPasswordLabel,
                   hintText: l10n.loginPasswordHint,
@@ -99,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xxl),
-                AppButton(
+                CustomButton(
                   label: l10n.loginSignIn,
                   leading: authState.isLoading
                       ? const SizedBox(
@@ -120,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                           if (!mounted) return;
                           if (success) {
-                            AppSnackBar.show(
+                            CustomSnackBar.show(
                               context,
                               message: 'Login successful.',
                               type: AppSnackBarType.success,
@@ -131,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           final message =
                               authState.errorMessage ??
                               'Invalid credentials. Please try again.';
-                          AppSnackBar.show(
+                          CustomSnackBar.show(
                             context,
                             message: message,
                             type: AppSnackBarType.error,
@@ -139,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                 ),
                 const SizedBox(height: AppSpacing.md),
-                AppButton(
+                CustomButton(
                   label: l10n.loginContinueAsGuest,
                   style: AppButtonStyle.outlined,
                   onPressed: () {
@@ -154,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                AppButton(
+                CustomButton(
                   label: l10n.loginCreateAccount,
                   style: AppButtonStyle.secondary,
                   onPressed: () {

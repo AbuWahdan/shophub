@@ -34,8 +34,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Failed to update default image';
 
   @override
-  String get productDefaultImageUpdated =>
-      'Default image updated successfully';
+  String get productDefaultImageUpdated => 'Default image updated successfully';
 
   @override
   String get productUpdateSuccess => 'Product updated successfully';
@@ -59,14 +58,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get productImages => 'Product Images';
-  @override
-  String? get totalLabel => 'Total';
 
   @override
-  String? get noOrdersYet => 'No orders yet';
+  String get totalLabel => 'Total';
 
   @override
-  String? get errorLoadingOrders => 'Error loading orders';
+  String get noOrdersYet => 'No orders yet';
+
+  @override
+  String get errorLoadingOrders => 'Error loading orders';
+
   @override
   String get productUpdateAction => 'Update action';
 
@@ -740,7 +741,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkoutOrderSummary => 'Order Summary';
 
   @override
-  String get cartEmptyMessage => 'Your cart_tab is empty';
+  String get cartEmptyMessage => 'Your cart is empty';
 
   @override
   String get checkoutDeliveryAddress => 'Delivery Address';
@@ -929,7 +930,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonRemove => 'Remove';
 
   @override
-  String get cartItemRemoved => 'Item removed from cart_tab';
+  String get cartItemRemoved => 'Item removed from cart';
 
   @override
   String cartAvailableStock(Object stock) {
@@ -940,7 +941,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cartItemTotal => 'Total';
 
   @override
-  String get cartEmptyTitle => 'Your cart_tab is empty';
+  String get cartEmptyTitle => 'Your cart is empty';
 
   @override
   String get cartStartShopping => 'Start Shopping';
@@ -978,6 +979,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String productAddedToCart(Object name) {
-    return '$name added to cart_tab';
+    return '$name added to cart';
   }
 }

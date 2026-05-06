@@ -7,7 +7,7 @@ import '../../l10n/app_localizations.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/config/route.dart';
 import '../../core/app/app_theme.dart';
-import '../../widgets/widgets/app_button.dart';
+import '../../widgets/custom_button/custom_button.dart';
 
 class OtpSentNoticeScreen extends StatefulWidget {
   final String username;
@@ -84,7 +84,7 @@ class _OtpSentNoticeScreenState extends State<OtpSentNoticeScreen> {
                 const SizedBox(height: AppSpacing.xxxl),
                 SizedBox(
                   width: double.infinity,
-                  child: AppButton(
+                  child: CustomButton(
                     label: _countdownSeconds > 0
                         ? '${l10n.commonContinue} (${_countdownSeconds}s)'
                         : l10n.commonContinue,

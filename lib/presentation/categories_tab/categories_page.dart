@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../data/categories_data.dart';
 import '../../../models/category_model.dart';
 import '../../../models/product_model.dart';
-import '../../core/app/app_theme.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_radius.dart';
 import '../../design/app_shadows.dart';
@@ -11,7 +10,7 @@ import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/product_service.dart';
-import '../../widgets/product_card.dart';
+import '../../widgets/product_card/product_card.dart';
 
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});

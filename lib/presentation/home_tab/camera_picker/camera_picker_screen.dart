@@ -6,7 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../core/app/app_theme.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
-import '../../../widgets/widgets/app_button.dart';
+import '../../../widgets/custom_button/custom_button.dart';
 import 'visual_search_loading_screen.dart';
 
 class CameraPickerScreen extends StatefulWidget {
@@ -152,7 +152,7 @@ class _CameraPickerScreenState extends State<CameraPickerScreen> {
                 textAlign: TextAlign.center,
               ),
               const Spacer(),
-              AppButton(
+              CustomButton(
                 label: 'Take Photo',
                 leading: _isPicking
                     ? const SizedBox(

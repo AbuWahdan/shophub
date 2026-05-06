@@ -4,7 +4,7 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart' hide colorToHex;
 import 'package:get/get.dart';
 import '../../../../design/app_spacing.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../../../widgets/widgets/app_button.dart';
+import '../../../../widgets/custom_button/custom_button.dart';
 import 'color_utils.dart';
 
 class ColorPickerDialog extends StatefulWidget {
@@ -109,7 +109,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                       ),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
-                        child: AppButton(
+                        child: CustomButton(
                           label: l10n.commonSelect,
                           onPressed: _controller.isSelectionEnabled.value
                               ? () {

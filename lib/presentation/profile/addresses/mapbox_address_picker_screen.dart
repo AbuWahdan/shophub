@@ -9,7 +9,7 @@ import '../../../core/app/app_theme.dart';
 import '../../../core/config/mapbox_config.dart';
 import '../../../design/app_spacing.dart';
 import '../../../models/addresses/map_picker_result_model.dart';
-import '../../../widgets/widgets/app_button.dart';
+import '../../../widgets/custom_button/custom_button.dart';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -523,7 +523,7 @@ class _LocationConfirmPanel extends StatelessWidget {
             ),
           ],
           const SizedBox(height: AppSpacing.md),
-          AppButton(
+          CustomButton(
             label: 'Save Location',
             onPressed: hasPin ? onConfirm : null,
           ),

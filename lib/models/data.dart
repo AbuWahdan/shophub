@@ -163,7 +163,7 @@ class AppData {
     if (existingIndex != -1) {
       final existing = _cartItems[existingIndex];
       _cartItems[existingIndex] = existing.copyWith(
-        itemQty: existing.itemQty + quantity,
+        bookedQty: existing.bookedQty + quantity,
         availableQty: sourceAvailableQty,
       );
       _syncCartCount();
@@ -176,7 +176,7 @@ class AppData {
         itemId: product.id,
         itemDetId: resolvedDetId,
         username: username,
-        itemQty: quantity,
+        bookedQty: quantity,
         availableQty: sourceAvailableQty,
         itemName: product.itemName,
         itemDesc: product.itemDesc,
@@ -194,7 +194,7 @@ class AppData {
 
   static void _syncCartCount() {
     cartCountNotifier.value =
-        _cartItems.fold<int>(0, (sum, item) => sum + item.itemQty);
+        _cartItems.fold<int>(0, (sum, item) => sum + item.bookedQty);
   }
 
 

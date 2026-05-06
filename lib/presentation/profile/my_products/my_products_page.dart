@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:sinwar_shoping/widgets/custom_empty_state/custom_empty_state.dart';
 
 import '../../../../controllers/my_products_controller.dart';
 import '../../../../models/product_image_model.dart';
@@ -14,7 +15,6 @@ import '../../../design/app_text_styles.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/state/auth_state.dart';
 import '../../../services/product_service.dart';
-import '../../../widgets/widgets/empty_state.dart';
 import 'edit_product_page.dart';
 import 'insert_product_page.dart';
 
@@ -263,10 +263,10 @@ class _EmptyProductsView extends StatelessWidget {
       children: [
         SizedBox(
           height: MediaQuery.of(context).size.height * 0.65,
-          child: EmptyState(
+          child: CustomEmptyState(
             icon: Icons.inventory_2_outlined,
             title: l10n.accountMyProducts,
-            message: l10n.myProductsEmptyMessage,
+            subtitle: l10n.myProductsEmptyMessage,
           ),
         ),
       ],

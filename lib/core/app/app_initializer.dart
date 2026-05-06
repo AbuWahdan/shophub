@@ -7,19 +7,17 @@ import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
 // Core
+import '../../repositories/address_repository.dart';
+import '../../repositories/cart_repository.dart';
+import '../../repositories/checkout_repository.dart';
+import '../../repositories/codes_repository.dart';
+import '../../repositories/comment_repository.dart';
+import '../../repositories/order_repository.dart';
+import '../../repositories/product_repository.dart';
+import '../../repositories/profile_repository.dart';
+import '../../repositories/user_repository.dart';
+import '../../repositories/visual_search_repository.dart';
 import '../api/api_service.dart';
-
-// Repositories
-import '../../data/repositories/address_repository.dart';
-import '../../data/repositories/cart_repository.dart';
-import '../../data/repositories/checkout_repository.dart';
-import '../../data/repositories/comment_repository.dart';
-import '../../data/repositories/codes_repository.dart';
-import '../../data/repositories/order_repository.dart';
-import '../../data/repositories/product_repository.dart';
-import '../../data/repositories/profile_repository.dart';
-import '../../data/repositories/user_repository.dart';
-import '../../data/repositories/visual_search_repository.dart';
 
 // Controllers
 import '../../controllers/address_controller.dart';
@@ -30,7 +28,7 @@ import '../../controllers/product_controller.dart';
 import '../config/mapbox_config.dart';
 import '../../presentation/profile/settings/app_settings.dart';
 import '../state/auth_state.dart';
-import '../state/wishlist_state.dart';
+import '../../presentation/profile/wishlist/wishlist_state.dart';
 
 /// Initializes all app-level dependencies before [runApp].
 ///

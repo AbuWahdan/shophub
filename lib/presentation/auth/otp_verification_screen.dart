@@ -11,8 +11,8 @@ import '../../core/config/route.dart';
 import '../../core/app/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/auth_service.dart';
-import '../../widgets/widgets/app_button.dart';
-import '../../widgets/widgets/app_snackbar.dart';
+import '../../widgets/custom_button/custom_button.dart';
+import '../../widgets/custom__snack_bar/custom_snack_bar.dart';
 
 /// Shared OTP verification screen for both flows:
 ///   - forgot_password → navigates to ResetPasswordScreen on success
@@ -109,7 +109,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
 
         if (!mounted) return;
 
-        AppSnackBar.show(
+        CustomSnackBar.show(
           context,
           message: 'Email verified! You can now log in.',
           type: AppSnackBarType.success,
@@ -128,10 +128,10 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
       }
     } on AuthException catch (e) {
       if (!mounted) return;
-      AppSnackBar.show(context, message: e.message, type: AppSnackBarType.error);
+      CustomSnackBar.show(context, message: e.message, type: AppSnackBarType.error);
     } catch (_) {
       if (!mounted) return;
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message: 'Verification failed. Please try again.',
         type: AppSnackBarType.error,
@@ -149,7 +149,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
       await _authService.sendOtp(username: widget.username, email: widget.email);
       if (!mounted) return;
 
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message: 'A new code has been sent to ${widget.email}',
         type: AppSnackBarType.success,
@@ -160,10 +160,10 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
       setState(() => _remainingSeconds = 60);
     } on AuthException catch (e) {
       if (!mounted) return;
-      AppSnackBar.show(context, message: e.message, type: AppSnackBarType.error);
+      CustomSnackBar.show(context, message: e.message, type: AppSnackBarType.error);
     } catch (_) {
       if (!mounted) return;
-      AppSnackBar.show(
+      CustomSnackBar.show(
         context,
         message: 'Failed to resend code. Please try again.',
         type: AppSnackBarType.error,
@@ -253,7 +253,7 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen>
 
               const SizedBox(height: AppSpacing.xxl),
 
-              AppButton(
+              CustomButton(
                 label: _isVerifying ? 'Verifying...' : l10n.otpVerify,
                 leading: _isVerifying
                     ? const SizedBox(

@@ -7,7 +7,7 @@ import '../../design/app_colors.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/app_localizations.dart';
-import '../../widgets/widgets/app_button.dart';
+import '../../widgets/custom_button/custom_button.dart';
 
 class PasswordUpdatedScreen extends StatefulWidget {
   const PasswordUpdatedScreen({super.key});
@@ -92,7 +92,7 @@ class _PasswordUpdatedScreenState extends State<PasswordUpdatedScreen> {
                 const SizedBox(height: AppSpacing.xxxl),
                 SizedBox(
                   width: double.infinity,
-                  child: AppButton(
+                  child: CustomButton(
                     label: l10n.passwordUpdatedBackToLogin,
                     onPressed: _navigateToLogin,
                   ),

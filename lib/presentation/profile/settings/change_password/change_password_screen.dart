@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
-
 import '../../../../../controllers/password_controller.dart';
-import '../../../../../data/repositories/user_repository.dart';
 import '../../../../core/config/route.dart';
 import '../../../../design/app_spacing.dart';
-import '../../../../core/app/app_theme.dart';
 import '../../../../core/state/auth_state.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../../../widgets/widgets/app_button.dart';
-import '../../../../widgets/widgets/app_snackbar.dart';
-import '../../../../widgets/widgets/app_text_field.dart';
+import '../../../../repositories/user_repository.dart';
+import '../../../../widgets/custom_button/custom_button.dart';
+import '../../../../widgets/custom__snack_bar/custom_snack_bar.dart';
+import '../../../../widgets/custom_text_field/custom_text_field.dart';
 
 enum ChangePasswordFlow { changeWithCurrentPassword, resetFromOtp }
 
@@ -76,7 +74,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       return;
     }
 
-    AppSnackBar.show(
+    CustomSnackBar.show(
       context,
       message: AppLocalizations.of(context).passwordUpdateSuccess,
       type: AppSnackBarType.success,
@@ -127,7 +125,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (widget.requiresCurrentPassword) ...[
-                    AppTextField(
+                    CustomTextField(
                       controller: _passwordController.currentPasswordController,
                       label: l10n.changePasswordCurrentLabel,
                       hintText: l10n.changePasswordCurrentHint,
@@ -149,7 +147,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     ),
                     const SizedBox(height: AppSpacing.lg),
                   ],
-                  AppTextField(
+                  CustomTextField(
                     controller: _passwordController.newPasswordController,
                     label: newPasswordLabel,
                     hintText: newPasswordHint,
@@ -169,7 +167,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  AppTextField(
+                  CustomTextField(
                     controller: _passwordController.confirmPasswordController,
                     label: confirmLabel,
                     hintText: confirmHint,
@@ -190,7 +188,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     textInputAction: TextInputAction.done,
                   ),
                   const SizedBox(height: AppSpacing.xxl),
-                  AppButton(
+                  CustomButton(
                     label: l10n.resetPasswordUpdateButton,
                     onPressed: _passwordController.isSubmitting.value
                         ? null

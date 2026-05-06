@@ -4,8 +4,8 @@ import '../../../../models/product_model.dart';
 import '../../../design/app_radius.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
-import '../../../widgets/empty_state_widget.dart';
-import '../../../widgets/product_card.dart';
+import '../../../widgets/custom_empty_state/custom_empty_state.dart';
+import '../../../widgets/product_card/product_card.dart';
 
 class VisualSearchResultsScreen extends StatelessWidget {
   final File imageFile;
@@ -24,7 +24,7 @@ class VisualSearchResultsScreen extends StatelessWidget {
       body: SafeArea(
         child: products.isEmpty
             ? const Center(
-                child: EmptyStateWidget(
+                child: CustomEmptyState(
                   icon: Icons.image_search,
                   title: 'No similar products found',
                   subtitle: 'Try another image with clearer product details.',

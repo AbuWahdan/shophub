@@ -34,6 +34,7 @@ class ApiConstants {
   static const String getOrders = '/products/GetOrders';
   static const String getOrderDetails = '/products/GetOrderDetails';
   static const String checkout = '/products/CheckOut';
+  static const String checkPromoCode = '/products/CheckPromoCode';
   static const String searchByImage = '/products/SearchByImage';
 
   // Users

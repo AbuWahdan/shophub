@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
-import '../data/repositories/product_repository.dart';
 import '../models/product_model.dart';
+import '../repositories/product_repository.dart';
 
 class ProductController extends GetxController {
   final ProductRepository _repo;

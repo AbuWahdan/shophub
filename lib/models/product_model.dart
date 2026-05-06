@@ -95,6 +95,7 @@ class ProductModel {
               color: '',
               itemSize: '',
               discount: 0,
+              tax: 0,
               itemPrice: 0,
               itemQty: 0,
             ),
@@ -322,6 +323,9 @@ class ProductModel {
         color: color,
         itemSize: itemSize,
         discount: discount,
+        tax: _asDouble(
+          _pick(json, const ['TAX', 'tax', 'ITEM_TAX', 'item_tax']),
+        ),
         itemPrice: itemPrice,
         itemQty: itemQty,
       ),
@@ -376,6 +380,7 @@ class ApiProductVariant {
   final String color;
   final String itemSize;
   final double discount;
+  final double tax;
   final double itemPrice;
   final int itemQty;
 
@@ -385,6 +390,7 @@ class ApiProductVariant {
     required this.color,
     required this.itemSize,
     required this.discount,
+    this.tax = 0,
     required this.itemPrice,
     required this.itemQty,
   });
@@ -403,6 +409,7 @@ class ApiProductVariant {
           'discount',
         ]),
       ),
+      tax: _asDouble(_pick(json, const ['TAX', 'tax', 'ITEM_TAX', 'item_tax'])),
       itemPrice: _asDouble(_pick(json, const ['ITEM_PRICE', 'item_price'])),
       itemQty: _asInt(_pick(json, const ['ITEM_QTY', 'item_qty'])),
     );
@@ -467,6 +474,7 @@ class ApiProductDetails {
   final double itemPrice;
   final int itemQty;
   final double discount;
+  final double tax;
   final String itemImgUrl;
   final int imageId;
   final String category;
@@ -487,6 +495,7 @@ class ApiProductDetails {
     required this.itemPrice,
     required this.itemQty,
     required this.discount,
+    this.tax = 0,
     required this.itemImgUrl,
     required this.imageId,
     required this.category,
@@ -516,6 +525,7 @@ class ApiProductDetails {
           'discount',
         ]),
       ),
+      tax: _asDouble(_pick(json, const ['TAX', 'tax', 'ITEM_TAX', 'item_tax'])),
       itemImgUrl: _asString(json, const ['ITEM_IMG_URL', 'item_img_url']),
       imageId: _asInt(_pick(json, const ['IMAGE_ID', 'image_id'])),
       category: _asString(json, const ['CATEGORY', 'category']),
@@ -636,6 +646,7 @@ class CreateProductDetail {
   final String color;
   final String itemSize; // ← MUST be String (SIZE_CODE), NOT int
   final double discount;
+  final double tax;
   final double itemPrice;
   final int itemQty;
   final int isActive;
@@ -646,6 +657,7 @@ class CreateProductDetail {
     required this.color,
     required this.itemSize,
     required this.discount,
+    this.tax = 0,
     required this.itemPrice,
     required this.itemQty,
     this.isActive = 1,
@@ -657,6 +669,7 @@ class CreateProductDetail {
     'color': color,
     'item_size': itemSize, // SIZE_CODE string — no conversion needed
     'discount': discount,
+    'tax': tax,
     'item_price': itemPrice,
     'item_qty': itemQty,
     'is_active': isActive,

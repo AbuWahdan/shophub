@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../data/repositories/codes_repository.dart';
 import '../../../../models/get_code_option_model.dart';
 import '../../../../models/user_model.dart';
 import '../../../core/config/route.dart';
@@ -8,11 +7,12 @@ import '../../../design/app_colors.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../repositories/codes_repository.dart';
 import '../../../services/auth_service.dart';
-import '../../../widgets/validation/auth_validators.dart';
-import '../../../widgets/widgets/app_button.dart';
-import '../../../widgets/widgets/app_snackbar.dart';
-import '../../../widgets/widgets/app_text_field.dart';
+import '../../../widgets/custom_button/custom_button.dart';
+import '../../../widgets/custom__snack_bar/custom_snack_bar.dart';
+import '../../../widgets/custom_text_field/custom_text_field.dart';
+import '../validation/auth_validators.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -210,10 +210,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
     } on AuthException catch (e) {
       if (!mounted) return;
-      AppSnackBar.show(context, message: e.message, type: AppSnackBarType.error);
+      CustomSnackBar.show(context, message: e.message, type: AppSnackBarType.error);
     } catch (e) {
       if (!mounted) return;
-      AppSnackBar.show(context, message: e.toString(), type: AppSnackBarType.error);
+      CustomSnackBar.show(context, message: e.toString(), type: AppSnackBarType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -232,7 +232,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppTextField(
+                CustomTextField(
                   controller: _usernameController,
                   label: 'Username',
                   hintText: 'Enter your username',
@@ -245,7 +245,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
-                AppTextField(
+                CustomTextField(
                   controller: _nameController,
                   label: l10n.registerFullNameLabel,
                   hintText: l10n.registerFullNameHint,
@@ -268,7 +268,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
                 const SizedBox(height: AppSpacing.lg),
 
-                AppTextField(
+                CustomTextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   label: l10n.registerEmailLabel,
@@ -283,7 +283,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
-                AppTextField(
+                CustomTextField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   label: 'Phone',
@@ -298,7 +298,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
-                AppTextField(
+                CustomTextField(
                   controller: _addressController,
                   label: 'Address',
                   hintText: 'Enter your address',
@@ -328,7 +328,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
-                AppTextField(
+                CustomTextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   label: l10n.registerPasswordLabel,
@@ -353,7 +353,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
-                AppTextField(
+                CustomTextField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
                   label: l10n.registerConfirmPasswordLabel,
@@ -390,7 +390,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: AppSpacing.xxl),
 
-                AppButton(
+                CustomButton(
                   label: _isLoading ? 'Sending code...' : 'Continue',
                   leading: _isLoading
                       ? const SizedBox(

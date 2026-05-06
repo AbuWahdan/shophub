@@ -122,7 +122,7 @@ AppException (base)
 
 ### Step 3 ✅ — Repositories
 
-**[lib/data/repositories/product_repository.dart](lib/data/repositories/product_repository.dart)**
+**[lib/data/repositories/product_repository.dart](lib/repositories/product_repository.dart)**
 - `getProducts()` — with 2-minute cache, cache invalidated on mutations
 - `getMyProducts()` — filters by username/userId, **NO isActive filter**
 - `getItemDetails()` — product variant details
@@ -134,16 +134,16 @@ AppException (base)
 - `toggleFavorite()` — like/unlike
 - `addItemComment()` — reviews & ratings
 
-**[lib/data/repositories/cart_repository.dart](lib/data/repositories/cart_repository.dart)**
+**[lib/data/repositories/cart_repository.dart](lib/repositories/cart_repository.dart)**
 - `getCart()` — load shopping cart
 - `addToCart()` — add/increment items
 - `deleteFromCart()` — remove items (sends exactly `{ "detail_id": X, "modified_by": Y }`)
 
-**[lib/data/repositories/order_repository.dart](lib/data/repositories/order_repository.dart)**
+**[lib/data/repositories/order_repository.dart](lib/repositories/order_repository.dart)**
 - `getOrders()` — load user orders
 - Status mapping: `p|pending` → "Pending", `c|confirmed` → "Confirmed", etc.
 
-**[lib/data/repositories/user_repository.dart](lib/data/repositories/user_repository.dart)**
+**[lib/data/repositories/user_repository.dart](lib/repositories/user_repository.dart)**
 - `sendOtp()` — initiate password reset
 - `verifyOtp()` — validate OTP
 - `resetPassword()` — update password (treats HTTP 200 as success always)

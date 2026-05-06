@@ -1082,7 +1082,7 @@ class ProductService {
         data['ITEMS'],
         data['product'],
         data['PRODUCT'],
-        data['my_products'],
+        data['products'],
         data['Products'],
         data['PRODUCTS'],
         data['data'],

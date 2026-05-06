@@ -1,8 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-
-import '../data/repositories/address_repository.dart';
 import '../models/addresses/address_model.dart';
+import '../repositories/address_repository.dart';
 
 /// GetX controller for all address operations.
 /// Uses [AddressModel] exclusively — there is no AddressEntity in this project.
