@@ -687,6 +687,7 @@ class UpdateItemDetail {
   final String modifiedBy;
   final String size; // SIZE_CODE string, e.g. "XL", "42", "32/30"
   final int isActive;
+  final double itemTax;
 
   const UpdateItemDetail({
     required this.detailId,
@@ -698,6 +699,8 @@ class UpdateItemDetail {
     required this.modifiedBy,
     required this.size,
     required this.isActive,
+    this.itemTax = 0,
+
   });
 
   factory UpdateItemDetail.fromJson(Map<String, dynamic> json) {
@@ -713,6 +716,9 @@ class UpdateItemDetail {
       modifiedBy: _asString(json, const ['modified_by', 'MODIFIED_BY']),
       size: _asString(json, const ['size', 'SIZE', 'item_size', 'ITEM_SIZE']),
       isActive: _asInt(_pick(json, const ['is_active', 'IS_ACTIVE'])),
+      itemTax: _asDouble(
+        _pick(json, const ['item_tax', 'ITEM_TAX']),
+      ),
     );
   }
 
@@ -726,6 +732,7 @@ class UpdateItemDetail {
     String? modifiedBy,
     String? size,
     int? isActive,
+    double? itemTax,
   }) {
     return UpdateItemDetail(
       detailId: detailId ?? this.detailId,
@@ -737,6 +744,7 @@ class UpdateItemDetail {
       modifiedBy: modifiedBy ?? this.modifiedBy,
       size: size ?? this.size,
       isActive: isActive ?? this.isActive,
+      itemTax: itemTax ?? this.itemTax,
     );
   }
 
@@ -745,11 +753,12 @@ class UpdateItemDetail {
     'item_price': itemPrice,
     'item_qty': itemQty,
     'item_discount': itemDiscount,
+    'item_tax': itemTax,
     'brand': brand,
     'color': color,
     'modified_by': modifiedBy,
-    'size': size, // some Oracle procs use this
-    'item_size': size, // ← ADDED: others use this (matches ITEM_SIZE column)
+    'size': size,
+    'item_size': size,
     'is_active': isActive,
   };
 

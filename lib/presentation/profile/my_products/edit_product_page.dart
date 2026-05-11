@@ -203,7 +203,9 @@ class _EditProductPageState extends State<EditProductPage> {
             itemPrice: price,
             itemQty: int.tryParse(e.qtyController.text.trim()) ?? 0,
             itemDiscount:
-                double.tryParse(e.discountController.text.trim()) ?? 0,
+            double.tryParse(e.discountController.text.trim()) ?? 0,
+            itemTax:
+            double.tryParse(e.taxController.text.trim()) ?? 0,
             brand: e.brandController.text.trim().isEmpty
                 ? 'N/A'
                 : e.brandController.text.trim(),
