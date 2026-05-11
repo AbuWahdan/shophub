@@ -144,7 +144,7 @@ class _ProductCardState extends State<ProductCard> {
         itemId:    widget.product.id,
         itemDetId: itemDetId,
         username:  username,
-        chosenQty: selection.qty,
+        requestedQty: selection.qty,
       );
 
       if (!mounted) return;

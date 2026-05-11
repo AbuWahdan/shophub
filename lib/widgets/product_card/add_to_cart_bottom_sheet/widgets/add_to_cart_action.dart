@@ -86,7 +86,7 @@ abstract final class AddToCartAction {
         itemId:    product.id,
         itemDetId: itemDetId,
         username:  username,
-        chosenQty: selection.qty,
+          requestedQty: selection.qty,
       );
 
       if (!context.mounted) return false;

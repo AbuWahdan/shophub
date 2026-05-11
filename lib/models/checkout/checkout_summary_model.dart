@@ -18,9 +18,9 @@ class CheckoutSummaryModel {
     );
     final itemDiscount = items.fold<double>(
       0,
-      (sum, item) => sum + item.lineDiscount,
+      (sum, item) => sum + item.discount,
     );
-    final tax = items.fold<double>(0, (sum, item) => sum + item.lineTax);
+    final tax = items.fold<double>(0, (sum, item) => sum + item.tax);
 
     return CheckoutSummaryModel(
       subtotal: subtotal,

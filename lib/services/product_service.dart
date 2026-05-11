@@ -624,7 +624,7 @@ class ProductService {
     return items.map(CartItemModel.fromJson).toList();
   }
 
-  Future<void> addItemToCart(AddItemToCartRequest request) async {
+  Future<void> addItemToCart(AddToCartRequest request) async {
     final endpoint = Uri.parse('$_baseUrl/AddItemToCart');
     final payload = request.toJson();
     if (kDebugMode) {

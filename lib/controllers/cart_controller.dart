@@ -3,65 +3,92 @@ import 'package:get/get.dart';
 import '../models/cart_item_model.dart';
 import '../repositories/cart_repository.dart';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CART CONTROLLER
+//
+// Responsibilities:
+//   • Owns the reactive cart state (items, loading flags)
+//   • Enforces quantity bounds BEFORE hitting the repository
+//   • Prevents rapid double-taps via per-item debounce
+//   • Rolls back optimistic UI updates on failure
+//
+// What it does NOT do:
+//   • Compute deltas or API payloads (that is CartRepository's concern)
+//   • Know anything about API accumulation behavior
+// ─────────────────────────────────────────────────────────────────────────────
+
 class CartController extends GetxController {
   final CartRepository _repo;
   CartController(this._repo);
 
+  // ── Reactive state ──────────────────────────────────────────────────────────
+
   final RxList<CartItemModel> items = <CartItemModel>[].obs;
   final RxBool isLoading = false.obs;
 
-  final RxMap<int, bool> itemLoading = <int, bool>{}.obs;
-  final RxMap<int, DateTime> _lastUpdateTime = <int, DateTime>{}.obs;
+  /// Per-item loading state keyed by detailId
+  final RxMap<int, bool> _itemBusy = <int, bool>{}.obs;
 
-  static const String _errLoadCart    = 'Failed to load cart. Please try again.';
-  static const String _errAddItem     = 'Failed to add item to cart.';
-  static const String _errRemoveItem  = 'Failed to remove item from cart.';
-  static const String _errUpdateQty   = 'Failed to update quantity.';
-  static const String _errInvalidQty  = 'Invalid quantity selected.';
-  static const String _errExceedsStock= 'Quantity exceeds available stock.';
-  static const String _errAuth        = 'Please log in to manage your cart.';
-  static const String _errRapidTap    = 'Please wait before tapping again.';
-  static const String _sucAdded       = 'Item added to cart';
-  static const String _sucRemoved     = 'Item removed from cart';
+  /// Debounce tracker — prevents rapid taps on the same item
+  final Map<int, DateTime> _lastTapTime = {};
 
-  int itemKey(CartItemModel item) =>
-      item.detailId > 0 ? item.detailId : item.itemDetId;
+  // ── Constants ───────────────────────────────────────────────────────────────
 
-  CartItemModel? _findByKey(int key) =>
-      items.firstWhereOrNull((i) => itemKey(i) == key);
+  static const Duration _tapDebounce = Duration(milliseconds: 600);
 
-  int _findIndexByKey(int key) {
-    for (int i = 0; i < items.length; i++) {
-      if (itemKey(items[i]) == key) return i;
-    }
-    return -1;
-  }
+  // ── Computed getters ────────────────────────────────────────────────────────
 
   int get totalItemCount => items.length;
 
-  int get totalQuantity =>
-      items.fold(0, (sum, item) => sum + item.bookedQty);
+  int get totalQuantity => items.fold(0, (sum, i) => sum + i.bookedQty);
 
-  double get totalPrice =>
-      items.fold(0.0, (sum, item) => sum + item.total);
+  double get totalPrice => items.fold(0.0, (sum, i) => sum + i.lineTotal);
+
+  bool isItemBusy(int detailId) => _itemBusy[detailId] == true;
 
   bool canIncrement(CartItemModel item) => item.bookedQty < item.availableQty;
 
   bool canDecrement(CartItemModel item) => item.bookedQty > 1;
 
-  void _lock(int key)   => itemLoading[key] = true;
-  void _unlock(int key) => itemLoading.remove(key);
-  bool _isLocked(int key) => itemLoading[key] == true;
+  // ── Private helpers ─────────────────────────────────────────────────────────
 
-  static const Duration _minTimeBetweenTaps = Duration(milliseconds: 500);
-
-  bool _canProcessTap(int key) {
-    final lastUpdate = _lastUpdateTime[key];
-    if (lastUpdate == null) return true;
-    return DateTime.now().difference(lastUpdate) >= _minTimeBetweenTaps;
+  void _setBusy(int detailId, {required bool busy}) {
+    if (busy) {
+      _itemBusy[detailId] = true;
+    } else {
+      _itemBusy.remove(detailId);
+    }
   }
 
-  void _recordTap(int key) => _lastUpdateTime[key] = DateTime.now();
+  bool _isDebounced(int detailId) {
+    final last = _lastTapTime[detailId];
+    if (last == null) return false;
+    return DateTime.now().difference(last) < _tapDebounce;
+  }
+
+  void _recordTap(int detailId) => _lastTapTime[detailId] = DateTime.now();
+
+  int _indexOf(int detailId) {
+    for (int i = 0; i < items.length; i++) {
+      if (items[i].detailId == detailId) return i;
+    }
+    return -1;
+  }
+
+  void _showError(String message) =>
+      Get.snackbar('Error', message, snackPosition: SnackPosition.BOTTOM);
+
+  void _showWarning(String message) =>
+      Get.snackbar('Warning', message, snackPosition: SnackPosition.BOTTOM);
+
+  void _showSuccess(String message) =>
+      Get.snackbar('', message, snackPosition: SnackPosition.BOTTOM);
+
+  // ── PUBLIC API ───────────────────────────────────────────────────────────────
+
+  // ─────────────────────────────
+  // LOAD CART
+  // ─────────────────────────────
 
   Future<void> loadCart({required String username}) async {
     final normalized = username.trim();
@@ -72,75 +99,83 @@ class CartController extends GetxController {
 
     isLoading.value = true;
     try {
-      final result = await _repo.getCart(username: normalized);
+      final result = await _repo.fetchCart(username: normalized);
       items.assignAll(result);
 
       if (kDebugMode) {
-        debugPrint('[CartController] loadCart → ${result.length} items for $normalized');
+        debugPrint(
+          '[CartController.loadCart] ${result.length} items for $normalized',
+        );
       }
     } catch (e) {
-      debugPrint('[CartController] loadCart error: $e');
-      Get.snackbar('Error', _errLoadCart, snackPosition: SnackPosition.BOTTOM);
+      debugPrint('[CartController.loadCart] error: $e');
+      _showError('Failed to load cart. Please try again.');
       rethrow;
     } finally {
       isLoading.value = false;
     }
   }
 
-  // ─────────────────────────────────────────────
-  // FIXED: ADD ITEM
-  // ─────────────────────────────────────────────
+  // ─────────────────────────────
+  // ADD ITEM (new item or re-add)
+  // ─────────────────────────────
+  //
+  // Sends delta qty to the API. If the item already exists in cart,
+  // caps the delta so it does not exceed remaining stock.
+
   Future<void> addItem({
     required int itemId,
     required int itemDetId,
     required String username,
-    required int chosenQty,
+    required int requestedQty,
   }) async {
-    if (chosenQty <= 0) return;
+    if (requestedQty <= 0) return;
 
     final normalized = username.trim();
     if (normalized.isEmpty) {
-      Get.snackbar('Error', _errAuth);
+      _showError('Please log in to manage your cart.');
       return;
     }
 
     try {
+      // Check if item already in cart → cap delta to remaining stock
       final existing = items.firstWhereOrNull((i) => i.itemDetId == itemDetId);
-      int payloadQty = chosenQty;
+      int deltaQty = requestedQty;
 
       if (existing != null) {
-        int remainingStock = existing.availableQty - existing.bookedQty;
-
-        // ✅ CRITICAL FIX 1: Abort completely if max stock is reached.
-        if (remainingStock <= 0) {
-          Get.snackbar('Warning', '$_errExceedsStock (Max: ${existing.availableQty})', snackPosition: SnackPosition.BOTTOM);
+        final remaining = existing.availableQty - existing.bookedQty;
+        if (remaining <= 0) {
+          _showWarning(
+            'Maximum quantity reached (${existing.availableQty} in stock).',
+          );
           return;
         }
-
-        // Cap the delta if they try to add more than remaining stock
-        if (payloadQty > remainingStock) {
-          payloadQty = remainingStock;
-          Get.snackbar('Warning', 'Only $remainingStock more items available. Added maximum to cart.', snackPosition: SnackPosition.BOTTOM);
+        if (deltaQty > remaining) {
+          deltaQty = remaining;
+          _showWarning('Only $remaining more available. Added maximum.');
         }
       }
 
-      // ✅ CRITICAL FIX 2: Send ONLY the delta (payloadQty) to the API.
-      // Do NOT send (existing + chosen) since the backend accumulates.
-      await _repo.addToCart(
-        AddItemToCartRequest(
+      await _repo.addItem(
+        AddToCartRequest(
           itemId: itemId,
           itemDetId: itemDetId,
           username: normalized,
-          bookedQty: payloadQty,
+          deltaQty: deltaQty,
         ),
       );
 
       await loadCart(username: normalized);
-      Get.snackbar(_sucAdded, '', snackPosition: SnackPosition.BOTTOM);
+      _showSuccess('Item added to cart');
     } catch (e) {
-      Get.snackbar('Error', _errAddItem, snackPosition: SnackPosition.BOTTOM);
+      debugPrint('[CartController.addItem] error: $e');
+      _showError('Failed to add item to cart.');
     }
   }
+
+  // ─────────────────────────────
+  // REMOVE ITEM
+  // ─────────────────────────────
 
   Future<bool> removeItem({
     required CartItemModel item,
@@ -148,154 +183,161 @@ class CartController extends GetxController {
   }) async {
     final normalized = username.trim();
     if (normalized.isEmpty) {
-      Get.snackbar('Error', _errAuth);
+      _showError('Please log in to manage your cart.');
       return false;
     }
 
-    final key = itemKey(item);
-    final originalIndex = _findIndexByKey(key);
+    final detailId = item.detailId;
+    if (_itemBusy[detailId] == true) return false;
+
+    // Optimistic removal
+    final originalIndex = _indexOf(detailId);
     final snapshot = originalIndex >= 0 ? items[originalIndex] : null;
+    if (originalIndex >= 0) items.removeAt(originalIndex);
 
-    if (_isLocked(key)) return false;
-
-    _lock(key);
-
+    _setBusy(detailId, busy: true);
     try {
-      items.removeWhere((i) => itemKey(i) == key);
-      await _repo.deleteFromCart(detailId: key, modifiedBy: normalized);
-      Get.snackbar(_sucRemoved, '', snackPosition: SnackPosition.BOTTOM);
+      await _repo.removeItem(detailId: detailId, username: normalized);
+      _showSuccess('Item removed');
       return true;
     } catch (e) {
+      // Rollback
       if (snapshot != null && originalIndex >= 0) {
         items.insert(originalIndex, snapshot);
       }
-      Get.snackbar('Error', _errRemoveItem, snackPosition: SnackPosition.BOTTOM);
+      _showError('Failed to remove item.');
       return false;
     } finally {
-      _unlock(key);
+      _setBusy(detailId, busy: false);
     }
   }
 
-  // ─────────────────────────────────────────────
-  // STRICT BOUNDS ENFORCEMENT
-  // ─────────────────────────────────────────────
-  Future<void> _updateQty({required CartItemModel item, required String username, required int newQty,}) async {
-    final normalized = username.trim();
-    if (normalized.isEmpty) {
-      Get.snackbar('Error', _errAuth);
-      return;
-    }
-
-    final key = itemKey(item);
-    if (!_canProcessTap(key)) {
-      Get.snackbar('Info', _errRapidTap, snackPosition: SnackPosition.BOTTOM);
-      return;
-    }
-    _recordTap(key);
-
-    final index = _findIndexByKey(key);
-    if (index == -1) return;
-
-    final snapshot = items[index];
-
-    if (_isLocked(key)) return;
-
-    if (newQty <= 0) {
-      await removeItem(item: snapshot, username: normalized);
-      return;
-    }
-
-    // ✅ STRICT BOUNDS CHECK: Do not allow optimistic updates or API calls to proceed.
-    if (newQty < 1) {
-      Get.snackbar('Error', _errInvalidQty);
-      return;
-    }
-
-    if (newQty > snapshot.availableQty) {
-      Get.snackbar('Warning', '$_errExceedsStock (Max: ${snapshot.availableQty})', snackPosition: SnackPosition.BOTTOM);
-      return;
-    }
-
-    _lock(key);
-    items[index] = snapshot.copyWith(bookedQty: newQty);
-
-    try {
-      await _repo.updateCartItemQty(
-        currentDetailId: key,
-        itemId: snapshot.itemId,
-        itemDetId: snapshot.itemDetId,
-        username: normalized,
-        newQty: newQty,
-        availableQty: snapshot.availableQty,
-        tax: snapshot.tax,
-      );
-
-      await loadCart(username: normalized);
-
-    } catch (e) {
-      final rollbackIndex = _findIndexByKey(key);
-      if (rollbackIndex >= 0) {
-        items[rollbackIndex] = snapshot;
-      } else if (index < items.length) {
-        items[index] = snapshot;
-      }
-      Get.snackbar('Error', _errUpdateQty, snackPosition: SnackPosition.BOTTOM);
-    } finally {
-      _unlock(key);
-    }
-  }
+  // ─────────────────────────────
+  // INCREMENT (+1)
+  // ─────────────────────────────
 
   Future<void> incrementItem({
     required CartItemModel item,
     required String username,
   }) async {
     if (!canIncrement(item)) {
-      Get.snackbar('Warning', '$_errExceedsStock (Max: ${item.availableQty})', snackPosition: SnackPosition.BOTTOM);
+      _showWarning(
+        'Maximum quantity reached (${item.availableQty} in stock).',
+      );
       return;
     }
-    await _updateQty(item: item, username: username, newQty: item.bookedQty + 1);
+
+    final detailId = item.detailId;
+
+    if (_isDebounced(detailId)) return;
+    if (_itemBusy[detailId] == true) return;
+
+    _recordTap(detailId);
+
+    // Optimistic update
+    final index = _indexOf(detailId);
+    if (index == -1) return;
+    final snapshot = items[index];
+    items[index] = snapshot.copyWith(bookedQty: snapshot.bookedQty + 1);
+
+    _setBusy(detailId, busy: true);
+    try {
+      // ✅ DELTA ONLY: Send +1. API accumulates, so this is correct.
+      await _repo.incrementItemQty(
+        itemId: item.itemId,
+        itemDetId: item.itemDetId,
+        username: username.trim(),
+        tax: item.tax,
+      );
+      // Refresh to get server-confirmed state
+      await loadCart(username: username.trim());
+    } catch (e) {
+      // Rollback
+      final rollbackIndex = _indexOf(detailId);
+      if (rollbackIndex >= 0) items[rollbackIndex] = snapshot;
+      _showError('Failed to update quantity.');
+    } finally {
+      _setBusy(detailId, busy: false);
+    }
   }
+
+  // ─────────────────────────────
+  // DECREMENT (-1)
+  // ─────────────────────────────
 
   Future<void> decrementItem({
     required CartItemModel item,
     required String username,
   }) async {
-    await _updateQty(item: item, username: username, newQty: item.bookedQty - 1);
+    final detailId = item.detailId;
+    final normalized = username.trim();
+
+    if (_isDebounced(detailId)) return;
+    if (_itemBusy[detailId] == true) return;
+
+    _recordTap(detailId);
+
+    // Decrement to 0 → remove entirely
+    if (item.bookedQty <= 1) {
+      await removeItem(item: item, username: normalized);
+      return;
+    }
+
+    // Optimistic update
+    final index = _indexOf(detailId);
+    if (index == -1) return;
+    final snapshot = items[index];
+    items[index] = snapshot.copyWith(bookedQty: snapshot.bookedQty - 1);
+
+    _setBusy(detailId, busy: true);
+    try {
+      // ✅ SIMPLE: Just send delta=-1. API subtracts natively.
+      // No delete+re-add. No race conditions. No available_qty corruption.
+      await _repo.decrementItemQty(
+        itemId: item.itemId,
+        itemDetId: item.itemDetId,
+        username: normalized,
+        tax: item.tax,
+      );
+      await loadCart(username: normalized);
+    } catch (e) {
+      // Rollback
+      final rollbackIndex = _indexOf(detailId);
+      if (rollbackIndex >= 0) items[rollbackIndex] = snapshot;
+      _showError('Failed to update quantity.');
+    } finally {
+      _setBusy(detailId, busy: false);
+    }
   }
 
-  Map<String, dynamic> validateCartState() {
-    final errors = <String>[];
-    final warnings = <String>[];
+  // ─────────────────────────────
+  // DEBUG VALIDATION
+  // ─────────────────────────────
 
-    final detailIds = items.map((i) => i.detailId).toList();
-    final uniqueDetailIds = detailIds.toSet();
-    if (detailIds.length != uniqueDetailIds.length) {
-      errors.add('Duplicate DETAIL_IDs detected');
+  Map<String, dynamic> debugValidateState() {
+    final errors = <String>[];
+
+    final ids = items.map((i) => i.detailId).toList();
+    if (ids.toSet().length != ids.length) {
+      errors.add('Duplicate detailIds detected: $ids');
     }
 
     for (final item in items) {
       if (item.bookedQty < 1) {
-        errors.add('Item ${item.itemDetId}: bookedQty=${item.bookedQty} < 1');
+        errors.add('${item.itemName}: bookedQty=${item.bookedQty} < 1');
       }
       if (item.bookedQty > item.availableQty) {
-        errors.add('Item ${item.itemDetId}: bookedQty=${item.bookedQty} > availableQty=${item.availableQty}');
+        errors.add(
+          '${item.itemName}: bookedQty=${item.bookedQty} '
+              '> availableQty=${item.availableQty}',
+        );
       }
     }
 
-    final calcQuantity = items.fold(0, (sum, item) => sum + item.bookedQty);
-    if (calcQuantity != totalQuantity) {
-      errors.add('Quantity mismatch: calculated=$calcQuantity, totalQuantity=$totalQuantity');
+    if (kDebugMode && errors.isNotEmpty) {
+      debugPrint('[CartController] ⚠️ Validation errors: $errors');
     }
 
-    final calcPrice = items.fold(0.0, (sum, item) => sum + item.total);
-    if ((calcPrice - totalPrice).abs() > 0.01) {
-      warnings.add('Price mismatch: calculated=${calcPrice.toStringAsFixed(2)}, totalPrice=$totalPrice');
-    }
-
-    return {
-      'isValid': errors.isEmpty,
-      'errors': errors,
-      'warnings': warnings,
-    };
+    return {'isValid': errors.isEmpty, 'errors': errors};
   }
 }

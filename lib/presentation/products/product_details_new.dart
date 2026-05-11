@@ -12,8 +12,10 @@ import '../../core/config/route.dart';
 import '../../core/state/auth_state.dart';
 import '../../core/state/review_refresh_notifier.dart';
 import '../../repositories/comment_repository.dart';
+import '../../repositories/cart_repository.dart';
 import '../../widgets/product_card/add_to_cart_bottom_sheet/add_to_cart_bottom_sheet.dart';
 import '../../widgets/product_card/add_to_cart_bottom_sheet/widgets/product_variant_widgets.dart';
+import '../../widgets/product_card/product_variant_card_with_stock.dart';
 import '../profile/wishlist/wishlist_state.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_radius.dart';
@@ -23,9 +25,11 @@ import '../../design/app_text_styles.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/product_service.dart';
 import '../../widgets/custom_empty_state/custom_empty_state.dart';
+import '../../widgets/floating_cart_icon/animated_floating_cart_icon.dart';
 import '../../widgets/gallery_section/gallery_viewer.dart';
 import '../../widgets/custom_image.dart';
 import '../../widgets/custom__snack_bar/custom_snack_bar.dart';
+import '../../controllers/floating_cart_controller.dart';
 import 'comments/widgets/product_comment_card.dart';
 
 class ProductDetailsPage extends StatefulWidget {
@@ -49,6 +53,7 @@ class ProductDetailsPage extends StatefulWidget {
 class _ProductDetailsPageState extends State<ProductDetailsPage> {
   final ProductService _productService = ProductService();
   late final CommentRepository _commentRepository;
+  late final FloatingCartController _floatingCartController;
   late PageController _imageController;
   late Future<List<ItemCommentModel>> _commentsFuture;
   int _currentImageIndex = 0;
@@ -98,6 +103,12 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   void initState() {
     super.initState();
     _commentRepository = Get.find<CommentRepository>();
+    
+    // Initialize floating cart controller
+    final cartRepository = Get.find<CartRepository>();
+    _floatingCartController = FloatingCartController(cartRepository);
+    Get.put<FloatingCartController>(_floatingCartController, tag: 'product-details');
+    
     _imageController = PageController();
     _commentsFuture = _commentRepository.getItemComments(
       itemId: widget.product.id,
@@ -113,12 +124,21 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     _loadItemImages();
     _loadDrawerVariants();
     ReviewRefreshNotifier.updatedItemId.addListener(_handleReviewRefresh);
+    
+    // Load cart for floating icon
+    final authState = context.read<AuthState>();
+    if (authState.isLoggedIn && authState.user != null) {
+      _floatingCartController.initializeCart(authState.user!.username);
+    }
   }
 
   @override
   void dispose() {
     ReviewRefreshNotifier.updatedItemId.removeListener(_handleReviewRefresh);
     _imageController.dispose();
+    if (Get.isRegistered<FloatingCartController>(tag: 'product-details')) {
+      Get.delete<FloatingCartController>(tag: 'product-details');
+    }
     super.dispose();
   }
 
@@ -269,108 +289,115 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     final isTogglingFavorite = wishlistState.isToggling(widget.product.id);
     final bottomActionHeight = AppSpacing.buttonMd + (AppSpacing.lg * 2);
     widget.product.isFavorite = isFavorite;
-    return Scaffold(
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildImageCarousel(),
-                Padding(
-                  padding: AppSpacing.insetsMd,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildProductInfo(),
-                      const SizedBox(height: AppSpacing.lg),
-                      _buildVariantSection(),
-                      const SizedBox(height: AppSpacing.xxl),
-                      _buildRatingSection(),
-                      const SizedBox(height: AppSpacing.xxl),
-                      _buildDescriptionSection(),
-                      const SizedBox(height: AppSpacing.xxl),
-                      _buildReviewsSection(),
-                      SizedBox(height: bottomActionHeight),
-                    ],
-                  ),
+    
+    return Stack(
+      children: [
+        Scaffold(
+          body: Stack(
+            children: [
+              SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildImageCarousel(),
+                    Padding(
+                      padding: AppSpacing.insetsMd,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildProductInfo(),
+                          const SizedBox(height: AppSpacing.lg),
+                          _buildVariantSection(),
+                          const SizedBox(height: AppSpacing.xxl),
+                          _buildRatingSection(),
+                          const SizedBox(height: AppSpacing.xxl),
+                          _buildDescriptionSection(),
+                          const SizedBox(height: AppSpacing.xxl),
+                          _buildReviewsSection(),
+                          SizedBox(height: bottomActionHeight),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: AppBar(
+                  backgroundColor: AppColors.transparent,
+                  elevation: 0,
+                  actions: [
+                    IconButton(
+                      icon: isTogglingFavorite
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Icon(
+                              isFavorite ? Icons.favorite : Icons.favorite_border,
+                              color: isFavorite
+                                  ? AppColors.error
+                                  : Theme.of(context).colorScheme.onSurface,
+                            ),
+                      onPressed: isTogglingFavorite ? null : _handleToggleFavorite,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: AppBar(
-              backgroundColor: AppColors.transparent,
-              elevation: 0,
-              actions: [
-                IconButton(
-                  icon: isTogglingFavorite
-                      ? const SizedBox(
+          bottomNavigationBar: SafeArea(
+            top: false,
+            child: Container(
+              padding: AppSpacing.insetsLg,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                boxShadow:  [AppShadows.subtleShadow],
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: AppSpacing.buttonMd,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                    ),
+                  ),
+                  onPressed: (_isAddingToCart || isAuthLoading)
+                      ? null
+                      : _openAddToCartSheet,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (_isAddingToCart || isAuthLoading)
+                        const SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Icon(
-                          isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color: isFavorite
-                              ? AppColors.error
-                              : Theme.of(context).colorScheme.onSurface,
                         ),
-                  onPressed: isTogglingFavorite ? null : _handleToggleFavorite,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Container(
-          padding: AppSpacing.insetsLg,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            boxShadow:  [AppShadows.subtleShadow],
-          ),
-          child: SizedBox(
-            width: double.infinity,
-            height: AppSpacing.buttonMd,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                ),
-              ),
-              onPressed: (_isAddingToCart || isAuthLoading)
-                  ? null
-                  : _openAddToCartSheet,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (_isAddingToCart || isAuthLoading)
-                    const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  if (_isAddingToCart || isAuthLoading)
-                    const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    AppLocalizations.of(context).productAddToCart,
-                    style: AppTextStyles.buttonLarge.copyWith(
-                      color: AppColors.black,
-                    ),
+                      if (_isAddingToCart || isAuthLoading)
+                        const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        AppLocalizations.of(context).productAddToCart,
+                        style: AppTextStyles.buttonLarge.copyWith(
+                          color: AppColors.black,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
         ),
-      ),
+        // Animated floating cart icon
+        AnimatedFloatingCartIcon(controller: _floatingCartController),
+      ],
     );
   }
 
@@ -603,9 +630,17 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
-        child: ProductVariantSummary(
-          variant: selectedVariant,
-          showColor: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ProductVariantSummary(
+              variant: selectedVariant,
+              showColor: false,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            // Stock indicator for single variant
+            _buildStockIndicator(selectedVariant),
+          ],
         ),
       );
     }
@@ -618,7 +653,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         ..._variants.map(
           (variant) => Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: ProductVariantOptionCard(
+            child: ProductVariantCardWithStock(
               variant: variant,
               isSelected: selectedVariant.detId > 0
                   ? selectedVariant.detId == variant.detId
@@ -633,10 +668,67 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     );
   }
 
-  Widget _buildRatingSection() {
-    final availableQty = _selectedVariant?.itemQty ?? widget.product.itemQty;
-    final showAvailableQty = availableQty >= 0 ;
+  Widget _buildStockIndicator(ApiProductVariant variant) {
+    if (variant.itemQty <= 0) {
+      return Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        child: Text(
+          'Out of Stock',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.error,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
+    
+    if (variant.itemQty <= 5) {
+      return Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.warning.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        child: Text(
+          'Only ${variant.itemQty} left!',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.warning,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
 
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Text(
+        '${variant.itemQty} available',
+        style: AppTextStyles.bodySmall.copyWith(
+          color: AppColors.primary,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRatingSection() {
     return Wrap(
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.xs,
@@ -651,13 +743,6 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           AppLocalizations.of(context).productReviews(widget.product.reviewCount),
           style: AppTextStyles.bodySmall,
         ),
-        if (showAvailableQty)
-          Text(
-            'Available: $availableQty',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.accent,
-            ),
-          ),
       ],
     );
   }
@@ -954,11 +1039,11 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
 
     try {
       await _productService.addItemToCart(
-        AddItemToCartRequest(
+        AddToCartRequest(
           itemId: widget.product.id,
           itemDetId: itemDetId,
           username: username,
-          bookedQty: qty,
+          deltaQty: qty,
         ),
       );
 
@@ -971,6 +1056,11 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         color: variant.color.trim().isEmpty ? 'Default' : variant.color,
         detId: itemDetId,
       );
+      
+      // ✅ Trigger floating cart animation and reload count
+      _floatingCartController.triggerAddToCartAnimation();
+      await _floatingCartController.loadCart();
+      
       CustomSnackBar.show(
         context,
         message: AppLocalizations.of(context).productAddedToCart(widget.product.name),

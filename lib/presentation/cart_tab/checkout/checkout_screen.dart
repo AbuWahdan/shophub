@@ -780,7 +780,7 @@ class _OrderSummaryRow extends StatelessWidget {
         ),
         const SizedBox(width: AppSpacing.md),
         Text(
-          '\$${item.total.toStringAsFixed(2)}',
+          '\$${item.itemPrice*item.bookedQty}',
           style: AppTextStyles.bodyLarge,
         ),
       ],
