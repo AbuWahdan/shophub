@@ -1,4 +1,7 @@
 {
+  "wishlistLoginRequired": "Please sign in to view your wishlist",
+  "wishlistEmptyTitle": "Your wishlist is empty",
+  "wishlistEmptySubtitle": "Save your favorite items to see them here",
   "productVariants": "Product Variants",
   "productAddVariant": "Add Variant",
   "productNoVariantsYet": "No variants yet",

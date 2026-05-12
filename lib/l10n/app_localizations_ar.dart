@@ -9,6 +9,15 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
+  String get wishlistLoginRequired => 'يرجى تسجيل الدخول لعرض المفضلة';
+
+  @override
+  String get wishlistEmptyTitle => 'قائمة المفضلة فارغة';
+
+  @override
+  String get wishlistEmptySubtitle => 'احفظ العناصر المفضلة لديك لتظهر هنا';
+
+  @override
   String get productVariants => 'خيارات المنتج';
 
   @override

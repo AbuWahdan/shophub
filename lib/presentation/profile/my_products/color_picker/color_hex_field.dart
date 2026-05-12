@@ -72,31 +72,51 @@ class _ColorHexFieldState extends State<ColorHexField> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: TextFormField(
-                controller: _controller.textController,
-                onChanged: _controller.updateFromText,
-                keyboardType: TextInputType.text,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9a-fA-F]')),
-                  LengthLimitingTextInputFormatter(6),
-                ],
-                validator: (value) {
-                  if (!isValidHex(value ?? '')) {
-                    return AppLocalizations.of(context).colorPickerInvalidHex;
-                  }
-                  return null;
-                },
-                style: AppTextStyles.bodyLarge,
-                decoration: InputDecoration(
-                  hintText: AppLocalizations.of(context).colorPickerHexHint,
-                  prefixText: '#',
-                  filled: true,
-                  fillColor: AppColors.surfaceVariant,
-                  contentPadding: AppSpacing.insetsMd,
+              child: GestureDetector(
+                onTap: _openPickerDialog,
+                child: AbsorbPointer(
+                  child: TextFormField(
+                    controller: _controller.textController,
+                    readOnly: true,
+                    style: AppTextStyles.bodyLarge,
+                    decoration: InputDecoration(
+                      hintText: AppLocalizations.of(context).colorPickerHexHint,
+                      prefixText: '#',
+                      suffixIcon: const Icon(Icons.palette_outlined),
+                      filled: true,
+                      fillColor: AppColors.surfaceVariant,
+                      contentPadding: AppSpacing.insetsMd,
+                    ),
+                  ),
                 ),
               ),
             ),
+            // Expanded(
+            //   child: TextFormField(
+            //     controller: _controller.textController,
+            //     onChanged: _controller.updateFromText,
+            //     keyboardType: TextInputType.text,
+            //     autovalidateMode: AutovalidateMode.onUserInteraction,
+            //     inputFormatters: [
+            //       FilteringTextInputFormatter.allow(RegExp(r'[0-9a-fA-F]')),
+            //       LengthLimitingTextInputFormatter(6),
+            //     ],
+            //     validator: (value) {
+            //       if (!isValidHex(value ?? '')) {
+            //         return AppLocalizations.of(context).colorPickerInvalidHex;
+            //       }
+            //       return null;
+            //     },
+            //     style: AppTextStyles.bodyLarge,
+            //     decoration: InputDecoration(
+            //       hintText: AppLocalizations.of(context).colorPickerHexHint,
+            //       prefixText: '#',
+            //       filled: true,
+            //       fillColor: AppColors.surfaceVariant,
+            //       contentPadding: AppSpacing.insetsMd,
+            //     ),
+            //   ),
+            // ),
             const SizedBox(width: AppSpacing.md),
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.md),
@@ -116,7 +136,6 @@ class _ColorHexFieldState extends State<ColorHexField> {
     );
   }
 }
-
 class _ColorHexFieldController extends GetxController {
   _ColorHexFieldController(this.initialColor, this.onColorChanged);
 
@@ -124,6 +143,7 @@ class _ColorHexFieldController extends GetxController {
   final ValueChanged<String> onColorChanged;
 
   final textController = TextEditingController();
+
   final currentHex = ''.obs;
   final previewColor = Rxn<Color>();
   final hasValidColor = false.obs;
@@ -131,40 +151,40 @@ class _ColorHexFieldController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
     final normalized = _normalizeInput(initialColor);
-    final initialHex = isValidHex(normalized) ? normalized : '';
-    textController.text = initialHex;
-    updateFromText(initialHex);
-  }
 
-  void updateFromText(String value) {
-    final normalized = _normalizeInput(value);
-    if (textController.text != normalized) {
-      _setText(normalized);
+    if (normalized.isEmpty || !isValidHex(normalized)) {
+      setHex('000000');
+      return;
     }
 
-    currentHex.value = normalized;
-    final parsedColor = hexToColor(normalized);
-    previewColor.value = parsedColor;
-    final isValid = parsedColor != null && normalized.length == 6;
-    hasValidColor.value = isValid;
-
-    if (isValid) {
-      onColorChanged(colorToHex(parsedColor));
-    }
+    setHex(normalized);
   }
+  // @override
+  // void onInit() {
+  //   super.onInit();
+  //   setHex(initialColor);
+  // }
 
   void setHex(String value) {
     final normalized = _normalizeInput(value);
-    _setText(normalized);
-    updateFromText(normalized);
-  }
 
-  void _setText(String value) {
-    textController.value = TextEditingValue(
-      text: value,
-      selection: TextSelection.collapsed(offset: value.length),
-    );
+    currentHex.value = normalized;
+
+    final parsedColor = hexToColor(normalized);
+
+    previewColor.value = parsedColor;
+
+    final isValid = parsedColor != null;
+
+    hasValidColor.value = isValid;
+
+    textController.text = normalized;
+
+    if (isValid) {
+      onColorChanged(normalized);
+    }
   }
 
   String _normalizeInput(String value) {
@@ -177,6 +197,67 @@ class _ColorHexFieldController extends GetxController {
     super.onClose();
   }
 }
+//
+// class _ColorHexFieldController extends GetxController {
+//   _ColorHexFieldController(this.initialColor, this.onColorChanged);
+//
+//   final String initialColor;
+//   final ValueChanged<String> onColorChanged;
+//
+//   final textController = TextEditingController();
+//   final currentHex = ''.obs;
+//   final previewColor = Rxn<Color>();
+//   final hasValidColor = false.obs;
+//
+//   @override
+//   void onInit() {
+//     super.onInit();
+//     final normalized = _normalizeInput(initialColor);
+//     final initialHex = isValidHex(normalized) ? normalized : '';
+//     textController.text = initialHex;
+//     updateFromText(initialHex);
+//   }
+//
+//   void updateFromText(String value) {
+//     final normalized = _normalizeInput(value);
+//     if (textController.text != normalized) {
+//       _setText(normalized);
+//     }
+//
+//     currentHex.value = normalized;
+//     final parsedColor = hexToColor(normalized);
+//     previewColor.value = parsedColor;
+//     final isValid = parsedColor != null && normalized.length == 6;
+//     hasValidColor.value = isValid;
+//
+//     if (isValid) {
+//       onColorChanged(colorToHex(parsedColor));
+//     }
+//   }
+//
+//   void setHex(String value) {
+//     final normalized = _normalizeInput(value);
+//     _setText(normalized);
+//     updateFromText(normalized);
+//   }
+//
+//   void _setText(String value) {
+//     textController.value = TextEditingValue(
+//       text: value,
+//       selection: TextSelection.collapsed(offset: value.length),
+//     );
+//   }
+//
+//   String _normalizeInput(String value) {
+//     return value.trim().replaceFirst('#', '').toUpperCase();
+//   }
+//
+//   @override
+//   void onClose() {
+//     textController.dispose();
+//     super.onClose();
+//   }
+// }
 
 class _ColorPreview extends StatelessWidget {
   const _ColorPreview({required this.color, required this.hasValidColor});

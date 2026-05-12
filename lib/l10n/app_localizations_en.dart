@@ -9,6 +9,16 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get wishlistLoginRequired => 'Please sign in to view your wishlist';
+
+  @override
+  String get wishlistEmptyTitle => 'Your wishlist is empty';
+
+  @override
+  String get wishlistEmptySubtitle =>
+      'Save your favorite items to see them here';
+
+  @override
   String get productVariants => 'Product Variants';
 
   @override

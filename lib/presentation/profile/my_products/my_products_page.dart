@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/widgets/custom_empty_state/custom_empty_state.dart';
 
 import '../../../../controllers/my_products_controller.dart';
-import '../../../../models/product_image_model.dart';
-import '../../../../models/product_model.dart';
+import '../../../models/product/product_image_model.dart';
+import '../../../models/product/product_model.dart';
 import '../../../core/config/route.dart';
 import '../../../design/app_colors.dart';
 import '../../../design/app_radius.dart';

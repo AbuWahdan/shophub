@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../data/categories_data.dart';
 import '../../../models/data.dart';
-import '../../../models/product_model.dart';
+import '../../models/product/product_model.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';

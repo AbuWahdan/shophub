@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import '../models/product_model.dart';
+import '../models/product/product_model.dart';
 import '../repositories/product_repository.dart';
 
 /// Manages a **seller's own product listings** — both active and inactive.

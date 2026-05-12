@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'product_model.dart';
+import 'product/product_model.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CART ITEM MODEL

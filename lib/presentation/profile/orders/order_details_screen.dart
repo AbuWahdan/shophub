@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../../models/order_detail_item_model.dart';
 import '../../../../models/orders_model.dart';
-import '../../../../models/product_model.dart';
+import '../../../models/product/product_model.dart';
 import '../../../repositories/order_repository.dart';
 import '../../../widgets/product_card/add_to_cart_bottom_sheet/widgets/add_to_cart_action.dart';
 import '../my_products/color_picker/color_parsing_extension.dart';

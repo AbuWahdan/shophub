@@ -6,9 +6,10 @@ import '../../models/category_model.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:http/http.dart' as http;
 import '../../core/utils/apex_response_helper.dart';
-import '../../models/product_image_model.dart';
+import '../models/product/product_image_model.dart';
 import '../../models/cart_item_model.dart';
-import '../../models/product_model.dart';
+import '../models/product/product_model.dart';
+import '../models/product/product_requests.dart';
 import 'api_client.dart';
 
 class ProductService {
@@ -1384,11 +1385,19 @@ class ProductService {
         // Empty on this attempt — try the next query variant.
         if (items.isEmpty && i < queryAttempts.length - 1) continue;
 
-        return items.map((item) {
+        final parsedProducts = items.map((item) {
           final product = ProductModel.fromJson(item);
           product.isFavorite = true;
           return product;
         }).toList();
+
+        final groupedProducts = _groupProductsByItemId(parsedProducts);
+
+        for (final product in groupedProducts) {
+          product.isFavorite = true;
+        }
+
+        return groupedProducts;
       } on ProductException catch (error) {
         lastError = error;
         if (i == queryAttempts.length - 1) rethrow;

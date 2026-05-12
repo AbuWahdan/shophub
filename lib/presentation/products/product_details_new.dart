@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/presentation/products/widgets/rating_stars.dart';
 import '../../../models/item_comment_model.dart';
 import '../../../models/data.dart';
-import '../../../models/product_image_model.dart';
-import '../../../models/product_model.dart';
+import '../../models/product/product_image_model.dart';
+import '../../models/product/product_model.dart';
 import '../../../models/cart_item_model.dart';
 import '../../core/config/route.dart';
 import '../../core/state/auth_state.dart';
@@ -16,7 +16,7 @@ import '../../repositories/cart_repository.dart';
 import '../../widgets/product_card/add_to_cart_bottom_sheet/add_to_cart_bottom_sheet.dart';
 import '../../widgets/product_card/add_to_cart_bottom_sheet/widgets/product_variant_widgets.dart';
 import '../../widgets/product_card/product_variant_card_with_stock.dart';
-import '../profile/wishlist/wishlist_state.dart';
+import '../../controllers/wishlist_state.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_radius.dart';
 import '../../design/app_shadows.dart';
@@ -284,7 +284,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   Widget build(BuildContext context) {
     final authState = context.watch<AuthState>();
     final isAuthLoading = authState.isInitializing || !authState.isInitialized;
-    final wishlistState = context.watch<WishlistState>();
+    final wishlistState = context.watch<FavoritesController>();
     final isFavorite = wishlistState.isInWishlist(widget.product.id);
     final isTogglingFavorite = wishlistState.isToggling(widget.product.id);
     final bottomActionHeight = AppSpacing.buttonMd + (AppSpacing.lg * 2);
@@ -938,7 +938,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     }
 
     try {
-      await context.read<WishlistState>().toggleWishlist(widget.product);
+      await context.read<FavoritesController>().toggleWishlist(widget.product);
     } on ProductException catch (error) {
       if (!mounted) return;
       CustomSnackBar.show(

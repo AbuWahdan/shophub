@@ -4,7 +4,7 @@ import '../../../design/app_radius.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../../../models/product_model.dart';
+import '../../../models/product/product_model.dart';
 import 'widgets/product_variant_widgets.dart';
 
 class AddToCartSelection {

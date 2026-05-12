@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../data/categories_data.dart';
 import '../../../models/category_model.dart';
-import '../../../models/product_model.dart';
+import '../../models/product/product_model.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_radius.dart';
 import '../../design/app_shadows.dart';

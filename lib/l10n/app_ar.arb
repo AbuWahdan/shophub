@@ -1,4 +1,7 @@
 {
+  "wishlistLoginRequired": "يرجى تسجيل الدخول لعرض المفضلة",
+  "wishlistEmptyTitle": "قائمة المفضلة فارغة",
+  "wishlistEmptySubtitle": "احفظ العناصر المفضلة لديك لتظهر هنا",
   "@@locale": "ar",
   "totalLabel": "الإجمالي",
   "noOrdersYet": "لا توجد طلبات بعد",

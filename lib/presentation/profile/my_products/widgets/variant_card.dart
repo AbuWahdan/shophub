@@ -96,6 +96,7 @@ class VariantCard extends StatelessWidget {
                   child: ColorHexField(
                     initialColor: entry.colorController.text,
                     label: l10n.productColor,
+
                     onColorChanged: (v) => entry.colorController.text = v,
                   ),
                 ),

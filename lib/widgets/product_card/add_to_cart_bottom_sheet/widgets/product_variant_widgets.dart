@@ -3,7 +3,7 @@ import '../../../../../design/app_colors.dart';
 import '../../../../design/app_radius.dart';
 import '../../../../design/app_spacing.dart';
 import '../../../../design/app_text_styles.dart';
-import '../../../../../models/product_model.dart';
+import '../../../../models/product/product_model.dart';
 import 'quantity_stepper.dart';
 
 bool isMeaningfulProductValue(String? value) {

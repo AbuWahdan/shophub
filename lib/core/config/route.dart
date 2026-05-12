@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sinwar_shoping/models/product_model.dart';
+import 'package:sinwar_shoping/models/product/product_model.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/item_comment_model.dart';
 import '../../models/user_model.dart';

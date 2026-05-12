@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 
 import '../../core/api/api_constants.dart';
 import '../../core/api/app_exception.dart';
-import '../../models/product_model.dart';
+import '../models/product/product_model.dart';
 import '../../services/api_client.dart';
 
 class VisualSearchRepository {

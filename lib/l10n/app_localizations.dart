@@ -98,6 +98,24 @@ abstract class AppLocalizations {
     Locale('en'),
   ];
 
+  /// No description provided for @wishlistLoginRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in to view your wishlist'**
+  String get wishlistLoginRequired;
+
+  /// No description provided for @wishlistEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wishlist is empty'**
+  String get wishlistEmptyTitle;
+
+  /// No description provided for @wishlistEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save your favorite items to see them here'**
+  String get wishlistEmptySubtitle;
+
   /// No description provided for @productVariants.
   ///
   /// In en, this message translates to:

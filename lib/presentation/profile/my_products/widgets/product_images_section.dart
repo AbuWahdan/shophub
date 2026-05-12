@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../design/app_colors.dart';
 import '../../../../design/app_spacing.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../../../models/product_image_model.dart';
+import '../../../../models/product/product_image_model.dart';
 import '../../../../widgets/gallery_section/gallery_viewer.dart';
 import 'product_section_title.dart';
 

@@ -13,6 +13,29 @@ String colorToHex(Color color) {
   final rgb = color.toARGB32() & 0x00FFFFFF;
   return rgb.toRadixString(16).padLeft(6, '0').toUpperCase();
 }
+String colorToRgb(Color color) {
+  return '${color.red}, ${color.green}, ${color.blue}';
+}
+
+Color? rgbToColor(String value) {
+  final match = RegExp(
+    r'^\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*$',
+  ).firstMatch(value);
+
+  if (match == null) {
+    return null;
+  }
+
+  final r = int.parse(match.group(1)!);
+  final g = int.parse(match.group(2)!);
+  final b = int.parse(match.group(3)!);
+
+  if (r > 255 || g > 255 || b > 255) {
+    return null;
+  }
+
+  return Color.fromRGBO(r, g, b, 1);
+}
 
 bool isValidHex(String hex) {
   return _normalizeHex(hex) != null;
@@ -29,7 +52,47 @@ Color? parseApiColor(String? value) {
   if (namedColor != null) {
     return namedColor;
   }
+  Color? rgbToColor(String value) {
+    final match = RegExp(
+      r'^\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*$',
+    ).firstMatch(value);
 
+    if (match == null) {
+      return null;
+    }
+
+    final r = int.parse(match.group(1)!);
+    final g = int.parse(match.group(2)!);
+    final b = int.parse(match.group(3)!);
+
+    if (r > 255 || g > 255 || b > 255) {
+      return null;
+    }
+
+    return Color.fromRGBO(r, g, b, 1);
+  }
+  String colorToRgb(Color color) {
+    return 'RGB(${color.red}, ${color.green}, ${color.blue})';
+  }
+
+  String colorToRgba(Color color) {
+    return 'RGBA('
+        '${color.red}, '
+        '${color.green}, '
+        '${color.blue}, '
+        '${color.a.toStringAsFixed(2)}'
+        ')';
+  }
+
+  String colorToHsv(Color color) {
+    final hsv = HSVColor.fromColor(color);
+
+    return 'HSV('
+        '${hsv.hue.toStringAsFixed(0)}, '
+        '${(hsv.saturation * 100).toStringAsFixed(0)}%, '
+        '${(hsv.value * 100).toStringAsFixed(0)}%'
+        ')';
+  }
   final rgbMatch = RegExp(
     r'rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*([0-9]*\.?[0-9]+))?\s*\)',
     caseSensitive: false,

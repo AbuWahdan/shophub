@@ -3,7 +3,7 @@ import 'package:sinwar_shoping/design/app_colors.dart';
 import 'package:sinwar_shoping/design/app_radius.dart';
 import 'package:sinwar_shoping/design/app_spacing.dart';
 import 'package:sinwar_shoping/design/app_text_styles.dart';
-import 'package:sinwar_shoping/models/product_model.dart';
+import 'package:sinwar_shoping/models/product/product_model.dart';
 import 'add_to_cart_bottom_sheet/widgets/quantity_stepper.dart';
 
 /// Enhanced variant card widget with integrated stock display

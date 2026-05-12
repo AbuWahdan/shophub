@@ -1,4 +1,4 @@
-import 'package:sinwar_shoping/models/product_model.dart';
+import 'package:sinwar_shoping/models/product/product_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sinwar_shoping/models/cart_item_model.dart';
 

@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sinwar_shoping/presentation/profile/my_products/widgets/product_image_cropper.dart';
 import 'package:sinwar_shoping/presentation/profile/my_products/widgets/variant_card.dart';
 
-import '../../../../models/product_model.dart';
+import '../../../models/product/product_model.dart';
 import '../../../core/config/size_options.dart';
 import '../../../design/app_spacing.dart';
 import '../../../l10n/app_localizations.dart';

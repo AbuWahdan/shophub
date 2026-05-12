@@ -28,7 +28,7 @@ import '../../controllers/product_controller.dart';
 import '../config/mapbox_config.dart';
 import '../../presentation/profile/settings/app_settings.dart';
 import '../state/auth_state.dart';
-import '../../presentation/profile/wishlist/wishlist_state.dart';
+import '../../controllers/wishlist_state.dart';
 
 /// Initializes all app-level dependencies before [runApp].
 ///
@@ -170,16 +170,16 @@ abstract final class AppInitializer {
 
   static List<SingleChildWidget> _buildProviders() {
     final authState = AuthState()..initialize();
-    final wishlistState = WishlistState()..updateAuth(authState);
+    final wishlistState = FavoritesController()..updateAuth(authState);
 
     logger.log('[AppInit] Providers built.', name: 'AppInit');
 
     return [
       ChangeNotifierProvider<AuthState>.value(value: authState),
-      ChangeNotifierProxyProvider<AuthState, WishlistState>(
+      ChangeNotifierProxyProvider<AuthState, FavoritesController>(
         create: (_) => wishlistState,
         update: (_, auth, wishlist) =>
-        (wishlist ?? WishlistState())..updateAuth(auth),
+        (wishlist ?? FavoritesController())..updateAuth(auth),
       ),
     ];
   }

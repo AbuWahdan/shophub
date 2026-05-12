@@ -120,11 +120,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                           if (!mounted) return;
                           if (success) {
-                            CustomSnackBar.show(
-                              context,
-                              message: 'Login successful.',
-                              type: AppSnackBarType.success,
-                            );
                             Navigator.of(context).pushReplacementNamed('/main');
                             return;
                           }

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../../controllers/cart_controller.dart';
 import '../../../../../core/state/auth_state.dart';
 import '../../../../../models/data.dart';
-import '../../../../../models/product_model.dart';
+import '../../../../models/product/product_model.dart';
 import '../../../../../services/product_service.dart';
 import '../../../custom__snack_bar/custom_snack_bar.dart';
 import '../add_to_cart_bottom_sheet.dart';
