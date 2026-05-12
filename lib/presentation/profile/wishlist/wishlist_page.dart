@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/presentation/profile/wishlist/widgets/wishlist_widgets.dart';
 
-import '../../../controllers/wishlist_state.dart';
+import '../../../controllers/wishlist_controller.dart';
 import '../../../core/state/auth_state.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -31,7 +31,7 @@ class _WishlistPageState extends State<WishlistPage> {
     await authState.ensureInitialized();
     if (!mounted || !authState.isLoggedIn || authState.user == null) return;
 
-    final controller = context.read<FavoritesController>();
+    final controller = context.read<WishlistController>();
     if (controller.hasLoadedForCurrentUser) return;
 
     try {
@@ -43,7 +43,7 @@ class _WishlistPageState extends State<WishlistPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final authState = context.watch<AuthState>();
-    final controller = context.watch<FavoritesController>();
+    final controller = context.watch<WishlistController>();
     final isLoggedIn = authState.isLoggedIn && authState.user != null;
 
     return Scaffold(

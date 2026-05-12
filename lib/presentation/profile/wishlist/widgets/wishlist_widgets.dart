@@ -11,7 +11,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../../../controllers/wishlist_state.dart';
+import '../../../../controllers/wishlist_controller.dart';
 import '../../../../design/app_colors.dart';
 import '../../../../design/app_spacing.dart';
 import '../../../../design/app_text_styles.dart';
@@ -77,7 +77,7 @@ class WishlistNotLoggedIn extends StatelessWidget {
 class WishlistBody extends StatelessWidget {
   const WishlistBody({super.key, required this.controller});
 
-  final FavoritesController controller;
+  final WishlistController controller;
 
   Future<void> _refresh() async {
     try {
@@ -274,7 +274,7 @@ class WishlistGrid extends StatelessWidget {
               return ProductCard(
                 product: product,
                 onCartTap: () => AddToCartAction.execute(
-                  context: itemContext,
+                  context: context, // use WishlistGrid's stable BuildContext
                   product: product,
                 ),
               );

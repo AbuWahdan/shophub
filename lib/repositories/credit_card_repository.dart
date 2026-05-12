@@ -27,7 +27,7 @@ class CreditCardRepository {
 
   Future<List<CreditCardModel>> getUserCards(String username) async {
     final response = await _post('GetUserCard', {
-      'username': username.toUpperCase(),
+      'username': username,
     });
     final items = _extractItems(response);
     return items

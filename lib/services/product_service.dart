@@ -1384,19 +1384,23 @@ class ProductService {
         // Empty on this attempt — try the next query variant.
         if (items.isEmpty && i < queryAttempts.length - 1) continue;
 
-        final parsedProducts = items.map((item) {
-          final product = ProductModel.fromJson(item);
-          product.isFavorite = true;
-          return product;
-        }).toList();
+        // Fetch full product details for each favorite item ID
+        final favoriteIds = items
+            .map((item) => _asInt(_pick(item, const ['ITEM_ID', 'item_id'])))
+            .where((id) => id > 0)
+            .toList();
 
-        final groupedProducts = _groupProductsByItemId(parsedProducts);
+        final allProducts = await getProducts(); // or however you fetch full products
+        final wishlistProducts = allProducts
+            .where((p) => favoriteIds.contains(p.id))
+            .map((p) {
+          p.isFavorite = true;
+          return p;
+        })
+            .toList();
 
-        for (final product in groupedProducts) {
-          product.isFavorite = true;
-        }
+        return wishlistProducts;
 
-        return groupedProducts;
       } on ProductException catch (error) {
         lastError = error;
         if (i == queryAttempts.length - 1) rethrow;
@@ -1409,7 +1413,12 @@ class ProductService {
     if (lastError != null) throw lastError;
     return const [];
   }
-
+  static dynamic _pick(Map<String, dynamic> json, List<String> keys) {
+    for (final key in keys) {
+      if (json.containsKey(key)) return json[key];
+    }
+    return null;
+  }
   // ── NEW HELPER — add this private method anywhere inside ProductService ───
   //
   // Handles both shapes the backend may return:

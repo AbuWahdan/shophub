@@ -9,6 +9,9 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
+  String get promoDiscount => 'خصم الكوبون';
+
+  @override
   String get wishlistLoginRequired => 'يرجى تسجيل الدخول لإدارة قائمة الأمنيات';
 
   @override

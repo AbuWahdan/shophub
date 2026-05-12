@@ -98,6 +98,12 @@ abstract class AppLocalizations {
     Locale('en'),
   ];
 
+  /// No description provided for @promoDiscount.
+  ///
+  /// In en, this message translates to:
+  /// **'Promo Discount'**
+  String get promoDiscount;
+
   /// No description provided for @wishlistLoginRequired.
   ///
   /// In en, this message translates to:

@@ -7,7 +7,6 @@ import 'package:sinwar_shoping/design/app_radius.dart';
 import 'package:sinwar_shoping/models/cart_item_model.dart';
 import '../../../../controllers/address_controller.dart';
 import '../../../../controllers/credit_card_controller.dart';
-import '../../../../core/utils/apex_response_helper.dart';
 import '../../../../models/payment_method_model.dart';
 import '../../../design/app_colors.dart';
 import '../../../design/app_spacing.dart';
@@ -82,14 +81,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ..dispose();
     super.dispose();
   }
+  CheckoutSummaryModel get _checkoutSummary {
+    final base = CheckoutSummaryModel.fromCartItems(widget.cartItems);
 
-  CheckoutSummaryModel get _checkoutSummary =>
-      CheckoutSummaryModel.fromCartItems(
-        widget.cartItems,
-        promoDiscount: _promoResult?.isValid == true
-            ? _promoResult!.discountAmount
-            : 0,
-      );
+    double promoDiscount = 0;
+
+    if (_promoResult?.isValid == true) {
+      final result = _promoResult!;
+      final orderAmount = base.taxableAmount + base.tax;
+
+      if (result.discountType == 'PERCENT') {
+        promoDiscount = (orderAmount * result.discountValue) / 100;
+
+        // apply max cap
+        if (result.maxDiscount > 0 &&
+            promoDiscount > result.maxDiscount) {
+          promoDiscount = result.maxDiscount;
+        }
+      } else {
+        promoDiscount = result.discountValue;
+      }
+    }
+
+    return CheckoutSummaryModel(
+      subtotal: base.subtotal,
+      itemDiscount: base.itemDiscount,
+      tax: base.tax,
+      promoDiscount: promoDiscount,
+    );
+  }
+
 
   void _onPromoCodeChanged() {
     _promoDebounce?.cancel();
@@ -113,43 +134,44 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     _promoDebounce = Timer(
       const Duration(milliseconds: 600),
-      () => _validatePromoCode(code: code, token: token),
+          () {
+        _validatePromoCode(code: code, token: token);
+      },
     );
   }
-
   Future<void> _validatePromoCode({
     required String code,
     required int token,
   }) async {
     try {
       final summary = CheckoutSummaryModel.fromCartItems(widget.cartItems);
+
       final result = await _checkoutRepository.validatePromoCode(
         code: code,
         orderAmount: summary.grandTotal,
       );
+
       if (!mounted || token != _promoValidationToken) return;
+
       setState(() {
         _promoResult = result;
         _promoError = result.isValid
             ? null
-            : result.message.isNotEmpty
+            : (result.message.isNotEmpty
             ? result.message
-            : AppLocalizations.of(context).invalidPromoCode;
+            : AppLocalizations.of(context).invalidPromoCode);
         _isValidatingPromo = false;
       });
     } catch (error) {
       if (!mounted || token != _promoValidationToken) return;
+
       setState(() {
         _promoResult = PromoValidationResult.invalid();
-        _promoError = ApexResponseHelper.messageForContext(
-          'CheckPromoCode',
-          error.toString(),
-        );
+        _promoError = error.toString();
         _isValidatingPromo = false;
       });
     }
   }
-
   List<PaymentMethodModel> _paymentMethods(BuildContext context) {
     return _paymentMethodOptions
         .map(
@@ -343,7 +365,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       );
       return;
     }
+    final enteredPromo = _promoController.text.trim();
 
+    if (enteredPromo.isNotEmpty &&
+        (_promoResult == null || _promoResult!.isValid != true)) {
+      CustomSnackBar.show(
+        context,
+        message: l10n.invalidPromoCode,
+        type: AppSnackBarType.error,
+      );
+      return;
+    }
     final paymentMethod = _selectedPaymentMethod(context)!;
     CreditCardModel? selectedCard = _selectedCard;
     final requiresCard = _isCreditCardPayment(paymentMethod);
@@ -352,6 +384,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (!mounted || selectedCard == null) return;
       setState(() => _selectedCard = selectedCard);
     }
+
 
     await Navigator.push(
       context,
@@ -862,12 +895,27 @@ class _CheckoutTotalsSection extends StatelessWidget {
       children: [
         _AmountRow(label: l10n.orderSubtotal, value: summary.subtotal),
         const SizedBox(height: AppSpacing.sm),
-        _AmountRow(
-          label: l10n.orderDiscount,
-          value: summary.totalDiscount,
-          valueColor: AppColors.error,
-          isDiscount: true,
-        ),
+        if (summary.itemDiscount > 0)
+          _AmountRow(
+            label: l10n.orderDiscount,
+            value: summary.itemDiscount,
+            valueColor: AppColors.error,
+            isDiscount: true,
+          ),
+
+        if (summary.promoDiscount > 0) ...[
+          const SizedBox(height: AppSpacing.sm),
+          if (summary.promoDiscount > 0) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _AmountRow(
+              label: l10n.promoDiscount,
+              value: summary.promoDiscount,
+              valueColor: AppColors.success,
+              isDiscount: true,
+            ),
+          ],
+
+        ],
         const SizedBox(height: AppSpacing.sm),
         _AmountRow(label: l10n.orderTax, value: summary.tax),
         const Divider(height: AppSpacing.xl),

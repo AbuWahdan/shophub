@@ -9,6 +9,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get promoDiscount => 'Promo Discount';
+
+  @override
   String get wishlistLoginRequired => 'Please log in to manage your wishlist';
 
   @override

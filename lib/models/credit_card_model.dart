@@ -104,7 +104,7 @@ class AddCardRequest {
     required this.expiryYear,
     required String cardholderName,
     required this.isDefault,
-  }) : username = username.toUpperCase(),
+  }) : username = username,
        maskedNumber = CreditCardModel.formatMasked(maskedNumber),
        cardType = cardType.toUpperCase(),
        cardholderName = cardholderName.toUpperCase();

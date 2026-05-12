@@ -10,7 +10,7 @@ import '../../../../controllers/cart_controller.dart';
 import '../../../../models/data.dart';
 import '../../models/product/product_model.dart';
 import '../../../core/state/auth_state.dart';
-import '../../controllers/wishlist_state.dart';
+import '../../controllers/wishlist_controller.dart';
 import '../../../design/app_colors.dart';
 import '../../design/app_radius.dart';
 import '../../design/app_shadows.dart';
@@ -75,7 +75,7 @@ class _ProductCardState extends State<ProductCard> {
     }
 
     try {
-      await context.read<FavoritesController>().toggleWishlist(widget.product);
+      await context.read<WishlistController>().toggleWishlist(widget.product);
     } on ProductException catch (error) {
       if (!mounted) return;
       CustomSnackBar.show(
@@ -196,7 +196,7 @@ class _ProductCardState extends State<ProductCard> {
     final product = widget.product;
     final theme = Theme.of(context);
     final textDirection = Directionality.of(context);
-    final wishlistState = context.watch<FavoritesController>();
+    final wishlistState = context.watch<WishlistController>();
     final isFavorite = wishlistState.isInWishlist(product.id);
     final isToggling = wishlistState.isToggling(product.id);
     product.isFavorite = isFavorite;

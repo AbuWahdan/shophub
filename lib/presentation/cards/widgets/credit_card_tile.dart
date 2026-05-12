@@ -81,11 +81,11 @@ class CreditCardTile extends StatelessWidget {
                           onSelected: (action) =>
                               _handleAction(context, action),
                           itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: _CreditCardAction.setDefault,
-                              enabled: onSetDefault != null && !card.isDefault,
-                              child: Text(l10n.cardActionSetDefault),
-                            ),
+                            // PopupMenuItem(
+                            //   value: _CreditCardAction.setDefault,
+                            //   enabled: onSetDefault != null && !card.isDefault,
+                            //   child: Text(l10n.cardActionSetDefault),
+                            // ),
                             PopupMenuItem(
                               value: _CreditCardAction.delete,
                               enabled: onDelete != null,

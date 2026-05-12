@@ -9,18 +9,24 @@ class CheckoutSummaryModel {
   });
 
   factory CheckoutSummaryModel.fromCartItems(
-    List<CartItemModel> items, {
-    double promoDiscount = 0,
-  }) {
+      List<CartItemModel> items, {
+        double promoDiscount = 0,
+      }) {
     final subtotal = items.fold<double>(
       0,
-      (sum, item) => sum + item.lineSubtotal,
+          (sum, item) => sum + item.lineSubtotal,
     );
+
     final itemDiscount = items.fold<double>(
       0,
-      (sum, item) => sum + item.discount,
+          (sum, item) =>
+      sum + ((item.price - item.discountedPrice) * item.bookedQty),
     );
-    final tax = items.fold<double>(0, (sum, item) => sum + item.tax);
+
+    final tax = items.fold<double>(
+      0,
+          (sum, item) => sum + item.tax,
+    );
 
     return CheckoutSummaryModel(
       subtotal: subtotal,
@@ -45,10 +51,15 @@ class CheckoutSummaryModel {
   }
 }
 
+/// =====================================================
+/// PROMO VALIDATION MODEL (FIXED FOR YOUR API)
+/// =====================================================
 class PromoValidationResult {
   const PromoValidationResult({
     required this.isValid,
-    required this.discountAmount,
+    required this.discountValue,
+    required this.discountType,
+    this.maxDiscount = 0,
     this.code = '',
     this.message = '',
   });
@@ -56,61 +67,81 @@ class PromoValidationResult {
   factory PromoValidationResult.invalid({String message = ''}) {
     return PromoValidationResult(
       isValid: false,
-      discountAmount: 0,
+      discountValue: 0,
+      discountType: '',
+      maxDiscount: 0,
       message: message,
     );
   }
 
   factory PromoValidationResult.fromJson(Map<String, dynamic> json) {
-    final status = _readString(json, const [
-      'status',
-      'STATUS',
-      'valid',
-      'VALID',
+    final isValidRaw = _pick(json, [
       'is_valid',
       'IS_VALID',
-    ]).toLowerCase();
-    final message = _readString(json, const [
+      'valid',
+      'VALID',
+    ]);
+
+    final discountType = _readString(json, [
+      'discount_type',
+      'DISCOUNT_TYPE',
+    ]).toUpperCase();
+
+    final discountValue = _readDouble(_pick(json, [
+      'discount_value',
+      'DISCOUNT_VALUE',
+    ]));
+
+    final maxDiscount = _readDouble(_pick(json, [
+      'max_discount',
+      'MAX_DISCOUNT',
+    ]));
+
+    final code = _readString(json, ['code', 'CODE']);
+    final message = _readString(json, [
       'message',
       'MESSAGE',
       'error',
       'ERROR',
-      'description',
-      'DESCRIPTION',
     ]);
-    final code = _readString(json, const ['code', 'CODE', 'promo_code']);
-    final discountAmount = _readDouble(
-      _pick(json, const [
-        'discount_amount',
-        'DISCOUNT_AMOUNT',
-        'discount',
-        'DISCOUNT',
-        'amount',
-        'AMOUNT',
-        'promo_discount',
-        'PROMO_DISCOUNT',
-      ]),
-    );
 
-    final valid =
-        status == 'success' ||
-        status == 'valid' ||
-        status == 'true' ||
-        status == '1' ||
-        (discountAmount > 0 && status != 'invalid' && status != 'error');
+    final isValid =
+        isValidRaw == 1 ||
+            isValidRaw == true ||
+            isValidRaw == '1' ||
+            isValidRaw == 'true';
 
     return PromoValidationResult(
-      isValid: valid,
-      discountAmount: valid ? discountAmount : 0,
+      isValid: isValid,
+      discountValue: isValid ? discountValue : 0,
+      discountType: discountType,
+      maxDiscount: maxDiscount,
       code: code,
       message: message,
     );
   }
 
   final bool isValid;
-  final double discountAmount;
+  final double discountValue;   // raw value from API
+  final String discountType;     // PERCENT or FIXED
+  final double maxDiscount;
   final String code;
   final String message;
+
+  /// ✅ CLIENT CALCULATION (IMPORTANT FIX)
+  double calculateDiscount(double subtotal) {
+    if (!isValid) return 0;
+
+    if (discountType == 'PERCENT') {
+      final raw = subtotal * (discountValue / 100);
+      if (maxDiscount > 0 && raw > maxDiscount) {
+        return maxDiscount;
+      }
+      return raw;
+    }
+
+    return discountValue;
+  }
 
   static dynamic _pick(Map<String, dynamic> json, List<String> keys) {
     for (final key in keys) {

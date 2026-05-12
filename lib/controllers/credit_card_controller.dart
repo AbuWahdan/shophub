@@ -20,7 +20,7 @@ class CreditCardController extends ChangeNotifier {
   bool get hasLoaded => _hasLoaded;
 
   Future<void> fetchCards(String username) async {
-    final normalizedUsername = username.trim().toUpperCase();
+    final normalizedUsername = username;
     if (normalizedUsername.isEmpty) {
       _cards = const [];
       _hasLoaded = true;

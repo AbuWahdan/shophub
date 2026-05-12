@@ -16,7 +16,7 @@ import '../../repositories/cart_repository.dart';
 import '../../widgets/product_card/add_to_cart_bottom_sheet/add_to_cart_bottom_sheet.dart';
 import '../../widgets/product_card/add_to_cart_bottom_sheet/widgets/product_variant_widgets.dart';
 import '../../widgets/product_card/product_variant_card_with_stock.dart';
-import '../../controllers/wishlist_state.dart';
+import '../../controllers/wishlist_controller.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_radius.dart';
 import '../../design/app_shadows.dart';
@@ -287,7 +287,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   Widget build(BuildContext context) {
     final authState = context.watch<AuthState>();
     final isAuthLoading = authState.isInitializing || !authState.isInitialized;
-    final wishlistState = context.watch<FavoritesController>();
+    final wishlistState = context.watch<WishlistController>();
     final isFavorite = wishlistState.isInWishlist(widget.product.id);
     final isTogglingFavorite = wishlistState.isToggling(widget.product.id);
     final bottomActionHeight = AppSpacing.buttonMd + (AppSpacing.lg * 2);
@@ -945,7 +945,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     }
 
     try {
-      await context.read<FavoritesController>().toggleWishlist(widget.product);
+      await context.read<WishlistController>().toggleWishlist(widget.product);
     } on ProductException catch (error) {
       if (!mounted) return;
       CustomSnackBar.show(
