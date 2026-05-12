@@ -9,10 +9,10 @@ class OrderDetailItemModel {
   final int deliveryStatus;
   final String brand;
   final String color;
-  final String? itemSize;
+  final String? size;
   final double itemDiscount;
   final int itemDetId;
-  final String itemName;
+  final String name;
 
   const OrderDetailItemModel({
     required this.orderDetId,
@@ -25,10 +25,10 @@ class OrderDetailItemModel {
     required this.deliveryStatus,
     required this.brand,
     required this.color,
-    this.itemSize,
+    this.size,
     required this.itemDiscount,
     required this.itemDetId,
-    required this.itemName,
+    required this.name,
   });
 
   factory OrderDetailItemModel.fromJson(Map<String, dynamic> json) {
@@ -43,10 +43,10 @@ class OrderDetailItemModel {
       deliveryStatus: _asInt(json['DELIVARY_STATUS']),
       brand: _asString(json['BRAND']),
       color: _asString(json['COLOR']),
-      itemSize: _asNullableString(json['ITEM_SIZE']),
+      size: _asNullableString(json['ITEM_SIZE']),
       itemDiscount: _asDouble(json['ITEM_DISCOUNT']),
       itemDetId: _asInt(json['ITEM_DET_ID']),
-      itemName: _asString(json['ITEM_NAME']),
+      name: _asString(json['ITEM_NAME']),
     );
   }
 

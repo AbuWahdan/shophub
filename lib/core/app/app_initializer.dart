@@ -12,6 +12,7 @@ import '../../repositories/cart_repository.dart';
 import '../../repositories/checkout_repository.dart';
 import '../../repositories/codes_repository.dart';
 import '../../repositories/comment_repository.dart';
+import '../../repositories/credit_card_repository.dart';
 import '../../repositories/order_repository.dart';
 import '../../repositories/product_repository.dart';
 import '../../repositories/profile_repository.dart';
@@ -22,6 +23,7 @@ import '../api/api_service.dart';
 // Controllers
 import '../../controllers/address_controller.dart';
 import '../../controllers/cart_controller.dart';
+import '../../controllers/credit_card_controller.dart';
 import '../../controllers/my_products_controller.dart';
 import '../../controllers/order_controller.dart';
 import '../../controllers/product_controller.dart';
@@ -106,62 +108,66 @@ abstract final class AppInitializer {
   static void _registerRepositories() {
     Get.lazyPut<AddressRepository>(() => AddressRepository(), fenix: true);
     Get.lazyPut<ProductRepository>(
-          () => ProductRepository(Get.find<ApiService>()),
+      () => ProductRepository(Get.find<ApiService>()),
       fenix: true,
     );
     Get.lazyPut<CartRepository>(
-          () => CartRepository(Get.find<ApiService>()),
+      () => CartRepository(Get.find<ApiService>()),
       fenix: true,
     );
     Get.lazyPut<CheckoutRepository>(
-          () => CheckoutRepository(Get.find<ApiService>()),
+      () => CheckoutRepository(Get.find<ApiService>()),
+      fenix: true,
+    );
+    Get.lazyPut<CreditCardRepository>(
+      () => CreditCardRepository(),
       fenix: true,
     );
     Get.lazyPut<CommentRepository>(
-          () => CommentRepository(Get.find<ApiService>()),
+      () => CommentRepository(Get.find<ApiService>()),
       fenix: true,
     );
     Get.lazyPut<CodesRepository>(
-          () => CodesRepository(Get.find<ApiService>()),
+      () => CodesRepository(Get.find<ApiService>()),
       fenix: true,
     );
     Get.lazyPut<OrderRepository>(
-          () => OrderRepository(Get.find<ApiService>()),
+      () => OrderRepository(Get.find<ApiService>()),
       fenix: true,
     );
     Get.lazyPut<ProfileRepository>(
-          () => ProfileRepository(Get.find<ApiService>()),
+      () => ProfileRepository(Get.find<ApiService>()),
       fenix: true,
     );
     Get.lazyPut<UserRepository>(
-          () => UserRepository(Get.find<ApiService>()),
+      () => UserRepository(Get.find<ApiService>()),
       fenix: true,
     );
     Get.lazyPut<VisualSearchRepository>(
-          () => VisualSearchRepository(),
+      () => VisualSearchRepository(),
       fenix: true,
     );
   }
 
   static void _registerControllers() {
     Get.lazyPut<ProductController>(
-          () => ProductController(Get.find<ProductRepository>()),
+      () => ProductController(Get.find<ProductRepository>()),
       fenix: true,
     );
     Get.lazyPut<MyProductsController>(
-          () => MyProductsController(Get.find<ProductRepository>()),
+      () => MyProductsController(Get.find<ProductRepository>()),
       fenix: true,
     );
     Get.lazyPut<CartController>(
-          () => CartController(Get.find<CartRepository>()),
+      () => CartController(Get.find<CartRepository>()),
       fenix: true,
     );
     Get.lazyPut<OrderController>(
-          () => OrderController(Get.find<OrderRepository>()),
+      () => OrderController(Get.find<OrderRepository>()),
       fenix: true,
     );
     Get.lazyPut<AddressController>(
-          () => AddressController(Get.find<AddressRepository>()),
+      () => AddressController(Get.find<AddressRepository>()),
       fenix: true,
     );
   }
@@ -179,7 +185,13 @@ abstract final class AppInitializer {
       ChangeNotifierProxyProvider<AuthState, FavoritesController>(
         create: (_) => wishlistState,
         update: (_, auth, wishlist) =>
-        (wishlist ?? FavoritesController())..updateAuth(auth),
+            (wishlist ?? FavoritesController())..updateAuth(auth),
+      ),
+      ChangeNotifierProvider<CreditCardController>(
+        create: (_) => CreditCardController(Get.find<CreditCardRepository>()),
+      ),
+      ChangeNotifierProvider<OrderController>(
+        create: (_) => OrderController(Get.find<OrderRepository>()),
       ),
     ];
   }

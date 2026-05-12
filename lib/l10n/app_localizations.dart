@@ -101,19 +101,19 @@ abstract class AppLocalizations {
   /// No description provided for @wishlistLoginRequired.
   ///
   /// In en, this message translates to:
-  /// **'Please sign in to view your wishlist'**
+  /// **'Please log in to manage your wishlist'**
   String get wishlistLoginRequired;
 
   /// No description provided for @wishlistEmptyTitle.
   ///
   /// In en, this message translates to:
-  /// **'Your wishlist is empty'**
+  /// **'No saved items'**
   String get wishlistEmptyTitle;
 
   /// No description provided for @wishlistEmptySubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Save your favorite items to see them here'**
+  /// **'Tap the heart icon on a product to save it here'**
   String get wishlistEmptySubtitle;
 
   /// No description provided for @productVariants.
@@ -1999,6 +1999,426 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name} added to cart'**
   String productAddedToCart(Object name);
+
+  /// No description provided for @addToCartLoginRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please log in to add items to your cart'**
+  String get addToCartLoginRequired;
+
+  /// No description provided for @addToCartVariantError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to determine product variant'**
+  String get addToCartVariantError;
+
+  /// No description provided for @addToCartSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'{productName} added to cart'**
+  String addToCartSuccess(Object productName);
+
+  /// No description provided for @addToCartFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to add to cart. Please try again.'**
+  String get addToCartFailure;
+
+  /// No description provided for @variantDefaultSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get variantDefaultSize;
+
+  /// No description provided for @variantDefaultColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get variantDefaultColor;
+
+  /// No description provided for @orderPromoApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Promo applied: {code}'**
+  String orderPromoApplied(Object code);
+
+  /// No description provided for @orderSubtotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtotal'**
+  String get orderSubtotal;
+
+  /// No description provided for @orderTax.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax'**
+  String get orderTax;
+
+  /// No description provided for @orderDiscount.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount'**
+  String get orderDiscount;
+
+  /// No description provided for @orderPromoDiscount.
+  ///
+  /// In en, this message translates to:
+  /// **'Promo discount'**
+  String get orderPromoDiscount;
+
+  /// No description provided for @orderTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get orderTotal;
+
+  /// No description provided for @orderSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Order Summary'**
+  String get orderSummaryTitle;
+
+  /// No description provided for @confirmOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Order'**
+  String get confirmOrder;
+
+  /// No description provided for @myCardsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Cards'**
+  String get myCardsTitle;
+
+  /// No description provided for @addCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Card'**
+  String get addCard;
+
+  /// No description provided for @saveCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Card'**
+  String get saveCard;
+
+  /// No description provided for @cardholderNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cardholder Name'**
+  String get cardholderNameLabel;
+
+  /// No description provided for @cardNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card Number'**
+  String get cardNumberLabel;
+
+  /// No description provided for @expiryMonthLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get expiryMonthLabel;
+
+  /// No description provided for @expiryYearLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get expiryYearLabel;
+
+  /// No description provided for @cardTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card Type'**
+  String get cardTypeLabel;
+
+  /// No description provided for @setAsDefaultLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as default card'**
+  String get setAsDefaultLabel;
+
+  /// No description provided for @deleteCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Card'**
+  String get deleteCardTitle;
+
+  /// No description provided for @deleteCardConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to remove this card?'**
+  String get deleteCardConfirm;
+
+  /// No description provided for @deleteCardCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get deleteCardCancel;
+
+  /// No description provided for @deleteCardConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteCardConfirmButton;
+
+  /// No description provided for @cardExpiredBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'EXPIRED'**
+  String get cardExpiredBadge;
+
+  /// No description provided for @cardDefaultBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'DEFAULT'**
+  String get cardDefaultBadge;
+
+  /// No description provided for @noCardsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No cards saved'**
+  String get noCardsTitle;
+
+  /// No description provided for @noCardsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a card to pay faster at checkout'**
+  String get noCardsSubtitle;
+
+  /// No description provided for @cardAddedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Card added successfully'**
+  String get cardAddedSuccess;
+
+  /// No description provided for @cardDeletedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Card removed'**
+  String get cardDeletedSuccess;
+
+  /// No description provided for @cardActionSetDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as default'**
+  String get cardActionSetDefault;
+
+  /// No description provided for @cardActionDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get cardActionDelete;
+
+  /// No description provided for @selectCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a Card'**
+  String get selectCardTitle;
+
+  /// No description provided for @addNewCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Add new card'**
+  String get addNewCard;
+
+  /// No description provided for @orderItemsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Items'**
+  String get orderItemsSection;
+
+  /// No description provided for @deliveryAddressSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery address'**
+  String get deliveryAddressSection;
+
+  /// No description provided for @amountBreakdownSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount breakdown'**
+  String get amountBreakdownSection;
+
+  /// No description provided for @selectedPaymentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected payment: {method}'**
+  String selectedPaymentLabel(Object method);
+
+  /// No description provided for @placeOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Place Order'**
+  String get placeOrder;
+
+  /// No description provided for @promoCodeOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Promo Code (Optional)'**
+  String get promoCodeOptional;
+
+  /// No description provided for @promoCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'ENTER CODE'**
+  String get promoCodeHint;
+
+  /// No description provided for @promoApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Promo applied'**
+  String get promoApplied;
+
+  /// No description provided for @invalidPromoCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid promo code'**
+  String get invalidPromoCode;
+
+  /// No description provided for @checkoutLoginRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please log in to continue with checkout.'**
+  String get checkoutLoginRequired;
+
+  /// No description provided for @checkoutLoginRequiredShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Please log in to continue.'**
+  String get checkoutLoginRequiredShort;
+
+  /// No description provided for @checkoutSelectAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a delivery address.'**
+  String get checkoutSelectAddress;
+
+  /// No description provided for @checkoutSelectPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a payment method.'**
+  String get checkoutSelectPayment;
+
+  /// No description provided for @checkoutSelectDeliveryAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Select delivery address'**
+  String get checkoutSelectDeliveryAddress;
+
+  /// No description provided for @checkoutCartEmptyWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Your cart is empty.'**
+  String get checkoutCartEmptyWarning;
+
+  /// No description provided for @cardNumberInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid 16-digit card number'**
+  String get cardNumberInvalid;
+
+  /// No description provided for @cardExpiryInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a future expiry date'**
+  String get cardExpiryInvalid;
+
+  /// No description provided for @orderIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Order ID'**
+  String get orderIdLabel;
+
+  /// No description provided for @orderDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Order Date'**
+  String get orderDateLabel;
+
+  /// No description provided for @orderCreatedDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Created Date'**
+  String get orderCreatedDateLabel;
+
+  /// No description provided for @orderItemsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Items ({count})'**
+  String orderItemsCount(Object count);
+
+  /// No description provided for @unknownProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown Product'**
+  String get unknownProduct;
+
+  /// No description provided for @brandLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Brand'**
+  String get brandLabel;
+
+  /// No description provided for @sizeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get sizeLabel;
+
+  /// No description provided for @quantityShortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Qty'**
+  String get quantityShortLabel;
+
+  /// No description provided for @colorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get colorLabel;
+
+  /// No description provided for @orderDetailsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load order details'**
+  String get orderDetailsLoadError;
+
+  /// No description provided for @orderItemsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No order items found'**
+  String get orderItemsEmptyTitle;
+
+  /// No description provided for @orderItemsEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no line items available for this order yet.'**
+  String get orderItemsEmptySubtitle;
+
+  /// No description provided for @changeEmailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Email'**
+  String get changeEmailTitle;
+
+  /// No description provided for @changeEmailSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your email address'**
+  String get changeEmailSubtitle;
+
+  /// No description provided for @stockOnlyLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {stock} left'**
+  String stockOnlyLeft(Object stock);
+
+  /// No description provided for @orderMoreItems.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} more items'**
+  String orderMoreItems(Object count);
 }
 
 class _AppLocalizationsDelegate

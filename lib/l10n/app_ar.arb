@@ -1,7 +1,7 @@
 {
-  "wishlistLoginRequired": "يرجى تسجيل الدخول لعرض المفضلة",
-  "wishlistEmptyTitle": "قائمة المفضلة فارغة",
-  "wishlistEmptySubtitle": "احفظ العناصر المفضلة لديك لتظهر هنا",
+  "wishlistLoginRequired": "يرجى تسجيل الدخول لإدارة قائمة الأمنيات",
+  "wishlistEmptyTitle": "لا توجد عناصر محفوظة",
+  "wishlistEmptySubtitle": "اضغط على رمز القلب في المنتج لحفظه هنا",
   "@@locale": "ar",
   "totalLabel": "الإجمالي",
   "noOrdersYet": "لا توجد طلبات بعد",
@@ -316,5 +316,117 @@
   "productUploading": "جارٍ رفع المنتج...",
   "productAddImage": "إضافة صورة",
   "productNoImagesYet": "لا توجد صور بعد",
-  "productImages": "صور المنتج"
+  "productImages": "صور المنتج",
+  "addToCartLoginRequired": "يرجى تسجيل الدخول لإضافة العناصر إلى السلة",
+  "addToCartVariantError": "تعذر تحديد خيار المنتج",
+  "addToCartSuccess": "تمت إضافة {productName} إلى السلة",
+  "@addToCartSuccess": {
+    "placeholders": {
+      "productName": {
+        "type": "Object"
+      }
+    }
+  },
+  "addToCartFailure": "فشل في الإضافة إلى السلة. حاول مرة أخرى.",
+  "variantDefaultSize": "افتراضي",
+  "variantDefaultColor": "افتراضي",
+  "orderPromoApplied": "تم تطبيق العرض: {code}",
+  "@orderPromoApplied": {
+    "placeholders": {
+      "code": {
+        "type": "Object"
+      }
+    }
+  },
+  "orderSubtotal": "المجموع الفرعي",
+  "orderTax": "الضريبة",
+  "orderDiscount": "الخصم",
+  "orderPromoDiscount": "خصم العرض",
+  "orderTotal": "الإجمالي",
+  "orderSummaryTitle": "ملخص الطلب",
+  "confirmOrder": "تأكيد الطلب",
+  "myCardsTitle": "بطاقاتي",
+  "addCard": "إضافة بطاقة",
+  "saveCard": "حفظ البطاقة",
+  "cardholderNameLabel": "اسم حامل البطاقة",
+  "cardNumberLabel": "رقم البطاقة",
+  "expiryMonthLabel": "الشهر",
+  "expiryYearLabel": "السنة",
+  "cardTypeLabel": "نوع البطاقة",
+  "setAsDefaultLabel": "تعيين كبطاقة افتراضية",
+  "deleteCardTitle": "حذف البطاقة",
+  "deleteCardConfirm": "هل أنت متأكد من إزالة هذه البطاقة؟",
+  "deleteCardCancel": "إلغاء",
+  "deleteCardConfirmButton": "حذف",
+  "cardExpiredBadge": "منتهية",
+  "cardDefaultBadge": "افتراضية",
+  "noCardsTitle": "لا توجد بطاقات محفوظة",
+  "noCardsSubtitle": "أضف بطاقة للدفع بشكل أسرع",
+  "cardAddedSuccess": "تمت إضافة البطاقة بنجاح",
+  "cardDeletedSuccess": "تم حذف البطاقة",
+  "cardActionSetDefault": "تعيين كافتراضي",
+  "cardActionDelete": "حذف",
+  "selectCardTitle": "اختر بطاقة",
+  "addNewCard": "إضافة بطاقة جديدة",
+  "orderItemsSection": "العناصر",
+  "deliveryAddressSection": "عنوان التوصيل",
+  "amountBreakdownSection": "تفاصيل المبلغ",
+  "selectedPaymentLabel": "الدفع المحدد: {method}",
+  "@selectedPaymentLabel": {
+    "placeholders": {
+      "method": {
+        "type": "Object"
+      }
+    }
+  },
+  "placeOrder": "إرسال الطلب",
+  "promoCodeOptional": "رمز العرض (اختياري)",
+  "promoCodeHint": "أدخل الرمز",
+  "promoApplied": "تم تطبيق العرض",
+  "invalidPromoCode": "رمز العرض غير صالح",
+  "checkoutLoginRequired": "يرجى تسجيل الدخول لمتابعة الدفع.",
+  "checkoutLoginRequiredShort": "يرجى تسجيل الدخول للمتابعة.",
+  "checkoutSelectAddress": "يرجى اختيار عنوان التوصيل.",
+  "checkoutSelectPayment": "يرجى اختيار طريقة الدفع.",
+  "checkoutSelectDeliveryAddress": "اختر عنوان التوصيل",
+  "checkoutCartEmptyWarning": "سلة التسوق فارغة.",
+  "cardNumberInvalid": "أدخل رقم بطاقة صحيحاً من 16 رقماً",
+  "cardExpiryInvalid": "اختر تاريخ انتهاء مستقبلياً",
+  "orderIdLabel": "رقم الطلب",
+  "orderDateLabel": "تاريخ الطلب",
+  "orderCreatedDateLabel": "تاريخ الإنشاء",
+  "orderItemsCount": "العناصر ({count})",
+  "@orderItemsCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "unknownProduct": "منتج غير معروف",
+  "brandLabel": "العلامة التجارية",
+  "sizeLabel": "المقاس",
+  "quantityShortLabel": "الكمية",
+  "colorLabel": "اللون",
+  "orderDetailsLoadError": "تعذر تحميل تفاصيل الطلب",
+  "orderItemsEmptyTitle": "لا توجد عناصر في الطلب",
+  "orderItemsEmptySubtitle": "لا توجد عناصر متاحة لهذا الطلب حالياً.",
+  "changeEmailTitle": "تغيير البريد الإلكتروني",
+  "changeEmailSubtitle": "تحديث عنوان بريدك الإلكتروني",
+  "stockOnlyLeft": "بقي {stock} فقط",
+  "@stockOnlyLeft": {
+    "placeholders": {
+      "stock": {
+        "type": "Object"
+      }
+    }
+  },
+  "orderMoreItems": "+{count} عناصر أخرى",
+  "@orderMoreItems": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  }
 }

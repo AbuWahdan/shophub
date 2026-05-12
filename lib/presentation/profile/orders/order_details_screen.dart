@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../../../controllers/order_controller.dart';
 import '../../../../models/order_detail_item_model.dart';
 import '../../../../models/orders_model.dart';
 import '../../../models/product/product_model.dart';
-import '../../../repositories/order_repository.dart';
 import '../../../widgets/product_card/add_to_cart_bottom_sheet/widgets/add_to_cart_action.dart';
 import '../my_products/color_picker/color_parsing_extension.dart';
 import '../../../core/state/auth_state.dart';
@@ -13,6 +12,7 @@ import '../../../design/app_colors.dart';
 import '../../../design/app_radius.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../widgets/custom_empty_state/custom_empty_state.dart';
 import 'single_ordered_item_screen.dart';
 
@@ -21,28 +21,28 @@ class OrderDetailsScreen extends StatefulWidget {
     super.key,
     required this.orderId,
     required this.orderNo,
+    this.order,
   });
 
   final int orderId;
   final String orderNo;
+  final OrdersModel? order;
 
   @override
   State<OrderDetailsScreen> createState() => _OrderDetailsScreenState();
 }
 
 class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
-  late final OrderRepository _orderRepository;
   late Future<List<OrderDetailItemModel>> _detailsFuture;
 
   @override
   void initState() {
     super.initState();
-    _orderRepository = Get.find<OrderRepository>();
     _detailsFuture = _fetchDetails();
   }
 
   Future<List<OrderDetailItemModel>> _fetchDetails() =>
-      _orderRepository.getOrderDetails(widget.orderId);
+      context.read<OrderController>().getOrderDetails(widget.orderId);
 
   void _reload() {
     setState(() => _detailsFuture = _fetchDetails());
@@ -105,7 +105,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 _OrderSummaryCard(order: order),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  'Order Items (${items.length})',
+                  AppLocalizations.of(context).orderItemsCount(items.length),
                   style: AppTextStyles.titleMedium.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -132,6 +132,22 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     List<OrderDetailItemModel> items,
     String username,
   ) {
+    final mappedItems = items
+        .map(
+          (e) => ApiOrderItem(
+            itemId: e.itemId,
+            itemDetId: e.itemDetId,
+            productName: e.name,
+            quantity: e.qty,
+            price: e.totalPrice,
+          ),
+        )
+        .toList();
+    final sourceOrder = widget.order;
+    if (sourceOrder != null) {
+      return sourceOrder.copyWith(items: mappedItems);
+    }
+
     final totalAmount = items.fold<double>(0, (s, i) => s + i.totalPrice);
     final isDelivered = items.any((e) => e.deliveryStatus == 1);
 
@@ -146,17 +162,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       netAmount: totalAmount,
       statusRaw: isDelivered ? 'Delivered' : 'Pending',
       createdDate: DateTime.now(),
-      items: items
-          .map(
-            (e) => ApiOrderItem(
-              itemId: e.itemId,
-              itemDetId: e.itemDetId,
-              productName: e.itemName,
-              quantity: e.qty,
-              price: e.totalPrice,
-            ),
-          )
-          .toList(),
+      items: mappedItems,
     );
   }
 }
@@ -171,17 +177,18 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: AppSpacing.insetsMd,
         child: CustomEmptyState(
           icon: Icons.error_outline,
-          title: 'Unable to load order details',
+          title: l10n.orderDetailsLoadError,
           subtitle: subtitle,
           action: ElevatedButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh),
-            label: const Text('Retry'),
+            label: Text(l10n.retry),
           ),
         ),
       ),
@@ -196,17 +203,18 @@ class _EmptyOrderView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: AppSpacing.insetsMd,
         child: CustomEmptyState(
           icon: Icons.receipt_long_outlined,
-          title: 'No order items found',
-          subtitle: 'There are no line items available for this order yet.',
+          title: l10n.orderItemsEmptyTitle,
+          subtitle: l10n.orderItemsEmptySubtitle,
           action: ElevatedButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh),
-            label: const Text('Retry'),
+            label: Text(l10n.retry),
           ),
         ),
       ),
@@ -223,7 +231,11 @@ class _OrderSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currency = NumberFormat.currency(symbol: 'JOD ', decimalDigits: 2);
+    final l10n = AppLocalizations.of(context);
+    final currency = NumberFormat.simpleCurrency(
+      locale: Localizations.localeOf(context).toLanguageTag(),
+    );
+    final promoCode = order.promoCode?.trim() ?? '';
 
     return Card(
       elevation: 2,
@@ -258,38 +270,54 @@ class _OrderSummaryCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
 
             // ── Info rows ─────────────────────────────────────────────────────
-            _InfoRow(label: 'Order ID', value: order.orderId.toString()),
+            _InfoRow(label: l10n.orderIdLabel, value: order.orderId.toString()),
             const SizedBox(height: AppSpacing.sm),
             _InfoRow(
-              label: 'Order Date',
+              label: l10n.orderDateLabel,
               value: DateFormat.yMMMd().format(order.orderDate),
             ),
             const SizedBox(height: AppSpacing.sm),
             _InfoRow(
-              label: 'Created Date',
+              label: l10n.orderCreatedDateLabel,
               value: DateFormat.yMMMd().format(order.createdDate),
             ),
             const Divider(height: AppSpacing.xl),
 
+            if (promoCode.isNotEmpty) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Chip(label: Text(l10n.orderPromoApplied(promoCode))),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+
             // ── Amounts ───────────────────────────────────────────────────────
             _PriceRow(
-              label: 'Total Amount',
+              label: l10n.orderSubtotal,
               value: currency.format(order.totalAmount),
             ),
             const SizedBox(height: AppSpacing.sm),
             _PriceRow(
-              label: 'Tax Amount',
+              label: l10n.orderTax,
               value: currency.format(order.taxAmount),
             ),
             const SizedBox(height: AppSpacing.sm),
             _PriceRow(
-              label: 'Discount Amount',
+              label: l10n.orderDiscount,
               value: currency.format(order.discountAmount),
-              valueColor: Colors.red,
+              valueColor: AppColors.error,
             ),
+            if (order.promoDiscountAmount > 0) ...[
+              const SizedBox(height: AppSpacing.sm),
+              _PriceRow(
+                label: l10n.orderPromoDiscount,
+                value: currency.format(order.promoDiscountAmount),
+                valueColor: AppColors.error,
+              ),
+            ],
             const Divider(height: AppSpacing.xl),
             _PriceRow(
-              label: 'Net Amount',
+              label: l10n.orderTotal,
               value: currency.format(order.netAmount),
               isBold: true,
             ),
@@ -381,24 +409,24 @@ class _OrderProductListItem extends StatelessWidget {
     return ProductModel(
       id: item.itemId,
       detId: item.itemDetId,
-      itemName: item.itemName,
-      itemDesc: '',
-      itemPrice: item.unitPrice,
-      itemQty: item.qty,
-      itemImgUrl: '',
+      name: item.name,
+      description: '',
+      basePrice: item.unitPrice,
+      baseStock: item.qty,
+      primaryImageUrl: '',
       categoryId: 0,
       category: '',
       createdBy: '',
       isActive: 1,
-      details: [
-        ApiProductVariant(
+      variants: [
+        ProductVariant(
           detId: item.itemDetId,
           brand: item.brand,
           color: item.color,
-          itemSize: item.itemSize ?? '',
+          size: item.size ?? '',
           discount: item.itemDiscount,
-          itemPrice: item.unitPrice,
-          itemQty: item.qty,
+          price: item.unitPrice,
+          stock: item.qty,
         ),
       ],
     );
@@ -410,6 +438,7 @@ class _OrderProductListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final itemColor = item.color.toColor();
     final discountedTotal =
         item.unitPrice * item.qty -
@@ -442,7 +471,7 @@ class _OrderProductListItem extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          item.itemName,
+                          item.name,
                           style: AppTextStyles.titleSmall,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -450,12 +479,18 @@ class _OrderProductListItem extends StatelessWidget {
                         const SizedBox(height: AppSpacing.xs),
 
                         if (item.brand.isNotEmpty)
-                          _ItemDetail(label: 'Brand', value: item.brand),
+                          _ItemDetail(
+                            label: l10n.brandLabel,
+                            value: item.brand,
+                          ),
 
-                        if (item.itemSize != null && item.itemSize != '0')
-                          _ItemDetail(label: 'Size', value: item.itemSize!),
+                        if (item.size != null && item.size != '0')
+                          _ItemDetail(label: l10n.sizeLabel, value: item.size!),
 
-                        _ItemDetail(label: 'Qty', value: item.qty.toString()),
+                        _ItemDetail(
+                          label: l10n.quantityShortLabel,
+                          value: item.qty.toString(),
+                        ),
 
                         if (itemColor != null) ...[
                           const SizedBox(height: AppSpacing.xs),
@@ -488,7 +523,7 @@ class _OrderProductListItem extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: () => _addToCart(context),
                   icon: const Icon(Icons.add_shopping_cart_outlined),
-                  label: const Text('Add to Cart'),
+                  label: Text(l10n.productAddToCart),
                 ),
               ),
             ],
@@ -522,7 +557,10 @@ class _ColorIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text('Color: ', style: AppTextStyles.bodySmall),
+        Text(
+          '${AppLocalizations.of(context).colorLabel}: ',
+          style: AppTextStyles.bodySmall,
+        ),
         Container(
           width: AppSpacing.iconSm,
           height: AppSpacing.iconSm,

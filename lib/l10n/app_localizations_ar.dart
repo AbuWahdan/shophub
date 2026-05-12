@@ -9,13 +9,13 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get wishlistLoginRequired => 'يرجى تسجيل الدخول لعرض المفضلة';
+  String get wishlistLoginRequired => 'يرجى تسجيل الدخول لإدارة قائمة الأمنيات';
 
   @override
-  String get wishlistEmptyTitle => 'قائمة المفضلة فارغة';
+  String get wishlistEmptyTitle => 'لا توجد عناصر محفوظة';
 
   @override
-  String get wishlistEmptySubtitle => 'احفظ العناصر المفضلة لديك لتظهر هنا';
+  String get wishlistEmptySubtitle => 'اضغط على رمز القلب في المنتج لحفظه هنا';
 
   @override
   String get productVariants => 'خيارات المنتج';
@@ -984,5 +984,229 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String productAddedToCart(Object name) {
     return 'تم إضافة $name إلى السلة';
+  }
+
+  @override
+  String get addToCartLoginRequired =>
+      'يرجى تسجيل الدخول لإضافة العناصر إلى السلة';
+
+  @override
+  String get addToCartVariantError => 'تعذر تحديد خيار المنتج';
+
+  @override
+  String addToCartSuccess(Object productName) {
+    return 'تمت إضافة $productName إلى السلة';
+  }
+
+  @override
+  String get addToCartFailure => 'فشل في الإضافة إلى السلة. حاول مرة أخرى.';
+
+  @override
+  String get variantDefaultSize => 'افتراضي';
+
+  @override
+  String get variantDefaultColor => 'افتراضي';
+
+  @override
+  String orderPromoApplied(Object code) {
+    return 'تم تطبيق العرض: $code';
+  }
+
+  @override
+  String get orderSubtotal => 'المجموع الفرعي';
+
+  @override
+  String get orderTax => 'الضريبة';
+
+  @override
+  String get orderDiscount => 'الخصم';
+
+  @override
+  String get orderPromoDiscount => 'خصم العرض';
+
+  @override
+  String get orderTotal => 'الإجمالي';
+
+  @override
+  String get orderSummaryTitle => 'ملخص الطلب';
+
+  @override
+  String get confirmOrder => 'تأكيد الطلب';
+
+  @override
+  String get myCardsTitle => 'بطاقاتي';
+
+  @override
+  String get addCard => 'إضافة بطاقة';
+
+  @override
+  String get saveCard => 'حفظ البطاقة';
+
+  @override
+  String get cardholderNameLabel => 'اسم حامل البطاقة';
+
+  @override
+  String get cardNumberLabel => 'رقم البطاقة';
+
+  @override
+  String get expiryMonthLabel => 'الشهر';
+
+  @override
+  String get expiryYearLabel => 'السنة';
+
+  @override
+  String get cardTypeLabel => 'نوع البطاقة';
+
+  @override
+  String get setAsDefaultLabel => 'تعيين كبطاقة افتراضية';
+
+  @override
+  String get deleteCardTitle => 'حذف البطاقة';
+
+  @override
+  String get deleteCardConfirm => 'هل أنت متأكد من إزالة هذه البطاقة؟';
+
+  @override
+  String get deleteCardCancel => 'إلغاء';
+
+  @override
+  String get deleteCardConfirmButton => 'حذف';
+
+  @override
+  String get cardExpiredBadge => 'منتهية';
+
+  @override
+  String get cardDefaultBadge => 'افتراضية';
+
+  @override
+  String get noCardsTitle => 'لا توجد بطاقات محفوظة';
+
+  @override
+  String get noCardsSubtitle => 'أضف بطاقة للدفع بشكل أسرع';
+
+  @override
+  String get cardAddedSuccess => 'تمت إضافة البطاقة بنجاح';
+
+  @override
+  String get cardDeletedSuccess => 'تم حذف البطاقة';
+
+  @override
+  String get cardActionSetDefault => 'تعيين كافتراضي';
+
+  @override
+  String get cardActionDelete => 'حذف';
+
+  @override
+  String get selectCardTitle => 'اختر بطاقة';
+
+  @override
+  String get addNewCard => 'إضافة بطاقة جديدة';
+
+  @override
+  String get orderItemsSection => 'العناصر';
+
+  @override
+  String get deliveryAddressSection => 'عنوان التوصيل';
+
+  @override
+  String get amountBreakdownSection => 'تفاصيل المبلغ';
+
+  @override
+  String selectedPaymentLabel(Object method) {
+    return 'الدفع المحدد: $method';
+  }
+
+  @override
+  String get placeOrder => 'إرسال الطلب';
+
+  @override
+  String get promoCodeOptional => 'رمز العرض (اختياري)';
+
+  @override
+  String get promoCodeHint => 'أدخل الرمز';
+
+  @override
+  String get promoApplied => 'تم تطبيق العرض';
+
+  @override
+  String get invalidPromoCode => 'رمز العرض غير صالح';
+
+  @override
+  String get checkoutLoginRequired => 'يرجى تسجيل الدخول لمتابعة الدفع.';
+
+  @override
+  String get checkoutLoginRequiredShort => 'يرجى تسجيل الدخول للمتابعة.';
+
+  @override
+  String get checkoutSelectAddress => 'يرجى اختيار عنوان التوصيل.';
+
+  @override
+  String get checkoutSelectPayment => 'يرجى اختيار طريقة الدفع.';
+
+  @override
+  String get checkoutSelectDeliveryAddress => 'اختر عنوان التوصيل';
+
+  @override
+  String get checkoutCartEmptyWarning => 'سلة التسوق فارغة.';
+
+  @override
+  String get cardNumberInvalid => 'أدخل رقم بطاقة صحيحاً من 16 رقماً';
+
+  @override
+  String get cardExpiryInvalid => 'اختر تاريخ انتهاء مستقبلياً';
+
+  @override
+  String get orderIdLabel => 'رقم الطلب';
+
+  @override
+  String get orderDateLabel => 'تاريخ الطلب';
+
+  @override
+  String get orderCreatedDateLabel => 'تاريخ الإنشاء';
+
+  @override
+  String orderItemsCount(Object count) {
+    return 'العناصر ($count)';
+  }
+
+  @override
+  String get unknownProduct => 'منتج غير معروف';
+
+  @override
+  String get brandLabel => 'العلامة التجارية';
+
+  @override
+  String get sizeLabel => 'المقاس';
+
+  @override
+  String get quantityShortLabel => 'الكمية';
+
+  @override
+  String get colorLabel => 'اللون';
+
+  @override
+  String get orderDetailsLoadError => 'تعذر تحميل تفاصيل الطلب';
+
+  @override
+  String get orderItemsEmptyTitle => 'لا توجد عناصر في الطلب';
+
+  @override
+  String get orderItemsEmptySubtitle =>
+      'لا توجد عناصر متاحة لهذا الطلب حالياً.';
+
+  @override
+  String get changeEmailTitle => 'تغيير البريد الإلكتروني';
+
+  @override
+  String get changeEmailSubtitle => 'تحديث عنوان بريدك الإلكتروني';
+
+  @override
+  String stockOnlyLeft(Object stock) {
+    return 'بقي $stock فقط';
+  }
+
+  @override
+  String orderMoreItems(Object count) {
+    return '+$count عناصر أخرى';
   }
 }

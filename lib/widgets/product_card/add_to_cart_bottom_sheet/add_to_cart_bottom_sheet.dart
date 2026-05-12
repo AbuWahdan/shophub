@@ -10,7 +10,7 @@ import 'widgets/product_variant_widgets.dart';
 class AddToCartSelection {
   const AddToCartSelection(this.variant, this.qty);
 
-  final ApiProductVariant variant;
+  final ProductVariant variant;
   final int qty;
 }
 
@@ -23,7 +23,7 @@ class AddToCartBottomSheet extends StatefulWidget {
   });
 
   final ProductModel product;
-  final List<ApiProductVariant>? variants;
+  final List<ProductVariant>? variants;
   final int? initialDetId;
 
   @override
@@ -31,8 +31,8 @@ class AddToCartBottomSheet extends StatefulWidget {
 }
 
 class _AddToCartBottomSheetState extends State<AddToCartBottomSheet> {
-  late final List<ApiProductVariant> _variants;
-  late ApiProductVariant _selected;
+  late final List<ProductVariant> _variants;
+  late ProductVariant _selected;
   final Map<String, int> _quantitiesByKey = <String, int>{};
 
   @override
@@ -87,9 +87,9 @@ class _AddToCartBottomSheetState extends State<AddToCartBottomSheet> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  if (widget.product.itemName.trim().isNotEmpty)
+                  if (widget.product.name.trim().isNotEmpty)
                     Text(
-                      widget.product.itemName.trim(),
+                      widget.product.name.trim(),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.titleMedium,
@@ -103,12 +103,12 @@ class _AddToCartBottomSheetState extends State<AddToCartBottomSheet> {
                           const SizedBox(height: AppSpacing.sm),
                       itemBuilder: (context, index) {
                         final variant = _variants[index];
-                        final isSelected = variant.detId == _selected.detId;
+                        final selected = variant.detId == _selected.detId;
                         final quantity = _quantityFor(variant);
 
                         return ProductVariantOptionCard(
                           variant: variant,
-                          isSelected: isSelected,
+                          selected: selected,
                           quantity: quantity,
                           showQuantityStepper: true,
                           showSelectionIndicator: false,
@@ -136,12 +136,10 @@ class _AddToCartBottomSheetState extends State<AddToCartBottomSheet> {
                         backgroundColor: AppColors.primary,
                         foregroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            AppRadius.sm,
-                          ),
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
                         ),
                       ),
-                      onPressed: _selected.itemQty <= 0
+                      onPressed: _selected.stock <= 0
                           ? null
                           : () => Navigator.of(context).pop(
                               AddToCartSelection(
@@ -166,11 +164,11 @@ class _AddToCartBottomSheetState extends State<AddToCartBottomSheet> {
     );
   }
 
-  void _selectVariant(ApiProductVariant variant) {
+  void _selectVariant(ProductVariant variant) {
     _selected = variant;
   }
 
-  int _quantityFor(ApiProductVariant variant) {
+  int _quantityFor(ProductVariant variant) {
     final key = _variantKey(variant);
     final stored = _quantitiesByKey[key];
     if (stored != null) {
@@ -180,32 +178,32 @@ class _AddToCartBottomSheetState extends State<AddToCartBottomSheet> {
     return 1;
   }
 
-  String _variantKey(ApiProductVariant variant) {
-    return '${variant.detId}|${variant.brand}|${variant.color}|${variant.itemSize}|${variant.itemPrice}|${variant.itemQty}';
+  String _variantKey(ProductVariant variant) {
+    return '${variant.detId}|${variant.brand}|${variant.color}|${variant.size}|${variant.price}|${variant.stock}';
   }
 }
 
-List<ApiProductVariant> resolveProductVariants(
+List<ProductVariant> resolveProductVariants(
   ProductModel product,
-  List<ApiProductVariant>? overrides,
+  List<ProductVariant>? overrides,
 ) {
   if (overrides != null && overrides.isNotEmpty) {
     return overrides;
   }
 
-  if (product.details.isNotEmpty) {
-    return product.details;
+  if (product.variants.isNotEmpty) {
+    return product.variants;
   }
 
   return [
-    ApiProductVariant(
+    ProductVariant(
       detId: product.detId,
       brand: '',
       color: '',
-      itemSize: '',
+      size: '',
       discount: 0,
-      itemPrice: product.price,
-      itemQty: product.quantity,
+      price: product.price,
+      stock: product.quantity,
     ),
   ];
 }

@@ -10,6 +10,8 @@ import '../../presentation/auth/password_updated_screen.dart';
 import '../../presentation/auth/signup/register_screen.dart';
 import '../../presentation/auth/signup/signup_otp_verification_screen.dart';
 import '../../presentation/categories_tab/categories_page.dart';
+import '../../presentation/cards/add_card_page.dart';
+import '../../presentation/cards/my_cards_page.dart';
 import '../../presentation/home_tab/main_page.dart';
 import '../../presentation/products/comments/comments_screen.dart';
 import '../../presentation/profile/my_products/my_products_page.dart';
@@ -44,6 +46,8 @@ class AppRoutes {
   static const String checkout = '/checkout';
   static const String orderConfirmation = '/order-confirmation';
   static const String wishlist = '/wishlist';
+  static const String myCards = '/my-cards';
+  static const String addCard = '/add-card';
   static const String productComments = '/product-comments';
   static const String productDetails = '/product-details';
   static const String settings = '/settings';
@@ -104,7 +108,6 @@ class AppRoutes {
           builder: (_) => const RegisterScreen(),
         );
 
-
       case forgotPassword:
         return MaterialPageRoute(
           settings: settings,
@@ -115,23 +118,23 @@ class AppRoutes {
         final args = settings.arguments as Map<String, dynamic>? ?? {};
         return MaterialPageRoute(
           builder: (_) => OTPVerificationScreen(
-            username:    args['username']    as String? ?? '',
-            email:       args['email']       as String? ?? '',
-            flow:        args['flow']        as String? ?? 'forgot_password',
-            pendingUser: args['pendingUser'] as UserModel?,  // <-- must be here
+            username: args['username'] as String? ?? '',
+            email: args['email'] as String? ?? '',
+            flow: args['flow'] as String? ?? 'forgot_password',
+            pendingUser: args['pendingUser'] as UserModel?, // <-- must be here
           ),
         );
 
       case otpVerification:
         final username = args?['username'] as String? ?? '';
-        final email    = args?['email']    as String? ?? '';
-        final flow     = args?['flow']     as String? ?? 'forgot_password';
+        final email = args?['email'] as String? ?? '';
+        final flow = args?['flow'] as String? ?? 'forgot_password';
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => OTPVerificationScreen(
             username: username,
-            email:    email,
-            flow:     flow,
+            email: email,
+            flow: flow,
           ),
         );
 
@@ -164,7 +167,6 @@ class AppRoutes {
           builder: (_) => const CategoriesPage(),
         );
 
-
       case orders:
         return MaterialPageRoute(
           settings: settings,
@@ -184,9 +186,7 @@ class AppRoutes {
           builder: (_) => CommentsScreen(
             productId: args['productId'],
             productName: args['productName'],
-            comments: List<ItemCommentModel>.from(
-              args['comments'] ?? [],
-            ),
+            comments: List<ItemCommentModel>.from(args['comments'] ?? []),
           ),
         );
 
@@ -209,6 +209,18 @@ class AppRoutes {
           builder: (_) => const WishlistPage(),
         );
 
+      case myCards:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const MyCardsPage(),
+        );
+
+      case addCard:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const AddCardPage(),
+        );
+
       case AppRoutes.settings:
         return MaterialPageRoute(
           settings: settings,
@@ -221,18 +233,17 @@ class AppRoutes {
           builder: (_) => const EditProfileScreen(),
         );
 
-
       case changeEmail:
         return MaterialPageRoute(
           settings: settings,
-          builder:  (_) => const ChangeEmailScreen(),
+          builder: (_) => const ChangeEmailScreen(),
         );
 
       case verifyNewEmail:
         final newEmail = settings.arguments as String? ?? '';
         return MaterialPageRoute(
           settings: settings,
-          builder:  (_) => VerifyNewEmailScreen(newEmail: newEmail),
+          builder: (_) => VerifyNewEmailScreen(newEmail: newEmail),
         );
       case changePassword:
         final flowName = args?['flow'] as String?;
@@ -315,8 +326,6 @@ class AppRoutes {
           builder: (_) => const MyProductsPage(),
         );
 
-
-
       case productDetails:
         final product = args?['product'] as ProductModel?;
         if (product == null) {
@@ -342,7 +351,6 @@ class AppRoutes {
             initialDetId: selectedDetId,
           ),
         );
-
 
       default:
         return MaterialPageRoute(

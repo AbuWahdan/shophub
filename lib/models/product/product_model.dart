@@ -1,11 +1,14 @@
+import 'product_variant.dart';
+export 'product_variant.dart';
+
 class ProductModel {
   final int id;
   final int detId;
-  final String itemName;
-  final String itemDesc;
-  final double itemPrice;
-  final int itemQty;
-  final String itemImgUrl;
+  final String name;
+  final String description;
+  final double basePrice;
+  final int baseStock;
+  final String primaryImageUrl;
   final int categoryId;
   final String category;
   final String createdBy;
@@ -14,7 +17,7 @@ class ProductModel {
   final int isActive;
   final double? discountPrice;
   final List<String> images;
-  final List<ApiProductVariant> details;
+  final List<ProductVariant> variants;
   final List<String> sizes;
   final List<String> colors;
   final Map<String, List<String>>? imagesByColor;
@@ -23,16 +26,15 @@ class ProductModel {
   final int reviewCount;
   final int soldCount;
   bool isFavorite;
-  bool isSelected;
 
   ProductModel({
     required this.id,
     this.detId = 0,
-    required this.itemName,
-    required this.itemDesc,
-    required this.itemPrice,
-    required this.itemQty,
-    required this.itemImgUrl,
+    required this.name,
+    required this.description,
+    required this.basePrice,
+    required this.baseStock,
+    required this.primaryImageUrl,
     required this.categoryId,
     required this.category,
     required this.createdBy,
@@ -41,7 +43,7 @@ class ProductModel {
     required this.isActive,
     this.discountPrice,
     List<String>? images,
-    this.details = const [],
+    this.variants = const [],
     this.sizes = const [],
     this.colors = const [],
     this.imagesByColor,
@@ -50,18 +52,15 @@ class ProductModel {
     this.reviewCount = 0,
     this.soldCount = 0,
     this.isFavorite = false,
-    this.isSelected = false,
-  }) : images = images ?? (itemImgUrl.isEmpty ? [] : [itemImgUrl]);
+  }) : images = images ?? (primaryImageUrl.isEmpty ? [] : [primaryImageUrl]);
 
-  String get name => itemName;
-  String get description => itemDesc;
-  double get price => itemPrice;
-  int get quantity => itemQty;
-  double get finalPrice => discountPrice ?? itemPrice;
+  double get price => finalPrice;
+  int get quantity => baseStock;
+  double get finalPrice => discountPrice ?? basePrice;
 
   int get discountPercentage {
-    if (discountPrice == null || itemPrice == 0) return 0;
-    return (((itemPrice - discountPrice!) / itemPrice) * 100).toInt();
+    if (discountPrice == null || basePrice == 0) return 0;
+    return (((basePrice - discountPrice!) / basePrice) * 100).toInt();
   }
 
   List<String> imagesForColor(String? color) {
@@ -78,7 +77,7 @@ class ProductModel {
     if (mapped != null) return mapped;
     final sizeIndex = sizes.indexOf(size);
     final colorIndex = colors.indexOf(color);
-    if (sizeIndex == -1 || colorIndex == -1) return itemQty;
+    if (sizeIndex == -1 || colorIndex == -1) return baseStock;
     return ((id + sizeIndex * 3 + colorIndex * 5) % 9) + 1;
   }
 
@@ -89,15 +88,15 @@ class ProductModel {
       (variant) => variant.detId == topLevelDetId,
       orElse: () => variants.isNotEmpty
           ? variants.first
-          : const ApiProductVariant(
+          : const ProductVariant(
               detId: 0,
               brand: '',
               color: '',
-              itemSize: '',
+              size: '',
               discount: 0,
               tax: 0,
-              itemPrice: 0,
-              itemQty: 0,
+              price: 0,
+              stock: 0,
             ),
     );
     final parsedPrice = _asDouble(
@@ -111,9 +110,9 @@ class ProductModel {
         'ITEM_OLD_PRICE',
       ]),
     );
-    final parsedQty = _asInt(_pick(json, const ['item_qty', 'ITEM_QTY']));
+    final parsedStock = _asInt(_pick(json, const ['item_qty', 'ITEM_QTY']));
     final variantSizes = variants
-        .map((variant) => variant.itemSize.trim())
+        .map((variant) => variant.size.trim())
         .where((size) => size.isNotEmpty)
         .toSet()
         .toList();
@@ -134,15 +133,15 @@ class ProductModel {
     return ProductModel(
       id: _asInt(_pick(json, const ['id', 'ID', 'ITEM_ID', 'item_id'])),
       detId: topLevelDetId > 0 ? topLevelDetId : selectedVariant.detId,
-      itemName: _asString(json, const ['item_name', 'ITEM_NAME']),
-      itemDesc: _asString(json, const ['item_desc', 'ITEM_DESC']),
-      itemPrice: _resolveOriginalPrice(
+      name: _asString(json, const ['item_name', 'ITEM_NAME']),
+      description: _asString(json, const ['item_desc', 'ITEM_DESC']),
+      basePrice: _resolveOriginalPrice(
         rawPrice: parsedPrice,
         explicitAltPrice: parsedAlternatePrice,
         variant: selectedVariant,
       ),
-      itemQty: parsedQty > 0 ? parsedQty : selectedVariant.itemQty,
-      itemImgUrl: primaryImage,
+      baseStock: parsedStock > 0 ? parsedStock : selectedVariant.stock,
+      primaryImageUrl: primaryImage,
       categoryId: _asInt(
         _pick(json, const [
           'category_id',
@@ -184,7 +183,7 @@ class ProductModel {
         variant: selectedVariant,
       ),
       images: imageList,
-      details: variants,
+      variants: variants,
       rating: _asDouble(
         _pick(json, const [
           'average_rating',
@@ -213,11 +212,11 @@ class ProductModel {
     );
   }
 
-  ApiProductVariant? variantFor({required String size, required String color}) {
-    if (details.isEmpty) return null;
-    for (final detail in details) {
-      if (detail.itemSize == size && detail.color == color) {
-        return detail;
+  ProductVariant? variantFor({required String size, required String color}) {
+    if (variants.isEmpty) return null;
+    for (final variant in variants) {
+      if (variant.size == size && variant.color == color) {
+        return variant;
       }
     }
     return null;
@@ -228,9 +227,9 @@ class ProductModel {
     required String color,
     int fallback = 0,
   }) {
-    final detail = variantFor(size: size, color: color);
-    if (detail != null && detail.detId > 0) {
-      return detail.detId;
+    final variant = variantFor(size: size, color: color);
+    if (variant != null && variant.detId > 0) {
+      return variant.detId;
     }
     if (detId > 0) return detId;
     return fallback;
@@ -273,7 +272,7 @@ class ProductModel {
         .toList();
   }
 
-  static List<ApiProductVariant> _parseVariants(Map<String, dynamic> json) {
+  static List<ProductVariant> _parseVariants(Map<String, dynamic> json) {
     final candidates = <dynamic>[
       _pick(json, const ['details', 'DETAILS']),
       _pick(json, const ['variants', 'VARIANTS']),
@@ -285,7 +284,7 @@ class ProductModel {
             .whereType<Map>()
             .map(
               (item) =>
-                  ApiProductVariant.fromJson(Map<String, dynamic>.from(item)),
+                  ProductVariant.fromJson(Map<String, dynamic>.from(item)),
             )
             .toList();
       }
@@ -294,11 +293,9 @@ class ProductModel {
     final detId = _asInt(_pick(json, const ['DET_ID', 'det_id']));
     final color = _asString(json, const ['COLOR', 'color']);
     final brand = _asString(json, const ['BRAND', 'brand']);
-    final itemSize = _asString(json, const ['ITEM_SIZE', 'item_size']);
-    final itemPrice = _asDouble(
-      _pick(json, const ['ITEM_PRICE', 'item_price']),
-    );
-    final itemQty = _asInt(_pick(json, const ['ITEM_QTY', 'item_qty']));
+    final size = _asString(json, const ['ITEM_SIZE', 'item_size']);
+    final price = _asDouble(_pick(json, const ['ITEM_PRICE', 'item_price']));
+    final stock = _asInt(_pick(json, const ['ITEM_QTY', 'item_qty']));
     final discount = _asDouble(
       _pick(json, const [
         'ITEM_DISCOUNT',
@@ -310,24 +307,24 @@ class ProductModel {
     if (detId == 0 &&
         color.trim().isEmpty &&
         brand.trim().isEmpty &&
-        itemSize.trim().isEmpty &&
-        itemPrice <= 0 &&
-        itemQty <= 0 &&
+        size.trim().isEmpty &&
+        price <= 0 &&
+        stock <= 0 &&
         discount <= 0) {
       return const [];
     }
     return [
-      ApiProductVariant(
+      ProductVariant(
         detId: detId,
         brand: brand,
         color: color,
-        itemSize: itemSize,
+        size: size,
         discount: discount,
         tax: _asDouble(
           _pick(json, const ['TAX', 'tax', 'ITEM_TAX', 'item_tax']),
         ),
-        itemPrice: itemPrice,
-        itemQty: itemQty,
+        price: price,
+        stock: stock,
       ),
     ];
   }
@@ -335,9 +332,9 @@ class ProductModel {
   static double _resolveOriginalPrice({
     required double rawPrice,
     required double? explicitAltPrice,
-    required ApiProductVariant variant,
+    required ProductVariant variant,
   }) {
-    final variantPrice = variant.itemPrice > 0 ? variant.itemPrice : rawPrice;
+    final variantPrice = variant.price > 0 ? variant.price : rawPrice;
     if (variantPrice <= 0 && explicitAltPrice != null && explicitAltPrice > 0) {
       return explicitAltPrice;
     }
@@ -352,9 +349,9 @@ class ProductModel {
   static double? _resolveDiscountedPrice({
     required double rawPrice,
     required double? explicitAltPrice,
-    required ApiProductVariant variant,
+    required ProductVariant variant,
   }) {
-    final variantPrice = variant.itemPrice > 0 ? variant.itemPrice : rawPrice;
+    final variantPrice = variant.price > 0 ? variant.price : rawPrice;
 
     if (explicitAltPrice != null &&
         explicitAltPrice > 0 &&
@@ -371,70 +368,6 @@ class ProductModel {
     }
 
     return null;
-  }
-}
-
-class ApiProductVariant {
-  final int detId;
-  final String brand;
-  final String color;
-  final String itemSize;
-  final double discount;
-  final double tax;
-  final double itemPrice;
-  final int itemQty;
-
-  const ApiProductVariant({
-    required this.detId,
-    required this.brand,
-    required this.color,
-    required this.itemSize,
-    required this.discount,
-    this.tax = 0,
-    required this.itemPrice,
-    required this.itemQty,
-  });
-
-  factory ApiProductVariant.fromJson(Map<String, dynamic> json) {
-    return ApiProductVariant(
-      detId: _asInt(_pick(json, const ['DET_ID', 'det_id', 'item_det_id'])),
-      brand: _asString(json, const ['BRAND', 'brand']),
-      color: _asString(json, const ['COLOR', 'color']),
-      itemSize: _asString(json, const ['ITEM_SIZE', 'item_size']),
-      discount: _asDouble(
-        _pick(json, const [
-          'ITEM_DISCOUNT',
-          'item_discount',
-          'DISCOUNT',
-          'discount',
-        ]),
-      ),
-      tax: _asDouble(_pick(json, const ['TAX', 'tax', 'ITEM_TAX', 'item_tax'])),
-      itemPrice: _asDouble(_pick(json, const ['ITEM_PRICE', 'item_price'])),
-      itemQty: _asInt(_pick(json, const ['ITEM_QTY', 'item_qty'])),
-    );
-  }
-
-  static dynamic _pick(Map<String, dynamic> json, List<String> keys) {
-    for (final key in keys) {
-      if (json.containsKey(key)) return json[key];
-    }
-    return null;
-  }
-
-  static String _asString(Map<String, dynamic> json, List<String> keys) {
-    final value = _pick(json, keys);
-    return (value ?? '').toString().trim();
-  }
-
-  static double _asDouble(dynamic value, {double fallback = 0.0}) {
-    if (value is num) return value.toDouble();
-    return double.tryParse((value ?? '').toString()) ?? fallback;
-  }
-
-  static int _asInt(dynamic value) {
-    if (value is num) return value.toInt();
-    return int.tryParse((value ?? '').toString()) ?? 0;
   }
 }
 
@@ -469,13 +402,13 @@ class GetProductsRequest {
 class ApiProductDetails {
   final int itemId;
   final int detId;
-  final String itemName;
-  final String itemDesc;
-  final double itemPrice;
-  final int itemQty;
+  final String name;
+  final String description;
+  final double price;
+  final int stock;
   final double discount;
   final double tax;
-  final String itemImgUrl;
+  final String primaryImageUrl;
   final int imageId;
   final String category;
   final int catId;
@@ -483,20 +416,20 @@ class ApiProductDetails {
   final String itemOwner;
   final int reviews;
   final double rating;
-  final String itemSize;
+  final String size;
   final String color;
   final String brand;
 
   const ApiProductDetails({
     required this.itemId,
     required this.detId,
-    required this.itemName,
-    required this.itemDesc,
-    required this.itemPrice,
-    required this.itemQty,
+    required this.name,
+    required this.description,
+    required this.price,
+    required this.stock,
     required this.discount,
     this.tax = 0,
-    required this.itemImgUrl,
+    required this.primaryImageUrl,
     required this.imageId,
     required this.category,
     required this.catId,
@@ -504,7 +437,7 @@ class ApiProductDetails {
     required this.itemOwner,
     required this.reviews,
     required this.rating,
-    required this.itemSize,
+    required this.size,
     required this.color,
     required this.brand,
   });
@@ -513,10 +446,10 @@ class ApiProductDetails {
     return ApiProductDetails(
       itemId: _asInt(_pick(json, const ['ITEM_ID', 'item_id', 'ID', 'id'])),
       detId: _asInt(_pick(json, const ['DET_ID', 'det_id'])),
-      itemName: _asString(json, const ['ITEM_NAME', 'item_name']),
-      itemDesc: _asString(json, const ['ITEM_DESC', 'item_desc']),
-      itemPrice: _asDouble(_pick(json, const ['ITEM_PRICE', 'item_price'])),
-      itemQty: _asInt(_pick(json, const ['ITEM_QTY', 'item_qty'])),
+      name: _asString(json, const ['ITEM_NAME', 'item_name']),
+      description: _asString(json, const ['ITEM_DESC', 'item_desc']),
+      price: _asDouble(_pick(json, const ['ITEM_PRICE', 'item_price'])),
+      stock: _asInt(_pick(json, const ['ITEM_QTY', 'item_qty'])),
       discount: _asDouble(
         _pick(json, const [
           'ITEM_DISCOUNT',
@@ -526,7 +459,7 @@ class ApiProductDetails {
         ]),
       ),
       tax: _asDouble(_pick(json, const ['TAX', 'tax', 'ITEM_TAX', 'item_tax'])),
-      itemImgUrl: _asString(json, const ['ITEM_IMG_URL', 'item_img_url']),
+      primaryImageUrl: _asString(json, const ['ITEM_IMG_URL', 'item_img_url']),
       imageId: _asInt(_pick(json, const ['IMAGE_ID', 'image_id'])),
       category: _asString(json, const ['CATEGORY', 'category']),
       catId: _asInt(_pick(json, const ['CAT_ID', 'cat_id', 'CATEGORY_ID'])),
@@ -534,7 +467,7 @@ class ApiProductDetails {
       itemOwner: _asString(json, const ['ITEM_OWNER', 'item_owner']),
       reviews: _asInt(_pick(json, const ['REVIEWS', 'reviews'])),
       rating: _asDouble(_pick(json, const ['RATING', 'rating'])),
-      itemSize: _asString(json, const ['ITEM_SIZE', 'item_size']),
+      size: _asString(json, const ['ITEM_SIZE', 'item_size']),
       color: _asString(json, const ['COLOR', 'color']),
       brand: _asString(json, const ['BRAND', 'brand']),
     );
@@ -601,31 +534,35 @@ class ApiItemImage {
 }
 
 class CreateProductRequest {
-  final String itemName;
-  final String itemDesc;
-  final String? itemImgUrl;
+  final String name;
+  final String description;
+  final String? primaryImageUrl;
   final String? imagesCsv;
-  final List<CreateProductDetail> details;
+  final List<CreateProductDetail> variants;
   final int categoryId;
   final String createdBy;
 
   const CreateProductRequest({
-    required this.itemName,
-    required this.itemDesc,
-    this.itemImgUrl,
+    required this.name,
+    required this.description,
+    this.primaryImageUrl,
     this.imagesCsv,
-    required this.details,
+    required this.variants,
     required this.categoryId,
     required this.createdBy,
   });
 
   Map<String, dynamic> toJson() {
-    final normalizedImages = _normalizeImagesCsv(imagesCsv ?? itemImgUrl ?? '');
+    final normalizedImages = _normalizeImagesCsv(
+      imagesCsv ?? primaryImageUrl ?? '',
+    );
     return {
-      'item_name': itemName,
-      'item_desc': itemDesc,
-      'item_img_url': normalizedImages.isEmpty ? itemImgUrl : normalizedImages,
-      'details': details.map((detail) => detail.toJson()).toList(),
+      'item_name': name,
+      'item_desc': description,
+      'item_img_url': normalizedImages.isEmpty
+          ? primaryImageUrl
+          : normalizedImages,
+      'details': variants.map((detail) => detail.toJson()).toList(),
       'category_id': categoryId,
       'created_by': createdBy,
     };
@@ -644,22 +581,22 @@ class CreateProductDetail {
   final int? detId;
   final String brand;
   final String color;
-  final String itemSize; // ← MUST be String (SIZE_CODE), NOT int
+  final String size; // ← MUST be String (SIZE_CODE), NOT int
   final double discount;
   final double tax;
-  final double itemPrice;
-  final int itemQty;
+  final double price;
+  final int stock;
   final int isActive;
 
   const CreateProductDetail({
     this.detId,
     required this.brand,
     required this.color,
-    required this.itemSize,
+    required this.size,
     required this.discount,
     this.tax = 0,
-    required this.itemPrice,
-    required this.itemQty,
+    required this.price,
+    required this.stock,
     this.isActive = 1,
   });
 
@@ -667,11 +604,11 @@ class CreateProductDetail {
     if (detId != null && detId! > 0) 'det_id': detId,
     'brand': brand,
     'color': color,
-    'item_size': itemSize, // SIZE_CODE string — no conversion needed
+    'item_size': size, // SIZE_CODE string — no conversion needed
     'discount': discount,
     'tax': tax,
-    'item_price': itemPrice,
-    'item_qty': itemQty,
+    'item_price': price,
+    'item_qty': stock,
     'is_active': isActive,
   };
 }
@@ -679,36 +616,35 @@ class CreateProductDetail {
 // ─── NEW: matches exact update-item API shape ──────────────────────────────
 class UpdateItemDetail {
   final int detailId;
-  final double itemPrice;
-  final int itemQty;
-  final double itemDiscount;
+  final double price;
+  final int stock;
+  final double discount;
   final String brand;
   final String color;
   final String modifiedBy;
   final String size; // SIZE_CODE string, e.g. "XL", "42", "32/30"
   final int isActive;
-  final double itemTax;
+  final double tax;
 
   const UpdateItemDetail({
     required this.detailId,
-    required this.itemPrice,
-    required this.itemQty,
-    this.itemDiscount = 0,
+    required this.price,
+    required this.stock,
+    this.discount = 0,
     required this.brand,
     required this.color,
     required this.modifiedBy,
     required this.size,
     required this.isActive,
-    this.itemTax = 0,
-
+    this.tax = 0,
   });
 
   factory UpdateItemDetail.fromJson(Map<String, dynamic> json) {
     return UpdateItemDetail(
       detailId: _asInt(_pick(json, const ['detail_id', 'DETAIL_ID'])),
-      itemPrice: _asDouble(_pick(json, const ['item_price', 'ITEM_PRICE'])),
-      itemQty: _asInt(_pick(json, const ['item_qty', 'ITEM_QTY'])),
-      itemDiscount: _asDouble(
+      price: _asDouble(_pick(json, const ['item_price', 'ITEM_PRICE'])),
+      stock: _asInt(_pick(json, const ['item_qty', 'ITEM_QTY'])),
+      discount: _asDouble(
         _pick(json, const ['item_discount', 'ITEM_DISCOUNT']),
       ),
       brand: _asString(json, const ['brand', 'BRAND']),
@@ -716,44 +652,42 @@ class UpdateItemDetail {
       modifiedBy: _asString(json, const ['modified_by', 'MODIFIED_BY']),
       size: _asString(json, const ['size', 'SIZE', 'item_size', 'ITEM_SIZE']),
       isActive: _asInt(_pick(json, const ['is_active', 'IS_ACTIVE'])),
-      itemTax: _asDouble(
-        _pick(json, const ['item_tax', 'ITEM_TAX']),
-      ),
+      tax: _asDouble(_pick(json, const ['item_tax', 'ITEM_TAX'])),
     );
   }
 
   UpdateItemDetail copyWith({
     int? detailId,
-    double? itemPrice,
-    int? itemQty,
-    double? itemDiscount,
+    double? price,
+    int? stock,
+    double? discount,
     String? brand,
     String? color,
     String? modifiedBy,
     String? size,
     int? isActive,
-    double? itemTax,
+    double? tax,
   }) {
     return UpdateItemDetail(
       detailId: detailId ?? this.detailId,
-      itemPrice: itemPrice ?? this.itemPrice,
-      itemQty: itemQty ?? this.itemQty,
-      itemDiscount: itemDiscount ?? this.itemDiscount,
+      price: price ?? this.price,
+      stock: stock ?? this.stock,
+      discount: discount ?? this.discount,
       brand: brand ?? this.brand,
       color: color ?? this.color,
       modifiedBy: modifiedBy ?? this.modifiedBy,
       size: size ?? this.size,
       isActive: isActive ?? this.isActive,
-      itemTax: itemTax ?? this.itemTax,
+      tax: tax ?? this.tax,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'detail_id': detailId,
-    'item_price': itemPrice,
-    'item_qty': itemQty,
-    'item_discount': itemDiscount,
-    'item_tax': itemTax,
+    'item_price': price,
+    'item_qty': stock,
+    'item_discount': discount,
+    'item_tax': tax,
     'brand': brand,
     'color': color,
     'modified_by': modifiedBy,
@@ -794,32 +728,32 @@ class UpdateItemDetail {
 // ─── REPLACED: old UpdateProductRequest was sending wrong keys ────────────
 class UpdateProductRequest {
   final int id;
-  final String itemName;
-  final String itemDesc;
+  final String name;
+  final String description;
   final int isActive;
   final List<UpdateItemDetail> itemDetails;
   final int categoryId;
-  final String? itemImgUrl;
+  final String? primaryImageUrl;
 
   const UpdateProductRequest({
     required this.id,
-    required this.itemName,
-    required this.itemDesc,
+    required this.name,
+    required this.description,
     required this.isActive,
     required this.itemDetails,
     required this.categoryId,
-    this.itemImgUrl,
+    this.primaryImageUrl,
   });
 
   /// Produces the exact shape the API expects inside "items"[0]
   Map<String, dynamic> toJson() => {
     'id': id,
-    'item_name': itemName,
-    'item_desc': itemDesc,
+    'item_name': name,
+    'item_desc': description,
     'is_active': isActive,
     'category_id': categoryId,
-    if (itemImgUrl != null && itemImgUrl!.isNotEmpty)
-      'item_img_url': itemImgUrl,
+    if (primaryImageUrl != null && primaryImageUrl!.isNotEmpty)
+      'item_img_url': primaryImageUrl,
     'item_details': itemDetails.map((d) => d.toJson()).toList(),
   };
 }

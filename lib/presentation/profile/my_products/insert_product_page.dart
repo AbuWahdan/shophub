@@ -160,11 +160,11 @@ class _InsertProductPageState extends State<InsertProductPage> {
           color: v.colorController.text.trim().isEmpty
               ? 'N/A'
               : v.colorController.text.trim(),
-          itemSize: (v.sizeId ?? 0).toString(),
+          size: (v.sizeId ?? 0).toString(),
           discount: discount < 0 ? 0.0 : discount,
           tax: tax < 0 ? 0.0 : tax,
-          itemPrice: price,
-          itemQty: qty,
+          price: price,
+          stock: qty,
           isActive: 1, // Always active on insert.
         ),
       );
@@ -224,11 +224,11 @@ class _InsertProductPageState extends State<InsertProductPage> {
       final imagesCsv = orderedPaths.join(',');
       await _productService.insertProduct(
         CreateProductRequest(
-          itemName: _nameController.text.trim(),
-          itemDesc: _descController.text.trim(),
-          itemImgUrl: imagesCsv,
+          name: _nameController.text.trim(),
+          description: _descController.text.trim(),
+          primaryImageUrl: imagesCsv,
           imagesCsv: imagesCsv,
-          details: details,
+          variants: details,
           categoryId: _selectedSubCategoryId!,
           createdBy: widget.currentUser,
           // isActive is always 1 — not user-controlled on insert.

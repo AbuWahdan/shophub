@@ -9,14 +9,14 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get wishlistLoginRequired => 'Please sign in to view your wishlist';
+  String get wishlistLoginRequired => 'Please log in to manage your wishlist';
 
   @override
-  String get wishlistEmptyTitle => 'Your wishlist is empty';
+  String get wishlistEmptyTitle => 'No saved items';
 
   @override
   String get wishlistEmptySubtitle =>
-      'Save your favorite items to see them here';
+      'Tap the heart icon on a product to save it here';
 
   @override
   String get productVariants => 'Product Variants';
@@ -990,5 +990,230 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String productAddedToCart(Object name) {
     return '$name added to cart';
+  }
+
+  @override
+  String get addToCartLoginRequired =>
+      'Please log in to add items to your cart';
+
+  @override
+  String get addToCartVariantError => 'Unable to determine product variant';
+
+  @override
+  String addToCartSuccess(Object productName) {
+    return '$productName added to cart';
+  }
+
+  @override
+  String get addToCartFailure => 'Failed to add to cart. Please try again.';
+
+  @override
+  String get variantDefaultSize => 'Default';
+
+  @override
+  String get variantDefaultColor => 'Default';
+
+  @override
+  String orderPromoApplied(Object code) {
+    return 'Promo applied: $code';
+  }
+
+  @override
+  String get orderSubtotal => 'Subtotal';
+
+  @override
+  String get orderTax => 'Tax';
+
+  @override
+  String get orderDiscount => 'Discount';
+
+  @override
+  String get orderPromoDiscount => 'Promo discount';
+
+  @override
+  String get orderTotal => 'Total';
+
+  @override
+  String get orderSummaryTitle => 'Order Summary';
+
+  @override
+  String get confirmOrder => 'Confirm Order';
+
+  @override
+  String get myCardsTitle => 'My Cards';
+
+  @override
+  String get addCard => 'Add Card';
+
+  @override
+  String get saveCard => 'Save Card';
+
+  @override
+  String get cardholderNameLabel => 'Cardholder Name';
+
+  @override
+  String get cardNumberLabel => 'Card Number';
+
+  @override
+  String get expiryMonthLabel => 'Month';
+
+  @override
+  String get expiryYearLabel => 'Year';
+
+  @override
+  String get cardTypeLabel => 'Card Type';
+
+  @override
+  String get setAsDefaultLabel => 'Set as default card';
+
+  @override
+  String get deleteCardTitle => 'Delete Card';
+
+  @override
+  String get deleteCardConfirm => 'Are you sure you want to remove this card?';
+
+  @override
+  String get deleteCardCancel => 'Cancel';
+
+  @override
+  String get deleteCardConfirmButton => 'Delete';
+
+  @override
+  String get cardExpiredBadge => 'EXPIRED';
+
+  @override
+  String get cardDefaultBadge => 'DEFAULT';
+
+  @override
+  String get noCardsTitle => 'No cards saved';
+
+  @override
+  String get noCardsSubtitle => 'Add a card to pay faster at checkout';
+
+  @override
+  String get cardAddedSuccess => 'Card added successfully';
+
+  @override
+  String get cardDeletedSuccess => 'Card removed';
+
+  @override
+  String get cardActionSetDefault => 'Set as default';
+
+  @override
+  String get cardActionDelete => 'Delete';
+
+  @override
+  String get selectCardTitle => 'Select a Card';
+
+  @override
+  String get addNewCard => 'Add new card';
+
+  @override
+  String get orderItemsSection => 'Items';
+
+  @override
+  String get deliveryAddressSection => 'Delivery address';
+
+  @override
+  String get amountBreakdownSection => 'Amount breakdown';
+
+  @override
+  String selectedPaymentLabel(Object method) {
+    return 'Selected payment: $method';
+  }
+
+  @override
+  String get placeOrder => 'Place Order';
+
+  @override
+  String get promoCodeOptional => 'Promo Code (Optional)';
+
+  @override
+  String get promoCodeHint => 'ENTER CODE';
+
+  @override
+  String get promoApplied => 'Promo applied';
+
+  @override
+  String get invalidPromoCode => 'Invalid promo code';
+
+  @override
+  String get checkoutLoginRequired =>
+      'Please log in to continue with checkout.';
+
+  @override
+  String get checkoutLoginRequiredShort => 'Please log in to continue.';
+
+  @override
+  String get checkoutSelectAddress => 'Please select a delivery address.';
+
+  @override
+  String get checkoutSelectPayment => 'Please select a payment method.';
+
+  @override
+  String get checkoutSelectDeliveryAddress => 'Select delivery address';
+
+  @override
+  String get checkoutCartEmptyWarning => 'Your cart is empty.';
+
+  @override
+  String get cardNumberInvalid => 'Enter a valid 16-digit card number';
+
+  @override
+  String get cardExpiryInvalid => 'Select a future expiry date';
+
+  @override
+  String get orderIdLabel => 'Order ID';
+
+  @override
+  String get orderDateLabel => 'Order Date';
+
+  @override
+  String get orderCreatedDateLabel => 'Created Date';
+
+  @override
+  String orderItemsCount(Object count) {
+    return 'Items ($count)';
+  }
+
+  @override
+  String get unknownProduct => 'Unknown Product';
+
+  @override
+  String get brandLabel => 'Brand';
+
+  @override
+  String get sizeLabel => 'Size';
+
+  @override
+  String get quantityShortLabel => 'Qty';
+
+  @override
+  String get colorLabel => 'Color';
+
+  @override
+  String get orderDetailsLoadError => 'Unable to load order details';
+
+  @override
+  String get orderItemsEmptyTitle => 'No order items found';
+
+  @override
+  String get orderItemsEmptySubtitle =>
+      'There are no line items available for this order yet.';
+
+  @override
+  String get changeEmailTitle => 'Change Email';
+
+  @override
+  String get changeEmailSubtitle => 'Update your email address';
+
+  @override
+  String stockOnlyLeft(Object stock) {
+    return 'Only $stock left';
+  }
+
+  @override
+  String orderMoreItems(Object count) {
+    return '+$count more items';
   }
 }

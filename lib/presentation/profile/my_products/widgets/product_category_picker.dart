@@ -87,7 +87,7 @@ class _InsertCategoryPickerState extends State<InsertCategoryPicker> {
                   ),
                   if (isExpanded)
                     ...main.children.map((child) {
-                      final isSelected =
+                      final selected =
                           widget.selectedSubCategoryId == child.id;
                       return ListTile(
                         contentPadding: const EdgeInsets.only(
@@ -95,11 +95,11 @@ class _InsertCategoryPickerState extends State<InsertCategoryPicker> {
                           right: 16,
                         ),
                         title: Text(child.name),
-                        trailing: isSelected
+                        trailing: selected
                             ? const Icon(Icons.check_circle,
                             color: AppColors.success)
                             : null,
-                        tileColor: isSelected
+                        tileColor: selected
                             ? AppColors.success.withValues(alpha: 0.1)
                             : null,
                         onTap: widget.isDisabled

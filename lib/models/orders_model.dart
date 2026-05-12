@@ -9,6 +9,8 @@ class OrdersModel {
   final double taxAmount;
   final double discountAmount;
   final double netAmount;
+  final double promoDiscountAmount;
+  final String? promoCode;
   final String statusRaw; // Store raw status value
   final DateTime createdDate;
   final List<ApiOrderItem> items;
@@ -22,6 +24,8 @@ class OrdersModel {
     required this.taxAmount,
     required this.discountAmount,
     required this.netAmount,
+    this.promoDiscountAmount = 0,
+    this.promoCode,
     required this.statusRaw,
     required this.createdDate,
     this.items = const [],
@@ -47,6 +51,8 @@ class OrdersModel {
       taxAmount: _parseDouble(json['TAX_AMOUNT']),
       discountAmount: _parseDouble(json['DISCOUNT_AMOUNT']),
       netAmount: _parseDouble(json['NET_AMOUNT']),
+      promoDiscountAmount: _parseDouble(json['PROMO_DISCOUNT_AMOUNT']),
+      promoCode: _parseNullableString(json['PROMO_CODE']),
       statusRaw: statusValue.toString().trim(),
       createdDate: _parseDateTime(json['CREATED_DATE']),
       items: _parseItems(json),
@@ -63,6 +69,9 @@ class OrdersModel {
       'TAX_AMOUNT': taxAmount,
       'DISCOUNT_AMOUNT': discountAmount,
       'NET_AMOUNT': netAmount,
+      'PROMO_DISCOUNT_AMOUNT': promoDiscountAmount,
+      if (promoCode != null && promoCode!.trim().isNotEmpty)
+        'PROMO_CODE': promoCode,
       'STATUS': statusRaw,
       'CREATED_DATE': createdDate.toIso8601String(),
       'ITEMS': items.map((item) => item.toJson()).toList(),
@@ -78,6 +87,8 @@ class OrdersModel {
     double? taxAmount,
     double? discountAmount,
     double? netAmount,
+    double? promoDiscountAmount,
+    String? promoCode,
     String? statusRaw,
     DateTime? createdDate,
     List<ApiOrderItem>? items,
@@ -91,6 +102,8 @@ class OrdersModel {
       taxAmount: taxAmount ?? this.taxAmount,
       discountAmount: discountAmount ?? this.discountAmount,
       netAmount: netAmount ?? this.netAmount,
+      promoDiscountAmount: promoDiscountAmount ?? this.promoDiscountAmount,
+      promoCode: promoCode ?? this.promoCode,
       statusRaw: statusRaw ?? this.statusRaw,
       createdDate: createdDate ?? this.createdDate,
       items: items ?? this.items,
@@ -154,6 +167,11 @@ class OrdersModel {
       }
     }
     return 0.0;
+  }
+
+  static String? _parseNullableString(dynamic value) {
+    final normalized = (value ?? '').toString().trim();
+    return normalized.isEmpty ? null : normalized;
   }
 
   /// Maps the raw status value to a human-readable label

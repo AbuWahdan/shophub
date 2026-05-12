@@ -3,6 +3,7 @@ import '../../../../../design/app_colors.dart';
 import '../../../../design/app_radius.dart';
 import '../../../../design/app_spacing.dart';
 import '../../../../design/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../models/product/product_model.dart';
 import 'quantity_stepper.dart';
 
@@ -16,34 +17,35 @@ bool isMeaningfulProductValue(String? value) {
       normalized != 'unknown';
 }
 
-double discountedVariantPrice(ApiProductVariant variant) {
+double discountedVariantPrice(ProductVariant variant) {
   if (variant.discount <= 0 || variant.discount >= 100) {
-    return variant.itemPrice;
+    return variant.price;
   }
-  return variant.itemPrice * (1 - (variant.discount / 100));
+  return variant.price * (1 - (variant.discount / 100));
 }
 
 class ProductColorCircle extends StatelessWidget {
   const ProductColorCircle({
     super.key,
     required this.colorValue,
-    this.showLabel = false,   // default false: circle only
-    this.size      = 20.0,
+    this.showLabel = false,
+    this.size = AppSpacing.iconMd,
   });
 
   final String colorValue;
-  final bool   showLabel;
+  final bool showLabel;
   final double size;
 
   Color _parseColor(String value) {
     final hex = value.replaceAll('#', '').trim();
     if (hex.length == 6) {
-      return Color(int.tryParse('FF$hex', radix: 8) ?? 0xFFCCCCCC);
+      final parsed = int.tryParse('FF$hex', radix: 16);
+      return parsed == null ? AppColors.neutral300 : Color(parsed);
     }
     if (hex.length == 8) {
-      return Color(int.tryParse(hex, radix: 8) ?? 0xFFCCCCCC);
+      final parsed = int.tryParse(hex, radix: 16);
+      return parsed == null ? AppColors.neutral300 : Color(parsed);
     }
-    // Named color or unknown → neutral gray fallback
     return AppColors.border;
   }
 
@@ -54,12 +56,15 @@ class ProductColorCircle extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width:  size,
+          width: size,
           height: size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: color,
-            border: Border.all(color: AppColors.border, width: 0.5),
+            border: Border.all(
+              color: AppColors.border,
+              width: AppSpacing.xs / AppSpacing.borderThin,
+            ),
           ),
         ),
         if (showLabel) ...[
@@ -79,7 +84,7 @@ class ProductVariantSummary extends StatelessWidget {
     this.priceAlignment = CrossAxisAlignment.start,
   });
 
-  final ApiProductVariant variant;
+  final ProductVariant variant;
   final bool showColor;
   final CrossAxisAlignment priceAlignment;
 
@@ -87,10 +92,11 @@ class ProductVariantSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasColor = showColor && isMeaningfulProductValue(variant.color);
     final hasBrand = isMeaningfulProductValue(variant.brand);
-    final hasSize = isMeaningfulProductValue(variant.itemSize);
-    final hasPrice = variant.itemPrice > 0;
+    final hasSize = isMeaningfulProductValue(variant.size);
+    final hasPrice = variant.price > 0;
     final hasDiscount = variant.discount > 0 && variant.discount < 100;
     final discountedPrice = discountedVariantPrice(variant);
+    final l10n = AppLocalizations.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,7 +106,7 @@ class ProductVariantSummary extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: AppSpacing.xs),
             child: Row(
               children: [
-                Text('Color', style: AppTextStyles.bodySmall),
+                Text(l10n.productColor, style: AppTextStyles.bodySmall),
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(child: ProductColorCircle(colorValue: variant.color)),
               ],
@@ -110,7 +116,7 @@ class ProductVariantSummary extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.xs),
             child: Text(
-              'Brand: ${variant.brand.trim()}',
+              '${l10n.productBrand}: ${variant.brand.trim()}',
               style: AppTextStyles.bodySmall,
             ),
           ),
@@ -118,7 +124,7 @@ class ProductVariantSummary extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.xs),
             child: Text(
-              'Size: ${variant.itemSize.trim()}',
+              '${l10n.productSize}: ${variant.size.trim()}',
               style: AppTextStyles.bodySmall,
             ),
           ),
@@ -127,14 +133,16 @@ class ProductVariantSummary extends StatelessWidget {
             crossAxisAlignment: priceAlignment,
             children: [
               Text(
-                (hasDiscount ? discountedPrice : variant.itemPrice).toStringAsFixed(2),
+                (hasDiscount ? discountedPrice : variant.price).toStringAsFixed(
+                  2,
+                ),
                 style: AppTextStyles.labelLarge.copyWith(
                   color: AppColors.primary,
                 ),
               ),
               if (hasDiscount)
                 Text(
-                  variant.itemPrice.toStringAsFixed(2),
+                  variant.price.toStringAsFixed(2),
                   style: AppTextStyles.bodySmall.copyWith(
                     decoration: TextDecoration.lineThrough,
                   ),
@@ -150,7 +158,7 @@ class ProductVariantOptionCard extends StatelessWidget {
   const ProductVariantOptionCard({
     super.key,
     required this.variant,
-    required this.isSelected,
+    required this.selected,
     required this.quantity,
     required this.onTap,
     this.onQuantityChanged,
@@ -158,8 +166,8 @@ class ProductVariantOptionCard extends StatelessWidget {
     this.showSelectionIndicator = true,
   });
 
-  final ApiProductVariant variant;
-  final bool isSelected;
+  final ProductVariant variant;
+  final bool selected;
   final int quantity;
   final VoidCallback onTap;
   final ValueChanged<int>? onQuantityChanged;
@@ -171,8 +179,8 @@ class ProductVariantOptionCard extends StatelessWidget {
     final theme = Theme.of(context);
     final canDecrement = quantity > 1 && onQuantityChanged != null;
     final canIncrement =
-        variant.itemQty > 0 &&
-        quantity < variant.itemQty &&
+        variant.stock > 0 &&
+        quantity < variant.stock &&
         onQuantityChanged != null;
 
     return InkWell(
@@ -183,8 +191,8 @@ class ProductVariantOptionCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.sm),
           border: Border.all(
-            color: isSelected ? AppColors.primary : theme.dividerColor,
-            width: isSelected ? AppSpacing.borderThick : AppSpacing.borderThin,
+            color: selected ? AppColors.primary : theme.dividerColor,
+            width: selected ? AppSpacing.borderThick : AppSpacing.borderThin,
           ),
         ),
         child: Row(
@@ -212,10 +220,8 @@ class ProductVariantOptionCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(left: AppSpacing.md),
                 child: Icon(
-                  isSelected
-                      ? Icons.check_circle
-                      : Icons.radio_button_unchecked,
-                  color: isSelected ? AppColors.primary : theme.dividerColor,
+                  selected ? Icons.check_circle : Icons.radio_button_unchecked,
+                  color: selected ? AppColors.primary : theme.dividerColor,
                 ),
               ),
           ],

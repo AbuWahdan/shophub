@@ -84,7 +84,7 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
     Navigator.pushNamedAndRemoveUntil(
       context,
       AppRoutes.main,
-          (route) => false,
+      (route) => false,
       arguments: {'initialTabIndex': _homeTabIndex},
     );
   }
@@ -218,17 +218,21 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
           constraints: BoxConstraints(minHeight: constraints.maxHeight),
           child: Column(
             children: _cartController.items
-                .map((item) => Obx(() => _CartItemCard(
-              key: ValueKey(item.detailId),
-              item: item,
-              isBusy: _cartController.isItemBusy(item.detailId),
-              canIncrement: _cartController.canIncrement(item),
-              canDecrement: _cartController.canDecrement(item),
-              onTap: () => _openProductDetails(item),
-              onRemove: () => _confirmRemoveItem(item),
-              onIncrement: () => _onIncrement(item),
-              onDecrement: () => _onDecrement(item),
-            )))
+                .map(
+                  (item) => Obx(
+                    () => _CartItemCard(
+                      key: ValueKey(item.detailId),
+                      item: item,
+                      isBusy: _cartController.isItemBusy(item.detailId),
+                      canIncrement: _cartController.canIncrement(item),
+                      canDecrement: _cartController.canDecrement(item),
+                      onTap: () => _openProductDetails(item),
+                      onRemove: () => _confirmRemoveItem(item),
+                      onIncrement: () => _onIncrement(item),
+                      onDecrement: () => _onDecrement(item),
+                    ),
+                  ),
+                )
                 .toList(),
           ),
         ),
@@ -417,7 +421,7 @@ class _CartItemCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Product image
-        CartItemImage(imageUrl: item.itemImgUrl.trim()),
+        CartItemImage(imageUrl: item.imageUrl.trim()),
 
         const SizedBox(width: AppSpacing.md),
 
@@ -436,7 +440,7 @@ class _CartItemCard extends StatelessWidget {
       children: [
         // Name
         Text(
-          item.itemName,
+          item.name,
           style: AppTextStyles.bodyLarge.copyWith(
             fontWeight: FontWeight.w700,
             height: 1.2,
@@ -454,7 +458,7 @@ class _CartItemCard extends StatelessWidget {
 
         // Variant chips (size / color / brand)
         CartItemVariantChips(
-          size: item.itemSize,
+          size: item.size,
           color: item.color,
           brand: item.brand,
         ),
@@ -484,7 +488,7 @@ class _CartItemCard extends StatelessWidget {
         ),
         if (item.hasDiscount) ...[
           Text(
-            '\$${item.itemPrice.toStringAsFixed(2)}',
+            '\$${item.price.toStringAsFixed(2)}',
             style: AppTextStyles.bodySmall.copyWith(
               decoration: TextDecoration.lineThrough,
               color: AppColors.textSecondary,
@@ -556,8 +560,9 @@ class _CartItemCard extends StatelessWidget {
         else
           QuantityStepper(
             value: item.bookedQty,
-            decrementIcon:
-            item.bookedQty <= 1 ? Icons.delete_outline : Icons.remove,
+            decrementIcon: item.bookedQty <= 1
+                ? Icons.delete_outline
+                : Icons.remove,
             onDecrement: onDecrement,
             onIncrement: canIncrement ? onIncrement : null,
           ),

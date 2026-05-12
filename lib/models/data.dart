@@ -76,10 +76,12 @@ class AppData {
 
     _wishlistProducts
       ..clear()
-      ..addEntries(products.map((p) {
-        p.isFavorite = true;
-        return MapEntry(p.id, p);
-      }));
+      ..addEntries(
+        products.map((p) {
+          p.isFavorite = true;
+          return MapEntry(p.id, p);
+        }),
+      );
 
     // Sync isFavorite flag on all loaded products.
     for (final product in _products) {
@@ -141,16 +143,15 @@ class AppData {
     );
     final sourceVariant =
         matchingVariant ??
-            (product.details.isNotEmpty ? product.details.first : null);
-    final sourceItemPrice = sourceVariant != null && sourceVariant.itemPrice > 0
-        ? sourceVariant.itemPrice
+        (product.variants.isNotEmpty ? product.variants.first : null);
+    final sourceItemPrice = sourceVariant != null && sourceVariant.price > 0
+        ? sourceVariant.price
         : product.price;
     final sourceDiscount = sourceVariant != null
         ? sourceVariant.discount
         : product.discountPercentage.toDouble();
-    final sourceAvailableQty =
-    sourceVariant != null && sourceVariant.itemQty > 0
-        ? sourceVariant.itemQty
+    final sourceAvailableQty = sourceVariant != null && sourceVariant.stock > 0
+        ? sourceVariant.stock
         : product.quantity;
 
     final existingIndex = _cartItems.indexWhere((item) {
@@ -178,25 +179,25 @@ class AppData {
         username: username,
         bookedQty: quantity,
         availableQty: sourceAvailableQty,
-        itemName: product.itemName,
-        itemDesc: product.itemDesc,
-        itemPrice: sourceItemPrice,
+        name: product.name,
+        description: product.description,
+        price: sourceItemPrice,
         discount: sourceDiscount,
-        itemImgUrl: product.itemImgUrl,
+        imageUrl: product.primaryImageUrl,
         color: normalizedColor,
-        itemSize: normalizedSize,
-        brand: matchingVariant?.brand ??
-            (product.details.isNotEmpty ? product.details.first.brand : ''),
+        size: normalizedSize,
+        brand:
+            matchingVariant?.brand ??
+            (product.variants.isNotEmpty ? product.variants.first.brand : ''),
       ),
     );
     _syncCartCount();
   }
 
   static void _syncCartCount() {
-    cartCountNotifier.value =
-        _cartItems.fold<int>(0, (sum, item) => sum + item.bookedQty);
+    cartCountNotifier.value = _cartItems.fold<int>(
+      0,
+      (sum, item) => sum + item.bookedQty,
+    );
   }
-
-
-
 }

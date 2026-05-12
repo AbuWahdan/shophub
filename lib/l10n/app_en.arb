@@ -1,7 +1,7 @@
 {
-  "wishlistLoginRequired": "Please sign in to view your wishlist",
-  "wishlistEmptyTitle": "Your wishlist is empty",
-  "wishlistEmptySubtitle": "Save your favorite items to see them here",
+  "wishlistLoginRequired": "Please log in to manage your wishlist",
+  "wishlistEmptyTitle": "No saved items",
+  "wishlistEmptySubtitle": "Tap the heart icon on a product to save it here",
   "productVariants": "Product Variants",
   "productAddVariant": "Add Variant",
   "productNoVariantsYet": "No variants yet",
@@ -65,7 +65,9 @@
   "otpResendCountdown": "Resend in {seconds} seconds",
   "@otpResendCountdown": {
     "placeholders": {
-      "seconds": { "type": "Object" }
+      "seconds": {
+        "type": "Object"
+      }
     }
   },
   "forgotPasswordTitle": "Forgot Password",
@@ -133,7 +135,9 @@
   "passwordUpdatedAutoRedirect": "Redirecting to login in {seconds} seconds",
   "@passwordUpdatedAutoRedirect": {
     "placeholders": {
-      "seconds": { "type": "Object" }
+      "seconds": {
+        "type": "Object"
+      }
     }
   },
   "otpTitle": "Verify OTP",
@@ -144,7 +148,9 @@
   "otpResendIn": "Resend in {seconds} seconds",
   "@otpResendIn": {
     "placeholders": {
-      "seconds": { "type": "Object" }
+      "seconds": {
+        "type": "Object"
+      }
     }
   },
   "otpVerify": "Verify",
@@ -263,7 +269,9 @@
   "checkoutQuantity": "Qty: {quantity}",
   "@checkoutQuantity": {
     "placeholders": {
-      "quantity": { "type": "Object" }
+      "quantity": {
+        "type": "Object"
+      }
     }
   },
   "accountMyProducts": "My Products",
@@ -326,7 +334,9 @@
   "cartAvailableStock": "Available: {stock}",
   "@cartAvailableStock": {
     "placeholders": {
-      "stock": { "type": "Object" }
+      "stock": {
+        "type": "Object"
+      }
     }
   },
   "cartItemTotal": "Total",
@@ -339,13 +349,17 @@
   "productReviews": "{count} Reviews",
   "@productReviews": {
     "placeholders": {
-      "count": { "type": "Object" }
+      "count": {
+        "type": "Object"
+      }
     }
   },
   "productSold": "{count} Sold",
   "@productSold": {
     "placeholders": {
-      "count": { "type": "Object" }
+      "count": {
+        "type": "Object"
+      }
     }
   },
   "productDescription": "Description",
@@ -354,7 +368,121 @@
   "productAddedToCart": "{name} added to cart",
   "@productAddedToCart": {
     "placeholders": {
-      "name": { "type": "Object" }
+      "name": {
+        "type": "Object"
+      }
+    }
+  },
+  "addToCartLoginRequired": "Please log in to add items to your cart",
+  "addToCartVariantError": "Unable to determine product variant",
+  "addToCartSuccess": "{productName} added to cart",
+  "@addToCartSuccess": {
+    "placeholders": {
+      "productName": {
+        "type": "Object"
+      }
+    }
+  },
+  "addToCartFailure": "Failed to add to cart. Please try again.",
+  "variantDefaultSize": "Default",
+  "variantDefaultColor": "Default",
+  "orderPromoApplied": "Promo applied: {code}",
+  "@orderPromoApplied": {
+    "placeholders": {
+      "code": {
+        "type": "Object"
+      }
+    }
+  },
+  "orderSubtotal": "Subtotal",
+  "orderTax": "Tax",
+  "orderDiscount": "Discount",
+  "orderPromoDiscount": "Promo discount",
+  "orderTotal": "Total",
+  "orderSummaryTitle": "Order Summary",
+  "confirmOrder": "Confirm Order",
+  "myCardsTitle": "My Cards",
+  "addCard": "Add Card",
+  "saveCard": "Save Card",
+  "cardholderNameLabel": "Cardholder Name",
+  "cardNumberLabel": "Card Number",
+  "expiryMonthLabel": "Month",
+  "expiryYearLabel": "Year",
+  "cardTypeLabel": "Card Type",
+  "setAsDefaultLabel": "Set as default card",
+  "deleteCardTitle": "Delete Card",
+  "deleteCardConfirm": "Are you sure you want to remove this card?",
+  "deleteCardCancel": "Cancel",
+  "deleteCardConfirmButton": "Delete",
+  "cardExpiredBadge": "EXPIRED",
+  "cardDefaultBadge": "DEFAULT",
+  "noCardsTitle": "No cards saved",
+  "noCardsSubtitle": "Add a card to pay faster at checkout",
+  "cardAddedSuccess": "Card added successfully",
+  "cardDeletedSuccess": "Card removed",
+  "cardActionSetDefault": "Set as default",
+  "cardActionDelete": "Delete",
+  "selectCardTitle": "Select a Card",
+  "addNewCard": "Add new card",
+  "orderItemsSection": "Items",
+  "deliveryAddressSection": "Delivery address",
+  "amountBreakdownSection": "Amount breakdown",
+  "selectedPaymentLabel": "Selected payment: {method}",
+  "@selectedPaymentLabel": {
+    "placeholders": {
+      "method": {
+        "type": "Object"
+      }
+    }
+  },
+  "placeOrder": "Place Order",
+  "promoCodeOptional": "Promo Code (Optional)",
+  "promoCodeHint": "ENTER CODE",
+  "promoApplied": "Promo applied",
+  "invalidPromoCode": "Invalid promo code",
+  "checkoutLoginRequired": "Please log in to continue with checkout.",
+  "checkoutLoginRequiredShort": "Please log in to continue.",
+  "checkoutSelectAddress": "Please select a delivery address.",
+  "checkoutSelectPayment": "Please select a payment method.",
+  "checkoutSelectDeliveryAddress": "Select delivery address",
+  "checkoutCartEmptyWarning": "Your cart is empty.",
+  "cardNumberInvalid": "Enter a valid 16-digit card number",
+  "cardExpiryInvalid": "Select a future expiry date",
+  "orderIdLabel": "Order ID",
+  "orderDateLabel": "Order Date",
+  "orderCreatedDateLabel": "Created Date",
+  "orderItemsCount": "Items ({count})",
+  "@orderItemsCount": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
+    }
+  },
+  "unknownProduct": "Unknown Product",
+  "brandLabel": "Brand",
+  "sizeLabel": "Size",
+  "quantityShortLabel": "Qty",
+  "colorLabel": "Color",
+  "orderDetailsLoadError": "Unable to load order details",
+  "orderItemsEmptyTitle": "No order items found",
+  "orderItemsEmptySubtitle": "There are no line items available for this order yet.",
+  "changeEmailTitle": "Change Email",
+  "changeEmailSubtitle": "Update your email address",
+  "stockOnlyLeft": "Only {stock} left",
+  "@stockOnlyLeft": {
+    "placeholders": {
+      "stock": {
+        "type": "Object"
+      }
+    }
+  },
+  "orderMoreItems": "+{count} more items",
+  "@orderMoreItems": {
+    "placeholders": {
+      "count": {
+        "type": "Object"
+      }
     }
   }
 }

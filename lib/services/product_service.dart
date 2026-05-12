@@ -22,9 +22,8 @@ class ProductService {
 
   final http.Client _client;
 
-
-  static final Map<int, List<ProductModel>> _categoryCache      = {};
-  static final Map<int, DateTime>         _categoryCacheTimes = {};
+  static final Map<int, List<ProductModel>> _categoryCache = {};
+  static final Map<int, DateTime> _categoryCacheTimes = {};
 
   ProductService({http.Client? client}) : _client = client ?? ApiClient();
 
@@ -202,15 +201,15 @@ class ProductService {
   }
 
   Future<List<ProductModel>> getProductsByCategory(
-      int categoryId, {
-        bool forceRefresh = false,
-      }) async {
+    int categoryId, {
+    bool forceRefresh = false,
+  }) async {
     final now = DateTime.now();
 
     // Layer 1 — per-category in-memory cache.
     // Tab switches after the first load cost zero network calls.
     if (!forceRefresh) {
-      final cached    = _categoryCache[categoryId];
+      final cached = _categoryCache[categoryId];
       final lastFetch = _categoryCacheTimes[categoryId];
       if (cached != null &&
           lastFetch != null &&
@@ -226,7 +225,7 @@ class ProductService {
         _lastProductsFetch != null &&
         now.difference(_lastProductsFetch!) < _cacheTtl) {
       final filtered = _filterByCategory(categoryId, _cachedProducts);
-      _categoryCache[categoryId]      = filtered;
+      _categoryCache[categoryId] = filtered;
       _categoryCacheTimes[categoryId] = now;
       return filtered;
     }
@@ -240,7 +239,7 @@ class ProductService {
 
     final targeted = await getProducts(
       forceRefresh: forceRefresh,
-      categoryId:   categoryId,
+      categoryId: categoryId,
     );
 
     if (targeted.isNotEmpty) {
@@ -249,16 +248,16 @@ class ProductService {
       final filtered = category != null && category.isMainCategory
           ? _filterByCategory(categoryId, targeted)
           : targeted;
-      _categoryCache[categoryId]      = filtered;
+      _categoryCache[categoryId] = filtered;
       _categoryCacheTimes[categoryId] = now;
       return filtered;
     }
 
     // Layer 4 — fallback: fetch everything and filter locally.
     // This also warms _cachedProducts so all subsequent category tabs are free.
-    final all      = await getProducts(forceRefresh: forceRefresh);
+    final all = await getProducts(forceRefresh: forceRefresh);
     final filtered = _filterByCategory(categoryId, all);
-    _categoryCache[categoryId]      = filtered;
+    _categoryCache[categoryId] = filtered;
     _categoryCacheTimes[categoryId] = now;
     return filtered;
   }
@@ -266,10 +265,10 @@ class ProductService {
   /// Filters [allProducts] by [categoryId] (respecting parent→children
   /// relationships), stores the result in the per-category cache, and returns it.
   List<ProductModel> _filterAndCache(
-      int categoryId,
-      List<ProductModel> allProducts,
-      DateTime now,
-      ) {
+    int categoryId,
+    List<ProductModel> allProducts,
+    DateTime now,
+  ) {
     final category = CategoriesData.getCategoryById(categoryId);
 
     final List<ProductModel> filtered;
@@ -278,17 +277,18 @@ class ProductService {
         category.id,
         ...category.children.map((c) => c.id),
       };
-      filtered =
-          allProducts.where((p) => categoryIds.contains(p.categoryId)).toList();
+      filtered = allProducts
+          .where((p) => categoryIds.contains(p.categoryId))
+          .toList();
     } else {
-      filtered =
-          allProducts.where((p) => p.categoryId == categoryId).toList();
+      filtered = allProducts.where((p) => p.categoryId == categoryId).toList();
     }
 
     _categoryCache[categoryId] = filtered;
     _categoryCacheTimes[categoryId] = now;
     return filtered;
   }
+
   Future<CategoryModel?> loadCategoryById(int id) async {
     final uri = Uri.parse(
       '$_baseUrl/loadCategory',
@@ -1032,24 +1032,23 @@ class ProductService {
   }
 
   void _invalidateProductsCache() {
-    _cachedProducts    = <ProductModel>[];
+    _cachedProducts = <ProductModel>[];
     _lastProductsFetch = null;
     // Also clear the per-category cache so stale slices don't survive
     // a product insert / update / delete.
     _categoryCache.clear();
     _categoryCacheTimes.clear();
   }
+
   List<ProductModel> _filterByCategory(int categoryId, List<ProductModel> all) {
     final category = CategoriesData.getCategoryById(categoryId);
     if (category != null && category.isMainCategory) {
-      final ids = <int>{
-        category.id,
-        ...category.children.map((c) => c.id),
-      };
+      final ids = <int>{category.id, ...category.children.map((c) => c.id)};
       return all.where((p) => ids.contains(p.categoryId)).toList();
     }
     return all.where((p) => p.categoryId == categoryId).toList();
   }
+
   Map<String, String> _defaultHeaders() {
     return const {
       'Accept': 'application/json',
@@ -1151,7 +1150,7 @@ class ProductService {
     if (!kDebugMode) return;
     try {
       final rows = await getItemDetailsRows(itemId: itemId);
-      final itemSizes = rows.map((row) => row.itemSize).toList();
+      final itemSizes = rows.map((row) => row.size).toList();
       debugPrint(
         '[InsertProduct] GetItemDetails item_id=$itemId ITEM_SIZE values after insert: $itemSizes',
       );
@@ -1186,25 +1185,25 @@ class ProductService {
       final rows = entry.value;
       final base = rows.first;
 
-      final variants = <ApiProductVariant>[];
+      final variants = <ProductVariant>[];
       final seenVariantKeys = <String>{};
       for (final row in rows) {
-        final sourceVariants = row.details.isNotEmpty
-            ? row.details
-            : <ApiProductVariant>[
-                ApiProductVariant(
+        final sourceVariants = row.variants.isNotEmpty
+            ? row.variants
+            : <ProductVariant>[
+                ProductVariant(
                   detId: row.detId,
                   brand: '',
                   color: row.colors.isNotEmpty ? row.colors.first : '',
-                  itemSize: row.sizes.isNotEmpty ? row.sizes.first : '',
+                  size: row.sizes.isNotEmpty ? row.sizes.first : '',
                   discount: 0,
-                  itemPrice: row.itemPrice,
-                  itemQty: row.itemQty,
+                  price: row.basePrice,
+                  stock: row.baseStock,
                 ),
               ];
         for (final variant in sourceVariants) {
           final key =
-              '${variant.detId}|${variant.brand}|${variant.color}|${variant.itemSize}|${variant.itemPrice}|${variant.itemQty}';
+              '${variant.detId}|${variant.brand}|${variant.color}|${variant.size}|${variant.price}|${variant.stock}';
           if (seenVariantKeys.add(key)) {
             variants.add(variant);
           }
@@ -1212,7 +1211,7 @@ class ProductService {
       }
 
       final sizes = variants
-          .map((variant) => variant.itemSize.trim())
+          .map((variant) => variant.size.trim())
           .where((size) => size.isNotEmpty)
           .toSet()
           .toList();
@@ -1222,16 +1221,15 @@ class ProductService {
           .toSet()
           .toList();
 
-      ApiProductVariant? displayVariant;
+      ProductVariant? displayVariant;
       for (final variant in variants) {
         if (displayVariant == null) {
           displayVariant = variant;
           continue;
         }
-        final candidatePrice =
-            variant.itemPrice * (1 - (variant.discount / 100));
+        final candidatePrice = variant.price * (1 - (variant.discount / 100));
         final currentPrice =
-            displayVariant.itemPrice * (1 - (displayVariant.discount / 100));
+            displayVariant.price * (1 - (displayVariant.discount / 100));
         if (candidatePrice < currentPrice) {
           displayVariant = variant;
         }
@@ -1245,22 +1243,22 @@ class ProductService {
           .toList();
 
       final displayPrice = displayVariant == null
-          ? base.itemPrice
-          : (displayVariant.itemPrice * (1 - (displayVariant.discount / 100)));
+          ? base.price
+          : (displayVariant.price * (1 - (displayVariant.discount / 100)));
 
       result.add(
         ProductModel(
           id: base.id,
           detId: displayVariant?.detId ?? base.detId,
-          itemName: base.itemName,
-          itemDesc: base.itemDesc,
-          itemPrice: displayVariant != null && displayVariant.itemPrice > 0
-              ? displayVariant.itemPrice
-              : base.itemPrice,
-          itemQty: displayVariant?.itemQty ?? base.itemQty,
-          itemImgUrl: mergedImages.isNotEmpty
+          name: base.name,
+          description: base.description,
+          basePrice: displayVariant != null && displayVariant.price > 0
+              ? displayVariant.price
+              : base.basePrice,
+          baseStock: displayVariant?.stock ?? base.baseStock,
+          primaryImageUrl: mergedImages.isNotEmpty
               ? mergedImages.first
-              : base.itemImgUrl,
+              : base.primaryImageUrl,
           images: mergedImages.isNotEmpty ? mergedImages : base.images,
           categoryId: base.categoryId,
           category: base.category,
@@ -1275,7 +1273,7 @@ class ProductService {
                   displayPrice > 0
               ? displayPrice
               : base.discountPrice,
-          details: variants,
+          variants: variants,
           sizes: sizes.isNotEmpty ? sizes : base.sizes,
           colors: colors.isNotEmpty ? colors : base.colors,
           imagesByColor: base.imagesByColor,
@@ -1284,7 +1282,6 @@ class ProductService {
           reviewCount: base.reviewCount,
           soldCount: base.soldCount,
           isFavorite: base.isFavorite,
-          isSelected: base.isSelected,
         ),
       );
     }
@@ -1342,7 +1339,9 @@ class ProductService {
 
   // ========================= FAVORITES =========================
 
-  Future<List<ProductModel>> getUserFavorites({required String username}) async {
+  Future<List<ProductModel>> getUserFavorites({
+    required String username,
+  }) async {
     final normalizedUsername = username.trim();
     if (normalizedUsername.isEmpty) {
       throw ProductException('Username is required to fetch favorites.');
@@ -1351,7 +1350,7 @@ class ProductService {
     // The backend only returns data for the 'body' key variant —
     // put that first so we succeed on the first attempt in most cases.
     final queryAttempts = <Map<String, String>>[
-      {'body':     normalizedUsername},
+      {'body': normalizedUsername},
       {'USERNAME': normalizedUsername},
       {'username': normalizedUsername},
     ];
@@ -1379,7 +1378,7 @@ class ProductService {
           );
         }
 
-        final data  = _decode(response.body);
+        final data = _decode(response.body);
         final items = _extractFavoriteItems(data);
 
         // Empty on this attempt — try the next query variant.
@@ -1441,9 +1440,9 @@ class ProductService {
     }
 
     // Fall back to the generic item extractor for other response shapes.
-    return _extractItems(data)
-        .where((item) => _extractPositiveItemId(item) > 0)
-        .toList();
+    return _extractItems(
+      data,
+    ).where((item) => _extractPositiveItemId(item) > 0).toList();
   }
 
   Future<void> toggleFavorite({

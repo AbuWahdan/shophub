@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import '../../../../../controllers/cart_controller.dart';
 import '../../../../../core/state/auth_state.dart';
+import '../../../../../design/app_colors.dart';
+import '../../../../../l10n/app_localizations.dart';
 import '../../../../../models/data.dart';
 import '../../../../models/product/product_model.dart';
 import '../../../../../services/product_service.dart';
@@ -38,10 +40,11 @@ abstract final class AddToCartAction {
     if (!context.mounted) return false;
 
     final username = authState.user?.username.trim() ?? '';
+    final l10n = AppLocalizations.of(context);
     if (username.isEmpty) {
       CustomSnackBar.show(
         context,
-        message: 'Please log in to add items to your cart',
+        message: l10n.addToCartLoginRequired,
         type: AppSnackBarType.error,
       );
       return false;
@@ -51,29 +54,27 @@ abstract final class AddToCartAction {
     final selection = await showModalBottomSheet<AddToCartSelection>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => AddToCartBottomSheet(
-        product:      product,
-        initialDetId: product.detId,
-      ),
+      backgroundColor: AppColors.transparent,
+      builder: (_) =>
+          AddToCartBottomSheet(product: product, initialDetId: product.detId),
     );
 
     if (!context.mounted || selection == null) return false;
 
     // ── Step 2: resolve the variant detId ───────────────────────────────────
-    final variant   = selection.variant;
+    final variant = selection.variant;
     final itemDetId = variant.detId > 0
         ? variant.detId
         : product.resolveDetId(
-      size:     variant.itemSize,
-      color:    variant.color,
-      fallback: product.detId,
-    );
+            size: variant.size,
+            color: variant.color,
+            fallback: product.detId,
+          );
 
     if (itemDetId <= 0) {
       CustomSnackBar.show(
         context,
-        message: 'Unable to determine product variant.',
+        message: l10n.addToCartVariantError,
         type: AppSnackBarType.error,
       );
       return false;
@@ -83,38 +84,46 @@ abstract final class AddToCartAction {
     try {
       final cartController = Get.find<CartController>();
       await cartController.addItem(
-        itemId:    product.id,
+        itemId: product.id,
         itemDetId: itemDetId,
-        username:  username,
-          requestedQty: selection.qty,
+        username: username,
+        requestedQty: selection.qty,
       );
 
       if (!context.mounted) return false;
 
       // ── Step 4: sync AppData cache ─────────────────────────────────────────
       AppData.addToCart(
-        product:  product,
+        product: product,
         quantity: selection.qty,
-        size:  variant.itemSize.trim().isEmpty ? 'Default' : variant.itemSize,
-        color: variant.color.trim().isEmpty    ? 'Default' : variant.color,
+        size: variant.size.trim().isEmpty
+            ? l10n.variantDefaultSize
+            : variant.size,
+        color: variant.color.trim().isEmpty
+            ? l10n.variantDefaultColor
+            : variant.color,
         detId: itemDetId,
       );
 
       CustomSnackBar.show(
         context,
-        message: '${product.name} added to cart',
+        message: l10n.addToCartSuccess(product.name),
         type: AppSnackBarType.success,
       );
       return true;
     } on ProductException catch (e) {
       if (!context.mounted) return false;
-      CustomSnackBar.show(context, message: e.message, type: AppSnackBarType.error);
+      CustomSnackBar.show(
+        context,
+        message: e.message,
+        type: AppSnackBarType.error,
+      );
       return false;
     } catch (_) {
       if (!context.mounted) return false;
       CustomSnackBar.show(
         context,
-        message: 'Failed to add to cart',
+        message: l10n.addToCartFailure,
         type: AppSnackBarType.error,
       );
       return false;

@@ -74,9 +74,9 @@ class _MyProductsPageState extends State<MyProductsPage> {
   }
 
   Future<void> _openEditProduct(
-      ProductModel product,
-      String currentUsername,
-      ) async {
+    ProductModel product,
+    String currentUsername,
+  ) async {
     if (_isNavigating) return;
     _isNavigating = true;
 
@@ -107,8 +107,8 @@ class _MyProductsPageState extends State<MyProductsPage> {
         MaterialPageRoute(
           builder: (_) => EditProductPage(
             product: product,
-            details: detailsRows.first,
-            detailsRows: detailsRows,
+            variants: detailsRows.first,
+            variantsRows: detailsRows,
             itemImages: itemImages,
             currentUser: currentUsername,
           ),
@@ -120,9 +120,9 @@ class _MyProductsPageState extends State<MyProductsPage> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _isNavigating = false);
     }
@@ -142,46 +142,44 @@ class _MyProductsPageState extends State<MyProductsPage> {
       appBar: AppBar(title: Text(l10n.accountMyProducts)),
       floatingActionButton: isLoggedIn
           ? FloatingActionButton.extended(
-        onPressed: _isNavigating
-            ? null
-            : () => _openInsertProduct(auth.user!.username.trim()),
-        icon: const Icon(Icons.add),
-        label: Text(l10n.insertProductMenu),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-      )
+              onPressed: _isNavigating
+                  ? null
+                  : () => _openInsertProduct(auth.user!.username.trim()),
+              icon: const Icon(Icons.add),
+              label: Text(l10n.insertProductMenu),
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            )
           : null,
       body: !isLoggedIn
           ? _NotLoggedInView(l10n: l10n)
           : Obx(() {
-        final ctrl = Get.find<MyProductsController>();
+              final ctrl = Get.find<MyProductsController>();
 
-        if (ctrl.error.isNotEmpty) {
-          return _ErrorView(
-            message: ctrl.error.value,
-            onRetry: () => ctrl.loadProducts(forceRefresh: true),
-          );
-        }
+              if (ctrl.error.isNotEmpty) {
+                return _ErrorView(
+                  message: ctrl.error.value,
+                  onRetry: () => ctrl.loadProducts(forceRefresh: true),
+                );
+              }
 
-        if (ctrl.isLoading.value) {
-          return const Center(
-            child: CircularProgressIndicator(color: AppColors.primary),
-          );
-        }
+              if (ctrl.isLoading.value) {
+                return const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                );
+              }
 
-        return RefreshIndicator(
-          onRefresh: () => ctrl.loadProducts(forceRefresh: true),
-          child: ctrl.products.isEmpty
-              ? _EmptyProductsView(l10n: l10n)
-              : _ProductGrid(
-            products: ctrl.products,
-            onProductTap: (product) => _openEditProduct(
-              product,
-              ctrl.username,
-            ),
-          ),
-        );
-      }),
+              return RefreshIndicator(
+                onRefresh: () => ctrl.loadProducts(forceRefresh: true),
+                child: ctrl.products.isEmpty
+                    ? _EmptyProductsView(l10n: l10n)
+                    : _ProductGrid(
+                        products: ctrl.products,
+                        onProductTap: (product) =>
+                            _openEditProduct(product, ctrl.username),
+                      ),
+              );
+            }),
     );
   }
 }
@@ -232,10 +230,9 @@ class _ErrorView extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: Colors.grey[600]),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: AppSpacing.xl),
           Center(
@@ -275,10 +272,7 @@ class _EmptyProductsView extends StatelessWidget {
 }
 
 class _ProductGrid extends StatelessWidget {
-  const _ProductGrid({
-    required this.products,
-    required this.onProductTap,
-  });
+  const _ProductGrid({required this.products, required this.onProductTap});
 
   final List<ProductModel> products;
   final ValueChanged<ProductModel> onProductTap;
@@ -324,16 +318,16 @@ class _ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isInactive = product.isActive != 1;
-    final inStock = product.itemQty > 0;
+    final inStock = product.baseStock > 0;
 
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
         side: isInactive
             ? BorderSide(
-          color: Theme.of(context).colorScheme.error.withOpacity(0.4),
-          width: 1.5,
-        )
+                color: Theme.of(context).colorScheme.error.withOpacity(0.4),
+                width: 1.5,
+              )
             : BorderSide.none,
       ),
       child: InkWell(
@@ -346,7 +340,7 @@ class _ProductCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _ProductCardImage(
-                  imageUrl: product.itemImgUrl,
+                  imageUrl: product.primaryImageUrl,
                   isInactive: isInactive,
                 ),
               ),
@@ -365,19 +359,32 @@ class _ProductCard extends StatelessWidget {
 }
 
 class _ProductCardImage extends StatelessWidget {
-  const _ProductCardImage({
-    required this.imageUrl,
-    required this.isInactive,
-  });
+  const _ProductCardImage({required this.imageUrl, required this.isInactive});
 
   final String imageUrl;
   final bool isInactive;
 
   static const _grayscaleMatrix = <double>[
-    0.2126, 0.7152, 0.0722, 0, 0,
-    0.2126, 0.7152, 0.0722, 0, 0,
-    0.2126, 0.7152, 0.0722, 0, 0,
-    0,      0,      0,      1, 0,
+    0.2126,
+    0.7152,
+    0.0722,
+    0,
+    0,
+    0.2126,
+    0.7152,
+    0.0722,
+    0,
+    0,
+    0.2126,
+    0.7152,
+    0.0722,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
   ];
 
   @override
@@ -391,9 +398,9 @@ class _ProductCardImage extends StatelessWidget {
             colorFilter: isInactive
                 ? const ColorFilter.matrix(_grayscaleMatrix)
                 : const ColorFilter.mode(
-              Colors.transparent,
-              BlendMode.multiply,
-            ),
+                    Colors.transparent,
+                    BlendMode.multiply,
+                  ),
             child: Image.network(
               imageUrl,
               fit: BoxFit.cover,
@@ -451,26 +458,22 @@ class _ProductCardInfo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          product.itemName,
+          product.name,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.color
-                ?.withOpacity(mutedOpacity),
+            color: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.color?.withOpacity(mutedOpacity),
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          '\$${product.itemPrice.toStringAsFixed(2)}',
+          '\$${product.price.toStringAsFixed(2)}',
           style: AppTextStyles.labelLarge.copyWith(
-            color: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.color
-                ?.withOpacity(isInactive ? 0.4 : 1.0),
+            color: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.color?.withOpacity(isInactive ? 0.4 : 1.0),
           ),
           overflow: TextOverflow.ellipsis,
         ),

@@ -135,7 +135,7 @@
 //
 //               // Product Name
 //               Text(
-//                 product.itemName,
+//                 product.name,
 //                 style: AppTextStyles.titleLarge,
 //                 textAlign: TextAlign.center,
 //                 maxLines: 2,
@@ -144,16 +144,16 @@
 //               const SizedBox(height: AppSpacing.sm),
 //
 //               // Product Details (brand, color, size)
-//               if (product.details.isNotEmpty)
+//               if (product.variants.isNotEmpty)
 //                 Builder(
 //                   builder: (context) {
-//                     final variant = product.details.first;
+//                     final variant = product.variants.first;
 //                     final details = <String>[
 //                       if (variant.brand.trim().isNotEmpty) variant.brand,
 //                       if (variant.color.trim().isNotEmpty) variant.color,
-//                       if (variant.itemSize.trim().isNotEmpty &&
-//                           variant.itemSize != 'Default')
-//                         variant.itemSize,
+//                       if (variant.size.trim().isNotEmpty &&
+//                           variant.size != 'Default')
+//                         variant.size,
 //                     ];
 //                     if (details.isEmpty) return const SizedBox.shrink();
 //                     return Text(
@@ -177,7 +177,7 @@
 //                       mainAxisAlignment: MainAxisAlignment.center,
 //                       children: List.generate(5, (index) {
 //                         final starNumber = index + 1;
-//                         final isSelected = _rating >= starNumber;
+//                         final selected = _rating >= starNumber;
 //
 //                         return GestureDetector(
 //                           onTap: () =>
@@ -186,14 +186,14 @@
 //                             padding:
 //                                 const EdgeInsets.symmetric(horizontal: 8),
 //                             child: AnimatedScale(
-//                               scale: isSelected ? 1.1 : 1.0,
+//                               scale: selected ? 1.1 : 1.0,
 //                               duration: const Duration(milliseconds: 200),
 //                               child: Icon(
-//                                 isSelected
+//                                 selected
 //                                     ? Icons.star_rounded
 //                                     : Icons.star_border_rounded,
 //                                 size: 40,
-//                                 color: isSelected
+//                                 color: selected
 //                                     ? const Color(0xFFFFB800)
 //                                     : Colors.grey.shade400,
 //                               ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'app_radius.dart';
 
 class AppSpacing {
   const AppSpacing._();
@@ -20,32 +19,32 @@ class AppSpacing {
   static const double iconMd = 20.0;
   static const double iconLg = 24.0;
 
-
   static const double buttonMd = 56.0;
   static const double buttonSm = 24.0;
 
-
   static const double borderThick = 12.0;
   static const double borderThin = 8.0;
-
-
-
-
 
   static const double imageSm = 12.0;
   static const double imageMd = 16.0;
   static const double imageLg = 120.0;
 
+  static const double cardAspectRatio = 1.58;
+  static const double cardCompactHeight = 152.0;
+  static const double bottomSheetMaxHeightFactor = 0.82;
+  static const int cardExpiryYearCount = 11;
 
   // EdgeInsets Helpers
   static const EdgeInsets insetsSm = EdgeInsets.all(sm);
   static const EdgeInsets insetsMd = EdgeInsets.all(md);
   static const EdgeInsets insetsLg = EdgeInsets.all(lg);
 
-  static const double  navHeight  =90.0;
+  static const double navHeight = 90.0;
 
-  static EdgeInsets horizontal(double value) => EdgeInsets.symmetric(horizontal: value);
-  static EdgeInsets vertical(double value) => EdgeInsets.symmetric(vertical: value);
+  static EdgeInsets horizontal(double value) =>
+      EdgeInsets.symmetric(horizontal: value);
+  static EdgeInsets vertical(double value) =>
+      EdgeInsets.symmetric(vertical: value);
 
   static EdgeInsets symmetric({double h = 0, double v = 0}) =>
       EdgeInsets.symmetric(horizontal: h, vertical: v);

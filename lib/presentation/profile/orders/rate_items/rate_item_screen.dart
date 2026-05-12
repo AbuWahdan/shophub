@@ -11,13 +11,13 @@
 //     super.key,
 //     required this.itemId,
 //     required this.orderId,
-//     required this.itemName,
+//     required this.name,
 //     required this.brand,
 //   });
 //
 //   final int itemId;
 //   final int orderId;
-//   final String itemName;
+//   final String name;
 //   final String brand;
 //
 //   @override
@@ -105,7 +105,7 @@
 //     final theme = Theme.of(context);
 //
 //     return Scaffold(
-//       appBar: AppBar(title: Text('Rate: ${widget.itemName}')),
+//       appBar: AppBar(title: Text('Rate: ${widget.name}')),
 //       body: SafeArea(
 //         child: SingleChildScrollView(
 //           padding: EdgeInsets.fromLTRB(
@@ -119,7 +119,7 @@
 //             child: Column(
 //               crossAxisAlignment: CrossAxisAlignment.start,
 //               children: [
-//                 Text(widget.itemName, style: theme.textTheme.titleLarge),
+//                 Text(widget.name, style: theme.textTheme.titleLarge),
 //                 if (widget.brand.trim().isNotEmpty)
 //                   Text(widget.brand, style: theme.textTheme.bodyMedium),
 //                 const SizedBox(height: 24),
@@ -128,13 +128,13 @@
 //                 Row(
 //                   children: List.generate(5, (index) {
 //                     final star = index + 1;
-//                     final isSelected = star <= _selectedRating;
+//                     final selected = star <= _selectedRating;
 //                     return IconButton(
 //                       icon: Icon(
-//                         isSelected
+//                         selected
 //                             ? Icons.star_rounded
 //                             : Icons.star_outline_rounded,
-//                         color: isSelected
+//                         color: selected
 //                             ? Colors.amber
 //                             : theme.colorScheme.onSurface.withValues(alpha: 0.3),
 //                         size: 36,

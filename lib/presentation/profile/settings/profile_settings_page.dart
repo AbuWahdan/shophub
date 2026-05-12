@@ -37,8 +37,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     if (!mounted) return;
     setState(() {
       _themeMode = AppSettings.themeMode.value;
-      _selectedLanguageCode =
-          AppSettings.locale.value?.languageCode ?? 'en';
+      _selectedLanguageCode = AppSettings.locale.value?.languageCode ?? 'en';
     });
   }
 
@@ -67,8 +66,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                   trailing: Switch(
                     value: _themeMode == ThemeMode.dark,
                     onChanged: (isDark) async {
-                      final mode =
-                      isDark ? ThemeMode.dark : ThemeMode.light;
+                      final mode = isDark ? ThemeMode.dark : ThemeMode.light;
                       setState(() => _themeMode = mode);
                       await AppSettings.setThemeMode(mode);
                     },
@@ -102,24 +100,29 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                     icon: Icons.lock_outline,
                     title: l10n.settingsChangePassword,
                     subtitle: l10n.settingsChangePasswordSubtitle,
-                    onTap: () => Navigator.pushNamed(
-                      context,
-                      AppRoutes.changePassword,
-                    ),
+                    onTap: () =>
+                        Navigator.pushNamed(context, AppRoutes.changePassword),
                   ),
                   const Divider(),
                   _SettingsTile(
                     icon: Icons.email_outlined,
-                    title: 'Change Email',
-                    subtitle: 'Update your email address',
+                    title: l10n.changeEmailTitle,
+                    subtitle: l10n.changeEmailSubtitle,
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute<void>(
                         builder: (_) => const ChangeEmailScreen(),
-                        settings:
-                        RouteSettings(name: AppRoutes.changeEmail),
+                        settings: RouteSettings(name: AppRoutes.changeEmail),
                       ),
                     ),
+                  ),
+                  const Divider(),
+                  _SettingsTile(
+                    icon: Icons.credit_card_rounded,
+                    title: l10n.myCardsTitle,
+                    subtitle: l10n.noCardsSubtitle,
+                    onTap: () =>
+                        Navigator.pushNamed(context, AppRoutes.myCards),
                   ),
                   const Divider(),
                 ],
@@ -155,37 +158,31 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 _SettingsTile(
                   icon: Icons.info,
                   title: l10n.settingsAboutApp,
-                  onTap: () =>
-                      Navigator.pushNamed(context, AppRoutes.about),
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.about),
                 ),
                 const Divider(),
                 _SettingsTile(
                   icon: Icons.privacy_tip,
                   title: l10n.settingsPrivacyPolicy,
-                  onTap: () =>
-                      Navigator.pushNamed(context, AppRoutes.privacy),
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.privacy),
                 ),
                 const Divider(),
                 _SettingsTile(
                   icon: Icons.description,
                   title: l10n.settingsTerms,
-                  onTap: () =>
-                      Navigator.pushNamed(context, AppRoutes.terms),
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.terms),
                 ),
                 const Divider(),
                 _SettingsTile(
                   icon: Icons.help,
                   title: l10n.settingsHelp,
-                  onTap: () =>
-                      Navigator.pushNamed(context, AppRoutes.help),
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.help),
                 ),
                 const Divider(),
                 _SettingsTile(
                   icon: Icons.article_outlined,
-                  title:
-                  MaterialLocalizations.of(context).licensesPageTitle,
-                  onTap: () =>
-                      Navigator.pushNamed(context, AppRoutes.licenses),
+                  title: MaterialLocalizations.of(context).licensesPageTitle,
+                  onTap: () => Navigator.pushNamed(context, AppRoutes.licenses),
                 ),
               ],
             ),
@@ -201,10 +198,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
 
 /// A labelled section with a [SectionHeader] followed by [children].
 class _SettingsSection extends StatelessWidget {
-  const _SettingsSection({
-    required this.title,
-    required this.children,
-  });
+  const _SettingsSection({required this.title, required this.children});
 
   final String title;
   final List<Widget> children;
@@ -245,7 +239,8 @@ class _SettingsTile extends StatelessWidget {
       subtitle: subtitle != null
           ? Text(subtitle!, style: AppTextStyles.bodySmall)
           : null,
-      trailing: trailing ??
+      trailing:
+          trailing ??
           const Icon(Icons.arrow_forward_ios, size: AppSpacing.iconSm),
       onTap: onTap,
     );

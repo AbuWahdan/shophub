@@ -14,14 +14,14 @@ class CartItemModel {
   final String username;
   final int bookedQty;
   final int availableQty;
-  final String itemName;
-  final String itemDesc;
-  final double itemPrice;
+  final String name;
+  final String description;
+  final double price;
   final double discount;
   final double tax;
-  final String itemImgUrl;
+  final String imageUrl;
   final String color;
-  final String itemSize;
+  final String size;
   final String brand;
 
   const CartItemModel({
@@ -31,14 +31,14 @@ class CartItemModel {
     this.username = '',
     required this.bookedQty,
     required this.availableQty,
-    required this.itemName,
-    this.itemDesc = '',
-    required this.itemPrice,
+    required this.name,
+    this.description = '',
+    required this.price,
     this.discount = 0,
     this.tax = 0,
-    this.itemImgUrl = '',
+    this.imageUrl = '',
     this.color = '',
-    this.itemSize = '',
+    this.size = '',
     this.brand = '',
   });
 
@@ -46,21 +46,21 @@ class CartItemModel {
   // DISPLAY HELPERS
   // ─────────────────────────────
 
-  String get displaySize => itemSize.trim().isEmpty ? 'Default' : itemSize.trim();
+  String get displaySize => size.trim().isEmpty ? 'Default' : size.trim();
 
   String get displayColor => color.trim().isEmpty ? 'Default' : color.trim();
 
   /// Price after discount applied (clamped to valid range)
   double get discountedPrice {
-    if (discount <= 0 || discount >= 100) return itemPrice;
-    return itemPrice * (1 - discount / 100);
+    if (discount <= 0 || discount >= 100) return price;
+    return price * (1 - discount / 100);
   }
 
   /// Total cost for this line item
   double get lineTotal => discountedPrice * bookedQty;
 
   /// Subtotal before discount
-  double get lineSubtotal => itemPrice * bookedQty;
+  double get lineSubtotal => price * bookedQty;
 
   /// Discount amount for this line
   double get lineDiscountAmount {
@@ -96,12 +96,19 @@ class CartItemModel {
     }
 
     final detailId = _parseIntFromKeys(json, const [
-      'detail_id', 'DETAIL_ID', 'cart_det_id', 'CART_DET_ID', 'ID',
+      'detail_id',
+      'DETAIL_ID',
+      'cart_det_id',
+      'CART_DET_ID',
+      'ID',
     ]);
 
     final itemDetId = () {
       final v = _parseIntFromKeys(json, const [
-        'item_det_id', 'ITEM_DET_ID', 'det_id', 'DET_ID',
+        'item_det_id',
+        'ITEM_DET_ID',
+        'det_id',
+        'DET_ID',
       ]);
       // Fall back to detailId so the key is never zero
       return v > 0 ? v : detailId;
@@ -109,16 +116,25 @@ class CartItemModel {
 
     final bookedQty = _clampMin(
       _parseIntFromKeys(json, const [
-        'booked_qty', 'BOOKED_QTY', 'qty', 'QTY', 'quantity', 'QUANTITY',
+        'booked_qty',
+        'BOOKED_QTY',
+        'qty',
+        'QTY',
+        'quantity',
+        'QUANTITY',
       ]),
       min: 1,
     );
 
     final rawAvailableQty = _parseIntFromKeys(json, const [
-      'available_qty', 'AVAILABLE_QTY',
-      'avail_qty',     'AVAIL_QTY',
-      'stock_qty',     'STOCK_QTY',
-      'item_qty',      'ITEM_QTY',
+      'available_qty',
+      'AVAILABLE_QTY',
+      'avail_qty',
+      'AVAIL_QTY',
+      'stock_qty',
+      'STOCK_QTY',
+      'item_qty',
+      'ITEM_QTY',
     ]);
 
     // Guard: never let availableQty drop below what user already has in cart
@@ -127,7 +143,7 @@ class CartItemModel {
     if (rawAvailableQty <= 0 && kDebugMode) {
       debugPrint(
         '[CartItemModel.fromJson] ⚠️ availableQty missing — '
-            'falling back to bookedQty=$bookedQty',
+        'falling back to bookedQty=$bookedQty',
       );
     }
 
@@ -138,25 +154,54 @@ class CartItemModel {
       username: _parseStringFromKeys(json, const ['username', 'USERNAME']),
       bookedQty: bookedQty,
       availableQty: availableQty,
-      itemName: _parseStringFromKeys(
-          json, const ['item_name', 'ITEM_NAME', 'name', 'NAME']),
-      itemDesc: _parseStringFromKeys(
-          json, const ['item_desc', 'ITEM_DESC', 'description', 'DESCRIPTION']),
-      itemPrice: _parseDoubleFromKey(
-          _pickFirstKey(json, const ['item_price', 'ITEM_PRICE', 'price', 'PRICE'])),
+      name: _parseStringFromKeys(json, const [
+        'item_name',
+        'ITEM_NAME',
+        'name',
+        'NAME',
+      ]),
+      description: _parseStringFromKeys(json, const [
+        'item_desc',
+        'ITEM_DESC',
+        'description',
+        'DESCRIPTION',
+      ]),
+      price: _parseDoubleFromKey(
+        _pickFirstKey(json, const [
+          'item_price',
+          'ITEM_PRICE',
+          'price',
+          'PRICE',
+        ]),
+      ),
       discount: _parseDoubleFromKey(
-          _pickFirstKey(json, const ['discount', 'DISCOUNT'])),
+        _pickFirstKey(json, const ['discount', 'DISCOUNT']),
+      ),
       tax: _parseDoubleFromKey(
-          _pickFirstKey(json, const [
-            'tax', 'TAX', 'item_tax', 'ITEM_TAX', 'tax_percent', 'TAX_PERCENT',
-          ])),
-      itemImgUrl: _parseStringFromKeys(
-          json, const [
-        'item_img_url', 'ITEM_IMG_URL', 'images', 'IMAGES', 'img_url', 'IMG_URL',
+        _pickFirstKey(json, const [
+          'tax',
+          'TAX',
+          'item_tax',
+          'ITEM_TAX',
+          'tax_percent',
+          'TAX_PERCENT',
+        ]),
+      ),
+      imageUrl: _parseStringFromKeys(json, const [
+        'item_img_url',
+        'ITEM_IMG_URL',
+        'images',
+        'IMAGES',
+        'img_url',
+        'IMG_URL',
       ]),
       color: _parseStringFromKeys(json, const ['color', 'COLOR']),
-      itemSize: _parseStringFromKeys(
-          json, const ['item_size', 'ITEM_SIZE', 'size', 'SIZE']),
+      size: _parseStringFromKeys(json, const [
+        'item_size',
+        'ITEM_SIZE',
+        'size',
+        'SIZE',
+      ]),
       brand: _parseStringFromKeys(json, const ['brand', 'BRAND']),
     );
   }
@@ -172,14 +217,14 @@ class CartItemModel {
     String? username,
     int? bookedQty,
     int? availableQty,
-    String? itemName,
-    String? itemDesc,
-    double? itemPrice,
+    String? name,
+    String? description,
+    double? price,
     double? discount,
     double? tax,
-    String? itemImgUrl,
+    String? imageUrl,
     String? color,
-    String? itemSize,
+    String? size,
     String? brand,
   }) {
     return CartItemModel(
@@ -189,14 +234,14 @@ class CartItemModel {
       username: username ?? this.username,
       bookedQty: bookedQty ?? this.bookedQty,
       availableQty: availableQty ?? this.availableQty,
-      itemName: itemName ?? this.itemName,
-      itemDesc: itemDesc ?? this.itemDesc,
-      itemPrice: itemPrice ?? this.itemPrice,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      price: price ?? this.price,
       discount: discount ?? this.discount,
       tax: tax ?? this.tax,
-      itemImgUrl: itemImgUrl ?? this.itemImgUrl,
+      imageUrl: imageUrl ?? this.imageUrl,
       color: color ?? this.color,
-      itemSize: itemSize ?? this.itemSize,
+      size: size ?? this.size,
       brand: brand ?? this.brand,
     );
   }
@@ -206,22 +251,22 @@ class CartItemModel {
   // ─────────────────────────────
 
   ProductModel toProduct() {
-    final images = itemImgUrl.trim().isEmpty
+    final images = imageUrl.trim().isEmpty
         ? <String>[]
-        : itemImgUrl
-        .split(',')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
+        : imageUrl
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
 
     return ProductModel(
       id: itemId,
       detId: itemDetId,
-      itemName: itemName,
-      itemDesc: itemDesc,
-      itemPrice: itemPrice,
-      itemQty: availableQty,
-      itemImgUrl: itemImgUrl,
+      name: name,
+      description: description,
+      basePrice: price,
+      baseStock: availableQty,
+      primaryImageUrl: imageUrl,
       images: images,
       categoryId: 0,
       category: '',
@@ -229,18 +274,18 @@ class CartItemModel {
       itemOwner: username,
       isActive: 1,
       discountPrice: hasDiscount ? discountedPrice : null,
-      sizes: itemSize.trim().isEmpty ? const ['Default'] : [itemSize],
+      sizes: size.trim().isEmpty ? const ['Default'] : [size],
       colors: color.trim().isEmpty ? const ['Default'] : [color],
-      details: [
-        ApiProductVariant(
+      variants: [
+        ProductVariant(
           detId: itemDetId,
           brand: brand,
           color: displayColor,
-          itemSize: displaySize,
+          size: displaySize,
           discount: discount,
           tax: tax,
-          itemPrice: itemPrice,
-          itemQty: availableQty,
+          price: price,
+          stock: availableQty,
         ),
       ],
     );
@@ -251,7 +296,7 @@ class CartItemModel {
   @override
   String toString() =>
       'CartItemModel(detailId=$detailId, itemDetId=$itemDetId, '
-          'name=$itemName, qty=$bookedQty/$availableQty)';
+      'name=$name, qty=$bookedQty/$availableQty)';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

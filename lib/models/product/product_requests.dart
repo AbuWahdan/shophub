@@ -44,30 +44,30 @@
 // // ─────────────────────────────────────────────────────────────────────────────
 //
 // class CreateProductRequest {
-//   final String itemName;
-//   final String itemDesc;
-//   final String? itemImgUrl;
+//   final String name;
+//   final String description;
+//   final String? primaryImageUrl;
 //   final String? imagesCsv;
 //   final List<CreateProductDetailDto> details;
 //   final int categoryId;
 //   final String createdBy;
 //
 //   const CreateProductRequest({
-//     required this.itemName,
-//     required this.itemDesc,
-//     this.itemImgUrl,
+//     required this.name,
+//     required this.description,
+//     this.primaryImageUrl,
 //     this.imagesCsv,
-//     required this.details,
+//     required this.variants,
 //     required this.categoryId,
 //     required this.createdBy,
 //   });
 //
 //   Map<String, dynamic> toJson() {
-//     final normalizedImages = _normalizeImagesCsv(imagesCsv ?? itemImgUrl ?? '');
+//     final normalizedImages = _normalizeImagesCsv(imagesCsv ?? primaryImageUrl ?? '');
 //     return {
-//       'item_name': itemName,
-//       'item_desc': itemDesc,
-//       'item_img_url': normalizedImages.isEmpty ? itemImgUrl : normalizedImages,
+//       'item_name': name,
+//       'item_desc': description,
+//       'item_img_url': normalizedImages.isEmpty ? primaryImageUrl : normalizedImages,
 //       'details': details.map((d) => d.toJson()).toList(),
 //       'category_id': categoryId,
 //       'created_by': createdBy,
@@ -123,31 +123,31 @@
 //
 // class UpdateProductRequest {
 //   final int id;
-//   final String itemName;
-//   final String itemDesc;
+//   final String name;
+//   final String description;
 //   final int isActive;
 //   final List<UpdateProductDetailDto> itemDetails;
 //   final int categoryId;
-//   final String? itemImgUrl;
+//   final String? primaryImageUrl;
 //
 //   const UpdateProductRequest({
 //     required this.id,
-//     required this.itemName,
-//     required this.itemDesc,
+//     required this.name,
+//     required this.description,
 //     required this.isActive,
 //     required this.itemDetails,
 //     required this.categoryId,
-//     this.itemImgUrl,
+//     this.primaryImageUrl,
 //   });
 //
 //   Map<String, dynamic> toJson() => {
 //     'id': id,
-//     'item_name': itemName,
-//     'item_desc': itemDesc,
+//     'item_name': name,
+//     'item_desc': description,
 //     'is_active': isActive,
 //     'category_id': categoryId,
-//     if (itemImgUrl != null && itemImgUrl!.isNotEmpty)
-//       'item_img_url': itemImgUrl,
+//     if (primaryImageUrl != null && primaryImageUrl!.isNotEmpty)
+//       'item_img_url': primaryImageUrl,
 //     'item_details': itemDetails.map((d) => d.toJson()).toList(),
 //   };
 // }
@@ -261,8 +261,8 @@
 // class ProductDetailResponse {
 //   final int itemId;
 //   final int detId;
-//   final String itemName;
-//   final String itemDesc;
+//   final String name;
+//   final String description;
 //   final double price;
 //   final int stock;
 //   final double discount;
@@ -282,8 +282,8 @@
 //   const ProductDetailResponse({
 //     required this.itemId,
 //     required this.detId,
-//     required this.itemName,
-//     required this.itemDesc,
+//     required this.name,
+//     required this.description,
 //     required this.price,
 //     required this.stock,
 //     required this.discount,
@@ -305,8 +305,8 @@
 //     return ProductDetailResponse(
 //       itemId: _int(_pick(json, const ['ITEM_ID', 'item_id', 'ID', 'id'])),
 //       detId: _int(_pick(json, const ['DET_ID', 'det_id'])),
-//       itemName: _str(json, const ['ITEM_NAME', 'item_name']),
-//       itemDesc: _str(json, const ['ITEM_DESC', 'item_desc']),
+//       name: _str(json, const ['ITEM_NAME', 'item_name']),
+//       description: _str(json, const ['ITEM_DESC', 'item_desc']),
 //       price: _dbl(_pick(json, const ['ITEM_PRICE', 'item_price'])),
 //       stock: _int(_pick(json, const ['ITEM_QTY', 'item_qty'])),
 //       discount: _dbl(

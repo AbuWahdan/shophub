@@ -31,7 +31,7 @@ class SingleOrderedItemScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(item.itemName),
+        title: Text(item.name),
       ),
 
       body: SingleChildScrollView(
@@ -55,7 +55,7 @@ class SingleOrderedItemScreen extends StatelessWidget {
                   children: [
 
                     Text(
-                      item.itemName,
+                      item.name,
                       style: AppTextStyles.titleMedium,
                     ),
 
@@ -68,7 +68,7 @@ class SingleOrderedItemScreen extends StatelessWidget {
                       _row('Brand', item.brand),
 
 
-                      _row('Size', item.itemSize ?? ''),
+                      _row('Size', item.size ?? ''),
 
                     _row('Quantity', item.qty.toString()),
 

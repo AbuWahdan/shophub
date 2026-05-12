@@ -10,8 +10,6 @@ class AppColors {
   static const Color accent = Color(0xFFFF6B35);
   static const Color accentLight = Color(0xFFFF9A70);
 
-
-
   static const Color secondary = Color(0xFF92D9E8);
 
   // --- Semantic (Status) ---
@@ -56,4 +54,12 @@ class AppColors {
   // --- Product Specifics ---
   static const Color star = Color(0xFFFFB800);
   static const Color saleBadge = Color(0xFFFF4D4F);
+
+  // --- Card Specifics ---
+  static const Color cardVisaStart = Color(0xFF0B1F66);
+  static const Color cardVisaEnd = Color(0xFF2B3EFF);
+  static const Color cardMastercardStart = Color(0xFFB42318);
+  static const Color cardMastercardEnd = Color(0xFFFF6B35);
+  static const Color cardDefaultStart = Color(0xFF1A1D26);
+  static const Color cardDefaultEnd = Color(0xFF65718A);
 }

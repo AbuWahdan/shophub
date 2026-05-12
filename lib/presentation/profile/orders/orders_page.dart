@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../../../controllers/order_controller.dart';
 import '../../../../core/state/auth_state.dart';
 import '../../../../models/orders_model.dart';
 import '../../../design/app_colors.dart';
@@ -9,7 +9,6 @@ import '../../../design/app_radius.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../repositories/order_repository.dart';
 import 'order_details_screen.dart';
 import 'widgets/order_status_badge.dart';
 
@@ -21,181 +20,98 @@ class OrdersPage extends StatefulWidget {
 }
 
 class _OrdersPageState extends State<OrdersPage> {
-  late final OrderRepository _orderRepository;
-  late Future<List<OrdersModel>> _ordersFuture;
-
   @override
   void initState() {
     super.initState();
-    _orderRepository = Get.find<OrderRepository>();
-    _loadOrders();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadOrders());
   }
 
-  void _loadOrders() {
+  Future<void> _loadOrders() async {
     final authState = context.read<AuthState>();
+    await authState.ensureInitialized();
+    if (!mounted) return;
     final username = authState.user?.username.trim() ?? '';
-
-    _ordersFuture = username.isEmpty
-        ? Future.value([])
-        : _orderRepository.getOrders(username: username);
+    await context.read<OrderController>().loadOrders(username: username);
   }
 
   Future<void> _onRefresh() async {
-    setState(() {
-      _loadOrders();
-    });
-    await _ordersFuture;
+    await _loadOrders();
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final controller = context.watch<OrderController>();
+    final orders = controller.orders;
+    final error = controller.error.trim();
+
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context).ordersTitle)),
-
-      body: FutureBuilder<List<OrdersModel>>(
-        future: _ordersFuture,
-
-        builder: (context, snapshot) {
-          /// =========================
-          /// LOADING
-          /// =========================
-
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return RefreshIndicator(
-              onRefresh: _onRefresh,
-              child: const CustomScrollView(
-                physics: AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          /// =========================
-          /// ERROR
-          /// =========================
-
-          if (snapshot.hasError) {
-            return RefreshIndicator(
-              onRefresh: _onRefresh,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: AppSpacing.insetsLg,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight:
-                        MediaQuery.sizeOf(context).height -
-                        kToolbarHeight -
-                        AppSpacing.xl,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 70,
-                        color: AppColors.error,
-                      ),
-
-                      const SizedBox(height: AppSpacing.lg),
-
-                      Text(
-                        AppLocalizations.of(context).errorLoadingOrders ??
-                            'Failed to load orders',
-                        style: AppTextStyles.titleMedium,
-                        textAlign: TextAlign.center,
-                      ),
-
-                      const SizedBox(height: AppSpacing.sm),
-
-                      Text(
-                        snapshot.error.toString(),
-                        style: AppTextStyles.bodySmall,
-                        textAlign: TextAlign.center,
-                      ),
-
-                      const SizedBox(height: AppSpacing.lg),
-
-                      ElevatedButton.icon(
-                        onPressed: _onRefresh,
-                        icon: const Icon(Icons.refresh),
-                        label: Text(AppLocalizations.of(context).retry),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }
-
-          final orders = snapshot.data ?? [];
-
-          /// =========================
-          /// EMPTY
-          /// =========================
-
-          if (orders.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: _onRefresh,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: AppSpacing.insetsLg,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight:
-                        MediaQuery.sizeOf(context).height -
-                        kToolbarHeight -
-                        AppSpacing.xl,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.shopping_bag_outlined,
-                        size: 70,
-                        color: AppColors.neutral400,
-                      ),
-
-                      const SizedBox(height: AppSpacing.lg),
-
-                      Text(
-                        AppLocalizations.of(context).noOrdersYet ??
-                            'No orders yet',
-                        style: AppTextStyles.titleMedium,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }
-
-          /// =========================
-          /// LIST
-          /// =========================
-
-          return RefreshIndicator(
-            onRefresh: _onRefresh,
-
-            child: ListView.builder(
-              padding: AppSpacing.insetsMd,
-              itemCount: orders.length,
-
-              itemBuilder: (context, index) {
-                return _buildOrderCard(context, orders[index]);
-              },
-            ),
-          );
-        },
+      appBar: AppBar(title: Text(l10n.ordersTitle)),
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        child: _buildOrdersBody(
+          context: context,
+          controller: controller,
+          orders: orders,
+          error: error,
+          l10n: l10n,
+        ),
       ),
     );
   }
 
+  Widget _buildOrdersBody({
+    required BuildContext context,
+    required OrderController controller,
+    required List<OrdersModel> orders,
+    required String error,
+    required AppLocalizations l10n,
+  }) {
+    if (controller.isLoading && orders.isEmpty) {
+      return const CustomScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        ],
+      );
+    }
+
+    if (error.isNotEmpty && orders.isEmpty) {
+      return _OrdersStateMessage(
+        icon: Icons.error_outline,
+        iconColor: AppColors.error,
+        title: l10n.errorLoadingOrders,
+        subtitle: error,
+        onRetry: _onRefresh,
+      );
+    }
+
+    if (orders.isEmpty) {
+      return _OrdersStateMessage(
+        icon: Icons.shopping_bag_outlined,
+        iconColor: AppColors.neutral400,
+        title: l10n.noOrdersYet,
+      );
+    }
+
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: AppSpacing.insetsMd,
+      itemCount: orders.length,
+      itemBuilder: (context, index) {
+        return _buildOrderCard(context, orders[index]);
+      },
+    );
+  }
+
   Widget _buildOrderCard(BuildContext context, OrdersModel order) {
-    final currency = NumberFormat.currency(symbol: 'JOD ', decimalDigits: 2);
+    final l10n = AppLocalizations.of(context);
+    final currency = NumberFormat.simpleCurrency(
+      locale: Localizations.localeOf(context).toLanguageTag(),
+    );
+    final promoCode = order.promoCode?.trim() ?? '';
 
     return Card(
       elevation: 2,
@@ -217,6 +133,7 @@ class _OrdersPageState extends State<OrdersPage> {
               builder: (context) => OrderDetailsScreen(
                 orderId: order.orderId,
                 orderNo: order.orderNo,
+                order: order,
               ),
             ),
           );
@@ -290,50 +207,69 @@ class _OrdersPageState extends State<OrdersPage> {
                 child: Column(
                   children: [
                     _buildInfoRow(
-                      title: 'Order ID',
+                      title: l10n.orderIdLabel,
                       value: order.orderId.toString(),
                     ),
 
                     const SizedBox(height: AppSpacing.sm),
 
                     _buildInfoRow(
-                      title: 'Order Date',
+                      title: l10n.orderDateLabel,
                       value: DateFormat.yMMMd().format(order.orderDate),
                     ),
 
                     const SizedBox(height: AppSpacing.sm),
 
                     _buildInfoRow(
-                      title: 'Created Date',
+                      title: l10n.orderCreatedDateLabel,
                       value: DateFormat.yMMMd().format(order.createdDate),
                     ),
 
                     const Divider(height: AppSpacing.xl),
 
+                    if (promoCode.isNotEmpty) ...[
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Chip(
+                          label: Text(l10n.orderPromoApplied(promoCode)),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                    ],
+
                     _buildPriceRow(
-                      title: 'Total Amount',
+                      title: l10n.orderSubtotal,
                       value: currency.format(order.totalAmount),
                     ),
 
                     const SizedBox(height: AppSpacing.sm),
 
                     _buildPriceRow(
-                      title: 'Tax Amount',
+                      title: l10n.orderTax,
                       value: currency.format(order.taxAmount),
                     ),
 
                     const SizedBox(height: AppSpacing.sm),
 
                     _buildPriceRow(
-                      title: 'Discount Amount',
+                      title: l10n.orderDiscount,
                       value: currency.format(order.discountAmount),
-                      valueColor: Colors.red,
+                      valueColor: AppColors.error,
                     ),
+
+                    if (order.promoDiscountAmount > 0) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      _buildPriceRow(
+                        title: l10n.orderPromoDiscount,
+                        value: currency.format(order.promoDiscountAmount),
+                        valueColor: AppColors.error,
+                      ),
+                    ],
 
                     const Divider(height: AppSpacing.xl),
 
                     _buildPriceRow(
-                      title: 'Net Amount',
+                      title: l10n.orderTotal,
                       value: currency.format(order.netAmount),
 
                       isBold: true,
@@ -349,7 +285,7 @@ class _OrdersPageState extends State<OrdersPage> {
                 const SizedBox(height: AppSpacing.lg),
 
                 Text(
-                  'Items (${order.items.length})',
+                  l10n.orderItemsCount(order.items.length),
                   style: AppTextStyles.titleSmall.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -414,7 +350,7 @@ class _OrdersPageState extends State<OrdersPage> {
                                 children: [
                                   Text(
                                     item.productName.isEmpty
-                                        ? 'Unknown Product'
+                                        ? l10n.unknownProduct
                                         : item.productName,
 
                                     style: AppTextStyles.bodyMedium.copyWith(
@@ -428,14 +364,14 @@ class _OrdersPageState extends State<OrdersPage> {
                                   const SizedBox(height: AppSpacing.xs),
 
                                   Text(
-                                    'Item ID: ${item.itemId}',
+                                    '${l10n.orderIdLabel}: ${item.itemId}',
                                     style: AppTextStyles.bodySmall,
                                   ),
 
                                   const SizedBox(height: AppSpacing.xs),
 
                                   Text(
-                                    'Quantity: ${item.quantity}',
+                                    '${l10n.quantityShortLabel}: ${item.quantity}',
                                     style: AppTextStyles.bodySmall,
                                   ),
                                 ],
@@ -463,7 +399,7 @@ class _OrdersPageState extends State<OrdersPage> {
                     padding: const EdgeInsets.only(top: AppSpacing.sm),
 
                     child: Text(
-                      '+${order.items.length - 3} more items',
+                      l10n.orderMoreItems(order.items.length - 3),
 
                       style: AppTextStyles.bodySmall.copyWith(
                         color: Theme.of(context).colorScheme.primary,
@@ -480,13 +416,10 @@ class _OrdersPageState extends State<OrdersPage> {
   }
 
   String _deliveryStatusFor(OrdersModel order) {
-    final deliveredItem = order.items.firstWhereOrNull(
-      (item) => item.deliveryStatus > 0,
-    );
-    if (deliveredItem != null) {
-      return OrderStatusBadge.labelFromDeliveryStatus(
-        deliveredItem.deliveryStatus,
-      );
+    for (final item in order.items) {
+      if (item.deliveryStatus > 0) {
+        return OrderStatusBadge.labelFromDeliveryStatus(item.deliveryStatus);
+      }
     }
     return order.statusRaw;
   }
@@ -540,6 +473,67 @@ class _OrdersPageState extends State<OrdersPage> {
               ),
         ),
       ],
+    );
+  }
+}
+
+class _OrdersStateMessage extends StatelessWidget {
+  const _OrdersStateMessage({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    this.subtitle,
+    this.onRetry,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String? subtitle;
+  final Future<void> Function()? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: AppSpacing.insetsLg,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight:
+              MediaQuery.sizeOf(context).height -
+              kToolbarHeight -
+              AppSpacing.xl,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: AppSpacing.xxl, color: iconColor),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              title,
+              style: AppTextStyles.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            if (subtitle != null && subtitle!.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                subtitle!,
+                style: AppTextStyles.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ],
+            if (onRetry != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              ElevatedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh),
+                label: Text(l10n.retry),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

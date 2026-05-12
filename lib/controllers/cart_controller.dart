@@ -324,11 +324,11 @@ class CartController extends GetxController {
 
     for (final item in items) {
       if (item.bookedQty < 1) {
-        errors.add('${item.itemName}: bookedQty=${item.bookedQty} < 1');
+        errors.add('${item.name}: bookedQty=${item.bookedQty} < 1');
       }
       if (item.bookedQty > item.availableQty) {
         errors.add(
-          '${item.itemName}: bookedQty=${item.bookedQty} '
+          '${item.name}: bookedQty=${item.bookedQty} '
               '> availableQty=${item.availableQty}',
         );
       }

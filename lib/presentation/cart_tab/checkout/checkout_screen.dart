@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/design/app_radius.dart';
 import 'package:sinwar_shoping/models/cart_item_model.dart';
 import '../../../../controllers/address_controller.dart';
+import '../../../../controllers/credit_card_controller.dart';
 import '../../../../core/utils/apex_response_helper.dart';
 import '../../../../models/payment_method_model.dart';
 import '../../../design/app_colors.dart';
@@ -15,6 +17,7 @@ import '../../../models/addresses/address_model.dart';
 import '../../../../models/get_code_option_model.dart';
 import '../../../models/checkout/checkout_request_model.dart';
 import '../../../models/checkout/checkout_summary_model.dart';
+import '../../../models/credit_card_model.dart';
 import '../../../core/state/auth_state.dart';
 import '../../../repositories/checkout_repository.dart';
 import '../../../repositories/codes_repository.dart';
@@ -22,7 +25,9 @@ import '../../../widgets/custom_button/custom_button.dart';
 import '../../../widgets/custom__snack_bar/custom_snack_bar.dart';
 import '../../profile/addresses/widgets/address_selection_bottom_sheet.dart';
 import '../../profile/addresses/addresses_page.dart';
-import 'order_confirmation/order_confirmation_screen.dart';
+import '../../cards/add_card_page.dart';
+import '../../cards/widgets/card_selector_bottom_sheet.dart';
+import 'order_summary_page.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key, required this.cartItems});
@@ -41,10 +46,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   // Added Promo Controller
   late final TextEditingController _promoController;
 
-  bool _isSubmitting = false;
   bool _isLoadingAddresses = false;
   bool _isLoadingPaymentMethods = false;
   AddressModel? _selectedAddress;
+  CreditCardModel? _selectedCard;
   int? _selectedPaymentMethodId;
   String? _addressError;
   String? _paymentMethodError;
@@ -85,8 +90,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ? _promoResult!.discountAmount
             : 0,
       );
-
-  double get _totalPrice => _checkoutSummary.grandTotal;
 
   void _onPromoCodeChanged() {
     _promoDebounce?.cancel();
@@ -131,7 +134,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ? null
             : result.message.isNotEmpty
             ? result.message
-            : 'Invalid promo code';
+            : AppLocalizations.of(context).invalidPromoCode;
         _isValidatingPromo = false;
       });
     } catch (error) {
@@ -240,7 +243,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       if (username.isEmpty) {
         setState(() {
-          _authError = 'Please log in to continue with checkout.';
+          _authError = AppLocalizations.of(context).checkoutLoginRequired;
           _isLoadingAddresses = false;
         });
         return;
@@ -280,7 +283,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       builder: (_) => AddressSelectionBottomSheet(
         savedAddresses: _addressController.addresses.toList(),
         selectedAddressId:
@@ -306,7 +309,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _placeOrder() async {
-    if (_isSubmitting) return;
+    final l10n = AppLocalizations.of(context);
 
     final authState = context.read<AuthState>();
     await authState.ensureInitialized();
@@ -318,13 +321,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     setState(() {
       _authError = (username == null || username.isEmpty)
-          ? 'Please log in to continue.'
+          ? l10n.checkoutLoginRequiredShort
           : null;
-      _addressError = addressId == null
-          ? 'Please select a delivery address.'
-          : null;
+      _addressError = addressId == null ? l10n.checkoutSelectAddress : null;
       _paymentMethodError = paymentMethodId == null
-          ? 'Please select a payment method.'
+          ? l10n.checkoutSelectPayment
           : null;
     });
 
@@ -337,53 +338,114 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (widget.cartItems.isEmpty) {
       CustomSnackBar.show(
         context,
-        message: 'Your cart_tab is empty.',
+        message: l10n.checkoutCartEmptyWarning,
         type: AppSnackBarType.warning,
       );
       return;
     }
 
-    setState(() {
-      _isSubmitting = true;
-    });
+    final paymentMethod = _selectedPaymentMethod(context)!;
+    CreditCardModel? selectedCard = _selectedCard;
+    final requiresCard = _isCreditCardPayment(paymentMethod);
+    if (requiresCard) {
+      selectedCard = await _ensureCreditCardSelected(username!);
+      if (!mounted || selectedCard == null) return;
+      setState(() => _selectedCard = selectedCard);
+    }
 
-    try {
-      final response = await _checkoutRepository.placeOrder(
-        CheckoutRequestModel(
-          username: username!,
-          shippingAddress: addressId!,
-          paymentMethod: paymentMethodId!,
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OrderSummaryPage(
+          items: widget.cartItems,
+          address: _selectedAddress!,
+          paymentMethod: paymentMethod,
+          summary: _checkoutSummary,
           promoCode: _promoResult?.isValid == true
               ? _promoController.text.trim().toUpperCase()
               : null,
+          selectedCard: selectedCard,
+          requiresCard: requiresCard,
+          onConfirm: () => _submitConfirmedOrder(
+            username: username!,
+            addressId: addressId!,
+            paymentMethodId: paymentMethodId!,
+            cardId: selectedCard?.cardId,
+          ),
         ),
-      );
+      ),
+    );
+  }
 
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              OrderConfirmationScreen(receipt: response, total: _totalPrice),
-        ),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      CustomSnackBar.show(
-        context,
-        message: ApexResponseHelper.messageForContext(
-          'PlaceOrder',
-          error.toString(),
-        ),
-        type: AppSnackBarType.error,
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-      }
+  bool _isCreditCardPayment(PaymentMethodModel method) {
+    return method.id == 3 ||
+        method.label.trim().toLowerCase() ==
+            AppLocalizations.of(context).checkoutPaymentCard.toLowerCase();
+  }
+
+  Future<CreditCardModel?> _ensureCreditCardSelected(String username) async {
+    final cardsController = context.read<CreditCardController>();
+    if (!cardsController.hasLoaded) {
+      await cardsController.fetchCards(username);
     }
+    if (!mounted) return null;
+
+    var cards = cardsController.cards;
+    if (cards.isEmpty) {
+      final added = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const AddCardPage()),
+      );
+      if (added != true || !mounted) return null;
+      await cardsController.fetchCards(username);
+      cards = cardsController.cards;
+      if (cards.isEmpty) return null;
+    }
+
+    while (mounted) {
+      final result = await showModalBottomSheet<CardSelectorResult>(
+        context: context,
+        isScrollControlled: true,
+        builder: (_) => CardSelectorBottomSheet(
+          cards: cards,
+          selectedCardId: _selectedCard?.cardId,
+        ),
+      );
+      if (!mounted || result == null) return null;
+      if (result.addNew) {
+        final added = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(builder: (_) => const AddCardPage()),
+        );
+        if (added != true || !mounted) return null;
+        await cardsController.fetchCards(username);
+        cards = cardsController.cards;
+        continue;
+      }
+      return result.card;
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>> _submitConfirmedOrder({
+    required String username,
+    required int addressId,
+    required int paymentMethodId,
+    int? cardId,
+  }) async {
+    final response = await _checkoutRepository.placeOrder(
+      CheckoutRequestModel(
+        username: username,
+        shippingAddress: addressId,
+        paymentMethod: paymentMethodId,
+        promoCode: _promoResult?.isValid == true
+            ? _promoController.text.trim().toUpperCase()
+            : null,
+        cardId: cardId,
+      ),
+    );
+
+    return response;
   }
 
   Future<void> _refreshCheckoutData() async {
@@ -457,13 +519,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           border: Border.all(
                             color: _selectedAddress != null
                                 ? AppColors.primary
-                                : Colors.grey[300]!,
+                                : AppColors.neutral300,
                             width: 1.5,
                           ),
                           borderRadius: BorderRadius.circular(AppRadius.md),
                           color: _selectedAddress != null
                               ? AppColors.primary.withValues(alpha: 0.05)
-                              : Colors.transparent,
+                              : AppColors.transparent,
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -473,7 +535,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               size: 20,
                               color: _selectedAddress != null
                                   ? AppColors.primary
-                                  : Colors.grey,
+                                  : AppColors.neutral500,
                             ),
                             const SizedBox(width: AppSpacing.md),
                             Expanded(
@@ -496,12 +558,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       children: [
                                         Text(
                                           _selectedAddress?.label ??
-                                              'Select delivery address',
+                                              l10n.checkoutSelectDeliveryAddress,
                                           style: AppTextStyles.bodyMedium
                                               .copyWith(
                                                 color: _selectedAddress != null
                                                     ? null
-                                                    : Colors.grey[600],
+                                                    : AppColors.neutral600,
                                               ),
                                         ),
                                         if (_selectedAddress != null) ...[
@@ -546,7 +608,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                     // --- NEW PROMO CODE SECTION (Container Design) ---
                     Text(
-                      'Promo Code (Optional)',
+                      l10n.promoCodeOptional,
                       style: AppTextStyles.titleSmall,
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -581,9 +643,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                               decoration: InputDecoration(
-                                hintText: 'ENTER CODE', // Capital hint
+                                hintText: l10n.promoCodeHint,
                                 hintStyle: AppTextStyles.bodyMedium.copyWith(
-                                  color: Colors.grey[400],
+                                  color: AppColors.neutral400,
                                 ),
                                 border: InputBorder.none,
                                 isDense: true,
@@ -615,7 +677,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         _promoResult?.isValid == true
-                            ? 'Promo applied'
+                            ? l10n.promoApplied
                             : _promoError!,
                         style: AppTextStyles.bodySmall.copyWith(
                           color: _promoResult?.isValid == true
@@ -651,7 +713,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         child: TextButton(
                           onPressed: () =>
                               _loadPaymentMethods(forceRefresh: true),
-                          child: const Text('Retry'),
+                          child: Text(l10n.retry),
                         ),
                       ),
                     ],
@@ -678,7 +740,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               border: Border.all(
                                 color: _selectedPaymentMethodId == method.id
                                     ? AppColors.primary
-                                    : Colors.grey[300]!,
+                                    : AppColors.neutral300,
                               ),
                             ),
                             child: Row(
@@ -724,21 +786,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     if (_selectedPaymentMethod(context) != null) ...[
                       const SizedBox(height: AppSpacing.sm),
                       Text(
-                        'Selected payment: ${_selectedPaymentMethod(context)!.label}',
+                        l10n.selectedPaymentLabel(
+                          _selectedPaymentMethod(context)!.label,
+                        ),
                         style: AppTextStyles.bodySmall,
                       ),
                     ],
                     const SizedBox(height: AppSpacing.xl),
                     CustomButton(
-                      label: 'Place Order',
-                      leading: _isSubmitting
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : null,
-                      onPressed: _isSubmitting ? null : _placeOrder,
+                      label: l10n.placeOrder,
+                      onPressed: _placeOrder,
                     ),
                   ],
                 ),
@@ -758,6 +815,10 @@ class _OrderSummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final currency = NumberFormat.simpleCurrency(
+      locale: Localizations.localeOf(context).toLanguageTag(),
+    );
     return Row(
       children: [
         Expanded(
@@ -772,17 +833,14 @@ class _OrderSummaryRow extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                '${AppLocalizations.of(context).checkoutQuantity(item.bookedQty)} • ${item.displayColor} • ${item.displaySize}',
+                l10n.checkoutQuantity(item.bookedQty),
                 style: AppTextStyles.bodySmall,
               ),
             ],
           ),
         ),
         const SizedBox(width: AppSpacing.md),
-        Text(
-          '\$${item.itemPrice*item.bookedQty}',
-          style: AppTextStyles.bodyLarge,
-        ),
+        Text(currency.format(item.lineTotal), style: AppTextStyles.bodyLarge),
       ],
     );
   }
@@ -799,18 +857,19 @@ class _CheckoutTotalsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
-        _AmountRow(label: 'Subtotal', value: summary.subtotal),
+        _AmountRow(label: l10n.orderSubtotal, value: summary.subtotal),
         const SizedBox(height: AppSpacing.sm),
         _AmountRow(
-          label: 'Discount',
+          label: l10n.orderDiscount,
           value: summary.totalDiscount,
           valueColor: AppColors.error,
           isDiscount: true,
         ),
         const SizedBox(height: AppSpacing.sm),
-        _AmountRow(label: 'Tax', value: summary.tax),
+        _AmountRow(label: l10n.orderTax, value: summary.tax),
         const Divider(height: AppSpacing.xl),
         _AmountRow(label: totalLabel, value: summary.grandTotal, isTotal: true),
       ],
@@ -835,13 +894,16 @@ class _AmountRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currency = NumberFormat.simpleCurrency(
+      locale: Localizations.localeOf(context).toLanguageTag(),
+    );
     final style = isTotal
         ? AppTextStyles.titleMedium
         : AppTextStyles.bodyMedium;
     final valueStyle = isTotal
         ? AppTextStyles.priceMedium
         : AppTextStyles.bodyMedium;
-    final formattedValue = '\$${value.toStringAsFixed(2)}';
+    final formattedValue = currency.format(value);
 
     return Row(
       children: [

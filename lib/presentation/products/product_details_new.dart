@@ -64,15 +64,15 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   bool _isLoadingItemImages = false;
   String? _itemImagesError;
   List<ProductImageModel> _itemImages = const [];
-  List<ApiProductVariant> _drawerVariants = const [];
+  List<ProductVariant> _drawerVariants = const [];
   bool _isAddingToCart = false;
-  List<ApiProductVariant> get _variants => _drawerVariants.isNotEmpty
+  List<ProductVariant> get _variants => _drawerVariants.isNotEmpty
       ? _drawerVariants
       : resolveProductVariants(widget.product, null);
 
   bool get _hasSingleVariant => _variants.length <= 1;
 
-  ApiProductVariant? get _selectedVariant {
+  ProductVariant? get _selectedVariant {
     final variants = _variants;
     if (variants.isEmpty) {
       return null;
@@ -89,7 +89,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     final preferredColor = (_selectedColor ?? '').trim();
     for (final variant in variants) {
       final matchesSize =
-          preferredSize.isEmpty || variant.itemSize.trim() == preferredSize;
+          preferredSize.isEmpty || variant.size.trim() == preferredSize;
       final matchesColor =
           preferredColor.isEmpty || variant.color.trim() == preferredColor;
       if (matchesSize && matchesColor) {
@@ -103,12 +103,15 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   void initState() {
     super.initState();
     _commentRepository = Get.find<CommentRepository>();
-    
+
     // Initialize floating cart controller
     final cartRepository = Get.find<CartRepository>();
     _floatingCartController = FloatingCartController(cartRepository);
-    Get.put<FloatingCartController>(_floatingCartController, tag: 'product-details');
-    
+    Get.put<FloatingCartController>(
+      _floatingCartController,
+      tag: 'product-details',
+    );
+
     _imageController = PageController();
     _commentsFuture = _commentRepository.getItemComments(
       itemId: widget.product.id,
@@ -124,7 +127,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     _loadItemImages();
     _loadDrawerVariants();
     ReviewRefreshNotifier.updatedItemId.addListener(_handleReviewRefresh);
-    
+
     // Load cart for floating icon
     final authState = context.read<AuthState>();
     if (authState.isLoggedIn && authState.user != null) {
@@ -203,14 +206,14 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       if (!mounted || rows.isEmpty) return;
       final variants = rows
           .map(
-            (row) => ApiProductVariant(
+            (row) => ProductVariant(
               detId: row.detId,
               brand: row.brand,
               color: row.color,
-              itemSize: row.itemSize.toString(),
+              size: row.size.toString(),
               discount: row.discount,
-              itemPrice: row.itemPrice,
-              itemQty: row.itemQty,
+              price: row.price,
+              stock: row.stock,
             ),
           )
           .toList();
@@ -236,7 +239,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     }
   }
 
-  ApiProductVariant? _matchVariantFrom(List<ApiProductVariant> variants) {
+  ProductVariant? _matchVariantFrom(List<ProductVariant> variants) {
     if (variants.isEmpty) {
       return null;
     }
@@ -256,7 +259,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     final preferredColor = (_selectedColor ?? widget.initialColor ?? '').trim();
     for (final variant in variants) {
       final matchesSize =
-          preferredSize.isEmpty || variant.itemSize.trim() == preferredSize;
+          preferredSize.isEmpty || variant.size.trim() == preferredSize;
       final matchesColor =
           preferredColor.isEmpty || variant.color.trim() == preferredColor;
       if (matchesSize && matchesColor) {
@@ -267,13 +270,13 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     return variants.first;
   }
 
-  void _setSelectedVariant(ApiProductVariant variant) {
+  void _setSelectedVariant(ProductVariant variant) {
     _selectedDetId = variant.detId;
-    _selectedSize = variant.itemSize;
+    _selectedSize = variant.size;
     _selectedColor = variant.color;
   }
 
-  void _selectVariant(ApiProductVariant variant) {
+  void _selectVariant(ProductVariant variant) {
     setState(() {
       _setSelectedVariant(variant);
     });
@@ -289,7 +292,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     final isTogglingFavorite = wishlistState.isToggling(widget.product.id);
     final bottomActionHeight = AppSpacing.buttonMd + (AppSpacing.lg * 2);
     widget.product.isFavorite = isFavorite;
-    
+
     return Stack(
       children: [
         Scaffold(
@@ -337,12 +340,16 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : Icon(
-                              isFavorite ? Icons.favorite : Icons.favorite_border,
+                              isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
                               color: isFavorite
                                   ? AppColors.error
                                   : Theme.of(context).colorScheme.onSurface,
                             ),
-                      onPressed: isTogglingFavorite ? null : _handleToggleFavorite,
+                      onPressed: isTogglingFavorite
+                          ? null
+                          : _handleToggleFavorite,
                     ),
                   ],
                 ),
@@ -355,7 +362,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               padding: AppSpacing.insetsLg,
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
-                boxShadow:  [AppShadows.subtleShadow],
+                boxShadow: [AppShadows.subtleShadow],
               ),
               child: SizedBox(
                 width: double.infinity,
@@ -492,9 +499,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                     child: Container(
                       padding: AppSpacing.insetsSm,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(
-                          AppSpacing.sm,
-                        ),
+                        borderRadius: BorderRadius.circular(AppSpacing.sm),
                         border: Border.all(
                           color: isActive
                               ? AppColors.primary
@@ -566,9 +571,11 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       // Prefer imagePath (URL/path) over base64 since GalleryViewer handles
       // both network URLs and local file paths natively.
       imagePaths = _itemImages
-          .map((img) => img.imagePath.trim().isNotEmpty
-          ? img.imagePath.trim()
-          : img.imageBase64) // fallback: pass base64 as data URI if needed
+          .map(
+            (img) => img.imagePath.trim().isNotEmpty
+                ? img.imagePath.trim()
+                : img.imageBase64,
+          ) // fallback: pass base64 as data URI if needed
           .where((s) => s.isNotEmpty)
           .toList();
     } else {
@@ -579,7 +586,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
 
     GalleryViewer.show(
       context,
-      images:       imagePaths,
+      images: imagePaths,
       initialIndex: initialIndex.clamp(0, imagePaths.length - 1),
     );
   }
@@ -588,8 +595,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     final selectedVariant = _selectedVariant;
     final showSingleVariantColor =
         _hasSingleVariant &&
-            selectedVariant != null &&
-            isMeaningfulProductValue(selectedVariant.color);
+        selectedVariant != null &&
+        isMeaningfulProductValue(selectedVariant.color);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -616,6 +623,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       ],
     );
   }
+
   Widget _buildVariantSection() {
     final selectedVariant = _selectedVariant;
     if (selectedVariant == null) {
@@ -633,10 +641,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ProductVariantSummary(
-              variant: selectedVariant,
-              showColor: false,
-            ),
+            ProductVariantSummary(variant: selectedVariant, showColor: false),
             const SizedBox(height: AppSpacing.md),
             // Stock indicator for single variant
             _buildStockIndicator(selectedVariant),
@@ -655,9 +660,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: ProductVariantCardWithStock(
               variant: variant,
-              isSelected: selectedVariant.detId > 0
+              selected: selectedVariant.detId > 0
                   ? selectedVariant.detId == variant.detId
-                  : selectedVariant.itemSize == variant.itemSize &&
+                  : selectedVariant.size == variant.size &&
                         selectedVariant.color == variant.color,
               quantity: 1,
               onTap: () => _selectVariant(variant),
@@ -668,8 +673,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     );
   }
 
-  Widget _buildStockIndicator(ApiProductVariant variant) {
-    if (variant.itemQty <= 0) {
+  Widget _buildStockIndicator(ProductVariant variant) {
+    if (variant.stock <= 0) {
       return Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
@@ -688,8 +693,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         ),
       );
     }
-    
-    if (variant.itemQty <= 5) {
+
+    if (variant.stock <= 5) {
       return Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
@@ -700,7 +705,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           borderRadius: BorderRadius.circular(AppRadius.sm),
         ),
         child: Text(
-          'Only ${variant.itemQty} left!',
+          'Only ${variant.stock} left!',
           style: AppTextStyles.bodySmall.copyWith(
             color: AppColors.warning,
             fontWeight: FontWeight.bold,
@@ -719,7 +724,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text(
-        '${variant.itemQty} available',
+        '${variant.stock} available',
         style: AppTextStyles.bodySmall.copyWith(
           color: AppColors.primary,
           fontWeight: FontWeight.bold,
@@ -740,7 +745,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           style: AppTextStyles.labelLarge,
         ),
         Text(
-          AppLocalizations.of(context).productReviews(widget.product.reviewCount),
+          AppLocalizations.of(
+            context,
+          ).productReviews(widget.product.reviewCount),
           style: AppTextStyles.bodySmall,
         ),
       ],
@@ -961,9 +968,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       for (final variant in _variants) {
         debugPrint(
           '[ProductDetails][DrawerVariant] detId=${variant.detId} '
-              'color=${variant.color} brand=${variant.brand} '
-              'size=${variant.itemSize} price=${variant.itemPrice} '
-              'discount=${variant.discount} qty=${variant.itemQty}',
+          'color=${variant.color} brand=${variant.brand} '
+          'size=${variant.size} price=${variant.price} '
+          'discount=${variant.discount} qty=${variant.stock}',
         );
       }
     }
@@ -975,8 +982,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AddToCartBottomSheet(
-        product:     widget.product,
-        variants:    _variants.isNotEmpty ? _variants : null,
+        product: widget.product,
+        variants: _variants.isNotEmpty ? _variants : null,
         initialDetId: _selectedDetId > 0
             ? _selectedDetId
             : widget.product.detId,
@@ -989,8 +996,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     _setSelectedVariant(variant);
     await _addToCart(variant: variant, qty: selection.qty);
   }
+
   Future<void> _addToCart({
-    required ApiProductVariant variant,
+    required ProductVariant variant,
     required int qty,
   }) async {
     final authState = context.read<AuthState>();
@@ -1005,7 +1013,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       );
       return;
     }
-    if (variant.itemQty <= 0) {
+    if (variant.stock <= 0) {
       CustomSnackBar.show(
         context,
         message: 'Selected variant is out of stock.',
@@ -1017,7 +1025,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     final itemDetId = variant.detId > 0
         ? variant.detId
         : widget.product.resolveDetId(
-            size: variant.itemSize,
+            size: variant.size,
             color: variant.color,
             fallback: widget.product.detId,
           );
@@ -1032,7 +1040,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
 
     setState(() {
       _isAddingToCart = true;
-      _selectedSize = variant.itemSize;
+      _selectedSize = variant.size;
       _selectedColor = variant.color;
       _selectedDetId = itemDetId;
     });
@@ -1052,18 +1060,20 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       AppData.addToCart(
         product: widget.product,
         quantity: qty,
-        size: variant.itemSize.trim().isEmpty ? 'Default' : variant.itemSize,
+        size: variant.size.trim().isEmpty ? 'Default' : variant.size,
         color: variant.color.trim().isEmpty ? 'Default' : variant.color,
         detId: itemDetId,
       );
-      
+
       // ✅ Trigger floating cart animation and reload count
       _floatingCartController.triggerAddToCartAnimation();
       await _floatingCartController.loadCart();
-      
+
       CustomSnackBar.show(
         context,
-        message: AppLocalizations.of(context).productAddedToCart(widget.product.name),
+        message: AppLocalizations.of(
+          context,
+        ).productAddedToCart(widget.product.name),
         type: AppSnackBarType.success,
       );
     } on ProductException catch (error) {

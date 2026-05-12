@@ -73,7 +73,7 @@ class OrderRepository {
           .toList();
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('[OrderRepository] Error fetching order details: $e');
+        debugPrint('[OrderRepository] Error fetching order variants: $e');
       }
       rethrow;
     }

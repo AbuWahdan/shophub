@@ -19,12 +19,12 @@
 //   String _username        = '';
 //   bool   _isLoading       = false;
 //   String? _errorMessage;
-//   bool   _hasLoadedForUser = false;
+//   bool   _hasLoadedForCurrentUser = false;
 //
 //   List<ProductModel> get items            => _itemsById.values.toList(growable: false);
 //   bool             get isLoading        => _isLoading;
 //   String?          get errorMessage     => _errorMessage;
-//   bool             get hasLoadedForUser => _hasLoadedForUser;
+//   bool             get hasLoadedForCurrentUser => _hasLoadedForCurrentUser;
 //
 //   bool isInWishlist(int productId) => _itemsById.containsKey(productId);
 //   bool isToggling(int productId)   => _togglingIds.contains(productId);
@@ -66,11 +66,11 @@
 //           _itemsById.isNotEmpty ||
 //           _togglingIds.isNotEmpty ||
 //           _errorMessage != null ||
-//           _hasLoadedForUser;
+//           _hasLoadedForCurrentUser;
 //       if (hadState) {
 //         _username        = '';
 //         _isLoading       = false;
-//         _hasLoadedForUser = false;
+//         _hasLoadedForCurrentUser = false;
 //         _errorMessage    = null;
 //         _itemsById.clear();
 //         _togglingIds.clear();
@@ -82,7 +82,7 @@
 //     }
 //
 //     if (_username == nextUsername) {
-//       if (!_hasLoadedForUser && !_isLoading) {
+//       if (!_hasLoadedForCurrentUser && !_isLoading) {
 //         Future<void>.microtask(_refreshSilently);
 //       }
 //       return;
@@ -93,7 +93,7 @@
 //     // Clearing immediately would cause a blank flash and lose data if the
 //     // API is slow or times out (APEX cold start).
 //     _username        = nextUsername;
-//     _hasLoadedForUser = false;
+//     _hasLoadedForCurrentUser = false;
 //     _errorMessage    = null;
 //     _togglingIds.clear();
 //     _clearOverrides();
@@ -116,7 +116,7 @@
 //     if (_username.isEmpty) {
 //       _isLoading        = false;
 //       _errorMessage     = null;
-//       _hasLoadedForUser = true;
+//       _hasLoadedForCurrentUser = true;
 //       // Do NOT clear _itemsById — there is nothing valid to show and nothing
 //       // wrong to clear.
 //       notifyListeners();
@@ -158,12 +158,12 @@
 //         _applyOverrides();
 //       }
 //
-//       _hasLoadedForUser = true;
+//       _hasLoadedForCurrentUser = true;
 //     } catch (error) {
 //       // FIX: Do NOT rethrow. Keeping existing items is better than crashing
 //       // or showing an empty screen because of a transient network error.
 //       _errorMessage     = error.toString();
-//       _hasLoadedForUser = true;
+//       _hasLoadedForCurrentUser = true;
 //       // _itemsById is intentionally left as-is on error.
 //     } finally {
 //       _isLoading = false;
@@ -241,7 +241,6 @@
 //   }
 // }
 
-
 // presentation/wishlist/favorites_controller.dart
 //
 // ChangeNotifier controller for the wishlist/favorites feature.
@@ -260,7 +259,7 @@ enum WishlistToggleResult { added, removed }
 
 class FavoritesController extends ChangeNotifier {
   FavoritesController({ProductService? productService})
-      : _service = productService ?? ProductService();
+    : _service = productService ?? ProductService();
 
   final ProductService _service;
 
@@ -280,8 +279,7 @@ class FavoritesController extends ChangeNotifier {
 
   // ── Public read-only state ─────────────────────────────────────────────────
 
-  List<ProductModel> get items =>
-      List.unmodifiable(_itemsById.values.toList());
+  List<ProductModel> get items => List.unmodifiable(_itemsById.values.toList());
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -404,10 +402,7 @@ class FavoritesController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _service.toggleFavorite(
-        itemId: productId,
-        username: _username,
-      );
+      await _service.toggleFavorite(itemId: productId, username: _username);
 
       _pendingFavoriteState[productId] = !wasInWishlist;
       if (!wasInWishlist) {
@@ -495,7 +490,8 @@ class FavoritesController extends ChangeNotifier {
   }
 
   void _clearAllState() {
-    final hadState = _username.isNotEmpty ||
+    final hadState =
+        _username.isNotEmpty ||
         _itemsById.isNotEmpty ||
         _pendingToggleIds.isNotEmpty ||
         _errorMessage != null ||

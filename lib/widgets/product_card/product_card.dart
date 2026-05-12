@@ -41,8 +41,8 @@ class ProductCard extends StatefulWidget {
 }
 
 class _ProductCardState extends State<ProductCard> {
-  bool _isAddingToCart    = false;
-  bool _isOpeningDetails  = false;
+  bool _isAddingToCart = false;
+  bool _isOpeningDetails = false;
 
   Future<void> _openProductDetails() async {
     if (_isOpeningDetails) return;
@@ -78,12 +78,18 @@ class _ProductCardState extends State<ProductCard> {
       await context.read<FavoritesController>().toggleWishlist(widget.product);
     } on ProductException catch (error) {
       if (!mounted) return;
-      CustomSnackBar.show(context, message: error.message,
-          type: AppSnackBarType.error);
+      CustomSnackBar.show(
+        context,
+        message: error.message,
+        type: AppSnackBarType.error,
+      );
     } catch (_) {
       if (!mounted) return;
-      CustomSnackBar.show(context, message: 'Failed to update favorite',
-          type: AppSnackBarType.error);
+      CustomSnackBar.show(
+        context,
+        message: 'Failed to update favorite',
+        type: AppSnackBarType.error,
+      );
     }
   }
 
@@ -130,10 +136,10 @@ class _ProductCardState extends State<ProductCard> {
       final itemDetId = selectedVariant.detId > 0
           ? selectedVariant.detId
           : widget.product.resolveDetId(
-        size:     selectedVariant.itemSize,
-        color:    selectedVariant.color,
-        fallback: widget.product.detId,
-      );
+              size: selectedVariant.size,
+              color: selectedVariant.color,
+              fallback: widget.product.detId,
+            );
 
       if (itemDetId <= 0) {
         throw ProductException('Unable to determine selected product variant.');
@@ -141,19 +147,23 @@ class _ProductCardState extends State<ProductCard> {
 
       final cartController = Get.find<CartController>();
       await cartController.addItem(
-        itemId:    widget.product.id,
+        itemId: widget.product.id,
         itemDetId: itemDetId,
-        username:  username,
+        username: username,
         requestedQty: selection.qty,
       );
 
       if (!mounted) return;
 
       AppData.addToCart(
-        product:  widget.product,
+        product: widget.product,
         quantity: selection.qty,
-        size:  selectedVariant.itemSize.trim().isEmpty ? 'Default' : selectedVariant.itemSize,
-        color: selectedVariant.color.trim().isEmpty   ? 'Default' : selectedVariant.color,
+        size: selectedVariant.size.trim().isEmpty
+            ? 'Default'
+            : selectedVariant.size,
+        color: selectedVariant.color.trim().isEmpty
+            ? 'Default'
+            : selectedVariant.color,
         detId: itemDetId,
       );
 
@@ -164,12 +174,18 @@ class _ProductCardState extends State<ProductCard> {
       );
     } on ProductException catch (error) {
       if (!mounted) return;
-      CustomSnackBar.show(context, message: error.message,
-          type: AppSnackBarType.error);
+      CustomSnackBar.show(
+        context,
+        message: error.message,
+        type: AppSnackBarType.error,
+      );
     } catch (_) {
       if (!mounted) return;
-      CustomSnackBar.show(context, message: 'Failed to add to cart',
-          type: AppSnackBarType.error);
+      CustomSnackBar.show(
+        context,
+        message: 'Failed to add to cart',
+        type: AppSnackBarType.error,
+      );
     } finally {
       if (mounted) setState(() => _isAddingToCart = false);
     }
@@ -177,13 +193,13 @@ class _ProductCardState extends State<ProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    final product        = widget.product;
-    final theme          = Theme.of(context);
-    final textDirection  = Directionality.of(context);
-    final wishlistState  = context.watch<FavoritesController>();
-    final isFavorite     = wishlistState.isInWishlist(product.id);
-    final isToggling     = wishlistState.isToggling(product.id);
-    product.isFavorite   = isFavorite;
+    final product = widget.product;
+    final theme = Theme.of(context);
+    final textDirection = Directionality.of(context);
+    final wishlistState = context.watch<FavoritesController>();
+    final isFavorite = wishlistState.isInWishlist(product.id);
+    final isToggling = wishlistState.isToggling(product.id);
+    product.isFavorite = isFavorite;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -223,8 +239,7 @@ class _ProductCardState extends State<ProductCard> {
                         ),
                         decoration: BoxDecoration(
                           color: AppColors.saleBadge,
-                          borderRadius:
-                          BorderRadius.circular(AppRadius.full),
+                          borderRadius: BorderRadius.circular(AppRadius.full),
                         ),
                         child: Text(
                           '-${product.discountPercentage}%',
@@ -245,27 +260,28 @@ class _ProductCardState extends State<ProductCard> {
                       child: Container(
                         padding: const EdgeInsets.all(AppSpacing.xs),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surface
-                              .withValues(alpha: 0.86),
-                          borderRadius:
-                          BorderRadius.circular(AppRadius.full),
+                          color: theme.colorScheme.surface.withValues(
+                            alpha: 0.86,
+                          ),
+                          borderRadius: BorderRadius.circular(AppRadius.full),
                         ),
                         child: isToggling
                             ? const SizedBox(
-                          width: AppSpacing.iconMd,
-                          height: AppSpacing.iconMd,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2),
-                        )
+                                width: AppSpacing.iconMd,
+                                height: AppSpacing.iconMd,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
                             : Icon(
-                          isFavorite
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          color: isFavorite
-                              ? AppColors.error
-                              : theme.colorScheme.onSurface,
-                          size: AppSpacing.iconMd,
-                        ),
+                                isFavorite
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color: isFavorite
+                                    ? AppColors.error
+                                    : theme.colorScheme.onSurface,
+                                size: AppSpacing.iconMd,
+                              ),
                       ),
                     ),
                   ),
@@ -290,7 +306,10 @@ class _ProductCardState extends State<ProductCard> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.md,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -343,10 +362,11 @@ class _ProductCardState extends State<ProductCard> {
 
   Widget _buildPriceTag(BuildContext context) {
     final product = widget.product;
-    final theme   = Theme.of(context);
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm, vertical: AppSpacing.xs,
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface.withValues(alpha: 0.9),
@@ -392,19 +412,20 @@ class _ProductCardState extends State<ProductCard> {
           child: Center(
             child: _isAddingToCart
                 ? SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                    theme.colorScheme.onPrimary),
-              ),
-            )
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        theme.colorScheme.onPrimary,
+                      ),
+                    ),
+                  )
                 : Icon(
-              Icons.shopping_cart_outlined,
-              size: AppSpacing.iconSm,
-              color: theme.colorScheme.onPrimary,
-            ),
+                    Icons.shopping_cart_outlined,
+                    size: AppSpacing.iconSm,
+                    color: theme.colorScheme.onPrimary,
+                  ),
           ),
         ),
       ),

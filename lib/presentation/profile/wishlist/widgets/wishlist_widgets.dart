@@ -26,31 +26,45 @@ import '../../../../widgets/product_card/product_card.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 
 class WishlistNotLoggedIn extends StatelessWidget {
-  const WishlistNotLoggedIn({super.key});
+  const WishlistNotLoggedIn({super.key, required this.onRefresh});
+
+  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return Center(
-      child: Padding(
-        padding: AppSpacing.insetsMd,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.lock_outline_rounded,
-              size: AppSpacing.xl,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverFillRemaining(
+            child: Center(
+              child: Padding(
+                padding: AppSpacing.insetsMd,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.lock_outline_rounded,
+                      size: AppSpacing.xl,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      l10n.wishlistLoginRequired,
+                      style: AppTextStyles.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              l10n.wishlistLoginRequired,
-              style: AppTextStyles.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -75,17 +89,14 @@ class WishlistBody extends StatelessWidget {
   Widget build(BuildContext context) {
     // Show loader while the first fetch is in progress.
     if (!controller.hasLoadedForCurrentUser || controller.isLoading) {
-      return const WishlistLoader();
+      return WishlistLoader(onRefresh: _refresh);
     }
 
     final errorMessage = controller.errorMessage?.trim() ?? '';
 
     // Show error only when there are no cached items to fall back on.
     if (errorMessage.isNotEmpty && controller.isEmpty) {
-      return WishlistError(
-        message: errorMessage,
-        onRetry: _refresh,
-      );
+      return WishlistError(message: errorMessage, onRetry: _refresh);
     }
 
     // Empty state — still allows pull-to-refresh.
@@ -93,10 +104,7 @@ class WishlistBody extends StatelessWidget {
       return WishlistEmpty(onRefresh: _refresh);
     }
 
-    return WishlistGrid(
-      items: controller.items,
-      onRefresh: _refresh,
-    );
+    return WishlistGrid(items: controller.items, onRefresh: _refresh);
   }
 }
 
@@ -105,12 +113,24 @@ class WishlistBody extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class WishlistLoader extends StatelessWidget {
-  const WishlistLoader({super.key});
+  const WishlistLoader({super.key, required this.onRefresh});
+
+  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(color: AppColors.primary),
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: const CustomScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverFillRemaining(
+            child: Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -219,11 +239,7 @@ class WishlistEmpty extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class WishlistGrid extends StatelessWidget {
-  const WishlistGrid({
-    super.key,
-    required this.items,
-    required this.onRefresh,
-  });
+  const WishlistGrid({super.key, required this.items, required this.onRefresh});
 
   final List<ProductModel> items;
   final Future<void> Function() onRefresh;

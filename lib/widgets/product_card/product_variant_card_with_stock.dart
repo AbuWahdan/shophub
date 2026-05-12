@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:sinwar_shoping/design/app_colors.dart';
 import 'package:sinwar_shoping/design/app_radius.dart';
 import 'package:sinwar_shoping/design/app_spacing.dart';
 import 'package:sinwar_shoping/design/app_text_styles.dart';
+import 'package:sinwar_shoping/l10n/app_localizations.dart';
 import 'package:sinwar_shoping/models/product/product_model.dart';
 import 'add_to_cart_bottom_sheet/widgets/quantity_stepper.dart';
 
 /// Enhanced variant card widget with integrated stock display
-/// 
+///
 /// **Changes:**
 /// - Border width reduced to 25% (borderThick * 0.25 = 3.0px)
 /// - "Available Qty" badge integrated inside the card (top-right)
@@ -16,7 +18,7 @@ class ProductVariantCardWithStock extends StatelessWidget {
   const ProductVariantCardWithStock({
     super.key,
     required this.variant,
-    required this.isSelected,
+    required this.selected,
     required this.quantity,
     required this.onTap,
     this.onQuantityChanged,
@@ -24,30 +26,30 @@ class ProductVariantCardWithStock extends StatelessWidget {
     this.showSelectionIndicator = true,
   });
 
-  final ApiProductVariant variant;
-  final bool isSelected;
+  final ProductVariant variant;
+  final bool selected;
   final int quantity;
   final VoidCallback onTap;
   final ValueChanged<int>? onQuantityChanged;
   final bool showQuantityStepper;
   final bool showSelectionIndicator;
 
-  // Border width = 25% of original thickness
-  static const double _borderWidth = 3.0; // AppSpacing.borderThick (12) * 0.25
+  static const double _borderWidth = AppSpacing.borderThick / AppSpacing.xs;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final canDecrement = quantity > 1 && onQuantityChanged != null;
     final canIncrement =
-        variant.itemQty > 0 &&
-        quantity < variant.itemQty &&
+        variant.stock > 0 &&
+        quantity < variant.stock &&
         onQuantityChanged != null;
-    final stockStatus = variant.itemQty <= 0
-        ? 'Out of Stock'
-        : variant.itemQty <= 5
-            ? 'Only ${variant.itemQty} left!'
-            : '${variant.itemQty} available';
+    final stockStatus = variant.stock <= 0
+        ? l10n.stockOut
+        : variant.stock <= 5
+        ? l10n.stockOnlyLeft(variant.stock)
+        : l10n.cartAvailableStock(variant.stock);
 
     return InkWell(
       onTap: onTap,
@@ -57,8 +59,10 @@ class ProductVariantCardWithStock extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.sm),
           border: Border.all(
-            color: isSelected ? AppColors.primary : theme.dividerColor,
-            width: isSelected ? _borderWidth : _borderWidth * 0.75,
+            color: selected ? AppColors.primary : theme.dividerColor,
+            width: selected
+                ? _borderWidth
+                : _borderWidth - AppSpacing.xs / AppSpacing.borderThin,
           ),
         ),
         child: Stack(
@@ -70,9 +74,7 @@ class ProductVariantCardWithStock extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: _buildVariantSummary(context),
-                    ),
+                    Expanded(child: _buildVariantSummary(context)),
                     if (showQuantityStepper) ...[
                       const SizedBox(width: AppSpacing.md),
                       QuantityStepper(
@@ -94,11 +96,7 @@ class ProductVariantCardWithStock extends StatelessWidget {
               ],
             ),
             // Stock badge (top-right corner)
-            Positioned(
-              top: 0,
-              right: 0,
-              child: _buildStockBadge(stockStatus),
-            ),
+            Positioned(top: 0, right: 0, child: _buildStockBadge(stockStatus)),
           ],
         ),
       ),
@@ -115,11 +113,12 @@ class ProductVariantCardWithStock extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: AppSpacing.xs),
             child: Row(
               children: [
-                Text('Color', style: AppTextStyles.bodySmall),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(
-                  child: _buildColorCircle(variant.color),
+                Text(
+                  AppLocalizations.of(context).productColor,
+                  style: AppTextStyles.bodySmall,
                 ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(child: _buildColorCircle(variant.color)),
               ],
             ),
           ),
@@ -128,44 +127,44 @@ class ProductVariantCardWithStock extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.xs),
             child: Text(
-              'Brand: ${variant.brand.trim()}',
+              '${AppLocalizations.of(context).productBrand}: ${variant.brand.trim()}',
               style: AppTextStyles.bodySmall,
             ),
           ),
         // Size
-        if (_isMeaningfulValue(variant.itemSize))
+        if (_isMeaningfulValue(variant.size))
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.xs),
             child: Text(
-              'Size: ${variant.itemSize.trim()}',
+              '${AppLocalizations.of(context).productSize}: ${variant.size.trim()}',
               style: AppTextStyles.bodySmall,
             ),
           ),
         // Price
-        if (variant.itemPrice > 0)
-          _buildPriceRow(),
+        if (variant.price > 0) _buildPriceRow(context),
       ],
     );
   }
 
-  Widget _buildPriceRow() {
+  Widget _buildPriceRow(BuildContext context) {
     final hasDiscount = variant.discount > 0 && variant.discount < 100;
     final discountedPrice = hasDiscount
-        ? variant.itemPrice * (1 - (variant.discount / 100))
-        : variant.itemPrice;
+        ? variant.price * (1 - (variant.discount / 100))
+        : variant.price;
+    final currency = NumberFormat.simpleCurrency(
+      locale: Localizations.localeOf(context).toLanguageTag(),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (hasDiscount)
           Text(
-            '\$${discountedPrice.toStringAsFixed(2)}',
-            style: AppTextStyles.labelLarge.copyWith(
-              color: AppColors.primary,
-            ),
+            currency.format(discountedPrice),
+            style: AppTextStyles.labelLarge.copyWith(color: AppColors.primary),
           ),
         Text(
-          '\$${variant.itemPrice.toStringAsFixed(2)}',
+          currency.format(variant.price),
           style: AppTextStyles.bodySmall.copyWith(
             decoration: hasDiscount ? TextDecoration.lineThrough : null,
           ),
@@ -175,8 +174,8 @@ class ProductVariantCardWithStock extends StatelessWidget {
   }
 
   Widget _buildStockBadge(String stockStatus) {
-    final isOutOfStock = variant.itemQty <= 0;
-    final isLowStock = variant.itemQty > 0 && variant.itemQty <= 5;
+    final isOutOfStock = variant.stock <= 0;
+    final isLowStock = variant.stock > 0 && variant.stock <= 5;
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -187,8 +186,8 @@ class ProductVariantCardWithStock extends StatelessWidget {
         color: isOutOfStock
             ? AppColors.error
             : isLowStock
-                ? AppColors.warning
-                : AppColors.primary,
+            ? AppColors.warning
+            : AppColors.primary,
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text(
@@ -204,13 +203,16 @@ class ProductVariantCardWithStock extends StatelessWidget {
   Widget _buildColorCircle(String colorValue) {
     final color = _parseColor(colorValue);
     return SizedBox(
-      width: 20,
-      height: 20,
+      width: AppSpacing.iconMd,
+      height: AppSpacing.iconMd,
       child: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: color,
-          border: Border.all(color: AppColors.border, width: 0.5),
+          border: Border.all(
+            color: AppColors.border,
+            width: AppSpacing.xs / AppSpacing.borderThin,
+          ),
         ),
       ),
     );

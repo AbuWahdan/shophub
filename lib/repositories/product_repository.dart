@@ -230,7 +230,7 @@ class ProductRepository {
 
         if (kDebugMode && matches) {
           debugPrint(
-            '[ProductRepository.getMyProducts] ✅ Product matched: "${product.itemName}" '
+            '[ProductRepository.getMyProducts] ✅ Product matched: "${product.name}" '
             '(ownerId=$ownerId, createdByUserId=${product.createdByUserId}, createdBy="${product.createdBy}")',
           );
         }
@@ -296,7 +296,7 @@ class ProductRepository {
       return _parseItemDetails(response);
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('[ProductRepository] Error fetching item details: $e');
+        debugPrint('[ProductRepository] Error fetching item variants: $e');
       }
       _invalidateCache();
       rethrow;
@@ -524,7 +524,7 @@ class ProductRepository {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('[ProductRepository] Error inserting product details: $e');
+        debugPrint('[ProductRepository] Error inserting product variants: $e');
       }
       rethrow;
     }
@@ -559,7 +559,9 @@ class ProductRepository {
   }
 
   /// Get user favorites.
-  Future<List<ProductModel>> getUserFavorites({required String username}) async {
+  Future<List<ProductModel>> getUserFavorites({
+    required String username,
+  }) async {
     try {
       final normalizedUsername = username.trim();
       if (normalizedUsername.isEmpty) {
@@ -741,28 +743,28 @@ class ProductRepository {
       final base = rows.first;
 
       // Collect all variants across rows, deduplicating by a stable key.
-      final variants = <ApiProductVariant>[];
+      final variants = <ProductVariant>[];
       final seenKeys = <String>{};
 
       for (final row in rows) {
-        final sourceVariants = row.details.isNotEmpty
-            ? row.details
-            : <ApiProductVariant>[
-                ApiProductVariant(
+        final sourceVariants = row.variants.isNotEmpty
+            ? row.variants
+            : <ProductVariant>[
+                ProductVariant(
                   detId: row.detId,
                   brand: '',
                   color: row.colors.isNotEmpty ? row.colors.first : '',
-                  itemSize: row.sizes.isNotEmpty ? row.sizes.first : '',
+                  size: row.sizes.isNotEmpty ? row.sizes.first : '',
                   discount: 0,
-                  itemPrice: row.itemPrice,
-                  itemQty: row.itemQty,
+                  price: row.basePrice,
+                  stock: row.baseStock,
                 ),
               ];
 
         for (final variant in sourceVariants) {
           final key =
               '${variant.detId}|${variant.brand}|${variant.color}'
-              '|${variant.itemSize}|${variant.itemPrice}|${variant.itemQty}';
+              '|${variant.size}|${variant.price}|${variant.stock}';
           if (seenKeys.add(key)) {
             variants.add(variant);
           }
@@ -770,7 +772,7 @@ class ProductRepository {
       }
 
       final sizes = variants
-          .map((v) => v.itemSize.trim())
+          .map((v) => v.size.trim())
           .where((s) => s.isNotEmpty)
           .toSet()
           .toList();
@@ -782,15 +784,15 @@ class ProductRepository {
           .toList();
 
       // Pick the variant with the lowest effective price for display.
-      ApiProductVariant? displayVariant;
+      ProductVariant? displayVariant;
       for (final v in variants) {
         if (displayVariant == null) {
           displayVariant = v;
           continue;
         }
-        final candidate = v.itemPrice * (1 - v.discount / 100);
+        final candidate = v.price * (1 - v.discount / 100);
         final current =
-            displayVariant.itemPrice * (1 - displayVariant.discount / 100);
+            displayVariant.price * (1 - displayVariant.discount / 100);
         if (candidate < current) displayVariant = v;
       }
 
@@ -802,20 +804,20 @@ class ProductRepository {
           .toList();
 
       final displayPrice = displayVariant == null
-          ? base.itemPrice
-          : displayVariant.itemPrice * (1 - displayVariant.discount / 100);
+          ? base.price
+          : displayVariant.price * (1 - displayVariant.discount / 100);
 
       result.add(
         ProductModel(
           id: base.id,
           detId: displayVariant?.detId ?? base.detId,
-          itemName: base.itemName,
-          itemDesc: base.itemDesc,
-          itemPrice: displayPrice > 0 ? displayPrice : base.itemPrice,
-          itemQty: displayVariant?.itemQty ?? base.itemQty,
-          itemImgUrl: mergedImages.isNotEmpty
+          name: base.name,
+          description: base.description,
+          basePrice: displayPrice > 0 ? displayPrice : base.basePrice,
+          baseStock: displayVariant?.stock ?? base.baseStock,
+          primaryImageUrl: mergedImages.isNotEmpty
               ? mergedImages.first
-              : base.itemImgUrl,
+              : base.primaryImageUrl,
           images: mergedImages.isNotEmpty ? mergedImages : base.images,
           categoryId: base.categoryId,
           category: base.category,
@@ -824,7 +826,7 @@ class ProductRepository {
           createdByUserId: base.createdByUserId,
           isActive: base.isActive,
           discountPrice: null,
-          details: variants,
+          variants: variants,
           sizes: sizes.isNotEmpty ? sizes : base.sizes,
           colors: colors.isNotEmpty ? colors : base.colors,
           imagesByColor: base.imagesByColor,
@@ -833,7 +835,6 @@ class ProductRepository {
           reviewCount: base.reviewCount,
           soldCount: base.soldCount,
           isFavorite: base.isFavorite,
-          isSelected: base.isSelected,
         ),
       );
     }

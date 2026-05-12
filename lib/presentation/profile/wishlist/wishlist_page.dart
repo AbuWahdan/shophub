@@ -50,7 +50,7 @@ class _WishlistPageState extends State<WishlistPage> {
       appBar: AppBar(title: Text(l10n.accountWishlist)),
       body: isLoggedIn
           ? WishlistBody(controller: controller)
-          : const WishlistNotLoggedIn(),
+          : WishlistNotLoggedIn(onRefresh: authState.ensureInitialized),
     );
   }
 }

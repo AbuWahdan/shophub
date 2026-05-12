@@ -61,7 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return _currentTab.products.where((p) {
       final categoryName =
           CategoriesData.getCategoryById(p.categoryId)?.name ?? p.category;
-      return p.itemName.toLowerCase().contains(query) ||
+      return p.name.toLowerCase().contains(query) ||
           categoryName.toLowerCase().contains(query);
     }).toList();
   }

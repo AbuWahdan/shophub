@@ -27,15 +27,15 @@ class EditProductPage extends StatefulWidget {
   const EditProductPage({
     super.key,
     required this.product,
-    required this.details,
-    this.detailsRows = const [],
+    required this.variants,
+    this.variantsRows = const [],
     this.itemImages = const [],
     required this.currentUser,
   });
 
   final ProductModel product;
-  final ApiProductDetails details;
-  final List<ApiProductDetails> detailsRows;
+  final ApiProductDetails variants;
+  final List<ApiProductDetails> variantsRows;
   final List<ProductImageModel> itemImages;
   final String currentUser;
 
@@ -66,10 +66,10 @@ class _EditProductPageState extends State<EditProductPage> {
   @override
   void initState() {
     super.initState();
-    final d = widget.details;
+    final d = widget.variants;
     _itemId = d.itemId;
-    _nameController = TextEditingController(text: d.itemName);
-    _descController = TextEditingController(text: d.itemDesc);
+    _nameController = TextEditingController(text: d.name);
+    _descController = TextEditingController(text: d.description);
     _selectedCategory = CategoriesData.getCategoryById(d.catId);
     _isProductActive = widget.product.isActive == 1;
 
@@ -78,8 +78,8 @@ class _EditProductPageState extends State<EditProductPage> {
   }
 
   void _initVariants() {
-    for (final d in widget.detailsRows) {
-      final opt = _resolveSizeOption(d.itemSize);
+    for (final d in widget.variantsRows) {
+      final opt = _resolveSizeOption(d.size);
       _variantEntries.add(
         VariantFormEntry(
           detailId: d.detId,
@@ -88,8 +88,8 @@ class _EditProductPageState extends State<EditProductPage> {
           sizeId: opt?.id,
           brand: d.brand,
           color: d.color,
-          price: d.itemPrice,
-          qty: d.itemQty,
+          price: d.price,
+          qty: d.stock,
           discount: d.discount,
           tax: d.tax,
         ),
@@ -200,12 +200,10 @@ class _EditProductPageState extends State<EditProductPage> {
         existingDetails.add(
           UpdateItemDetail(
             detailId: e.detailId!,
-            itemPrice: price,
-            itemQty: int.tryParse(e.qtyController.text.trim()) ?? 0,
-            itemDiscount:
-            double.tryParse(e.discountController.text.trim()) ?? 0,
-            itemTax:
-            double.tryParse(e.taxController.text.trim()) ?? 0,
+            price: price,
+            stock: int.tryParse(e.qtyController.text.trim()) ?? 0,
+            discount: double.tryParse(e.discountController.text.trim()) ?? 0,
+            tax: double.tryParse(e.taxController.text.trim()) ?? 0,
             brand: e.brandController.text.trim().isEmpty
                 ? 'N/A'
                 : e.brandController.text.trim(),
@@ -222,14 +220,14 @@ class _EditProductPageState extends State<EditProductPage> {
       await _productService.updateProduct(
         UpdateProductRequest(
           id: _itemId,
-          itemName: _nameController.text.trim(),
-          itemDesc: _descController.text.trim(),
+          name: _nameController.text.trim(),
+          description: _descController.text.trim(),
           isActive: _isProductActive ? 1 : 0,
           itemDetails: existingDetails,
           categoryId: _selectedCategory!.id,
-          itemImgUrl: widget.product.itemImgUrl.trim().isEmpty
+          primaryImageUrl: widget.product.primaryImageUrl.trim().isEmpty
               ? null
-              : widget.product.itemImgUrl,
+              : widget.product.primaryImageUrl,
         ),
       );
 
@@ -251,9 +249,9 @@ class _EditProductPageState extends State<EditProductPage> {
               color: e.colorController.text.trim().isEmpty
                   ? 'N/A'
                   : e.colorController.text.trim(),
-              itemSize: sizeOpt?.code ?? '',
-              itemPrice: price,
-              itemQty: int.tryParse(e.qtyController.text.trim()) ?? 0,
+              size: sizeOpt?.code ?? '',
+              price: price,
+              stock: int.tryParse(e.qtyController.text.trim()) ?? 0,
               discount: double.tryParse(e.discountController.text.trim()) ?? 0,
               tax: double.tryParse(e.taxController.text.trim()) ?? 0,
               isActive: e.isActive ? 1 : 0,
