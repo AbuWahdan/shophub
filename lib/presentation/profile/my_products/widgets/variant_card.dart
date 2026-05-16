@@ -152,7 +152,7 @@ class VariantCard extends StatelessWidget {
                   ),
                   CustomTextField(
                     controller: entry.taxController,
-                    label: 'Tax',
+                    label: l10n.tax,
                     hintText: 'Tax percentage',
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,

@@ -9,6 +9,66 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get userName => 'Username';
+
+  @override
+  String get fullName => 'Full Name';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get phone => 'Phone';
+
+  @override
+  String get country => 'Country';
+
+  @override
+  String get jordan => 'Jordan';
+
+  @override
+  String get gender => 'Gender';
+
+  @override
+  String get saveChanges => 'Save Changes';
+
+  @override
+  String get notificationLoginRequired => 'Please log in to continue';
+
+  @override
+  String get notificationServerError => 'Server error. Please try again later';
+
+  @override
+  String get notificationNetworkError =>
+      'Network error. Please check your connection';
+
+  @override
+  String get notificationProfileUpdateSuccess => 'Profile updated successfully';
+
+  @override
+  String get notificationImageProcessError => 'Failed to process image';
+
+  @override
+  String get notificationUnknownError => 'An unexpected error occurred';
+
+  @override
+  String get notificationEmailChangeSuccess => 'Email changed successfully';
+
+  @override
+  String get notificationCartAddError => 'Failed to add item to cart';
+
+  @override
+  String notificationProductAddedToCart(String productName) {
+    return '$productName added to cart';
+  }
+
+  @override
+  String get tax => 'Tax';
+
+  @override
+  String get editProfile => 'Edit Profile';
+
+  @override
   String get promoDiscount => 'Promo Discount';
 
   @override
@@ -1219,4 +1279,131 @@ class AppLocalizationsEn extends AppLocalizations {
   String orderMoreItems(Object count) {
     return '+$count more items';
   }
+
+  @override
+  String get notificationCartAddSuccess => 'Item added to cart';
+
+  @override
+  String get notificationCartRemoveSuccess => 'Item removed from cart';
+
+  @override
+  String get notificationCartRemoveError => 'Failed to remove item from cart';
+
+  @override
+  String get notificationCartUpdateSuccess => 'Cart updated';
+
+  @override
+  String get notificationCartUpdateError => 'Failed to update cart';
+
+  @override
+  String get notificationCartLoadError =>
+      'Failed to load cart. Please try again.';
+
+  @override
+  String get notificationTimeoutError => 'Request timed out. Please try again';
+
+  @override
+  String get notificationOperationSuccess => 'Operation completed successfully';
+
+  @override
+  String get notificationAddressSelected => 'Address selected successfully';
+
+  @override
+  String get notificationAddressUpdateSuccess => 'Address updated successfully';
+
+  @override
+  String get notificationAddressUpdateError => 'Failed to update address';
+
+  @override
+  String get notificationAddressDeleteSuccess => 'Address deleted successfully';
+
+  @override
+  String get notificationAddressDeleteError => 'Failed to delete address';
+
+  @override
+  String get notificationCodeApplySuccess => 'Promo code applied successfully';
+
+  @override
+  String get notificationCodeApplyError => 'Invalid or expired promo code';
+
+  @override
+  String get notificationCheckoutError => 'Checkout failed. Please try again';
+
+  @override
+  String get notificationOrderPlacedSuccess => 'Order placed successfully';
+
+  @override
+  String get notificationOrderPlacedError => 'Failed to place order';
+
+  @override
+  String get notificationImageUploadError =>
+      'Failed to upload image. Please try again';
+
+  @override
+  String get notificationProductSaveSuccess => 'Product saved successfully';
+
+  @override
+  String get notificationProductSaveError => 'Failed to save product';
+
+  @override
+  String get notificationProductDeleteSuccess => 'Product deleted successfully';
+
+  @override
+  String get notificationProductDeleteError => 'Failed to delete product';
+
+  @override
+  String get notificationProfileUpdateError => 'Failed to update profile';
+
+  @override
+  String get notificationPasswordChangeSuccess =>
+      'Password changed successfully';
+
+  @override
+  String get notificationPasswordChangeError => 'Failed to change password';
+
+  @override
+  String get notificationEmailChangeError => 'Failed to change email';
+
+  @override
+  String get notificationWishlistAddSuccess => 'Added to wishlist';
+
+  @override
+  String get notificationWishlistAddError => 'Failed to add to wishlist';
+
+  @override
+  String get notificationWishlistRemoveSuccess => 'Removed from wishlist';
+
+  @override
+  String get notificationWishlistRemoveError =>
+      'Failed to remove from wishlist';
+
+  @override
+  String get notificationReviewSubmitSuccess => 'Review submitted successfully';
+
+  @override
+  String get notificationReviewSubmitError => 'Failed to submit review';
+
+  @override
+  String get notificationPaymentProcessing => 'Processing payment...';
+
+  @override
+  String get notificationPaymentSuccess => 'Payment successful';
+
+  @override
+  String get notificationPaymentError => 'Payment failed. Please try again';
+
+  @override
+  String get notificationCopyToClipboard => 'Copied to clipboard';
+
+  @override
+  String get notificationNoAction => 'Please try again';
+
+  @override
+  String get notificationFieldRequired => 'This field is required';
+
+  @override
+  String get notificationInvalidInput => 'Invalid input';
+
+  @override
+  String get notificationLinkExpired => 'Link expired. Please try again';
 }

@@ -7,8 +7,10 @@ import '../../../../models/get_code_option_model.dart';
 import '../../../design/app_colors.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../repositories/codes_repository.dart';
 import '../../../repositories/profile_repository.dart';
+import '../../../services/app_notification_service.dart';
 import '../../../widgets/custom_button/custom_button.dart';
 import '../../../widgets/custom_text_field/custom_text_field.dart';
 import '../../../core/state/auth_state.dart';
@@ -135,8 +137,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       await authState.updateCurrentUser(updatedUser);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully')),
+      AppNotificationService.instance.showSuccess(
+        context,
+        AppLocalizations.of(context).notificationProfileUpdateSuccess,
       );
     } catch (error) {
       if (!mounted) return;
@@ -150,9 +153,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthState>().user;
+   final l10n= AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Profile')),
+      appBar: AppBar(title:  Text(l10n.editProfile)),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _onRefresh,
@@ -166,7 +170,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 children: [
                   // ── Read-only: Username
                   ReadOnlyProfileField(
-                    label: 'Username',
+                    label: l10n.userName,
                     value: user?.username ?? '',
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -174,7 +178,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   // ── Editable: Full Name
                   CustomTextField(
                     controller: _fullNameController,
-                    label: 'Full Name',
+                    label: l10n.fullName,
                     hintText: 'Enter your full name',
                     validator: (value) {
                       if ((value?.trim() ?? '').isEmpty) {
@@ -187,7 +191,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                   // ── Read-only: Email
                   ReadOnlyProfileField(
-                    label: 'Email',
+                    label: l10n.email,
                     value: user?.email ?? '',
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -196,7 +200,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   CustomTextField(
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
-                    label: 'Phone',
+                    label: l10n.phone,
                     hintText: 'Enter your phone number',
                     validator: (value) {
                       if ((value?.trim() ?? '').isEmpty) {
@@ -209,13 +213,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                   // ── Read-only: Country (fixed to Jordan)
                   ReadOnlyProfileField(
-                    label: 'Country',
-                    value: 'Jordan',
+                    label: l10n.country,
+                    value: l10n.jordan,
                   ),
                   const SizedBox(height: AppSpacing.lg),
 
                   // ── Gender selector
-                  Text('Gender', style: AppTextStyles.labelMedium),
+                  Text(l10n.gender, style: AppTextStyles.labelMedium),
                   const SizedBox(height: AppSpacing.sm),
                   GenderSelectorSection(
                     options: _genderOptions,
@@ -254,7 +258,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: CustomButton(
-                      label: 'Save Changes',
+                      label: l10n.saveChanges,
                       leading: _isSubmitting
                           ? const SizedBox(
                         width: AppSpacing.iconSm,

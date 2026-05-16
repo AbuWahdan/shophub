@@ -175,54 +175,9 @@ class OrdersModel {
   }
 
   /// Maps the raw status value to a human-readable label
-  String getStatusLabel() {
-    final normalized = statusRaw.trim().toLowerCase();
 
-    switch (normalized) {
-      case 'p':
-      case 'pending':
-        return 'Pending';
-      case 'c':
-      case 'confirmed':
-        return 'Confirmed';
-      case 'shipped':
-      case 's':
-        return 'Shipped';
-      case 'd':
-      case 'delivered':
-        return 'Delivered';
-      case 'cancelled':
-      case 'x':
-        return 'Cancelled';
-      default:
-        return normalized.isNotEmpty ? normalized : 'Processing';
-    }
-  }
 
-  /// Returns the color associated with the status for UI display
-  Color getStatusColor() {
-    final normalized = statusRaw.trim().toLowerCase();
 
-    switch (normalized) {
-      case 'p':
-      case 'pending':
-        return const Color(0xFFFFA500); // Orange
-      case 'c':
-      case 'confirmed':
-        return const Color(0xFF2196F3); // Blue
-      case 'shipped':
-      case 's':
-        return const Color(0xFF9C27B0); // Purple
-      case 'd':
-      case 'delivered':
-        return const Color(0xFF4CAF50); // Green
-      case 'cancelled':
-      case 'x':
-        return const Color(0xFFF44336); // Red
-      default:
-        return const Color(0xFF757575); // Grey
-    }
-  }
 }
 
 class ApiOrderResponse {
@@ -273,7 +228,7 @@ class ApiOrderItem {
   // final String productImage;
   final int quantity;
   final double price;
-  final int deliveryStatus;
+  final int deliveryStatusCode;
 
   const ApiOrderItem({
     required this.itemId,
@@ -282,7 +237,7 @@ class ApiOrderItem {
     //required this.productImage,
     required this.quantity,
     required this.price,
-    this.deliveryStatus = 0,
+     this.deliveryStatusCode =0,
   });
 
   factory ApiOrderItem.fromJson(Map<String, dynamic> json) {
@@ -322,7 +277,7 @@ class ApiOrderItem {
             json['PRICE'] ??
             json['price'],
       ),
-      deliveryStatus: _parseInt(
+      deliveryStatusCode: _parseInt(
         json['DELIVARY_STATUS'] ??
             json['DELIVERY_STATUS'] ??
             json['delivery_status'] ??
@@ -340,7 +295,7 @@ class ApiOrderItem {
       //'ITEM_IMG_URL': productImage,
       'ITEM_QTY': quantity,
       'ITEM_PRICE': price,
-      'DELIVARY_STATUS': deliveryStatus,
+      'DELIVARY_STATUS': deliveryStatusCode,
     };
   }
 }

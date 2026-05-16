@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../models/cart_item_model.dart';
 import '../repositories/cart_repository.dart';
+import '../services/app_notification_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CART CONTROLLER
@@ -76,13 +77,13 @@ class CartController extends GetxController {
   }
 
   void _showError(String message) =>
-      Get.snackbar('Error', message, snackPosition: SnackPosition.BOTTOM);
+      AppNotificationService.instance.showError(null, message);
 
   void _showWarning(String message) =>
-      Get.snackbar('Warning', message, snackPosition: SnackPosition.BOTTOM);
+      AppNotificationService.instance.showWarning(null, message);
 
   void _showSuccess(String message) =>
-      Get.snackbar('', message, snackPosition: SnackPosition.BOTTOM);
+      AppNotificationService.instance.showSuccess(null, message);
 
   // ── PUBLIC API ───────────────────────────────────────────────────────────────
 

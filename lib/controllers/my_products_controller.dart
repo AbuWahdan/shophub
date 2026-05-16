@@ -36,10 +36,9 @@ class MyProductsController extends GetxController {
     error.value = '';
 
     try {
-      _log('Loading for username="$username", userId=$userId');
+      _log('Loading for username="$username"');
       final result = await _repo.getMyProducts(
         username: username,
-        userId: userId,
         forceRefresh: forceRefresh,
       );
       products.assignAll(result);

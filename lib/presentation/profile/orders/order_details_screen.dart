@@ -140,6 +140,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
             productName: e.name,
             quantity: e.qty,
             price: e.totalPrice,
+            deliveryStatusCode: e.deliveryStatus,
           ),
         )
         .toList();

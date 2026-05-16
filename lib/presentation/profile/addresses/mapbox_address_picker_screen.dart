@@ -8,7 +8,9 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import '../../../core/app/app_theme.dart';
 import '../../../core/config/mapbox_config.dart';
 import '../../../design/app_spacing.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/addresses/map_picker_result_model.dart';
+import '../../../services/app_notification_service.dart';
 import '../../../widgets/custom_button/custom_button.dart';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -163,12 +165,9 @@ class _MapboxAddressPickerScreenState
   void _showLocationUnavailableSnackBar() {
     if (!mounted || _isClosing) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Location unavailable. Please enable GPS in your device settings.',
-        ),
-      ),
+    AppNotificationService.instance.showError(
+      context,
+      AppLocalizations.of(context).notificationNetworkError,
     );
   }
 

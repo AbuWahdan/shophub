@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 
+import '../../../../../services/app_notification_service.dart';
+import '../../../../../l10n/app_localizations.dart';
 import 'product_image_processor.dart';
 
 /// A full-screen interactive crop screen that enforces a 1:1 aspect ratio.
@@ -75,8 +77,9 @@ class _ProductImageCropperState extends State<ProductImageCropper> {
       Navigator.of(context).pop(result);
     } else if (result is ImageProcessFailure) {
       setState(() => _isCropping = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to process image: ${result.reason}')),
+      AppNotificationService.instance.showError(
+        context,
+        AppLocalizations.of(context).notificationImageProcessError,
       );
     }
   }

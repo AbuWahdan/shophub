@@ -70,26 +70,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                             ),
                           ),
                           const SizedBox(height: AppSpacing.xl),
-                          // TextField(
-                          //   controller: _controller.hexController,
-                          //   onChanged: _controller.updateFromHex,
-                          //   keyboardType: TextInputType.text,
-                          //   maxLength: 6,
-                          //   inputFormatters: [
-                          //     FilteringTextInputFormatter.allow(
-                          //       RegExp(r'[0-9a-fA-F]'),
-                          //     ),
-                          //     LengthLimitingTextInputFormatter(6),
-                          //   ],
-                          //   decoration: InputDecoration(
-                          //     labelText: l10n.productColor,
-                          //     hintText: l10n.colorPickerHexHint,
-                          //     prefixText: '#',
-                          //     errorText: _controller.shouldShowError.value
-                          //         ? l10n.colorPickerInvalidHex
-                          //         : null,
-                          //   ),
-                          // ),
+
                           Column(
                             children: [
                               TextField(
@@ -97,11 +78,14 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                                 onChanged: _controller.updateFromHex,
                                 keyboardType: TextInputType.text,
                                 maxLength: 6,
+                                // inputFormatters: [
+                                //   FilteringTextInputFormatter.allow(
+                                //     RegExp(r'[0-9a-fA-F]'),
+                                //   ),
+                                //   LengthLimitingTextInputFormatter(6),
+                                // ],
                                 inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                    RegExp(r'[0-9a-fA-F]'),
-                                  ),
-                                  LengthLimitingTextInputFormatter(6),
+                                  FilteringTextInputFormatter.allow(RegExp(r'[0-9,\s]')),
                                 ],
                                 decoration: InputDecoration(
                                   labelText: 'HEX',
@@ -197,25 +181,6 @@ class _ColorPickerDialogController extends GetxController {
   }
 
 
-  // @override
-  // void onInit() {
-  //   super.onInit();
-  //   final normalized = _normalizeInput(initialColor);
-  //   if (isValidHex(normalized)) {
-  //     final color = hexToColor(normalized);
-  //     if (color != null) {
-  //       selectedColor.value = color;
-  //       _setHex(normalized);
-  //       isSelectionEnabled.value = true;
-  //       shouldShowError.value = false;
-  //       return;
-  //     }
-  //   }
-  //
-  //   _setHex('');
-  //   isSelectionEnabled.value = false;
-  //   shouldShowError.value = false;
-  // }
   @override
   void onInit() {
     super.onInit();
@@ -232,13 +197,15 @@ class _ColorPickerDialogController extends GetxController {
   }
 
   void updateFromPicker(Color color) {
-    selectedColor.value = color;
-    isSelectionEnabled.value = true;
-    shouldShowError.value = false;
-    _setHex(colorToHex(color));
+    _updateColor(color);
   }
   void updateFromHex(String value) {
     final normalized = _normalizeInput(value);
+
+    hexController.value = TextEditingValue(
+      text: normalized,
+      selection: TextSelection.collapsed(offset: normalized.length),
+    );
 
     if (!isValidHex(normalized)) {
       return;
@@ -250,17 +217,40 @@ class _ColorPickerDialogController extends GetxController {
       return;
     }
 
-    _updateColor(color);
+    selectedColor.value = color;
+
+    final rgb = colorToRgb(color);
+
+    rgbController.value = TextEditingValue(
+      text: rgb,
+      selection: TextSelection.collapsed(offset: rgb.length),
+    );
+
+    isSelectionEnabled.value = true;
   }
 
   void updateFromRgb(String value) {
+    rgbController.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+
     final color = rgbToColor(value);
 
     if (color == null) {
       return;
     }
 
-    _updateColor(color);
+    selectedColor.value = color;
+
+    final hex = colorToHex(color);
+
+    hexController.value = TextEditingValue(
+      text: hex,
+      selection: TextSelection.collapsed(offset: hex.length),
+    );
+
+    isSelectionEnabled.value = true;
   }
 
   void _updateColor(Color color) {

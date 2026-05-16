@@ -60,7 +60,7 @@ class ProfilePage extends StatelessWidget {
                     Navigator.pushNamed(context, AppRoutes.editProfile);
                   },
                   icon: const Icon(Icons.edit_outlined),
-                  label: const Text('Edit Profile'),
+                  label: Text(l10n.editProfile),
                 ),
               ] else ...[
                 SizedBox(

@@ -417,8 +417,8 @@ class _OrdersPageState extends State<OrdersPage> {
 
   String _deliveryStatusFor(OrdersModel order) {
     for (final item in order.items) {
-      if (item.deliveryStatus > 0) {
-        return OrderStatusBadge.labelFromDeliveryStatus(item.deliveryStatus);
+      if (item.deliveryStatusCode > 0) {
+        return OrderStatusBadge.labelFromDeliveryStatus(item.deliveryStatusCode);
       }
     }
     return order.statusRaw;

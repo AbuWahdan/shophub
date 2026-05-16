@@ -19,31 +19,35 @@ class ProductRepository {
   // ═══════════════════════════════════════════════════════════════════════════
 
   /// Get all products with optional caching (cache for 2 minutes)
-  Future<List<ProductModel>> getProducts({bool forceRefresh = false}) async {
+  Future<List<ProductModel>> getProducts({
+    bool forceRefresh = false,
+    String? username,
+  }) async {
     final now = DateTime.now();
+    final isUserSpecific = username != null && username.isNotEmpty;
 
-    if (!forceRefresh &&
+    // Only use cache for non-user-specific calls
+    if (!isUserSpecific &&
+        !forceRefresh &&
         _cachedProducts.isNotEmpty &&
         _lastProductsFetch != null &&
         now.difference(_lastProductsFetch!) < _cacheTtl) {
       if (kDebugMode) {
-        debugPrint(
-          '[ProductRepository.getProducts] Cache HIT: ${_cachedProducts.length} products',
-        );
+        debugPrint('[ProductRepository.getProducts] Cache HIT: ${_cachedProducts.length} products');
       }
       return _cachedProducts;
     }
 
     try {
       if (kDebugMode) {
-        debugPrint(
-          '[ProductRepository.getProducts] Cache MISS - fetching from API...',
-        );
+        debugPrint('[ProductRepository.getProducts] Cache MISS - fetching from API...');
       }
 
-      // Try GET first (REST convention for fetching data)
+      final queryParams = username != null && username.isNotEmpty
+          ? {'username': username}
+          : null;
+
       dynamic response;
-      String lastTryMethod = 'GET';
 
       try {
         if (kDebugMode) {
@@ -51,6 +55,7 @@ class ProductRepository {
         }
         response = await _apiService.get(
           ApiConstants.getProducts,
+          queryParams: queryParams,
           isReadOperation: true,
         );
       } catch (getError) {
@@ -60,7 +65,6 @@ class ProductRepository {
           );
         }
         // Fallback to POST if GET fails
-        lastTryMethod = 'POST';
         try {
           response = await _apiService.post(
             ApiConstants.getProducts,
@@ -82,8 +86,7 @@ class ProductRepository {
 
       if (kDebugMode) {
         debugPrint(
-          '[ProductRepository.getProducts] API response received (via $lastTryMethod): ${response.runtimeType}',
-        );
+          '[ProductRepository.getProducts] API response received: ${response.runtimeType}',        );
       }
 
       if (response == null) {
@@ -137,17 +140,18 @@ class ProductRepository {
       // Group variants by product ID
       final products = _groupProductsByItemId(parsed);
 
-      // Update cache
-      _cachedProducts = products;
-      _lastProductsFetch = now;
+      // Only cache non-user-specific results
+      if (!isUserSpecific) {
+        _cachedProducts = products;
+        _lastProductsFetch = now;
+      }
 
       if (kDebugMode) {
-        debugPrint(
-          '[ProductRepository.getProducts] ✅ Final count after grouping: ${products.length} products',
-        );
+        debugPrint('[ProductRepository.getProducts] ✅ Final count after grouping: ${products.length} products');
       }
 
       return products;
+
     } on ServerException catch (e) {
       // Handle API errors specifically
       if (kDebugMode) {
@@ -183,126 +187,61 @@ class ProductRepository {
   /// Returns all products (active and inactive) for the user.
   Future<List<ProductModel>> getMyProducts({
     required String username,
-    required int userId,
     bool forceRefresh = false,
   }) async {
     final normalizedUsername = username.trim().toLowerCase();
-    final normalizedUserId = userId > 0 ? userId : 0;
+
+    if (normalizedUsername.isEmpty) return <ProductModel>[];
 
     if (kDebugMode) {
-      debugPrint(
-        '[ProductRepository.getMyProducts] Called with username="$normalizedUsername", userId=$normalizedUserId',
-      );
-    }
-
-    if (normalizedUsername.isEmpty && normalizedUserId == 0) {
-      if (kDebugMode) {
-        debugPrint(
-          '[ProductRepository.getMyProducts] ⚠️ Both username and userId are invalid - returning empty list',
-        );
-      }
-      return <ProductModel>[];
+      debugPrint('[ProductRepository.getMyProducts] Called with username="$normalizedUsername"');
     }
 
     try {
-      // Fetch all products first
-      final products = await getProducts(forceRefresh: forceRefresh);
+      // Fetch flat (ungrouped) products directly from API
+      final products = await _fetchFlatProducts(forceRefresh: forceRefresh);
+
+      final filtered = products.where((p) =>
+      p.createdBy.trim().toLowerCase() == normalizedUsername
+      ).toList();
 
       if (kDebugMode) {
-        debugPrint(
-          '[ProductRepository.getMyProducts] Got ${products.length} total products from cache/API',
-        );
-      }
-
-      // Filter for current user's products
-      final filtered = products.where((product) {
-        final ownerId = int.tryParse(product.itemOwner.trim()) ?? 0;
-        final matchesOwnerId =
-            normalizedUserId > 0 && ownerId == normalizedUserId;
-        final matchesCreatedByUserId =
-            normalizedUserId > 0 && product.createdByUserId == normalizedUserId;
-        final matchesUsername =
-            normalizedUsername.isNotEmpty &&
-            product.createdBy.trim().toLowerCase() == normalizedUsername;
-
-        final matches =
-            matchesOwnerId || matchesCreatedByUserId || matchesUsername;
-
-        if (kDebugMode && matches) {
-          debugPrint(
-            '[ProductRepository.getMyProducts] ✅ Product matched: "${product.name}" '
-            '(ownerId=$ownerId, createdByUserId=${product.createdByUserId}, createdBy="${product.createdBy}")',
-          );
-        }
-
-        return matches;
-      }).toList();
-
-      if (kDebugMode) {
-        debugPrint(
-          '[ProductRepository.getMyProducts] ✅ Filtered ${filtered.length} products for userId=$normalizedUserId, username=$normalizedUsername',
-        );
+        debugPrint('[ProductRepository.getMyProducts] ✅ Got ${filtered.length} products for username="$normalizedUsername"');
       }
 
       return filtered;
     } on ServerException catch (e) {
-      // Handle API errors specifically
-      if (kDebugMode) {
-        debugPrint(
-          '[ProductRepository.getMyProducts] ❌ ServerException: ${e.message} (statusCode: ${e.statusCode})',
-        );
-      }
-
-      // On 404/405, return empty list gracefully
-      if (e.statusCode == 404 || e.statusCode == 405) {
-        if (kDebugMode) {
-          debugPrint(
-            '[ProductRepository.getMyProducts] Endpoint issue - returning empty list',
-          );
-        }
-        return <ProductModel>[];
-      }
-
+      if (e.statusCode == 404 || e.statusCode == 405) return <ProductModel>[];
       _invalidateCache();
       rethrow;
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint(
-          '[ProductRepository.getMyProducts] ❌ ERROR: ${e.runtimeType} - $e',
-        );
-      }
       _invalidateCache();
       rethrow;
     }
   }
+  Future<List<ProductModel>> _fetchFlatProducts({bool forceRefresh = false}) async {
+    dynamic response;
 
-  /// Get product details rows for a specific item.
-  Future<List<ApiProductDetails>> getItemDetails({required int itemId}) async {
     try {
-      if (kDebugMode) {
-        debugPrint(
-          '[ProductRepository] Fetching item details for itemId=$itemId',
-        );
-      }
-
-      final response = await _apiService.post(
-        ApiConstants.getItemDetails,
-        body: {'item_id': itemId},
+      response = await _apiService.get(
+        ApiConstants.getProducts,
         isReadOperation: true,
       );
-
-      if (response == null) return <ApiProductDetails>[];
-
-      return _parseItemDetails(response);
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Error fetching item variants: $e');
-      }
-      _invalidateCache();
-      rethrow;
+    } catch (getError) {
+      response = await _apiService.post(
+        ApiConstants.getProducts,
+        body: const {},
+        isReadOperation: true,
+      );
     }
-  }
 
+    if (response == null) return const [];
+
+    final rawItems = _extractItems(response);
+    if (rawItems.isEmpty) return const [];
+
+    return rawItems.map((item) => ProductModel.fromJson(item)).toList();
+  }
   /// Get images for a specific item.
   Future<List<ApiItemImage>> getItemImages({required int itemId}) async {
     try {
@@ -824,7 +763,7 @@ class ProductRepository {
           createdBy: base.createdBy,
           itemOwner: base.itemOwner,
           createdByUserId: base.createdByUserId,
-          isActive: base.isActive,
+          isActive: rows.every((r) => r.isActive == 1) ? 1 : 0,
           discountPrice: null,
           variants: variants,
           sizes: sizes.isNotEmpty ? sizes : base.sizes,

@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../l10n/app_localizations.dart';
 import '../presentation/auth/validation/auth_validators.dart';
 import '../repositories/user_repository.dart';
-import '../widgets/custom__snack_bar/custom_snack_bar.dart';
+import '../services/app_notification_service.dart';
 
 class PasswordController extends GetxController {
   PasswordController(this._userRepository);
@@ -88,10 +88,9 @@ class PasswordController extends GetxController {
   }) async {
     final currentPassword = currentPasswordController.text.trim();
     if (currentPassword.isEmpty) {
-      CustomSnackBar.show(
+      AppNotificationService.instance.showError(
         context,
-        message: AppLocalizations.of(context).changePasswordCurrentRequired,
-        type: AppSnackBarType.error,
+        AppLocalizations.of(context).changePasswordCurrentRequired,
       );
       return false;
     }
@@ -110,10 +109,9 @@ class PasswordController extends GetxController {
   }) async {
     final normalizedUsername = username.trim();
     if (normalizedUsername.isEmpty) {
-      CustomSnackBar.show(
+      AppNotificationService.instance.showError(
         context,
-        message: AppLocalizations.of(context).productAccountUnavailable,
-        type: AppSnackBarType.error,
+        AppLocalizations.of(context).productAccountUnavailable,
       );
       return false;
     }
@@ -134,10 +132,9 @@ class PasswordController extends GetxController {
       if (!context.mounted) {
         return false;
       }
-      CustomSnackBar.show(
+      AppNotificationService.instance.showError(
         context,
-        message: _resolveErrorMessage(context, error),
-        type: AppSnackBarType.error,
+        _resolveErrorMessage(context, error),
       );
       return false;
     } finally {

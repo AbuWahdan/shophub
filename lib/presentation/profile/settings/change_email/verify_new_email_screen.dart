@@ -6,8 +6,10 @@ import '../../../../core/state/auth_state.dart';
 import '../../../../design/app_colors.dart';
 import '../../../../design/app_spacing.dart';
 import '../../../../design/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../repositories/profile_repository.dart';
 import '../../../../repositories/user_repository.dart';
+import '../../../../services/app_notification_service.dart';
 import '../../../../widgets/custom_button/custom_button.dart';
 
 /// Step 2 of the change-email flow.
@@ -88,8 +90,9 @@ class _VerifyNewEmailScreenState extends State<VerifyNewEmailScreen> {
       await authState.updateCurrentUser(updatedUser);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email updated successfully')),
+      AppNotificationService.instance.showSuccess(
+        context,
+        AppLocalizations.of(context).notificationEmailChangeSuccess,
       );
 
       // Pop this screen AND ChangeEmailScreen in one go.
@@ -124,8 +127,9 @@ class _VerifyNewEmailScreenState extends State<VerifyNewEmailScreen> {
         email:    widget.newEmail,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('A new code has been sent')),
+      AppNotificationService.instance.showInfo(
+        context,
+        AppLocalizations.of(context).otpResend,
       );
     } catch (error) {
       if (!mounted) return;

@@ -9,6 +9,67 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
+  String get userName => 'اسم المستخدم';
+
+  @override
+  String get fullName => 'الاسم الكامل';
+
+  @override
+  String get email => 'البريد الإلكتروني';
+
+  @override
+  String get phone => 'رقم الهاتف';
+
+  @override
+  String get country => 'الدولة';
+
+  @override
+  String get jordan => 'الأردن';
+
+  @override
+  String get gender => 'الجنس';
+
+  @override
+  String get saveChanges => 'حفظ التغييرات';
+
+  @override
+  String get notificationLoginRequired => 'يرجى تسجيل الدخول للمتابعة';
+
+  @override
+  String get notificationServerError => 'خطأ في الخادم. يرجى المحاولة لاحقاً';
+
+  @override
+  String get notificationNetworkError =>
+      'خطأ في الشبكة. يرجى التحقق من الاتصال';
+
+  @override
+  String get notificationProfileUpdateSuccess => 'تم تحديث الملف الشخصي بنجاح';
+
+  @override
+  String get notificationImageProcessError => 'فشل في معالجة الصورة';
+
+  @override
+  String get notificationUnknownError => 'حدث خطأ غير متوقع';
+
+  @override
+  String get notificationEmailChangeSuccess =>
+      'تم تغيير البريد الإلكتروني بنجاح';
+
+  @override
+  String get notificationCartAddError => 'فشل في إضافة العنصر إلى السلة';
+
+  @override
+  String notificationProductAddedToCart(String productName) {
+    return 'تمت إضافة $productName إلى السلة';
+  }
+
+  @override
+  String get tax => 'الضريبة';
+
+  @override
+  String get editProfile => 'تعديل الملف الشخصي';
+
+  @override
   String get promoDiscount => 'خصم الكوبون';
 
   @override
@@ -1212,4 +1273,132 @@ class AppLocalizationsAr extends AppLocalizations {
   String orderMoreItems(Object count) {
     return '+$count عناصر أخرى';
   }
+
+  @override
+  String get notificationCartAddSuccess => 'تمت إضافة العنصر إلى السلة';
+
+  @override
+  String get notificationCartRemoveSuccess => 'تم حذف العنصر من السلة';
+
+  @override
+  String get notificationCartRemoveError => 'فشل في حذف العنصر من السلة';
+
+  @override
+  String get notificationCartUpdateSuccess => 'تم تحديث السلة';
+
+  @override
+  String get notificationCartUpdateError => 'فشل في تحديث السلة';
+
+  @override
+  String get notificationCartLoadError =>
+      'فشل في تحميل السلة. يرجى المحاولة مرة أخرى';
+
+  @override
+  String get notificationTimeoutError =>
+      'انتهت المهلة الزمنية. يرجى المحاولة مرة أخرى';
+
+  @override
+  String get notificationOperationSuccess => 'تمت العملية بنجاح';
+
+  @override
+  String get notificationAddressSelected => 'تم اختيار العنوان بنجاح';
+
+  @override
+  String get notificationAddressUpdateSuccess => 'تم تحديث العنوان بنجاح';
+
+  @override
+  String get notificationAddressUpdateError => 'فشل في تحديث العنوان';
+
+  @override
+  String get notificationAddressDeleteSuccess => 'تم حذف العنوان بنجاح';
+
+  @override
+  String get notificationAddressDeleteError => 'فشل في حذف العنوان';
+
+  @override
+  String get notificationCodeApplySuccess => 'تم تطبيق الكود الترويجي بنجاح';
+
+  @override
+  String get notificationCodeApplyError =>
+      'كود ترويجي غير صحيح أو انتهت صلاحيته';
+
+  @override
+  String get notificationCheckoutError => 'فشل الدفع. يرجى المحاولة مرة أخرى';
+
+  @override
+  String get notificationOrderPlacedSuccess => 'تم تقديم الطلب بنجاح';
+
+  @override
+  String get notificationOrderPlacedError => 'فشل في تقديم الطلب';
+
+  @override
+  String get notificationImageUploadError =>
+      'فشل في تحميل الصورة. يرجى المحاولة مرة أخرى';
+
+  @override
+  String get notificationProductSaveSuccess => 'تم حفظ المنتج بنجاح';
+
+  @override
+  String get notificationProductSaveError => 'فشل في حفظ المنتج';
+
+  @override
+  String get notificationProductDeleteSuccess => 'تم حذف المنتج بنجاح';
+
+  @override
+  String get notificationProductDeleteError => 'فشل في حذف المنتج';
+
+  @override
+  String get notificationProfileUpdateError => 'فشل في تحديث الملف الشخصي';
+
+  @override
+  String get notificationPasswordChangeSuccess => 'تم تغيير كلمة المرور بنجاح';
+
+  @override
+  String get notificationPasswordChangeError => 'فشل في تغيير كلمة المرور';
+
+  @override
+  String get notificationEmailChangeError => 'فشل في تغيير البريد الإلكتروني';
+
+  @override
+  String get notificationWishlistAddSuccess => 'تمت الإضافة إلى المفضلة';
+
+  @override
+  String get notificationWishlistAddError => 'فشل في الإضافة إلى المفضلة';
+
+  @override
+  String get notificationWishlistRemoveSuccess => 'تم الحذف من المفضلة';
+
+  @override
+  String get notificationWishlistRemoveError => 'فشل في الحذف من المفضلة';
+
+  @override
+  String get notificationReviewSubmitSuccess => 'تم إرسال التقييم بنجاح';
+
+  @override
+  String get notificationReviewSubmitError => 'فشل في إرسال التقييم';
+
+  @override
+  String get notificationPaymentProcessing => 'جاري معالجة الدفع...';
+
+  @override
+  String get notificationPaymentSuccess => 'تم الدفع بنجاح';
+
+  @override
+  String get notificationPaymentError => 'فشل الدفع. يرجى المحاولة مرة أخرى';
+
+  @override
+  String get notificationCopyToClipboard => 'تم النسخ إلى الحافظة';
+
+  @override
+  String get notificationNoAction => 'يرجى المحاولة مرة أخرى';
+
+  @override
+  String get notificationFieldRequired => 'هذا الحقل مطلوب';
+
+  @override
+  String get notificationInvalidInput => 'إدخال غير صحيح';
+
+  @override
+  String get notificationLinkExpired =>
+      'انتهت صلاحية الرابط. يرجى المحاولة مرة أخرى';
 }

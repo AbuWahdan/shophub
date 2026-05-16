@@ -98,6 +98,120 @@ abstract class AppLocalizations {
     Locale('en'),
   ];
 
+  /// No description provided for @userName.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get userName;
+
+  /// No description provided for @fullName.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name'**
+  String get fullName;
+
+  /// No description provided for @email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// No description provided for @phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get phone;
+
+  /// No description provided for @country.
+  ///
+  /// In en, this message translates to:
+  /// **'Country'**
+  String get country;
+
+  /// No description provided for @jordan.
+  ///
+  /// In en, this message translates to:
+  /// **'Jordan'**
+  String get jordan;
+
+  /// No description provided for @gender.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get gender;
+
+  /// No description provided for @saveChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get saveChanges;
+
+  /// No description provided for @notificationLoginRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please log in to continue'**
+  String get notificationLoginRequired;
+
+  /// No description provided for @notificationServerError.
+  ///
+  /// In en, this message translates to:
+  /// **'Server error. Please try again later'**
+  String get notificationServerError;
+
+  /// No description provided for @notificationNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Please check your connection'**
+  String get notificationNetworkError;
+
+  /// No description provided for @notificationProfileUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile updated successfully'**
+  String get notificationProfileUpdateSuccess;
+
+  /// No description provided for @notificationImageProcessError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to process image'**
+  String get notificationImageProcessError;
+
+  /// No description provided for @notificationUnknownError.
+  ///
+  /// In en, this message translates to:
+  /// **'An unexpected error occurred'**
+  String get notificationUnknownError;
+
+  /// No description provided for @notificationEmailChangeSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Email changed successfully'**
+  String get notificationEmailChangeSuccess;
+
+  /// No description provided for @notificationCartAddError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to add item to cart'**
+  String get notificationCartAddError;
+
+  /// No description provided for @notificationProductAddedToCart.
+  ///
+  /// In en, this message translates to:
+  /// **'{productName} added to cart'**
+  String notificationProductAddedToCart(String productName);
+
+  /// No description provided for @tax.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax'**
+  String get tax;
+
+  /// No description provided for @editProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Profile'**
+  String get editProfile;
+
   /// No description provided for @promoDiscount.
   ///
   /// In en, this message translates to:
@@ -2425,6 +2539,252 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'+{count} more items'**
   String orderMoreItems(Object count);
+
+  /// No description provided for @notificationCartAddSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Item added to cart'**
+  String get notificationCartAddSuccess;
+
+  /// No description provided for @notificationCartRemoveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Item removed from cart'**
+  String get notificationCartRemoveSuccess;
+
+  /// No description provided for @notificationCartRemoveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to remove item from cart'**
+  String get notificationCartRemoveError;
+
+  /// No description provided for @notificationCartUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Cart updated'**
+  String get notificationCartUpdateSuccess;
+
+  /// No description provided for @notificationCartUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update cart'**
+  String get notificationCartUpdateError;
+
+  /// No description provided for @notificationCartLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load cart. Please try again.'**
+  String get notificationCartLoadError;
+
+  /// No description provided for @notificationTimeoutError.
+  ///
+  /// In en, this message translates to:
+  /// **'Request timed out. Please try again'**
+  String get notificationTimeoutError;
+
+  /// No description provided for @notificationOperationSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Operation completed successfully'**
+  String get notificationOperationSuccess;
+
+  /// No description provided for @notificationAddressSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Address selected successfully'**
+  String get notificationAddressSelected;
+
+  /// No description provided for @notificationAddressUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Address updated successfully'**
+  String get notificationAddressUpdateSuccess;
+
+  /// No description provided for @notificationAddressUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update address'**
+  String get notificationAddressUpdateError;
+
+  /// No description provided for @notificationAddressDeleteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Address deleted successfully'**
+  String get notificationAddressDeleteSuccess;
+
+  /// No description provided for @notificationAddressDeleteError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete address'**
+  String get notificationAddressDeleteError;
+
+  /// No description provided for @notificationCodeApplySuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Promo code applied successfully'**
+  String get notificationCodeApplySuccess;
+
+  /// No description provided for @notificationCodeApplyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid or expired promo code'**
+  String get notificationCodeApplyError;
+
+  /// No description provided for @notificationCheckoutError.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout failed. Please try again'**
+  String get notificationCheckoutError;
+
+  /// No description provided for @notificationOrderPlacedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Order placed successfully'**
+  String get notificationOrderPlacedSuccess;
+
+  /// No description provided for @notificationOrderPlacedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to place order'**
+  String get notificationOrderPlacedError;
+
+  /// No description provided for @notificationImageUploadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to upload image. Please try again'**
+  String get notificationImageUploadError;
+
+  /// No description provided for @notificationProductSaveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Product saved successfully'**
+  String get notificationProductSaveSuccess;
+
+  /// No description provided for @notificationProductSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save product'**
+  String get notificationProductSaveError;
+
+  /// No description provided for @notificationProductDeleteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Product deleted successfully'**
+  String get notificationProductDeleteSuccess;
+
+  /// No description provided for @notificationProductDeleteError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete product'**
+  String get notificationProductDeleteError;
+
+  /// No description provided for @notificationProfileUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update profile'**
+  String get notificationProfileUpdateError;
+
+  /// No description provided for @notificationPasswordChangeSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed successfully'**
+  String get notificationPasswordChangeSuccess;
+
+  /// No description provided for @notificationPasswordChangeError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to change password'**
+  String get notificationPasswordChangeError;
+
+  /// No description provided for @notificationEmailChangeError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to change email'**
+  String get notificationEmailChangeError;
+
+  /// No description provided for @notificationWishlistAddSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to wishlist'**
+  String get notificationWishlistAddSuccess;
+
+  /// No description provided for @notificationWishlistAddError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to add to wishlist'**
+  String get notificationWishlistAddError;
+
+  /// No description provided for @notificationWishlistRemoveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from wishlist'**
+  String get notificationWishlistRemoveSuccess;
+
+  /// No description provided for @notificationWishlistRemoveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to remove from wishlist'**
+  String get notificationWishlistRemoveError;
+
+  /// No description provided for @notificationReviewSubmitSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Review submitted successfully'**
+  String get notificationReviewSubmitSuccess;
+
+  /// No description provided for @notificationReviewSubmitError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to submit review'**
+  String get notificationReviewSubmitError;
+
+  /// No description provided for @notificationPaymentProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing payment...'**
+  String get notificationPaymentProcessing;
+
+  /// No description provided for @notificationPaymentSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment successful'**
+  String get notificationPaymentSuccess;
+
+  /// No description provided for @notificationPaymentError.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment failed. Please try again'**
+  String get notificationPaymentError;
+
+  /// No description provided for @notificationCopyToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to clipboard'**
+  String get notificationCopyToClipboard;
+
+  /// No description provided for @notificationNoAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Please try again'**
+  String get notificationNoAction;
+
+  /// No description provided for @notificationFieldRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get notificationFieldRequired;
+
+  /// No description provided for @notificationInvalidInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid input'**
+  String get notificationInvalidInput;
+
+  /// No description provided for @notificationLinkExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Link expired. Please try again'**
+  String get notificationLinkExpired;
 }
 
 class _AppLocalizationsDelegate

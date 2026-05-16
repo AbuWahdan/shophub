@@ -4,7 +4,9 @@ import 'package:get/get.dart';
 import '../../../core/app/app_theme.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../repositories/visual_search_repository.dart';
+import '../../../services/app_notification_service.dart';
 import 'visual_search_results_screen.dart';
 
 class VisualSearchLoadingScreen extends StatefulWidget {
@@ -19,6 +21,7 @@ class VisualSearchLoadingScreen extends StatefulWidget {
 
 class _VisualSearchLoadingScreenState extends State<VisualSearchLoadingScreen> {
   late final VisualSearchRepository _visualSearchRepository;
+  late final l10n = AppLocalizations.of(context);
 
   @override
   void initState() {
@@ -46,9 +49,11 @@ class _VisualSearchLoadingScreenState extends State<VisualSearchLoadingScreen> {
       );
     } catch (error) {
       if (!mounted) return;
-      final messenger = ScaffoldMessenger.of(context);
       Navigator.pop(context);
-      messenger.showSnackBar(SnackBar(content: Text(error.toString())));
+      AppNotificationService.instance.showError(
+        context,
+       l10n.notificationServerError,
+      );
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/utils/localization_ar_en/localized_text_extensions.dart';
 import '../../../../design/app_colors.dart';
 import '../../../../design/app_spacing.dart';
 import '../../../../design/app_text_styles.dart';
@@ -56,7 +57,7 @@ class GenderSelectorSection extends StatelessWidget {
           .map(
             (option) => RadioListTile<int>(
           contentPadding: EdgeInsets.zero,
-          title: Text(option.label),
+          title: Text(option.localizedTitle(context)),
           value: option.minorCode,
           groupValue: selectedGender,
           onChanged: onChanged,

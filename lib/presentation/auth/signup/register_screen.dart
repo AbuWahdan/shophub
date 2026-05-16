@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../../models/get_code_option_model.dart';
 import '../../../../models/user_model.dart';
 import '../../../core/config/route.dart';
+import '../../../core/utils/localization_ar_en/localized_text_extensions.dart';
 import '../../../design/app_colors.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
@@ -130,7 +131,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       children: _genderOptions.map((option) => RadioListTile<int>(
         contentPadding: EdgeInsets.zero,
-        title: Text(option.label),
+        title: Text(option.localizedTitle(context)),
         value: option.minorCode,
         groupValue: _selectedGender,
         onChanged: (value) => setState(() {

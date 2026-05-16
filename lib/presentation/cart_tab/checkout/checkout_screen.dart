@@ -8,6 +8,7 @@ import 'package:sinwar_shoping/models/cart_item_model.dart';
 import '../../../../controllers/address_controller.dart';
 import '../../../../controllers/credit_card_controller.dart';
 import '../../../../models/payment_method_model.dart';
+import '../../../core/utils/localization_ar_en/localized_text_extensions.dart';
 import '../../../design/app_colors.dart';
 import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
@@ -177,7 +178,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         .map(
           (option) => PaymentMethodModel(
             id: option.minorCode,
-            label: option.label,
+            label: option.localizedTitle(context),
             icon: _paymentMethodIcon(option),
           ),
         )
@@ -753,7 +754,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ..._paymentMethodOptions.map((option) {
                       final method = PaymentMethodModel(
                         id: option.minorCode,
-                        label: option.label,
+                        label: option.localizedTitle(context),
                         icon: _paymentMethodIcon(option),
                       );
                       return Padding(

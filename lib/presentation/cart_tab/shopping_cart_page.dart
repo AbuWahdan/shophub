@@ -12,6 +12,7 @@ import '../../design/app_text_styles.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/cart_item_model.dart';
 import '../../core/state/auth_state.dart';
+import '../../services/app_notification_service.dart';
 import '../../widgets/dialogs/app_dialogs.dart';
 import '../../widgets/custom_button/custom_button.dart';
 import '../../widgets/product_card/add_to_cart_bottom_sheet/widgets/quantity_stepper.dart';
@@ -102,10 +103,10 @@ class _ShoppingCartPageState extends State<ShoppingCartPage> {
       onConfirm: () async {
         final username = await _resolveUsername();
         if (username.isEmpty) {
-          Get.snackbar(
-            'Error',
-            'Please log in to manage your cart.',
-            snackPosition: SnackPosition.BOTTOM,
+          if (!mounted) return;
+          AppNotificationService.instance.showError(
+            context,
+            l10n.notificationLoginRequired,
           );
           return;
         }

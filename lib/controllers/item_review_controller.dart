@@ -4,7 +4,7 @@ import '../core/state/review_refresh_notifier.dart';
 import '../l10n/app_localizations.dart';
 import '../models/item_comment_model.dart';
 import '../repositories/comment_repository.dart';
-import '../widgets/custom__snack_bar/custom_snack_bar.dart';
+import '../services/app_notification_service.dart';
 
 class ItemReviewController extends GetxController {
   ItemReviewController(this._commentRepository);
@@ -64,37 +64,33 @@ class ItemReviewController extends GetxController {
     final normalizedComment = comment.trim();
 
     if (normalizedUsername.isEmpty) {
-      CustomSnackBar.show(
+      AppNotificationService.instance.showError(
         context,
-        message:  AppLocalizations.of(context).itemReviewLoginRequired,
-        type: AppSnackBarType.error,
+        AppLocalizations.of(context).itemReviewLoginRequired,
       );
       return;
     }
 
     if (userReview(normalizedUsername) != null) {
-      CustomSnackBar.show(
+      AppNotificationService.instance.showWarning(
         context,
-        message: AppLocalizations.of(context).itemReviewAlreadyRated,
-        type: AppSnackBarType.warning,
+        AppLocalizations.of(context).itemReviewAlreadyRated,
       );
       return;
     }
 
     if (rating < 1 || rating > 5) {
-      CustomSnackBar.show(
+      AppNotificationService.instance.showWarning(
         context,
-        message: AppLocalizations.of(context).itemReviewRatingRequired,
-        type: AppSnackBarType.warning,
+        AppLocalizations.of(context).itemReviewRatingRequired,
       );
       return;
     }
 
     if (normalizedComment.isEmpty) {
-      CustomSnackBar.show(
+      AppNotificationService.instance.showWarning(
         context,
-        message: AppLocalizations.of(context).itemReviewCommentRequired,
-        type: AppSnackBarType.warning,
+        AppLocalizations.of(context).itemReviewCommentRequired,
       );
       return;
     }
@@ -118,21 +114,19 @@ class ItemReviewController extends GetxController {
       if (!context.mounted) {
         return;
       }
-      CustomSnackBar.show(
+      AppNotificationService.instance.showSuccess(
         context,
-        message: AppLocalizations.of(context).itemReviewSubmittedSuccess,
-        type: AppSnackBarType.success,
+        AppLocalizations.of(context).itemReviewSubmittedSuccess,
       );
     } catch (error) {
       if (!context.mounted) {
         return;
       }
-      CustomSnackBar.show(
+      AppNotificationService.instance.showError(
         context,
-        message: _resolveErrorMessage(error).isEmpty
+        _resolveErrorMessage(error).isEmpty
             ? AppLocalizations.of(context).itemReviewLoadFailed
             : _resolveErrorMessage(error),
-        type: AppSnackBarType.error,
       );
     } finally {
       isSubmitting.value = false;

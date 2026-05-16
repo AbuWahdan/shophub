@@ -14,6 +14,7 @@ import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/state/auth_state.dart';
+import '../../../services/app_notification_service.dart';
 import '../../../services/product_service.dart';
 import 'edit_product_page.dart';
 import 'insert_product_page.dart';
@@ -120,9 +121,10 @@ class _MyProductsPageState extends State<MyProductsPage> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
+      AppNotificationService.instance.showError(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        AppLocalizations.of(context).notificationUnknownError,
+      );
     } finally {
       if (mounted) setState(() => _isNavigating = false);
     }

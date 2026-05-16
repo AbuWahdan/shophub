@@ -3,7 +3,6 @@ import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/widgets/custom_image.dart';
-import 'package:sinwar_shoping/widgets/custom__snack_bar/custom_snack_bar.dart';
 import '../../../../core/config/route.dart';
 
 import '../../../../controllers/cart_controller.dart';
@@ -16,6 +15,8 @@ import '../../design/app_radius.dart';
 import '../../design/app_shadows.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../services/app_notification_service.dart';
 import '../../../services/product_service.dart';
 import '../../presentation/products/widgets/rating_stars.dart';
 import 'add_to_cart_bottom_sheet/add_to_cart_bottom_sheet.dart';
@@ -66,10 +67,9 @@ class _ProductCardState extends State<ProductCard> {
     final username = auth.user?.username.trim() ?? '';
 
     if (username.isEmpty) {
-      CustomSnackBar.show(
+      AppNotificationService.instance.showWarning(
         context,
-        message: 'Please log in to manage favorites',
-        type: AppSnackBarType.warning,
+        AppLocalizations.of(context).notificationLoginRequired,
       );
       return;
     }
@@ -78,17 +78,15 @@ class _ProductCardState extends State<ProductCard> {
       await context.read<WishlistController>().toggleWishlist(widget.product);
     } on ProductException catch (error) {
       if (!mounted) return;
-      CustomSnackBar.show(
+      AppNotificationService.instance.showError(
         context,
-        message: error.message,
-        type: AppSnackBarType.error,
+        error.message,
       );
     } catch (_) {
       if (!mounted) return;
-      CustomSnackBar.show(
+      AppNotificationService.instance.showError(
         context,
-        message: 'Failed to update favorite',
-        type: AppSnackBarType.error,
+        AppLocalizations.of(context).notificationUnknownError,
       );
     }
   }
@@ -106,10 +104,9 @@ class _ProductCardState extends State<ProductCard> {
     final username = auth.user?.username.trim() ?? '';
 
     if (username.isEmpty) {
-      CustomSnackBar.show(
+      AppNotificationService.instance.showWarning(
         context,
-        message: 'Please log in to add items to cart',
-        type: AppSnackBarType.warning,
+        AppLocalizations.of(context).notificationLoginRequired,
       );
       return;
     }
@@ -167,24 +164,21 @@ class _ProductCardState extends State<ProductCard> {
         detId: itemDetId,
       );
 
-      CustomSnackBar.show(
+      AppNotificationService.instance.showSuccess(
         context,
-        message: '${widget.product.name} added to cart',
-        type: AppSnackBarType.success,
+        AppLocalizations.of(context).notificationProductAddedToCart(widget.product.name),
       );
     } on ProductException catch (error) {
       if (!mounted) return;
-      CustomSnackBar.show(
+      AppNotificationService.instance.showError(
         context,
-        message: error.message,
-        type: AppSnackBarType.error,
+        error.message,
       );
     } catch (_) {
       if (!mounted) return;
-      CustomSnackBar.show(
+      AppNotificationService.instance.showError(
         context,
-        message: 'Failed to add to cart',
-        type: AppSnackBarType.error,
+        AppLocalizations.of(context).notificationCartAddError,
       );
     } finally {
       if (mounted) setState(() => _isAddingToCart = false);
