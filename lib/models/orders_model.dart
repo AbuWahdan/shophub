@@ -1,5 +1,34 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
+
+// ─────────────────────────────────────────────────────────────────
+// DeliveryStatus Enum
+// ─────────────────────────────────────────────────────────────────
+enum DeliveryStatus {
+  pending,
+  processing,
+  shipped,
+  delivered,
+  cancelled,
+  unknown;
+
+  static DeliveryStatus fromString(String? raw) {
+    final normalized = (raw ?? '').trim().toLowerCase();
+    return switch (normalized) {
+      'pending'    => DeliveryStatus.pending,
+      'processing' => DeliveryStatus.processing,
+      'shipped'    => DeliveryStatus.shipped,
+      'delivered'  => DeliveryStatus.delivered,
+      'cancelled'  => DeliveryStatus.cancelled,
+      _            => DeliveryStatus.unknown,
+    };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Orders Model Instance
+// ─────────────────────────────────────────────────────────────────
 class OrdersModel {
   final int orderId;
   final String orderNo;
@@ -11,7 +40,7 @@ class OrdersModel {
   final double netAmount;
   final double promoDiscountAmount;
   final String? promoCode;
-  final String statusRaw; // Store raw status value
+  final String statusRaw; // Store cleaned raw status value
   final DateTime createdDate;
   final List<ApiOrderItem> items;
 
@@ -31,16 +60,21 @@ class OrdersModel {
     this.items = const [],
   });
 
+  /// Computed property to let UI components access enum logic cleanly
+  DeliveryStatus get deliveryStatus => DeliveryStatus.fromString(statusRaw);
+
   factory OrdersModel.fromJson(Map<String, dynamic> json) {
     // Check for status field with multiple possible names
     final statusValue =
         json['STATUS'] ??
-        json['status'] ??
-        json['ORDER_STATUS'] ??
-        json['order_status'] ??
-        json['ITEM_STATUS'] ??
-        json['item_status'] ??
-        '';
+            json['status'] ??
+            json['ORDER_STATUS'] ??
+            json['order_status'] ??
+            json['ITEM_STATUS'] ??
+            json['item_status'] ??
+            json['DELIVARY_STATUS'] ??
+            json['DELIVERY_STATUS'] ??
+            '';
 
     return OrdersModel(
       orderId: json['ORDER_ID'] as int? ?? 0,
@@ -53,7 +87,7 @@ class OrdersModel {
       netAmount: _parseDouble(json['NET_AMOUNT']),
       promoDiscountAmount: _parseDouble(json['PROMO_DISCOUNT_AMOUNT']),
       promoCode: _parseNullableString(json['PROMO_CODE']),
-      statusRaw: statusValue.toString().trim(),
+      statusRaw: statusValue.toString().trim(), // Added strict trimming here
       createdDate: _parseDateTime(json['CREATED_DATE']),
       items: _parseItems(json),
     );
@@ -173,13 +207,11 @@ class OrdersModel {
     final normalized = (value ?? '').toString().trim();
     return normalized.isEmpty ? null : normalized;
   }
-
-  /// Maps the raw status value to a human-readable label
-
-
-
 }
 
+// ─────────────────────────────────────────────────────────────────
+// API Response Array Container
+// ─────────────────────────────────────────────────────────────────
 class ApiOrderResponse {
   final String status;
   final List<OrdersModel> data;
@@ -204,9 +236,9 @@ class ApiOrderResponse {
         items: [
           ...existing.items,
           ...order.items.where(
-            (candidate) => existing.items.every(
-              (existingItem) =>
-                  existingItem.itemId != candidate.itemId ||
+                (candidate) => existing.items.every(
+                  (existingItem) =>
+              existingItem.itemId != candidate.itemId ||
                   existingItem.itemDetId != candidate.itemDetId,
             ),
           ),
@@ -221,11 +253,13 @@ class ApiOrderResponse {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────
+// Api Order Line Item Entity
+// ─────────────────────────────────────────────────────────────────
 class ApiOrderItem {
   final int itemId;
   final int itemDetId;
   final String productName;
-  // final String productImage;
   final int quantity;
   final double price;
   final int deliveryStatusCode;
@@ -234,10 +268,9 @@ class ApiOrderItem {
     required this.itemId,
     required this.itemDetId,
     required this.productName,
-    //required this.productImage,
     required this.quantity,
     required this.price,
-     this.deliveryStatusCode =0,
+    this.deliveryStatusCode = 0,
   });
 
   factory ApiOrderItem.fromJson(Map<String, dynamic> json) {
@@ -255,19 +288,12 @@ class ApiOrderItem {
             json['det_id'],
       ),
       productName:
-          (json['ITEM_NAME'] ??
-                  json['item_name'] ??
-                  json['PRODUCT_NAME'] ??
-                  json['product_name'] ??
-                  '')
-              .toString(),
-      // productImage:
-      //     (json['ITEM_IMG_URL'] ??
-      //             json['item_img_url'] ??
-      //             json['PRODUCT_IMAGE'] ??
-      //             json['product_image'] ??
-      //             '')
-      //         .toString(),
+      (json['ITEM_NAME'] ??
+          json['item_name'] ??
+          json['PRODUCT_NAME'] ??
+          json['product_name'] ??
+          '')
+          .toString(),
       quantity: _parseInt(
         json['ITEM_QTY'] ?? json['item_qty'] ?? json['QTY'] ?? json['qty'] ?? 1,
       ),
@@ -292,7 +318,6 @@ class ApiOrderItem {
       'ITEM_ID': itemId,
       'ITEM_DET_ID': itemDetId,
       'ITEM_NAME': productName,
-      //'ITEM_IMG_URL': productImage,
       'ITEM_QTY': quantity,
       'ITEM_PRICE': price,
       'DELIVARY_STATUS': deliveryStatusCode,
@@ -308,4 +333,46 @@ int _parseInt(dynamic value) {
 double _parseDouble(dynamic value) {
   if (value is num) return value.toDouble();
   return double.tryParse((value ?? '').toString()) ?? 0;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Delivery Status UI Badge Component
+// ─────────────────────────────────────────────────────────────────
+class DeliveryStatusBadge extends StatelessWidget {
+  final DeliveryStatus status;
+
+  const DeliveryStatusBadge({super.key, required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, bg, fg) = _resolve(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: fg,
+        ),
+      ),
+    );
+  }
+
+  (String, Color, Color) _resolve(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return switch (status) {
+      DeliveryStatus.pending    => (l10n.statusPending,    const Color(0xFFFFF3CD), const Color(0xFF856404)),
+      DeliveryStatus.processing => (l10n.statusProcessing, const Color(0xFFCCE5FF), const Color(0xFF004085)),
+      DeliveryStatus.shipped    => (l10n.statusShipped,    const Color(0xFFD4EDDA), const Color(0xFF155724)),
+      DeliveryStatus.delivered  => (l10n.statusDelivered,  const Color(0xFFD4EDDA), const Color(0xFF155724)),
+      DeliveryStatus.cancelled  => (l10n.statusCancelled,  const Color(0xFFF8D7DA), const Color(0xFF721C24)),
+      DeliveryStatus.unknown    => (l10n.statusUnknown,    const Color(0xFFE2E3E5), const Color(0xFF383D41)),
+    };
+  }
 }

@@ -10,7 +10,6 @@ import '../../../design/app_spacing.dart';
 import '../../../design/app_text_styles.dart';
 import '../../../l10n/app_localizations.dart';
 import 'order_details_screen.dart';
-import 'widgets/order_status_badge.dart';
 
 class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
@@ -176,7 +175,7 @@ class _OrdersPageState extends State<OrdersPage> {
                           order.username.isEmpty ? '-' : order.username,
 
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.neutral600,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
 
                           overflow: TextOverflow.ellipsis,
@@ -187,8 +186,7 @@ class _OrdersPageState extends State<OrdersPage> {
 
                   const SizedBox(width: AppSpacing.md),
 
-                  OrderStatusBadge(status: _deliveryStatusFor(order)),
-                ],
+                  DeliveryStatusBadge(status: order.deliveryStatus),                ],
               ),
 
               const SizedBox(height: AppSpacing.lg),
@@ -269,10 +267,9 @@ class _OrdersPageState extends State<OrdersPage> {
                     const Divider(height: AppSpacing.xl),
 
                     _buildPriceRow(
-                      title: l10n.orderTotal,
-                      value: currency.format(order.netAmount),
-
-                      isBold: true,
+                      title: l10n.orderDiscount,
+                      value: currency.format(order.discountAmount),
+                      valueColor: Theme.of(context).colorScheme.error, // Much safer
                     ),
                   ],
                 ),
@@ -304,7 +301,7 @@ class _OrdersPageState extends State<OrdersPage> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(AppRadius.md),
 
-                          border: Border.all(color: AppColors.neutral200),
+                          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
                         ),
 
                         child: Row(
@@ -312,33 +309,6 @@ class _OrdersPageState extends State<OrdersPage> {
                             /// IMAGE
                             ClipRRect(
                               borderRadius: BorderRadius.circular(AppRadius.md),
-
-                              // child: SizedBox(
-                              //   width: 60,
-                              //   height: 60,
-                              //
-                              //   child: item.productImage.isNotEmpty
-                              //       ? Image.network(
-                              //     item.productImage,
-                              //     fit: BoxFit.cover,
-                              //
-                              //     errorBuilder:
-                              //         (_, __, ___) {
-                              //       return Container(
-                              //         color: AppColors.neutral100,
-                              //         child: const Icon(
-                              //           Icons.image_not_supported_outlined,
-                              //         ),
-                              //       );
-                              //     },
-                              //   )
-                              //       : Container(
-                              //     color: AppColors.neutral100,
-                              //     child: const Icon(
-                              //       Icons.inventory_2_outlined,
-                              //     ),
-                              //   ),
-                              // ),
                             ),
 
                             const SizedBox(width: AppSpacing.md),
@@ -415,14 +385,7 @@ class _OrdersPageState extends State<OrdersPage> {
     );
   }
 
-  String _deliveryStatusFor(OrdersModel order) {
-    for (final item in order.items) {
-      if (item.deliveryStatusCode > 0) {
-        return OrderStatusBadge.labelFromDeliveryStatus(item.deliveryStatusCode);
-      }
-    }
-    return order.statusRaw;
-  }
+
 
   Widget _buildInfoRow({required String title, required String value}) {
     return Row(

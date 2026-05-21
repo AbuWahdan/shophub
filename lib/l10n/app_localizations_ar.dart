@@ -9,6 +9,49 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
+  String get statusPending => 'قيد الانتظار';
+
+  @override
+  String get statusProcessing => 'قيد المعالجة';
+
+  @override
+  String get statusShipped => 'تم الشحن';
+
+  @override
+  String get statusCancelled => 'تم الإلغاء';
+
+  @override
+  String get statusDelivered => 'تم التوصيل';
+
+  @override
+  String get statusUnknown => 'غير معروف';
+
+  @override
+  String get viewAll => 'عرض الكل';
+
+  @override
+  String get productVariantError => 'يرجى اختيار خيار المنتج';
+
+  @override
+  String get productOutOfStock => 'المنتج غير متوفر';
+
+  @override
+  String get productDetails => 'تفاصيل المنتج';
+
+  @override
+  String get stockOutOfStock => 'غير متوفر';
+
+  @override
+  String stockLowCount(Object stock) {
+    return 'متبقي فقط $stock في المخزون';
+  }
+
+  @override
+  String stockAvailableCount(Object stock) {
+    return '$stock عنصر متوفر';
+  }
+
+  @override
   String get userName => 'اسم المستخدم';
 
   @override

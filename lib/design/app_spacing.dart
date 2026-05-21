@@ -11,6 +11,11 @@ class AppSpacing {
   static const double xl = 32.0;
   static const double xxl = 48.0;
   static const double xxxl = 56.0;
+  static const double iconXl        = 32.0;   // wishlist button diameter
+  static const double iconXs        = 12.0;   // spinner inside cart button
+  static const double cartButtonSize = 36.0;  // cart button diameter
+  static const double ribbonWidth   = 28.0;   // discount ribbon width
+  static const double ribbonTail    = 10.0;   // ribbon pointed tail height
 
   static const double tabHeight = 72.0;
 
@@ -25,9 +30,9 @@ class AppSpacing {
   static const double borderThick = 12.0;
   static const double borderThin = 8.0;
 
-  static const double imageSm = 12.0;
-  static const double imageMd = 16.0;
-  static const double imageLg = 120.0;
+  static const double imageSm = 60.0;
+  static const double imageMd = 160.0;
+  static const double imageLg = 240.0;
 
   static const double cardAspectRatio = 1.58;
   static const double cardCompactHeight = 152.0;

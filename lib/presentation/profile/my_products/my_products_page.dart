@@ -75,15 +75,25 @@ class _MyProductsPageState extends State<MyProductsPage> {
   }
 
   Future<void> _openEditProduct(
-    ProductModel product,
-    String currentUsername,
-  ) async {
+      ProductModel product,
+      String currentUsername,
+      ) async {
     if (_isNavigating) return;
     _isNavigating = true;
 
     final productService = ProductService();
 
+    // 1. Show a loading dialog immediately
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
     try {
+      // 2. Fetch the data while the loading spinner is on screen
       final detailsRows = await productService.getItemDetailsRows(
         itemId: product.id,
       );
@@ -103,6 +113,10 @@ class _MyProductsPageState extends State<MyProductsPage> {
 
       if (!mounted) return;
 
+      // 3. Dismiss the loading dialog
+      Navigator.of(context, rootNavigator: true).pop();
+
+      // 4. Navigate to the edit page with the fetched data
       final updated = await Navigator.push<bool>(
         context,
         MaterialPageRoute(
@@ -120,6 +134,9 @@ class _MyProductsPageState extends State<MyProductsPage> {
         Get.find<MyProductsController>().loadProducts(forceRefresh: true);
       }
     } catch (e) {
+      // Dismiss loading dialog if there's an error
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+
       if (!mounted) return;
       AppNotificationService.instance.showError(
         context,

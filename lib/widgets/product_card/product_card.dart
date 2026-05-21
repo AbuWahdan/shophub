@@ -1,33 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_instance/src/extension_instance.dart';
+import 'package:get/get.dart';
 import 'package:provider/provider.dart';
-import 'package:sinwar_shoping/widgets/custom_image.dart';
-import '../../../../core/config/route.dart';
-
 import '../../../../controllers/cart_controller.dart';
 import '../../../../models/data.dart';
-import '../../models/product/product_model.dart';
-import '../../../core/state/auth_state.dart';
 import '../../controllers/wishlist_controller.dart';
-import '../../../design/app_colors.dart';
+import '../../core/config/route.dart';
+import '../../core/state/auth_state.dart';
 import '../../design/app_radius.dart';
 import '../../design/app_shadows.dart';
-import '../../design/app_spacing.dart';
-import '../../design/app_text_styles.dart';
+import '../../models/product/product_model.dart';
+import '../../services/product_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/app_notification_service.dart';
-import '../../../services/product_service.dart';
-import '../../presentation/products/widgets/rating_stars.dart';
 import 'add_to_cart_bottom_sheet/add_to_cart_bottom_sheet.dart';
+import 'add_to_cart_bottom_sheet/widgets/product_card_image_section.dart';
+import 'add_to_cart_bottom_sheet/widgets/product_card_info_section.dart';
 
 class ProductCard extends StatefulWidget {
   final ProductModel product;
   final ValueChanged<ProductModel>? onSelected;
-
-  // FIX: optional override for the cart-button tap — used by WishlistPage
-  // to open the bottom drawer within the wishlist context.
-  // When null, the card's own _handleAddToCart is used (home tab behaviour).
   final VoidCallback? onCartTap;
 
   const ProductCard({
@@ -64,9 +55,8 @@ class _ProductCardState extends State<ProductCard> {
     final auth = context.read<AuthState>();
     await auth.ensureInitialized();
     if (!mounted) return;
-    final username = auth.user?.username.trim() ?? '';
 
-    if (username.isEmpty) {
+    if ((auth.user?.username.trim() ?? '').isEmpty) {
       AppNotificationService.instance.showWarning(
         context,
         AppLocalizations.of(context).notificationLoginRequired,
@@ -76,12 +66,9 @@ class _ProductCardState extends State<ProductCard> {
 
     try {
       await context.read<WishlistController>().toggleWishlist(widget.product);
-    } on ProductException catch (error) {
+    } on ProductException catch (e) {
       if (!mounted) return;
-      AppNotificationService.instance.showError(
-        context,
-        error.message,
-      );
+      AppNotificationService.instance.showError(context, e.message);
     } catch (_) {
       if (!mounted) return;
       AppNotificationService.instance.showError(
@@ -92,7 +79,6 @@ class _ProductCardState extends State<ProductCard> {
   }
 
   Future<void> _handleAddToCart() async {
-    // If the parent supplied a custom tap handler, delegate immediately.
     if (widget.onCartTap != null) {
       widget.onCartTap!();
       return;
@@ -101,8 +87,8 @@ class _ProductCardState extends State<ProductCard> {
     final auth = context.read<AuthState>();
     await auth.ensureInitialized();
     if (!mounted) return;
-    final username = auth.user?.username.trim() ?? '';
 
+    final username = auth.user?.username.trim() ?? '';
     if (username.isEmpty) {
       AppNotificationService.instance.showWarning(
         context,
@@ -115,8 +101,6 @@ class _ProductCardState extends State<ProductCard> {
     setState(() => _isAddingToCart = true);
 
     try {
-      // FIX: ALWAYS open the bottom drawer regardless of variant count.
-      // This gives the user the quantity stepper every time.
       final selection = await showModalBottomSheet<AddToCartSelection>(
         context: context,
         isScrollControlled: true,
@@ -133,17 +117,16 @@ class _ProductCardState extends State<ProductCard> {
       final itemDetId = selectedVariant.detId > 0
           ? selectedVariant.detId
           : widget.product.resolveDetId(
-              size: selectedVariant.size,
-              color: selectedVariant.color,
-              fallback: widget.product.detId,
-            );
+        size: selectedVariant.size,
+        color: selectedVariant.color,
+        fallback: widget.product.detId,
+      );
 
       if (itemDetId <= 0) {
         throw ProductException('Unable to determine selected product variant.');
       }
 
-      final cartController = Get.find<CartController>();
-      await cartController.addItem(
+      await Get.find<CartController>().addItem(
         itemId: widget.product.id,
         itemDetId: itemDetId,
         username: username,
@@ -155,12 +138,8 @@ class _ProductCardState extends State<ProductCard> {
       AppData.addToCart(
         product: widget.product,
         quantity: selection.qty,
-        size: selectedVariant.size.trim().isEmpty
-            ? 'Default'
-            : selectedVariant.size,
-        color: selectedVariant.color.trim().isEmpty
-            ? 'Default'
-            : selectedVariant.color,
+        size: selectedVariant.size.trim().isEmpty ? 'Default' : selectedVariant.size,
+        color: selectedVariant.color.trim().isEmpty ? 'Default' : selectedVariant.color,
         detId: itemDetId,
       );
 
@@ -168,12 +147,9 @@ class _ProductCardState extends State<ProductCard> {
         context,
         AppLocalizations.of(context).notificationProductAddedToCart(widget.product.name),
       );
-    } on ProductException catch (error) {
+    } on ProductException catch (e) {
       if (!mounted) return;
-      AppNotificationService.instance.showError(
-        context,
-        error.message,
-      );
+      AppNotificationService.instance.showError(context, e.message);
     } catch (_) {
       if (!mounted) return;
       AppNotificationService.instance.showError(
@@ -188,8 +164,6 @@ class _ProductCardState extends State<ProductCard> {
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-    final theme = Theme.of(context);
-    final textDirection = Directionality.of(context);
     final wishlistState = context.watch<WishlistController>();
     final isFavorite = wishlistState.isInWishlist(product.id);
     final isToggling = wishlistState.isToggling(product.id);
@@ -197,243 +171,34 @@ class _ProductCardState extends State<ProductCard> {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.secondary,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         boxShadow: const [AppShadows.cardShadow],
       ),
-      child: InkWell(
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        onTap: _isOpeningDetails ? null : _openProductDetails,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Hero(
-                      tag: 'product_${product.id}',
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(AppRadius.lg),
-                        ),
-                        child: _buildImageSlot(),
-                      ),
-                    ),
-                  ),
-                  if (product.discountPercentage > 0)
-                    Positioned.directional(
-                      textDirection: textDirection,
-                      top: AppSpacing.sm,
-                      start: AppSpacing.sm,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: AppSpacing.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.saleBadge,
-                          borderRadius: BorderRadius.circular(AppRadius.full),
-                        ),
-                        child: Text(
-                          '-${product.discountPercentage}%',
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.saleBadge,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  Positioned.directional(
-                    textDirection: textDirection,
-                    top: AppSpacing.sm,
-                    end: AppSpacing.sm,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: isToggling ? null : _handleToggleFavorite,
-                      child: Container(
-                        padding: const EdgeInsets.all(AppSpacing.xs),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surface.withValues(
-                            alpha: 0.86,
-                          ),
-                          borderRadius: BorderRadius.circular(AppRadius.full),
-                        ),
-                        child: isToggling
-                            ? const SizedBox(
-                                width: AppSpacing.iconMd,
-                                height: AppSpacing.iconMd,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Icon(
-                                isFavorite
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color: isFavorite
-                                    ? AppColors.error
-                                    : theme.colorScheme.onSurface,
-                                size: AppSpacing.iconMd,
-                              ),
-                      ),
-                    ),
-                  ),
-                  Positioned.directional(
-                    textDirection: textDirection,
-                    start: AppSpacing.sm,
-                    end: AppSpacing.xxl,
-                    bottom: AppSpacing.sm,
-                    child: Align(
-                      alignment: AlignmentDirectional.bottomStart,
-                      child: _buildPriceTag(context),
-                    ),
-                  ),
-                  Positioned.directional(
-                    textDirection: textDirection,
-                    end: AppSpacing.sm,
-                    bottom: AppSpacing.sm,
-                    child: _buildAddToCartButton(context),
-                  ),
-                ],
+        child: InkWell(
+          onTap: _isOpeningDetails ? null : _openProductDetails,
+          child: // ✅ AFTER
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Wrap the Image section in Expanded
+              Expanded(
+                child: ProductCardImageSection(
+                  product: product,
+                  isFavorite: isFavorite,
+                  isToggling: isToggling,
+                  isAddingToCart: _isAddingToCart,
+                  onFavoriteTap: _handleToggleFavorite,
+                  onCartTap: _handleAddToCart,
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                AppSpacing.md,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (product.name.trim().isNotEmpty)
-                    Text(
-                      product.name.trim(),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.titleSmall,
-                    ),
-                  if (product.rating > 0 || product.reviewCount > 0) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    Row(
-                      children: [
-                        RatingStars(
-                          rating: product.rating,
-                          size: AppSpacing.iconSm,
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Expanded(
-                          child: Text(
-                            product.reviewCount > 0
-                                ? '${product.rating.toStringAsFixed(1)} (${product.reviewCount})'
-                                : product.rating.toStringAsFixed(1),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.caption,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
+              // 2. Info section takes exactly the space it needs at the bottom
+              ProductCardInfoSection(product: product),
+            ],
+          )
         ),
-      ),
-    );
-  }
-
-  Widget _buildImageSlot() {
-    final images = widget.product.images;
-    if (images.isEmpty || images.first.trim().isEmpty) {
-      return _buildPlaceholder();
-    }
-    return CustomImage(path: images.first.trim(), fit: BoxFit.cover);
-  }
-
-  Widget _buildPriceTag(BuildContext context) {
-    final product = widget.product;
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            product.finalPrice.toStringAsFixed(2),
-            style: AppTextStyles.labelLarge.copyWith(
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          if (product.discountPercentage > 0)
-            Text(
-              product.price.toStringAsFixed(2),
-              style: AppTextStyles.caption.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
-                decoration: TextDecoration.lineThrough,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddToCartButton(BuildContext context) {
-    final theme = Theme.of(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _isAddingToCart ? null : _handleAddToCart,
-        customBorder: const CircleBorder(),
-        child: Ink(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary,
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: _isAddingToCart
-                ? SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        theme.colorScheme.onPrimary,
-                      ),
-                    ),
-                  )
-                : Icon(
-                    Icons.shopping_cart_outlined,
-                    size: AppSpacing.iconSm,
-                    color: theme.colorScheme.onPrimary,
-                  ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return Container(
-      color: AppColors.surfaceVariant,
-      alignment: Alignment.center,
-      child: const Icon(
-        Icons.image_outlined,
-        size: AppSpacing.iconLg,
-        color: AppColors.textHint,
       ),
     );
   }

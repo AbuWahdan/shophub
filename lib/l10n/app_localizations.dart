@@ -98,6 +98,84 @@ abstract class AppLocalizations {
     Locale('en'),
   ];
 
+  /// No description provided for @statusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get statusPending;
+
+  /// No description provided for @statusProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing'**
+  String get statusProcessing;
+
+  /// No description provided for @statusShipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Shipped'**
+  String get statusShipped;
+
+  /// No description provided for @statusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get statusCancelled;
+
+  /// No description provided for @statusDelivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get statusDelivered;
+
+  /// No description provided for @statusUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get statusUnknown;
+
+  /// No description provided for @viewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View All'**
+  String get viewAll;
+
+  /// No description provided for @productVariantError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a product variant'**
+  String get productVariantError;
+
+  /// No description provided for @productOutOfStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Product is out of stock'**
+  String get productOutOfStock;
+
+  /// No description provided for @productDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Product Details'**
+  String get productDetails;
+
+  /// No description provided for @stockOutOfStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of stock'**
+  String get stockOutOfStock;
+
+  /// No description provided for @stockLowCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {stock} left in stock'**
+  String stockLowCount(Object stock);
+
+  /// No description provided for @stockAvailableCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{stock} items available'**
+  String stockAvailableCount(Object stock);
+
   /// No description provided for @userName.
   ///
   /// In en, this message translates to:

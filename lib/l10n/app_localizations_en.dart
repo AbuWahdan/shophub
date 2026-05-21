@@ -9,6 +9,49 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get statusPending => 'Pending';
+
+  @override
+  String get statusProcessing => 'Processing';
+
+  @override
+  String get statusShipped => 'Shipped';
+
+  @override
+  String get statusCancelled => 'Cancelled';
+
+  @override
+  String get statusDelivered => 'Delivered';
+
+  @override
+  String get statusUnknown => 'Unknown';
+
+  @override
+  String get viewAll => 'View All';
+
+  @override
+  String get productVariantError => 'Please select a product variant';
+
+  @override
+  String get productOutOfStock => 'Product is out of stock';
+
+  @override
+  String get productDetails => 'Product Details';
+
+  @override
+  String get stockOutOfStock => 'Out of stock';
+
+  @override
+  String stockLowCount(Object stock) {
+    return 'Only $stock left in stock';
+  }
+
+  @override
+  String stockAvailableCount(Object stock) {
+    return '$stock items available';
+  }
+
+  @override
   String get userName => 'Username';
 
   @override

@@ -18,7 +18,7 @@ import '../../presentation/profile/my_products/my_products_page.dart';
 import '../../presentation/profile/settings/change_email/change_email_screen.dart';
 import '../../presentation/profile/settings/change_email/verify_new_email_screen.dart';
 import '../../presentation/profile/settings/widgets/info_page.dart';
-import '../../presentation/products/product_details_new.dart';
+import '../../presentation/products/product_details.dart';
 import '../../presentation/profile/addresses/addresses_page.dart';
 import '../../presentation/profile/edit_profile/edit_profile_screen.dart';
 import '../../presentation/cart_tab/checkout/order_confirmation/order_confirmation_screen.dart';
@@ -344,7 +344,7 @@ class AppRoutes {
         final selectedDetId = args?['selectedDetId'] as int?;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => ProductDetailsPage(
+          builder: (_) => ProductDetails(
             product: product,
             initialSize: selectedSize,
             initialColor: selectedColor,
