@@ -1,29 +1,29 @@
 import 'package:flutter/material.dart';
-import '../../../models/data.dart';
-import '../../widgets/BottomNavigationBar/bottom_navigation_bar.dart';
-import '../cart_tab/shopping_cart_screen.dart';
-import 'home_page.dart';
-import '../categories_tab/categories_page.dart';
-import '../profile/profile_page.dart';
+import '../../models/data.dart';
+import '../widgets/BottomNavigationBar/bottom_navigation_bar.dart';
+import 'cart_tab/shopping_cart_screen.dart';
+import 'home_tab/home_page.dart';
+import 'categories_tab/categories_page.dart';
+import 'profile/profile_page.dart';
 
-class MainPage extends StatefulWidget {
-  const MainPage({super.key, this.title, this.initialTabIndex});
+class MainNavigator extends StatefulWidget {
+  const MainNavigator({super.key, this.title, this.initialTabIndex});
 
   final String? title;
   final int? initialTabIndex;
 
   static bool switchToTab(BuildContext context, int index) {
-    final state = context.findAncestorStateOfType<_MainPageState>();
+    final state = context.findAncestorStateOfType<_MainNavigatorState>();
     if (state == null) return false;
     state.switchToTab(index);
     return true;
   }
 
   @override
-  State<MainPage> createState() => _MainPageState();
+  State<MainNavigator> createState() => _MainNavigatorState();
 }
 
-class _MainPageState extends State<MainPage> {
+class _MainNavigatorState extends State<MainNavigator> {
   late int currentIndex;
   
   static const int accountTabIndex = 3;

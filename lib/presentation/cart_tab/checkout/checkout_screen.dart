@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:sinwar_shoping/design/app_radius.dart';
 import 'package:sinwar_shoping/models/cart_item_model.dart';
 import '../../../../controllers/address_controller.dart';
 import '../../../../controllers/credit_card_controller.dart';
@@ -21,12 +19,18 @@ import '../../../models/credit_card_model.dart';
 import '../../../core/state/auth_state.dart';
 import '../../../repositories/checkout_repository.dart';
 import '../../../repositories/codes_repository.dart';
-import '../../../widgets/custom_button/custom_button.dart';
 import '../../../widgets/custom__snack_bar/custom_snack_bar.dart';
 import '../../profile/addresses/widgets/address_selection_bottom_sheet.dart';
 import '../../profile/addresses/addresses_page.dart';
-import '../../cards/add_card_page.dart';
-import '../../cards/widgets/card_selector_bottom_sheet.dart';
+import 'cards/add_card_page_in_checkout.dart';
+import 'cards/widgets/card_selector_bottom_sheet.dart';
+import 'widgets/checkout_items_list.dart';
+import 'widgets/checkout_tokens.dart';
+import 'widgets/delivery_address_card.dart';
+import 'widgets/order_summary_card.dart';
+import 'widgets/payment_method_card.dart';
+import 'widgets/place_order_bar.dart';
+import 'widgets/promo_code_input.dart';
 import 'order_summary_page.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -82,6 +86,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ..dispose();
     super.dispose();
   }
+
   CheckoutSummaryModel get _checkoutSummary {
     final base = CheckoutSummaryModel.fromCartItems(widget.cartItems);
 
@@ -95,8 +100,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         promoDiscount = (orderAmount * result.discountValue) / 100;
 
         // apply max cap
-        if (result.maxDiscount > 0 &&
-            promoDiscount > result.maxDiscount) {
+        if (result.maxDiscount > 0 && promoDiscount > result.maxDiscount) {
           promoDiscount = result.maxDiscount;
         }
       } else {
@@ -111,7 +115,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       promoDiscount: promoDiscount,
     );
   }
-
 
   void _onPromoCodeChanged() {
     _promoDebounce?.cancel();
@@ -133,13 +136,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       _promoResult = null;
     });
 
-    _promoDebounce = Timer(
-      const Duration(milliseconds: 600),
-          () {
-        _validatePromoCode(code: code, token: token);
-      },
-    );
+    _promoDebounce = Timer(const Duration(milliseconds: 600), () {
+      _validatePromoCode(code: code, token: token);
+    });
   }
+
   Future<void> _validatePromoCode({
     required String code,
     required int token,
@@ -159,8 +160,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         _promoError = result.isValid
             ? null
             : (result.message.isNotEmpty
-            ? result.message
-            : AppLocalizations.of(context).invalidPromoCode);
+                  ? result.message
+                  : AppLocalizations.of(context).invalidPromoCode);
         _isValidatingPromo = false;
       });
     } catch (error) {
@@ -173,15 +174,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       });
     }
   }
+
   List<PaymentMethodModel> _paymentMethods(BuildContext context) {
     return _paymentMethodOptions
         .map(
           (option) => PaymentMethodModel(
-        id: option.minorCode,
-        label: option.localizedTitle(context),
-        icon: _paymentMethodIcon(option),
-      ),
-    )
+            id: option.minorCode,
+            label: option.localizedTitle(context),
+            icon: _paymentMethodIcon(option),
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -214,7 +216,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         _paymentMethodOptions = options;
         if (_selectedPaymentMethodId != null &&
             !_paymentMethodOptions.any(
-                  (option) => option.minorCode == _selectedPaymentMethodId,
+              (option) => option.minorCode == _selectedPaymentMethodId,
             )) {
           _selectedPaymentMethodId = null;
         }
@@ -310,7 +312,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       builder: (_) => AddressSelectionBottomSheet(
         savedAddresses: _addressController.addresses.toList(),
         selectedAddressId:
-        _selectedAddress?.addressId ??
+            _selectedAddress?.addressId ??
             _addressController.selectedAddressId.value,
         onAddressSelected: (address) {
           setState(() {
@@ -386,7 +388,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       setState(() => _selectedCard = selectedCard);
     }
 
-
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -437,6 +438,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
 
     while (mounted) {
+      if (!mounted) return null;
       final result = await showModalBottomSheet<CardSelectorResult>(
         context: context,
         isScrollControlled: true,
@@ -497,16 +499,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final paymentMethods = _paymentMethods(context);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(title: Text(l10n.checkoutTitle)),
+      bottomNavigationBar: PlaceOrderBar(
+        label: l10n.placeOrderButton,
+        onPressed: _placeOrder,
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _refreshCheckoutData,
           child: LayoutBuilder(
             builder: (context, constraints) => SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: AppSpacing.insetsMd,
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                CheckoutTokens.bottomBarReserve,
+              ),
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: Column(
@@ -522,7 +535,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       const SizedBox(height: AppSpacing.md),
                     ],
                     Text(
-                      l10n.checkoutOrderSummary,
+                      l10n.orderItemsSection,
                       style: AppTextStyles.headingMedium,
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -532,277 +545,43 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         style: AppTextStyles.bodyMedium,
                       )
                     else
-                      ...widget.cartItems.map(
-                            (item) => Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                          child: _OrderSummaryRow(item: item),
-                        ),
-                      ),
-                    const Divider(height: AppSpacing.xl),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      l10n.checkoutDeliveryAddress,
-                      style: AppTextStyles.titleSmall,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    GestureDetector(
+                      CheckoutItemsList(items: widget.cartItems),
+                    const SizedBox(height: AppSpacing.xl),
+                    DeliveryAddressCard(
+                      title: l10n.deliveryAddressTitle,
+                      selectLabel: l10n.checkoutSelectDeliveryAddress,
+                      estimateText: l10n.deliveryEstimateLabel,
+                      address: _selectedAddress,
+                      isLoading: _isLoadingAddresses,
+                      errorText: _addressError,
                       onTap: _isLoadingAddresses ? null : _openAddressSelection,
-                      child: Container(
-                        padding: AppSpacing.insetsMd,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: _selectedAddress != null
-                                ? AppColors.primary
-                                : AppColors.neutral300,
-                            width: 1.5,
-                          ),
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          color: _selectedAddress != null
-                              ? AppColors.primary.withValues(alpha: 0.05)
-                              : AppColors.transparent,
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              size: 20,
-                              color: _selectedAddress != null
-                                  ? AppColors.primary
-                                  : AppColors.neutral500,
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                            Expanded(
-                              child: _isLoadingAddresses
-                                  ? const Padding(
-                                padding: EdgeInsets.symmetric(
-                                  vertical: AppSpacing.sm,
-                                ),
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                              )
-                                  : Column(
-                                crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _selectedAddress?.label ??
-                                        l10n.checkoutSelectDeliveryAddress,
-                                    style: AppTextStyles.bodyMedium
-                                        .copyWith(
-                                      color: _selectedAddress != null
-                                          ? null
-                                          : AppColors.neutral600,
-                                    ),
-                                  ),
-                                  if (_selectedAddress != null) ...[
-                                    const SizedBox(height: AppSpacing.xs),
-                                    Text(
-                                      _selectedAddress!.streetAddress,
-                                      style: AppTextStyles.bodySmall,
-                                    ),
-                                    const SizedBox(height: AppSpacing.xs),
-                                    Text(
-                                      [
-                                        _selectedAddress!.city,
-                                        _selectedAddress!.country,
-                                      ]
-                                          .where(
-                                            (value) =>
-                                        value.trim().isNotEmpty,
-                                      )
-                                          .join(', '),
-                                      style: AppTextStyles.bodySmall,
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            const Icon(Icons.keyboard_arrow_down),
-                          ],
-                        ),
-                      ),
                     ),
-                    if (_addressError != null) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        _addressError!,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.error,
-                        ),
-                      ),
-                    ],
-
                     const SizedBox(height: AppSpacing.xl),
-
-                    // --- NEW PROMO CODE SECTION (Container Design) ---
-                    Text(
-                      l10n.promoCodeOptional,
-                      style: AppTextStyles.titleSmall,
+                    PromoCodeInput(
+                      controller: _promoController,
+                      hintText: l10n.promoCodeHint,
+                      isLoading: _isValidatingPromo,
+                      isApplied: _promoResult?.isValid == true,
+                      errorText: _promoError,
+                      appliedText: l10n.promoApplied,
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Container(
-                      padding: AppSpacing.insetsMd,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: _promoError != null
-                              ? AppColors.error
-                              : _promoResult?.isValid == true
-                              ? AppColors.success
-                              : AppColors.neutral300,
-                          width: 1.5,
-                        ),
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.confirmation_number_outlined,
-                            size: 20,
-                            color: _promoResult?.isValid == true
-                                ? AppColors.success
-                                : AppColors.neutral500,
-                          ),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: TextField(
-                              controller: _promoController,
-                              textCapitalization: TextCapitalization.characters,
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: l10n.promoCodeHint,
-                                hintStyle: AppTextStyles.bodyMedium.copyWith(
-                                  color: AppColors.neutral400,
-                                ),
-                                border: InputBorder.none,
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          ),
-                          if (_isValidatingPromo)
-                            const SizedBox(
-                              width: AppSpacing.iconMd,
-                              height: AppSpacing.iconMd,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          else if (_promoResult?.isValid == true)
-                            const Icon(
-                              Icons.check_circle_outline,
-                              color: AppColors.success,
-                            )
-                          else if (_promoError != null)
-                              const Icon(
-                                Icons.error_outline,
-                                color: AppColors.error,
-                              ),
-                        ],
-                      ),
-                    ),
-                    if (_promoError != null ||
-                        (_promoResult != null && _promoResult!.isValid)) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        _promoResult?.isValid == true
-                            ? l10n.promoApplied
-                            : _promoError!,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: _promoResult?.isValid == true
-                              ? AppColors.success
-                              : AppColors.error,
-                        ),
-                      ),
-                    ],
-
                     const SizedBox(height: AppSpacing.xl),
-
-                    Text(
-                      l10n.checkoutPaymentMethod,
-                      style: AppTextStyles.titleSmall,
+                    PaymentMethodCard(
+                      title: l10n.paymentMethodTitle,
+                      methods: paymentMethods,
+                      selectedMethodId: _selectedPaymentMethodId,
+                      selectedCardNumber: _selectedCard?.maskedNumber,
+                      isLoading: _isLoadingPaymentMethods,
+                      errorText: _paymentMethodLoadError,
+                      retryLabel: l10n.retry,
+                      onRetry: () => _loadPaymentMethods(forceRefresh: true),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedPaymentMethodId = value;
+                          _paymentMethodError = null;
+                        });
+                      },
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    if (_isLoadingPaymentMethods)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                        child: LinearProgressIndicator(),
-                      ),
-                    if (_paymentMethodLoadError != null &&
-                        _paymentMethodOptions.isEmpty) ...[
-                      Text(
-                        _paymentMethodLoadError!,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.error,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton(
-                          onPressed: () =>
-                              _loadPaymentMethods(forceRefresh: true),
-                          child: Text(l10n.retry),
-                        ),
-                      ),
-                    ],
-                    ..._paymentMethodOptions.map((option) {
-                      final method = PaymentMethodModel(
-                        id: option.minorCode,
-                        label: option.localizedTitle(context),
-                        icon: _paymentMethodIcon(option),
-                      );
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          onTap: () {
-                            setState(() {
-                              _selectedPaymentMethodId = method.id;
-                              _paymentMethodError = null;
-                            });
-                          },
-                          child: Container(
-                            padding: AppSpacing.insetsMd,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(AppRadius.md),
-                              border: Border.all(
-                                color: _selectedPaymentMethodId == method.id
-                                    ? AppColors.primary
-                                    : AppColors.neutral300,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(method.icon, color: AppColors.primary),
-                                const SizedBox(width: AppSpacing.md),
-                                Expanded(
-                                  child: Text(
-                                    method.label,
-                                    style: AppTextStyles.bodyMedium,
-                                  ),
-                                ),
-                                Radio<int>(
-                                  value: method.id,
-                                  groupValue: _selectedPaymentMethodId,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _selectedPaymentMethodId = value;
-                                      _paymentMethodError = null;
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
                     if (_paymentMethodError != null) ...[
                       const SizedBox(height: AppSpacing.xs),
                       Text(
@@ -813,23 +592,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       ),
                     ],
                     const SizedBox(height: AppSpacing.xl),
-                    _CheckoutTotalsSection(
+                    OrderSummaryCard(
+                      title: l10n.orderSummaryTitle,
                       summary: _checkoutSummary,
-                      totalLabel: l10n.checkoutTotal,
-                    ),
-                    if (_selectedPaymentMethod(context) != null) ...[
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        l10n.selectedPaymentLabel(
-                          _selectedPaymentMethod(context)!.label,
-                        ),
-                        style: AppTextStyles.bodySmall,
-                      ),
-                    ],
-                    const SizedBox(height: AppSpacing.xl),
-                    CustomButton(
-                      label: l10n.placeOrder,
-                      onPressed: _placeOrder,
+                      subtotalLabel: l10n.subtotalLabel,
+                      discountLabel: l10n.discountLabel,
+                      shippingLabel: l10n.shippingLabel,
+                      taxLabel: l10n.taxLabel,
+                      totalLabel: l10n.totalLabel,
                     ),
                   ],
                 ),
@@ -838,133 +608,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _OrderSummaryRow extends StatelessWidget {
-  const _OrderSummaryRow({required this.item});
-
-  final CartItemModel item;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final currency = NumberFormat.simpleCurrency(
-      locale: Localizations.localeOf(context).toLanguageTag(),
-    );
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                item.product.name,
-                style: AppTextStyles.bodyLarge,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                l10n.checkoutQuantity(item.bookedQty),
-                style: AppTextStyles.bodySmall,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Text(currency.format(item.lineTotal), style: AppTextStyles.bodyLarge),
-      ],
-    );
-  }
-}
-
-class _CheckoutTotalsSection extends StatelessWidget {
-  const _CheckoutTotalsSection({
-    required this.summary,
-    required this.totalLabel,
-  });
-
-  final CheckoutSummaryModel summary;
-  final String totalLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Column(
-      children: [
-        _AmountRow(label: l10n.orderSubtotal, value: summary.subtotal),
-        const SizedBox(height: AppSpacing.sm),
-        if (summary.itemDiscount > 0)
-          _AmountRow(
-            label: l10n.orderDiscount,
-            value: summary.itemDiscount,
-            valueColor: AppColors.error,
-            isDiscount: true,
-          ),
-
-        if (summary.promoDiscount > 0) ...[
-          const SizedBox(height: AppSpacing.sm),
-          if (summary.promoDiscount > 0) ...[
-            const SizedBox(height: AppSpacing.sm),
-            _AmountRow(
-              label: l10n.promoDiscount,
-              value: summary.promoDiscount,
-              valueColor: AppColors.success,
-              isDiscount: true,
-            ),
-          ],
-
-        ],
-        const SizedBox(height: AppSpacing.sm),
-        _AmountRow(label: l10n.orderTax, value: summary.tax),
-        const Divider(height: AppSpacing.xl),
-        _AmountRow(label: totalLabel, value: summary.grandTotal, isTotal: true),
-      ],
-    );
-  }
-}
-
-class _AmountRow extends StatelessWidget {
-  const _AmountRow({
-    required this.label,
-    required this.value,
-    this.valueColor,
-    this.isDiscount = false,
-    this.isTotal = false,
-  });
-
-  final String label;
-  final double value;
-  final Color? valueColor;
-  final bool isDiscount;
-  final bool isTotal;
-
-  @override
-  Widget build(BuildContext context) {
-    final currency = NumberFormat.simpleCurrency(
-      locale: Localizations.localeOf(context).toLanguageTag(),
-    );
-    final style = isTotal
-        ? AppTextStyles.titleMedium
-        : AppTextStyles.bodyMedium;
-    final valueStyle = isTotal
-        ? AppTextStyles.priceMedium
-        : AppTextStyles.bodyMedium;
-    final formattedValue = currency.format(value);
-
-    return Row(
-      children: [
-        Expanded(child: Text(label, style: style)),
-        Text(
-          isDiscount && value > 0 ? '-$formattedValue' : formattedValue,
-          style: valueStyle.copyWith(
-            color: valueColor,
-            fontWeight: isTotal ? FontWeight.w700 : FontWeight.w600,
-          ),
-        ),
-      ],
     );
   }
 }

@@ -9,6 +9,21 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
+  String get emptyCartTitle => 'سلتك فارغة';
+
+  @override
+  String get emptyCartSubtitle => 'يبدو أنك لم تضف أي شيء بعد';
+
+  @override
+  String get continueShoppingButton => 'متابعة التسوق';
+
+  @override
+  String get proceedToCheckoutButton => 'المتابعة إلى الدفع';
+
+  @override
+  String get shoppingCartTitle => 'سلة التسوق';
+
+  @override
   String get promoCodeLabel => 'كود الخصم';
 
   @override
@@ -949,6 +964,57 @@ class AppLocalizationsAr extends AppLocalizations {
   String get checkoutTitle => 'الدفع';
 
   @override
+  String get deliveryAddressTitle => 'عنوان التوصيل';
+
+  @override
+  String get deliveryEstimateLabel => 'تقدير التوصيل: 2-4 أيام عمل';
+
+  @override
+  String get promoCodeHint => 'أدخل الرمز';
+
+  @override
+  String get subtotalLabel => 'المجموع الفرعي';
+
+  @override
+  String get discountLabel => 'الخصم';
+
+  @override
+  String get shippingLabel => 'الشحن';
+
+  @override
+  String get taxLabel => 'الضريبة';
+
+  @override
+  String get paymentMethodTitle => 'طريقة الدفع';
+
+  @override
+  String get placeOrderButton => 'إتمام الطلب';
+
+  @override
+  String get confirmOrderTitle => 'تأكيد الطلب';
+
+  @override
+  String get confirmOrderSubtitle => 'راجع التفاصيل قبل إتمام الطلب.';
+
+  @override
+  String get cancelButton => 'إلغاء';
+
+  @override
+  String get confirmButton => 'تأكيد';
+
+  @override
+  String get orderPlacedSuccessTitle => 'تم إرسال الطلب بنجاح';
+
+  @override
+  String get orderPlacedSuccessSubtitle => 'شكراً لعملية الشراء.';
+
+  @override
+  String get trackOrderButton => 'تتبع الطلب';
+
+  @override
+  String get orderIdLabel => 'رقم الطلب';
+
+  @override
   String get checkoutOrderSummary => 'ملخص الطلب';
 
   @override
@@ -1108,6 +1174,42 @@ class AppLocalizationsAr extends AppLocalizations {
   String get navAccount => 'الحساب';
 
   @override
+  String get categoriesTitle => 'الفئات';
+
+  @override
+  String get searchCategoriesHint => 'ابحث في الفئات';
+
+  @override
+  String get subCategoriesTitle => 'الفئات الفرعية';
+
+  @override
+  String get addToCartButton => 'إضافة إلى السلة';
+
+  @override
+  String get homeTab => 'الرئيسية';
+
+  @override
+  String get categoriesTab => 'الفئات';
+
+  @override
+  String get cartTab => 'السلة';
+
+  @override
+  String get accountTab => 'الحساب';
+
+  @override
+  String categoryItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عناصر',
+      one: 'عنصر واحد',
+      zero: 'لا توجد عناصر',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get orderStatusPending => 'قيد الانتظار';
 
   @override
@@ -1259,6 +1361,39 @@ class AppLocalizationsAr extends AppLocalizations {
   String get expiryYearLabel => 'السنة';
 
   @override
+  String get paymentMethodsTitle => 'طرق الدفع';
+
+  @override
+  String get savedCardsTitle => 'البطاقات المحفوظة';
+
+  @override
+  String get addNewCardTitle => 'إضافة بطاقة جديدة';
+
+  @override
+  String get cardHolderNameLabel => 'اسم حامل البطاقة';
+
+  @override
+  String get expiryDateLabel => 'تاريخ الانتهاء';
+
+  @override
+  String get cvvLabel => 'رمز CVV';
+
+  @override
+  String get savePaymentCardButton => 'حفظ بطاقة الدفع';
+
+  @override
+  String get defaultBadge => 'افتراضي';
+
+  @override
+  String get expiresLabel => 'تنتهي';
+
+  @override
+  String get cardPreviewMaskedNumber => '•••• •••• •••• ••••';
+
+  @override
+  String get cardPreviewExpiry => 'MM/YYYY';
+
+  @override
   String get cardTypeLabel => 'نوع البطاقة';
 
   @override
@@ -1327,9 +1462,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get promoCodeOptional => 'رمز العرض (اختياري)';
 
   @override
-  String get promoCodeHint => 'أدخل الرمز';
-
-  @override
   String get promoApplied => 'تم تطبيق العرض';
 
   @override
@@ -1358,9 +1490,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cardExpiryInvalid => 'اختر تاريخ انتهاء مستقبلياً';
-
-  @override
-  String get orderIdLabel => 'رقم الطلب';
 
   @override
   String get orderDateLabel => 'تاريخ الطلب';

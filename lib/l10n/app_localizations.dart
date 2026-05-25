@@ -98,6 +98,36 @@ abstract class AppLocalizations {
     Locale('en'),
   ];
 
+  /// No description provided for @emptyCartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your cart is empty'**
+  String get emptyCartTitle;
+
+  /// No description provided for @emptyCartSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Looks like you haven’t added anything yet'**
+  String get emptyCartSubtitle;
+
+  /// No description provided for @continueShoppingButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Shopping'**
+  String get continueShoppingButton;
+
+  /// No description provided for @proceedToCheckoutButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Proceed to Checkout'**
+  String get proceedToCheckoutButton;
+
+  /// No description provided for @shoppingCartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shopping Cart'**
+  String get shoppingCartTitle;
+
   /// No description provided for @promoCodeLabel.
   ///
   /// In en, this message translates to:
@@ -1922,6 +1952,108 @@ abstract class AppLocalizations {
   /// **'Checkout'**
   String get checkoutTitle;
 
+  /// No description provided for @deliveryAddressTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery Address'**
+  String get deliveryAddressTitle;
+
+  /// No description provided for @deliveryEstimateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery estimate: 2-4 business days'**
+  String get deliveryEstimateLabel;
+
+  /// No description provided for @promoCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'ENTER CODE'**
+  String get promoCodeHint;
+
+  /// No description provided for @subtotalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtotal'**
+  String get subtotalLabel;
+
+  /// No description provided for @discountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount'**
+  String get discountLabel;
+
+  /// No description provided for @shippingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Shipping'**
+  String get shippingLabel;
+
+  /// No description provided for @taxLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax'**
+  String get taxLabel;
+
+  /// No description provided for @paymentMethodTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Method'**
+  String get paymentMethodTitle;
+
+  /// No description provided for @placeOrderButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Place Order'**
+  String get placeOrderButton;
+
+  /// No description provided for @confirmOrderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Order'**
+  String get confirmOrderTitle;
+
+  /// No description provided for @confirmOrderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review your details before placing the order.'**
+  String get confirmOrderSubtitle;
+
+  /// No description provided for @cancelButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancelButton;
+
+  /// No description provided for @confirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirmButton;
+
+  /// No description provided for @orderPlacedSuccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Order Placed Successfully'**
+  String get orderPlacedSuccessTitle;
+
+  /// No description provided for @orderPlacedSuccessSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you for your purchase.'**
+  String get orderPlacedSuccessSubtitle;
+
+  /// No description provided for @trackOrderButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Track Order'**
+  String get trackOrderButton;
+
+  /// No description provided for @orderIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Order ID'**
+  String get orderIdLabel;
+
   /// No description provided for @checkoutOrderSummary.
   ///
   /// In en, this message translates to:
@@ -2234,6 +2366,60 @@ abstract class AppLocalizations {
   /// **'Account'**
   String get navAccount;
 
+  /// No description provided for @categoriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get categoriesTitle;
+
+  /// No description provided for @searchCategoriesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search categories'**
+  String get searchCategoriesHint;
+
+  /// No description provided for @subCategoriesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Subcategories'**
+  String get subCategoriesTitle;
+
+  /// No description provided for @addToCartButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Cart'**
+  String get addToCartButton;
+
+  /// No description provided for @homeTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get homeTab;
+
+  /// No description provided for @categoriesTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get categoriesTab;
+
+  /// No description provided for @cartTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Cart'**
+  String get cartTab;
+
+  /// No description provided for @accountTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get accountTab;
+
+  /// No description provided for @categoryItemCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No items} =1{1 item} other{{count} items}}'**
+  String categoryItemCount(int count);
+
   /// No description provided for @orderStatusPending.
   ///
   /// In en, this message translates to:
@@ -2510,6 +2696,72 @@ abstract class AppLocalizations {
   /// **'Year'**
   String get expiryYearLabel;
 
+  /// No description provided for @paymentMethodsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Methods'**
+  String get paymentMethodsTitle;
+
+  /// No description provided for @savedCardsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved Cards'**
+  String get savedCardsTitle;
+
+  /// No description provided for @addNewCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add New Card'**
+  String get addNewCardTitle;
+
+  /// No description provided for @cardHolderNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card Holder Name'**
+  String get cardHolderNameLabel;
+
+  /// No description provided for @expiryDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiry Date'**
+  String get expiryDateLabel;
+
+  /// No description provided for @cvvLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'CVV'**
+  String get cvvLabel;
+
+  /// No description provided for @savePaymentCardButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Payment Card'**
+  String get savePaymentCardButton;
+
+  /// No description provided for @defaultBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get defaultBadge;
+
+  /// No description provided for @expiresLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires'**
+  String get expiresLabel;
+
+  /// No description provided for @cardPreviewMaskedNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'•••• •••• •••• ••••'**
+  String get cardPreviewMaskedNumber;
+
+  /// No description provided for @cardPreviewExpiry.
+  ///
+  /// In en, this message translates to:
+  /// **'MM/YYYY'**
+  String get cardPreviewExpiry;
+
   /// No description provided for @cardTypeLabel.
   ///
   /// In en, this message translates to:
@@ -2642,12 +2894,6 @@ abstract class AppLocalizations {
   /// **'Promo Code (Optional)'**
   String get promoCodeOptional;
 
-  /// No description provided for @promoCodeHint.
-  ///
-  /// In en, this message translates to:
-  /// **'ENTER CODE'**
-  String get promoCodeHint;
-
   /// No description provided for @promoApplied.
   ///
   /// In en, this message translates to:
@@ -2707,12 +2953,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select a future expiry date'**
   String get cardExpiryInvalid;
-
-  /// No description provided for @orderIdLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Order ID'**
-  String get orderIdLabel;
 
   /// No description provided for @orderDateLabel.
   ///

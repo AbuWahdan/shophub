@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../../../models/data.dart';
 import '../../../../core/config/route.dart';
 import '../../../../design/app_colors.dart';
 import '../../../../design/app_radius.dart';
 import '../../../../design/app_spacing.dart';
 import '../../../../design/app_text_styles.dart';
-import '../../../home_tab/main_page.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../widgets/success_state_view.dart';
+import '../../../main_navigator.dart';
 
 class OrderConfirmationScreen extends StatelessWidget {
   const OrderConfirmationScreen({
@@ -42,16 +45,6 @@ class OrderConfirmationScreen extends StatelessWidget {
     return total;
   }
 
-  List<Map<String, dynamic>> _items() {
-    final raw = receipt['items'];
-    if (raw is List) {
-      return raw.whereType<Map>().map((item) {
-        return Map<String, dynamic>.from(item);
-      }).toList();
-    }
-    return const [];
-  }
-
   @override
   Widget build(BuildContext context) {
     final orderId = _stringFor(const [
@@ -63,78 +56,35 @@ class OrderConfirmationScreen extends StatelessWidget {
       'ID',
     ]);
     final amount = _doubleFor(const ['total', 'TOTAL', 'amount', 'AMOUNT']);
-    final items = _items();
+    final l10n = AppLocalizations.of(context);
+    final currency = NumberFormat.simpleCurrency(
+      locale: Localizations.localeOf(context).toLanguageTag(),
+    );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Order Confirmation')),
+      appBar: AppBar(title: Text(l10n.orderPlacedSuccessTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: AppSpacing.insetsMd,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Column(
-                  children: [
-                    Container(
-                      width: AppSpacing.lg,
-                      height: AppSpacing.lg,
-                      decoration: BoxDecoration(
-                        color: AppColors.success,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.check,
-                        color: AppColors.primary,
-                        size: AppSpacing.xxxl,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Text(
-                      'Order Placed Successfully!',
-                      style: AppTextStyles.headingLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      'Thank you for your purchase.',
-                      style: AppTextStyles.bodyMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
+              SuccessStateView(
+                title: l10n.orderPlacedSuccessTitle,
+                subtitle: l10n.orderPlacedSuccessSubtitle,
+                orderIdLabel: l10n.orderIdLabel,
+                orderId: orderId,
+                trackOrderLabel: l10n.trackOrderButton,
+                onTrackOrder: () => _handleContinue(context),
               ),
               const SizedBox(height: AppSpacing.xl),
               if (orderId.isNotEmpty)
-                _DetailRow(label: 'Order ID', value: orderId),
+                _DetailRow(label: l10n.orderIdLabel, value: orderId),
               _DetailRow(
-                label: 'Total',
-                value: '\$${amount.toStringAsFixed(2)}',
+                label: l10n.totalLabel,
+                value: currency.format(amount),
                 highlight: true,
               ),
-              if (items.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.lg),
-                Text('Items', style: AppTextStyles.headingSmall),
-                const SizedBox(height: AppSpacing.sm),
-                ...items.map((item) {
-                  final name = item['item_name']?.toString() ??
-                      item['ITEM_NAME']?.toString() ??
-                      'Item';
-                  final qty = item['item_qty']?.toString() ??
-                      item['ITEM_QTY']?.toString() ??
-                      '1';
-                  final price = item['item_price']?.toString() ??
-                      item['ITEM_PRICE']?.toString() ??
-                      '';
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: Text(
-                      '$name  x$qty  ${price.isNotEmpty ? '\$$price' : ''}',
-                      style: AppTextStyles.bodySmall,
-                    ),
-                  );
-                }),
-              ],
               const SizedBox(height: AppSpacing.xl),
               SizedBox(
                 width: double.infinity,
@@ -142,16 +92,16 @@ class OrderConfirmationScreen extends StatelessWidget {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.primary,
+                    foregroundColor: AppColors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadius.lg),
                     ),
                   ),
                   onPressed: () => _handleContinue(context),
                   child: Text(
-                    'Continue Shopping',
+                    l10n.trackOrderButton,
                     style: AppTextStyles.buttonLarge.copyWith(
-                      color: AppColors.primary,
+                      color: AppColors.white,
                     ),
                   ),
                 ),
@@ -166,17 +116,14 @@ class OrderConfirmationScreen extends StatelessWidget {
   void _handleContinue(BuildContext context) {
     onContinue?.call();
     AppData.setCartItems(const []);
-    final switched = MainPage.switchToTab(
-      context,
-      homeTabIndex,
-    );
+    final switched = MainNavigator.switchToTab(context, homeTabIndex);
     if (switched) {
       Navigator.of(context).popUntil((route) => route.isFirst);
       return;
     }
     Navigator.pushNamedAndRemoveUntil(
       context,
-      AppRoutes.main ,
+      AppRoutes.main,
       (route) => false,
       arguments: {'initialTabIndex': homeTabIndex},
     );

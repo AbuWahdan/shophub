@@ -4,13 +4,15 @@ import '../../../data/categories_data.dart';
 import '../../../models/category_model.dart';
 import '../../models/product/product_model.dart';
 import '../../design/app_colors.dart';
-import '../../design/app_radius.dart';
-import '../../design/app_shadows.dart';
 import '../../design/app_spacing.dart';
-import '../../design/app_text_styles.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/product_service.dart';
-import '../../widgets/product_card/product_card.dart';
+import 'widgets/category_grid.dart';
+import 'widgets/category_state_handler.dart';
+import 'widgets/category_tokens.dart';
+import 'widgets/product_list.dart';
+import 'widgets/search_bar.dart';
+import 'widgets/subcategory_chips.dart';
 
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({super.key});
@@ -36,150 +38,79 @@ class _CategoriesPageState extends State<CategoriesPage> {
         ? <CategoryModel>[]
         : CategoriesData.getSubcategories(_selectedMainCategoryId!);
 
-    return Column(
-      children: [
-        SizedBox(
-          height: 120,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: AppSpacing.insetsMd,
-            itemCount: mainCategories.length,
-            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
-            itemBuilder: (context, index) {
-              final category = mainCategories[index];
-              final selected = _selectedMainCategoryId == category.id;
-              return GestureDetector(
-                onTap: () =>
-                    _loadProducts(category.id, mainCategoryId: category.id),
-                child: Container(
-                  width: 110,
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    boxShadow: const [AppShadows.subtleShadow],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        _getCategoryIcon(category.id),
-                        size: 36,
-                        color: selected
-                            ? AppColors.primary
-                            : AppColors.textHint,
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Padding(
-                        padding: AppSpacing.insetsSm,
-                        child: Text(
-                          category.name,
-                          maxLines: 2,
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.labelMedium.copyWith(
-                            color: selected
-                                ? AppColors.primary
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+          onPressed: () => Navigator.maybePop(context),
+          icon: const Icon(CategoryTokens.backIcon),
         ),
-        if (_selectedMainCategoryId != null) ...[
-          const SizedBox(height: AppSpacing.sm),
-          SizedBox(
-            height: 40,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding:AppSpacing.insetsMd,
-              itemCount: subcategories.length,
-              separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
-              itemBuilder: (context, index) {
-                final sub = subcategories[index];
-                return ActionChip(
-                  label: Text(sub.name),
-                  onPressed: () => _loadProducts(
-                    sub.id,
-                    mainCategoryId: _selectedMainCategoryId,
-                  ),
-                );
-              },
-            ),
+        centerTitle: true,
+        title: Text(l10n.categoriesTitle),
+        actions: [
+          IconButton(
+            tooltip: l10n.searchCategoriesHint,
+            onPressed: () {},
+            icon: const Icon(CategoryTokens.searchIcon),
           ),
         ],
-        const SizedBox(height: AppSpacing.sm),
-        Expanded(child: _buildProductsContent(l10n)),
-      ],
-    );
-  }
-
-  Widget _buildProductsContent(dynamic l10n) {
-    if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
-      );
-    }
-
-    if (_errorMessage != null && _errorMessage!.trim().isNotEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppColors.textHint,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              _errorMessage!,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+      ),
+      body: RefreshIndicator(
+        onRefresh: () => _reloadCurrentCategory(forceRefresh: true),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            CategoryTokens.bottomReserve,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CategorySearchBar(hintText: l10n.searchCategoriesHint),
+              const SizedBox(height: AppSpacing.lg),
+              CategoryGrid(
+                categories: mainCategories,
+                selectedCategoryId: _selectedMainCategoryId,
+                itemCountBuilder: (category) =>
+                    l10n.categoryItemCount(category.children.length),
+                iconBuilder: _getCategoryIcon,
+                onSelected: (category) =>
+                    _loadProducts(category.id, mainCategoryId: category.id),
               ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            ElevatedButton(
-              onPressed: _reloadCurrentCategory,
-              child: Text(l10n.retry),
-            ),
-          ],
+              const SizedBox(height: AppSpacing.lg),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: _selectedMainCategoryId == null
+                    ? const SizedBox.shrink()
+                    : SubcategoryChips(
+                        key: ValueKey(_selectedMainCategoryId),
+                        title: l10n.subCategoriesTitle,
+                        subcategories: subcategories,
+                        selectedCategoryId: _selectedCategoryId,
+                        onSelected: (subcategory) => _loadProducts(
+                          subcategory.id,
+                          mainCategoryId: _selectedMainCategoryId,
+                        ),
+                      ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              CategoryStateHandler(
+                isLoading: _isLoading,
+                errorMessage: _errorMessage,
+                hasSelectedCategory: _selectedCategoryId != null,
+                hasProducts: _products.isNotEmpty,
+                selectCategoryMessage: l10n.searchFilterSelectCategory,
+                emptyMessage: l10n.noProductsInCategory,
+                retryLabel: l10n.retry,
+                onRetry: _reloadCurrentCategory,
+                child: CategoryProductList(products: _products),
+              ),
+            ],
+          ),
         ),
-      );
-    }
-
-    if (_selectedCategoryId == null) {
-      return Center(child: Text(l10n.searchFilterSelectCategory));
-    }
-
-    if (_products.isEmpty) {
-      return Center(child: Text(l10n.noProductsInCategory));
-    }
-
-    return RefreshIndicator(
-      onRefresh: () async => _reloadCurrentCategory(forceRefresh: true),
-      child: GridView.builder(
-        physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
-        ),
-        padding:AppSpacing.insetsMd,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.82,
-          crossAxisSpacing: AppSpacing.lg,
-          mainAxisSpacing: AppSpacing.lg,
-        ),
-        itemCount: _products.length,
-        itemBuilder: (context, index) {
-          return ProductCard(product: _products[index]);
-        },
       ),
     );
   }

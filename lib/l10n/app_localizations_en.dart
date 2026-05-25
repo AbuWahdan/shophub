@@ -9,6 +9,21 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get emptyCartTitle => 'Your cart is empty';
+
+  @override
+  String get emptyCartSubtitle => 'Looks like you haven’t added anything yet';
+
+  @override
+  String get continueShoppingButton => 'Continue Shopping';
+
+  @override
+  String get proceedToCheckoutButton => 'Proceed to Checkout';
+
+  @override
+  String get shoppingCartTitle => 'Shopping Cart';
+
+  @override
   String get promoCodeLabel => 'Promo Code';
 
   @override
@@ -951,6 +966,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkoutTitle => 'Checkout';
 
   @override
+  String get deliveryAddressTitle => 'Delivery Address';
+
+  @override
+  String get deliveryEstimateLabel => 'Delivery estimate: 2-4 business days';
+
+  @override
+  String get promoCodeHint => 'ENTER CODE';
+
+  @override
+  String get subtotalLabel => 'Subtotal';
+
+  @override
+  String get discountLabel => 'Discount';
+
+  @override
+  String get shippingLabel => 'Shipping';
+
+  @override
+  String get taxLabel => 'Tax';
+
+  @override
+  String get paymentMethodTitle => 'Payment Method';
+
+  @override
+  String get placeOrderButton => 'Place Order';
+
+  @override
+  String get confirmOrderTitle => 'Confirm Order';
+
+  @override
+  String get confirmOrderSubtitle =>
+      'Review your details before placing the order.';
+
+  @override
+  String get cancelButton => 'Cancel';
+
+  @override
+  String get confirmButton => 'Confirm';
+
+  @override
+  String get orderPlacedSuccessTitle => 'Order Placed Successfully';
+
+  @override
+  String get orderPlacedSuccessSubtitle => 'Thank you for your purchase.';
+
+  @override
+  String get trackOrderButton => 'Track Order';
+
+  @override
+  String get orderIdLabel => 'Order ID';
+
+  @override
   String get checkoutOrderSummary => 'Order Summary';
 
   @override
@@ -1112,6 +1179,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navAccount => 'Account';
 
   @override
+  String get categoriesTitle => 'Categories';
+
+  @override
+  String get searchCategoriesHint => 'Search categories';
+
+  @override
+  String get subCategoriesTitle => 'Subcategories';
+
+  @override
+  String get addToCartButton => 'Add to Cart';
+
+  @override
+  String get homeTab => 'Home';
+
+  @override
+  String get categoriesTab => 'Categories';
+
+  @override
+  String get cartTab => 'Cart';
+
+  @override
+  String get accountTab => 'Account';
+
+  @override
+  String categoryItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+      zero: 'No items',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get orderStatusPending => 'Pending';
 
   @override
@@ -1264,6 +1367,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expiryYearLabel => 'Year';
 
   @override
+  String get paymentMethodsTitle => 'Payment Methods';
+
+  @override
+  String get savedCardsTitle => 'Saved Cards';
+
+  @override
+  String get addNewCardTitle => 'Add New Card';
+
+  @override
+  String get cardHolderNameLabel => 'Card Holder Name';
+
+  @override
+  String get expiryDateLabel => 'Expiry Date';
+
+  @override
+  String get cvvLabel => 'CVV';
+
+  @override
+  String get savePaymentCardButton => 'Save Payment Card';
+
+  @override
+  String get defaultBadge => 'Default';
+
+  @override
+  String get expiresLabel => 'Expires';
+
+  @override
+  String get cardPreviewMaskedNumber => '•••• •••• •••• ••••';
+
+  @override
+  String get cardPreviewExpiry => 'MM/YYYY';
+
+  @override
   String get cardTypeLabel => 'Card Type';
 
   @override
@@ -1332,9 +1468,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get promoCodeOptional => 'Promo Code (Optional)';
 
   @override
-  String get promoCodeHint => 'ENTER CODE';
-
-  @override
   String get promoApplied => 'Promo applied';
 
   @override
@@ -1364,9 +1497,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cardExpiryInvalid => 'Select a future expiry date';
-
-  @override
-  String get orderIdLabel => 'Order ID';
 
   @override
   String get orderDateLabel => 'Order Date';

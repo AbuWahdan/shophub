@@ -10,10 +10,10 @@ import '../../presentation/auth/otp_verification_screen.dart';
 import '../../presentation/auth/password_updated_screen.dart';
 import '../../presentation/auth/signup/register_screen.dart';
 import '../../presentation/auth/signup/signup_otp_verification_screen.dart';
+import '../../presentation/cart_tab/checkout/cards/add_card_page_in_checkout.dart';
 import '../../presentation/categories_tab/categories_page.dart';
-import '../../presentation/cards/add_card_page.dart';
-import '../../presentation/cards/my_cards_page.dart';
-import '../../presentation/home_tab/main_page.dart';
+import '../../presentation/profile/settings/payment_methods/my_cards_page.dart';
+import '../../presentation/main_navigator.dart';
 import '../../presentation/products/comments/comments_screen.dart';
 import '../../presentation/profile/my_products/my_products_page.dart';
 import '../../presentation/profile/notifications/notifications_screen.dart';
@@ -182,7 +182,7 @@ class AppRoutes {
         final initialTabIndex = args?['initialTabIndex'] as int?;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => MainPage(initialTabIndex: initialTabIndex),
+          builder: (_) => MainNavigator(initialTabIndex: initialTabIndex),
         );
 
       case categories:
