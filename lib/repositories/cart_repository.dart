@@ -4,21 +4,6 @@ import '../../core/api/api_service.dart';
 import '../../core/utils/apex_response_helper.dart';
 import '../../models/cart_item_model.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CART REPOSITORY
-//
-// API BEHAVIOR CONTRACT (confirmed by testing):
-//   • GET  /GetItemCart          → returns current cart items with BOOKED_QTY
-//   • POST /AddItemToCart        → ACCUMULATES qty with signed delta:
-//                                    +N  →  adds N to current qty
-//                                    -N  →  subtracts N from current qty
-//   • POST /DeleteItemCart       → removes the record entirely by DETAIL_ID
-//
-// CRITICAL: NEVER send an absolute quantity. Always send the signed delta.
-//   Increment → deltaQty = +1
-//   Decrement → deltaQty = -1   (API handles subtraction natively)
-//   Remove    → use DeleteItemCart (when qty would reach 0)
-// ─────────────────────────────────────────────────────────────────────────────
 
 class CartRepository {
   final ApiService _apiService;
@@ -65,12 +50,6 @@ class CartRepository {
     }
   }
 
-  // ─────────────────────────────
-  // ADD ITEM  (delta qty only)
-  // ─────────────────────────────
-  //
-  // Only call this when adding a brand-new item OR sending a delta of 1.
-  // NEVER pass an absolute target quantity here.
 
   Future<void> addItem(AddToCartRequest request) async {
     assert(request.deltaQty != 0, 'deltaQty must not be zero');
@@ -96,14 +75,7 @@ class CartRepository {
     }
   }
 
-  // ─────────────────────────────
-  // REMOVE ITEM
-  // ─────────────────────────────
-
-  Future<void> removeItem({
-    required int detailId,
-    required String username,
-  }) async {
+  Future<void> removeItem({required int detailId, required String username,}) async {
     if (detailId <= 0) throw ArgumentError('detailId must be > 0');
     if (username.trim().isEmpty) throw ArgumentError('username is empty');
 
@@ -126,13 +98,6 @@ class CartRepository {
     }
   }
 
-  // ─────────────────────────────
-  // INCREMENT QTY  (+1 only)
-  // ─────────────────────────────
-  //
-  // Because the API accumulates, incrementing is just adding delta=1.
-  // No delete needed. No absolute value sent. Safe from explosion bug.
-
   Future<void> incrementItemQty({
     required int itemId,
     required int itemDetId,
@@ -154,13 +119,6 @@ class CartRepository {
     );
   }
 
-  // ─────────────────────────────
-  // DECREMENT QTY  (-1 only)
-  // ─────────────────────────────
-  //
-  // The API supports negative deltas natively.
-  // Simply POST item_qty=-1 — no delete needed, no race conditions.
-  // The controller must call removeItem() separately when qty reaches 0.
 
   Future<void> decrementItemQty({
     required int itemId,

@@ -98,6 +98,78 @@ abstract class AppLocalizations {
     Locale('en'),
   ];
 
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @notificationsMarkAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all as read'**
+  String get notificationsMarkAllRead;
+
+  /// No description provided for @notificationsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications yet'**
+  String get notificationsEmpty;
+
+  /// No description provided for @commonRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get commonRetry;
+
+  /// No description provided for @providerSectionViewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View All'**
+  String get providerSectionViewAll;
+
+  /// No description provided for @providerSectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Providers'**
+  String get providerSectionLabel;
+
+  /// No description provided for @loadingProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading products...'**
+  String get loadingProducts;
+
+  /// No description provided for @noProductsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No products found'**
+  String get noProductsFound;
+
+  /// No description provided for @pullToRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull to refresh'**
+  String get pullToRefresh;
+
+  /// No description provided for @refresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refresh;
+
+  /// No description provided for @productsByProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Products by {providerUsername}'**
+  String productsByProvider(Object providerUsername);
+
+  /// No description provided for @viewStore.
+  ///
+  /// In en, this message translates to:
+  /// **'View Store'**
+  String get viewStore;
+
   /// No description provided for @statusPending.
   ///
   /// In en, this message translates to:

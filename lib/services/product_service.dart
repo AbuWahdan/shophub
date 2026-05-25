@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import '../../data/categories_data.dart';
-import '../../models/orders_model.dart';
 import '../../models/category_model.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:http/http.dart' as http;
@@ -9,7 +8,6 @@ import '../../core/utils/apex_response_helper.dart';
 import '../models/product/product_image_model.dart';
 import '../../models/cart_item_model.dart';
 import '../models/product/product_model.dart';
-import '../models/product/product_requests.dart';
 import 'api_client.dart';
 
 class ProductService {
@@ -27,48 +25,7 @@ class ProductService {
 
   ProductService({http.Client? client}) : _client = client ?? ApiClient();
 
-  Future<List<ProductModel>> getMyProducts({
-    required int currentUserId,
-    required String currentUsername,
-    bool forceRefresh = false,
-  }) async {
-    final normalizedUsername = currentUsername.trim().toLowerCase();
-    final normalizedUserId = currentUserId > 0 ? currentUserId : 0;
-    if (normalizedUsername.isEmpty && normalizedUserId == 0) {
-      return <ProductModel>[];
-    }
-
-    try {
-      final products = await getProducts(forceRefresh: forceRefresh);
-      debugPrint('MyProducts total from API: ${products.length}');
-      final filtered = products.where((product) {
-        final ownerId = int.tryParse(product.itemOwner.trim()) ?? 0;
-        final matchesOwnerId =
-            normalizedUserId > 0 && ownerId == normalizedUserId;
-        final matchesCreatedByUserId =
-            normalizedUserId > 0 && product.createdByUserId == normalizedUserId;
-        final matchesUsername =
-            normalizedUsername.isNotEmpty &&
-            product.createdBy.trim().toLowerCase() == normalizedUsername;
-        return matchesOwnerId || matchesCreatedByUserId || matchesUsername;
-      }).toList();
-      debugPrint(
-        'MyProducts filtered for userId=$normalizedUserId username=$normalizedUsername => ${filtered.length}',
-      );
-      return filtered;
-    } on ProductException {
-      rethrow;
-    } catch (error) {
-      throw ProductException('Error loading my products: $error');
-    }
-  }
-
-  Future<List<ProductModel>> getProducts({
-    bool forceRefresh = false,
-    String? createdBy,
-    int? categoryId,
-    int? detId,
-  }) async {
+  Future<List<ProductModel>> getProducts({bool forceRefresh = false, String? createdBy, int? categoryId, int? detId,}) async {
     final normalizedCreatedBy = createdBy?.trim();
     final hasCreatedByFilter =
         normalizedCreatedBy != null && normalizedCreatedBy.isNotEmpty;
@@ -84,9 +41,7 @@ class ProductService {
     }
 
     final request = GetProductsRequest(
-      createdBy: normalizedCreatedBy,
-      categoryId: categoryId,
-      detId: detId,
+      createdBy: normalizedCreatedBy, categoryId: categoryId, detId: detId,
     );
     final endpoints = <String>[_getProductsUrl];
 
@@ -155,7 +110,7 @@ class ProductService {
         if (response.statusCode < 200 || response.statusCode >= 300) {
           lastError =
               _extractMessage(data) ??
-              'Fetching products failed (HTTP ${response.statusCode}).';
+                  'Fetching products failed (HTTP ${response.statusCode}).';
           errors.add('$endpoint -> HTTP ${response.statusCode}');
           continue;
         }
@@ -173,7 +128,7 @@ class ProductService {
           products = products
               .where(
                 (product) => product.createdBy.toLowerCase().trim() == name,
-              )
+          )
               .toList();
         }
         if (hasCreatedByFilter) {
@@ -196,12 +151,12 @@ class ProductService {
     }
 
     throw ProductException(
-      '${lastError ?? 'Fetching products failed.'} (${errors.take(3).join(' | ')})',
+      '${lastError ?? 'Fetching products failed.'} (${errors.take(3).join(
+          ' | ')})',
     );
   }
 
-  Future<List<ProductModel>> getProductsByCategory(
-    int categoryId, {
+  Future<List<ProductModel>> getProductsByCategory(int categoryId, {
     bool forceRefresh = false,
   }) async {
     final now = DateTime.now();
@@ -264,11 +219,9 @@ class ProductService {
 
   /// Filters [allProducts] by [categoryId] (respecting parent→children
   /// relationships), stores the result in the per-category cache, and returns it.
-  List<ProductModel> _filterAndCache(
-    int categoryId,
-    List<ProductModel> allProducts,
-    DateTime now,
-  ) {
+  List<ProductModel> _filterAndCache(int categoryId,
+      List<ProductModel> allProducts,
+      DateTime now,) {
     final category = CategoriesData.getCategoryById(categoryId);
 
     final List<ProductModel> filtered;
@@ -355,7 +308,7 @@ class ProductService {
       if (response.statusCode < 200 || response.statusCode >= 300) {
         lastError =
             _extractMessage(data) ??
-            'Inserting product failed (HTTP ${response.statusCode}).';
+                'Inserting product failed (HTTP ${response.statusCode}).';
         errors.add('POST $endpoint -> HTTP ${response.statusCode}');
         continue;
       }
@@ -368,7 +321,7 @@ class ProductService {
       if (_hasExplicitInsertError(data, response.body)) {
         lastError =
             _extractMessage(data) ??
-            'Inserting product failed due to backend error response.';
+                'Inserting product failed due to backend error response.';
         errors.add('POST $endpoint -> explicit backend error');
         continue;
       }
@@ -385,7 +338,8 @@ class ProductService {
     }
 
     throw ProductException(
-      '${lastError ?? 'Inserting product failed.'} (${errors.take(3).join(' | ')})',
+      '${lastError ?? 'Inserting product failed.'} (${errors.take(3).join(
+          ' | ')})',
     );
   }
 
@@ -415,8 +369,7 @@ class ProductService {
   }
 
   Future<UpdateProductResult> updateProduct(
-    UpdateProductRequest request,
-  ) async {
+      UpdateProductRequest request,) async {
     // toJson() now produces the correct shape with "item_details" / "detail_id" / "size"
     final payload = request.toJson();
     final body = <String, dynamic>{
@@ -443,10 +396,12 @@ class ProductService {
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ProductException(
-        response.body.trim().isNotEmpty
+        response.body
+            .trim()
+            .isNotEmpty
             ? response.body
             : (_extractMessage(data) ??
-                  'Updating product failed (HTTP ${response.statusCode}).'),
+            'Updating product failed (HTTP ${response.statusCode}).'),
       );
     }
 
@@ -488,11 +443,11 @@ class ProductService {
       if (data is Map) {
         final v =
             data['result'] ??
-            data['status'] ??
-            data['value'] ??
-            data['RESULT'] ??
-            data['STATUS'] ??
-            data.values.first;
+                data['status'] ??
+                data['value'] ??
+                data['RESULT'] ??
+                data['STATUS'] ??
+                data.values.first;
         return _asInt(v) == 1;
       }
     } catch (_) {
@@ -503,38 +458,9 @@ class ProductService {
     return false;
   }
 
-  // Helper — keeps DRY with existing _asInt usages in the file
-  //   static int _asInt(dynamic v) {
-  //     if (v is num) return v.toInt();
-  //     return int.tryParse((v ?? '').toString()) ?? 0;
-  //   }
 
-  // ══════════════════════════════════════════════════════════════════════════════
-  // REPLACE insertProductDetails in product_service.dart
-  //
-  // Correct API shape:
-  // POST /products/InsertProductDetails
-  // {
-  //   "details": [
-  //     {
-  //       "item_id": 505,      ← inside each detail, NOT at top level
-  //       "brand": "Nike",
-  //       "color": "Black",
-  //       "item_size": "L",    ← SIZE_CODE string
-  //       "discount": 10,
-  //       "item_price": 50,
-  //       "item_qty": 5,
-  //       "is_active": 1
-  //     }
-  //   ]
-  // }
-  // ══════════════════════════════════════════════════════════════════════════════
-
-  Future<void> insertProductDetails({
-    required int itemId,
-    required List<CreateProductDetail> details,
-    String createdBy = '',
-  }) async {
+  Future<void> insertProductDetails({required int itemId, required List<
+      CreateProductDetail> details, String createdBy = '',}) async {
     if (itemId <= 0 || details.isEmpty) {
       throw ProductException(
         'Invalid payload: itemId=$itemId details=${details.length}',
@@ -548,10 +474,14 @@ class ProductService {
     final body = <String, dynamic>{
       'details': details.map((d) {
         final map = <String, dynamic>{
-          'item_id': itemId, // ← inside each row
-          ...d.toJson(), // brand, color, item_size, discount, item_price, item_qty, is_active
+          'item_id': itemId,
+          // ← inside each row
+          ...d.toJson(),
+          // brand, color, item_size, discount, item_price, item_qty, is_active
         };
-        if (createdBy.trim().isNotEmpty) {
+        if (createdBy
+            .trim()
+            .isNotEmpty) {
           map['created_by'] = createdBy.trim();
         }
         return map;
@@ -654,75 +584,9 @@ class ProductService {
     }
   }
 
-  Future<void> deleteItemFromCart({
-    required int detailId,
-    required String modifiedBy,
-  }) async {
-    final normalizedModifiedBy = modifiedBy.trim();
-    if (detailId <= 0) {
-      throw ProductException('Invalid cart_tab detail id: $detailId');
-    }
-    if (normalizedModifiedBy.isEmpty) {
-      throw ProductException('User not authenticated.');
-    }
 
-    final endpoint = Uri.parse('$_baseUrl/DeleteItemCart');
-    final payload = {
-      'detail_id': detailId,
-      'modified_by': normalizedModifiedBy,
-    };
-    if (kDebugMode) {
-      debugPrint('[DeleteItemCart] POST $endpoint');
-      debugPrint('[DeleteItemCart] body: $payload');
-    }
-    final response = await _safePost(endpoint, body: payload);
-    if (kDebugMode) {
-      debugPrint('[DeleteItemCart] status: ${response.statusCode}');
-      debugPrint('[DeleteItemCart] response: ${response.body}');
-    }
-
-    final responseBody = response.body.trim();
-    final responseLower = responseBody.toLowerCase();
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      final data = _decode(responseBody);
-      if (data != null) {
-        try {
-          ApexResponseHelper.unwrapResponse(data, 'DeleteItemCart');
-          return;
-        } catch (error) {
-          throw ProductException(error.toString());
-        }
-      }
-
-      if (responseLower.contains('ora-') || responseLower.contains('pl/sql')) {
-        throw ProductException(
-          ApexResponseHelper.messageForContext('DeleteItemCart', responseBody),
-        );
-      }
-
-      return;
-    }
-
-    final data = _decode(responseBody);
-    throw ProductException(
-      ApexResponseHelper.messageForContext(
-        'DeleteItemCart',
-        _extractMessage(data) ?? responseBody,
-      ),
-    );
-  }
-
-  Future<ApiProductDetails> getItemDetails({required int itemId}) async {
-    final rows = await getItemDetailsRows(itemId: itemId);
-    if (rows.isEmpty) {
-      throw ProductException('No item details found for this product.');
-    }
-    return rows.first;
-  }
-
-  Future<List<ApiProductDetails>> getItemDetailsRows({
-    required int itemId,
-  }) async {
+  Future<List<ApiProductDetails>> getItemDetailsRows(
+      {required int itemId,}) async {
     final uri = Uri.parse(
       '$_baseUrl/GetItemDetails',
     ).replace(queryParameters: {'item_id': itemId.toString()});
@@ -761,7 +625,7 @@ class ProductService {
         .whereType<Map>()
         .map(
           (row) => ApiProductDetails.fromJson(Map<String, dynamic>.from(row)),
-        )
+    )
         .toList();
   }
 
@@ -783,7 +647,9 @@ class ProductService {
     for (final item in rawImages) {
       try {
         final parsed = ApiItemImage.fromJson(item);
-        if (parsed.imagePath.trim().isNotEmpty) {
+        if (parsed.imagePath
+            .trim()
+            .isNotEmpty) {
           images.add(parsed);
         }
       } catch (_) {
@@ -805,13 +671,9 @@ class ProductService {
     return ordered;
   }
 
-  Future<List<ApiItemImage>> loadItemImages({required int itemId}) {
-    return getItemImages(itemId: itemId);
-  }
 
-  Future<List<ProductImageModel>> getItemImagesBase64({
-    required int itemId,
-  }) async {
+  Future<List<ProductImageModel>> getItemImagesBase64(
+      {required int itemId,}) async {
     if (itemId <= 0) {
       return const <ProductImageModel>[];
     }
@@ -832,9 +694,13 @@ class ProductService {
         .map(ProductImageModel.fromJson)
         .where(
           (image) =>
-              image.imageBase64.trim().isNotEmpty ||
-              image.imagePath.trim().isNotEmpty,
-        )
+      image.imageBase64
+          .trim()
+          .isNotEmpty ||
+          image.imagePath
+              .trim()
+              .isNotEmpty,
+    )
         .toList();
     if (images.isEmpty) {
       return const <ProductImageModel>[];
@@ -853,11 +719,8 @@ class ProductService {
     return ordered;
   }
 
-  Future<void> insertItemImage({
-    required int itemId,
-    required String imageBase64,
-    required bool isDefault,
-  }) async {
+  Future<void> insertItemImage(
+      {required int itemId, required String imageBase64, required bool isDefault,}) async {
     final normalizedImage = imageBase64.trim();
     if (itemId <= 0) {
       throw ProductException('Invalid item id.');
@@ -904,7 +767,9 @@ class ProductService {
           {
             'image_id': imageId,
             'is_Default': 1,
-            if (imageBase64.trim().isNotEmpty)
+            if (imageBase64
+                .trim()
+                .isNotEmpty)
               'image_base64': imageBase64.trim(),
           },
         ],
@@ -923,40 +788,6 @@ class ProductService {
     }
   }
 
-  Future<void> updateItemImage({
-    required int imageId,
-    required String imagePath,
-  }) async {
-    final normalizedPath = imagePath.trim();
-    if (imageId <= 0 || normalizedPath.isEmpty) {
-      throw ProductException('Invalid image update payload.');
-    }
-    final endpoint = Uri.parse('$_baseUrl/UpdateItemImages');
-    final body = <String, dynamic>{
-      'items': [
-        {
-          'image_id': imageId,
-          'IMAGE_ID': imageId,
-          'image_path': normalizedPath,
-          'IMAGE_PATH': normalizedPath,
-        },
-      ],
-    };
-    final response = await _safePost(endpoint, body: body);
-    final data = _decode(response.body);
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ProductException(
-        _extractMessage(data) ??
-            'Updating item image failed (HTTP ${response.statusCode}).',
-      );
-    }
-    final status = (data is Map<String, dynamic> ? data['status'] : null)
-        ?.toString()
-        .toLowerCase();
-    if (status == 'error') {
-      throw ProductException(_extractMessage(data) ?? 'Updating image failed.');
-    }
-  }
 
   List<Map<String, dynamic>> _extractImageRows(dynamic data) {
     if (data == null) return const [];
@@ -985,8 +816,7 @@ class ProductService {
     return const [];
   }
 
-  Future<http.Response> _safePost(
-    Uri uri, {
+  Future<http.Response> _safePost(Uri uri, {
     required Map<String, dynamic> body,
   }) async {
     try {
@@ -1012,8 +842,7 @@ class ProductService {
     }
   }
 
-  Future<http.Response?> _safePostOrNull(
-    Uri uri, {
+  Future<http.Response?> _safePostOrNull(Uri uri, {
     required Map<String, dynamic> body,
   }) async {
     try {
@@ -1114,7 +943,9 @@ class ProductService {
       final candidates = [data['message'], data['error'], data['detail']];
 
       for (final candidate in candidates) {
-        if (candidate is String && candidate.trim().isNotEmpty) {
+        if (candidate is String && candidate
+            .trim()
+            .isNotEmpty) {
           final normalized = candidate.trim().toLowerCase();
           if (normalized.contains('not found')) {
             return 'Requested endpoint was not found. Please verify API endpoint.';
@@ -1191,19 +1022,20 @@ class ProductService {
         final sourceVariants = row.variants.isNotEmpty
             ? row.variants
             : <ProductVariant>[
-                ProductVariant(
-                  detId: row.detId,
-                  brand: '',
-                  color: row.colors.isNotEmpty ? row.colors.first : '',
-                  size: row.sizes.isNotEmpty ? row.sizes.first : '',
-                  discount: 0,
-                  price: row.basePrice,
-                  stock: row.baseStock,
-                ),
-              ];
+          ProductVariant(
+            detId: row.detId,
+            brand: '',
+            color: row.colors.isNotEmpty ? row.colors.first : '',
+            size: row.sizes.isNotEmpty ? row.sizes.first : '',
+            discount: 0,
+            price: row.basePrice,
+            stock: row.baseStock,
+          ),
+        ];
         for (final variant in sourceVariants) {
           final key =
-              '${variant.detId}|${variant.brand}|${variant.color}|${variant.size}|${variant.price}|${variant.stock}';
+              '${variant.detId}|${variant.brand}|${variant.color}|${variant
+              .size}|${variant.price}|${variant.stock}';
           if (seenVariantKeys.add(key)) {
             variants.add(variant);
           }
@@ -1267,10 +1099,10 @@ class ProductService {
           createdByUserId: base.createdByUserId,
           isActive: rows.any((r) => r.isActive == 1) ? 1 : base.isActive,
           discountPrice:
-              displayVariant != null &&
-                  displayVariant.discount > 0 &&
-                  displayVariant.discount < 100 &&
-                  displayPrice > 0
+          displayVariant != null &&
+              displayVariant.discount > 0 &&
+              displayVariant.discount < 100 &&
+              displayPrice > 0
               ? displayPrice
               : base.discountPrice,
           variants: variants,
@@ -1289,53 +1121,6 @@ class ProductService {
     return result;
   }
 
-  Future<List<OrdersModel>> getOrders({required String username}) async {
-    final normalizedUsername = username.trim();
-    if (normalizedUsername.isEmpty) {
-      throw ProductException('Username is required to fetch orders.');
-    }
-
-    final uri = Uri.parse(
-      '$_baseUrl/GetOrders',
-    ).replace(queryParameters: {'l_USERNAME': normalizedUsername});
-
-    if (kDebugMode) {
-      debugPrint('[GetOrders] GET $uri');
-    }
-
-    try {
-      final response = await _safeGet(uri);
-
-      if (kDebugMode) {
-        debugPrint('[GetOrders] status: ${response.statusCode}');
-        debugPrint('[GetOrders] response: ${response.body}');
-      }
-
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw ProductException(
-          'Failed to fetch orders (HTTP ${response.statusCode}).',
-        );
-      }
-
-      final data = _decode(response.body);
-
-      if (data is! Map<String, dynamic>) {
-        throw ProductException('Invalid orders response format.');
-      }
-
-      final apiResponse = ApiOrderResponse.fromJson(data);
-
-      if (apiResponse.status != 'success') {
-        throw ProductException('Failed to fetch orders: ${apiResponse.status}');
-      }
-
-      return apiResponse.data;
-    } on ProductException {
-      rethrow;
-    } catch (error) {
-      throw ProductException('Error fetching orders: $error');
-    }
-  }
 
   // ========================= FAVORITES =========================
 
@@ -1400,7 +1185,6 @@ class ProductService {
             .toList();
 
         return wishlistProducts;
-
       } on ProductException catch (error) {
         lastError = error;
         if (i == queryAttempts.length - 1) rethrow;
@@ -1413,12 +1197,14 @@ class ProductService {
     if (lastError != null) throw lastError;
     return const [];
   }
+
   static dynamic _pick(Map<String, dynamic> json, List<String> keys) {
     for (final key in keys) {
       if (json.containsKey(key)) return json[key];
     }
     return null;
   }
+
   // ── NEW HELPER — add this private method anywhere inside ProductService ───
   //
   // Handles both shapes the backend may return:
@@ -1504,52 +1290,7 @@ class ProductService {
     );
   }
 
-  // ========================= RATINGS =========================
 
-  Future<void> addItemComment({
-    required int itemId,
-    required String username,
-    required int rating,
-    required String comment,
-  }) async {
-    final normalizedUsername = username.trim();
-    if (itemId <= 0 || normalizedUsername.isEmpty || rating < 1 || rating > 5) {
-      throw ProductException('Invalid rating payload.');
-    }
-
-    final endpoint = Uri.parse('$_baseUrl/AddItemComment');
-    final payload = {
-      'item_id': itemId,
-      'username': normalizedUsername,
-      'rating': rating,
-      'comment': comment.trim(),
-    };
-
-    if (kDebugMode) {
-      debugPrint('[AddItemComment] POST $endpoint');
-      debugPrint('[AddItemComment] body: $payload');
-    }
-
-    final response = await _safePost(endpoint, body: payload);
-
-    if (kDebugMode) {
-      debugPrint('[AddItemComment] status: ${response.statusCode}');
-      debugPrint('[AddItemComment] response: ${response.body}');
-    }
-
-    // CRITICAL RULE: For comment submission, HTTP 200 is success regardless of body.
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      // HTTP 200 = success regardless of body content
-      return;
-    }
-
-    // Only non-200 status codes are treated as errors
-    final data = _decode(response.body);
-    throw ProductException(
-      _extractMessage(data) ??
-          'Adding comment failed (HTTP ${response.statusCode}).',
-    );
-  }
 }
 
 class ProductException implements Exception {

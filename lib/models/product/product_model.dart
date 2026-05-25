@@ -12,7 +12,7 @@ class ProductModel {
   final int categoryId;
   final String category;
   final String createdBy;
-  final String itemOwner;
+  final String? itemOwner;
   final int createdByUserId;
   final int isActive;
   final double? discountPrice;
@@ -38,7 +38,7 @@ class ProductModel {
     required this.categoryId,
     required this.category,
     required this.createdBy,
-    this.itemOwner = '',
+    this.itemOwner,
     this.createdByUserId = 0,
     required this.isActive,
     this.discountPrice,
@@ -157,7 +157,7 @@ class ProductModel {
         'item_cat',
         'ITEM_CAT',
       ]),
-      createdBy: _asString(json, const [
+        createdBy: _asString(json, const [
         'created_by',
         'CREATED_BY',
         'creatd_by',
@@ -165,7 +165,7 @@ class ProductModel {
         'item_owner',
         'ITEM_OWNER',
       ]),
-      itemOwner: _asString(json, const ['item_owner', 'ITEM_OWNER']),
+      itemOwner: _asNullableString(json, const ['item_owner', 'ITEM_OWNER']),
       createdByUserId: _asInt(
         _pick(json, const [
           'created_by_user_id',
@@ -250,6 +250,13 @@ class ProductModel {
   static double _asDouble(dynamic value, {double fallback = 0.0}) {
     if (value is num) return value.toDouble();
     return double.tryParse((value ?? '').toString()) ?? fallback;
+  }
+
+  static String? _asNullableString(Map<String, dynamic> json, List<String> keys) {
+    final value = _pick(json, keys);
+    if (value == null) return null;
+    final normalized = value.toString().trim();
+    return normalized.isEmpty ? null : normalized;
   }
 
   static double? _asNullableDouble(dynamic value) {

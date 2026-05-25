@@ -15,10 +15,12 @@ import '../../presentation/cards/my_cards_page.dart';
 import '../../presentation/home_tab/main_page.dart';
 import '../../presentation/products/comments/comments_screen.dart';
 import '../../presentation/profile/my_products/my_products_page.dart';
+import '../../presentation/profile/notifications/notifications_screen.dart';
 import '../../presentation/profile/settings/change_email/change_email_screen.dart';
 import '../../presentation/profile/settings/change_email/verify_new_email_screen.dart';
 import '../../presentation/profile/settings/widgets/info_page.dart';
 import '../../presentation/products/product_details.dart';
+import '../../presentation/products/provider_products_screen.dart';
 import '../../presentation/profile/addresses/addresses_page.dart';
 import '../../presentation/profile/edit_profile/edit_profile_screen.dart';
 import '../../presentation/cart_tab/checkout/order_confirmation/order_confirmation_screen.dart';
@@ -32,6 +34,8 @@ import '../../presentation/splash/splash_screen.dart';
 
 class AppRoutes {
   // Route names
+  static const String notifications = '/notifications';
+
   static const String verifyNewEmail = '/verify-new-email';
   static const String changeEmail = '/change-email';
   static const String splash = '/';
@@ -50,6 +54,7 @@ class AppRoutes {
   static const String addCard = '/add-card';
   static const String productComments = '/product-comments';
   static const String productDetails = '/product-details';
+  static const String providerProducts = '/provider-products';
   static const String settings = '/settings';
   static const String editProfile = '/edit-profile';
   static const String changePassword = '/change-password';
@@ -73,7 +78,6 @@ class AppRoutes {
   static const String signupOtpVerification = '/signup-otp-verification';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
-    final args = settings.arguments as Map<String, dynamic>?;
     switch (settings.name) {
       case splash:
         return MaterialPageRoute(
@@ -90,11 +94,6 @@ class AppRoutes {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const SignupOtpVerificationScreen(),
-        );
-      case onboarding:
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => const OnboardingScreen(),
         );
       case login:
         return MaterialPageRoute(
@@ -125,7 +124,14 @@ class AppRoutes {
           ),
         );
 
+      case notifications:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const NotificationsScreen(),
+        );
+
       case otpVerification:
+        final args = settings.arguments as Map<String, dynamic>?;
         final username = args?['username'] as String? ?? '';
         final email = args?['email'] as String? ?? '';
         final flow = args?['flow'] as String? ?? 'forgot_password';
@@ -139,6 +145,7 @@ class AppRoutes {
         );
 
       case resetPassword:
+        final args = settings.arguments as Map<String, dynamic>?;
         final username = args?['username'] as String? ?? '';
         return MaterialPageRoute(
           settings: settings,
@@ -155,6 +162,7 @@ class AppRoutes {
         );
 
       case main:
+        final args = settings.arguments as Map<String, dynamic>?;
         final initialTabIndex = args?['initialTabIndex'] as int?;
         return MaterialPageRoute(
           settings: settings,
@@ -190,7 +198,17 @@ class AppRoutes {
           ),
         );
 
+      case providerProducts:
+        final providerUsername = settings.arguments as String? ?? '';
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => ProviderProductsScreen(
+            providerUsername: providerUsername,
+          ),
+        );
+
       case orderConfirmation:
+        final args = settings.arguments as Map<String, dynamic>?;
         final receipt = (args?['receipt'] as Map<String, dynamic>?) ?? const {};
         final total = (args?['total'] as num?)?.toDouble() ?? 0;
         final onContinue = args?['onContinue'] as VoidCallback?;
@@ -246,6 +264,7 @@ class AppRoutes {
           builder: (_) => VerifyNewEmailScreen(newEmail: newEmail),
         );
       case changePassword:
+        final args = settings.arguments as Map<String, dynamic>?;
         final flowName = args?['flow'] as String?;
         final flow = flowName == 'reset'
             ? ChangePasswordFlow.resetFromOtp
@@ -327,6 +346,7 @@ class AppRoutes {
         );
 
       case productDetails:
+        final args = settings.arguments as Map<String, dynamic>?;
         final product = args?['product'] as ProductModel?;
         if (product == null) {
           return MaterialPageRoute(

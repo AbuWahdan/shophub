@@ -9,6 +9,44 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get notificationsMarkAllRead => 'Mark all as read';
+
+  @override
+  String get notificationsEmpty => 'No notifications yet';
+
+  @override
+  String get commonRetry => 'Retry';
+
+  @override
+  String get providerSectionViewAll => 'View All';
+
+  @override
+  String get providerSectionLabel => 'Providers';
+
+  @override
+  String get loadingProducts => 'Loading products...';
+
+  @override
+  String get noProductsFound => 'No products found';
+
+  @override
+  String get pullToRefresh => 'Pull to refresh';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String productsByProvider(Object providerUsername) {
+    return 'Products by $providerUsername';
+  }
+
+  @override
+  String get viewStore => 'View Store';
+
+  @override
   String get statusPending => 'Pending';
 
   @override

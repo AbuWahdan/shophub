@@ -27,6 +27,7 @@ class ApiService {
     Map<String, String>? queryParams,
     bool isReadOperation = true,
   }) async {
+
     try {
       final response = await _client
           .get(_uri(endpoint, queryParams), headers: _headers)

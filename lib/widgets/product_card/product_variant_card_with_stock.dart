@@ -62,7 +62,7 @@ class ProductVariantCardWithStock extends StatelessWidget {
             color: selected ? AppColors.primary : theme.dividerColor,
             width: selected
                 ? _borderWidth
-                : _borderWidth - AppSpacing.xs / AppSpacing.borderThin,
+                : (_borderWidth - (AppSpacing.xs / AppSpacing.borderThin)).clamp(0.0, double.infinity),
           ),
         ),
         child: Stack(

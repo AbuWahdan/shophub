@@ -27,8 +27,8 @@ class AppSpacing {
   static const double buttonMd = 56.0;
   static const double buttonSm = 24.0;
 
-  static const double borderThick = 12.0;
-  static const double borderThin = 8.0;
+  static const double borderThick = 4.0;
+  static const double borderThin = 2.0;
 
   static const double imageSm = 60.0;
   static const double imageMd = 160.0;

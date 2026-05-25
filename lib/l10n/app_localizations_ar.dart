@@ -9,6 +9,44 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
+  String get notifications => 'الإشعارات';
+
+  @override
+  String get notificationsMarkAllRead => 'تحديد الكل كمقروء';
+
+  @override
+  String get notificationsEmpty => 'لا توجد إشعارات بعد';
+
+  @override
+  String get commonRetry => 'إعادة المحاولة';
+
+  @override
+  String get providerSectionViewAll => 'عرض الكل';
+
+  @override
+  String get providerSectionLabel => 'مقدمو الخدمة';
+
+  @override
+  String get loadingProducts => 'جارٍ تحميل المنتجات...';
+
+  @override
+  String get noProductsFound => 'لم يتم العثور على منتجات';
+
+  @override
+  String get pullToRefresh => 'اسحب للتحديث';
+
+  @override
+  String get refresh => 'تحديث';
+
+  @override
+  String productsByProvider(Object providerUsername) {
+    return 'منتجات بواسطة $providerUsername';
+  }
+
+  @override
+  String get viewStore => 'عرض المتجر';
+
+  @override
   String get statusPending => 'قيد الانتظار';
 
   @override

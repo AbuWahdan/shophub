@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/data.dart';
 import '../../widgets/BottomNavigationBar/bottom_navigation_bar.dart';
-import '../cart_tab/shopping_cart_page.dart';
+import '../cart_tab/shopping_cart_screen.dart';
 import 'home_page.dart';
 import '../categories_tab/categories_page.dart';
 import '../profile/profile_page.dart';
@@ -34,7 +34,7 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     currentIndex = _normalizeTabIndex(widget.initialTabIndex);
-    pages = [MyHomePage(), CategoriesPage(), ShoppingCartPage(), ProfilePage()];
+    pages = [MyHomePage(), CategoriesPage(), ShoppingCartScreen(), ProfilePage()];
   }
 
   int _normalizeTabIndex(int? index) {

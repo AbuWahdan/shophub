@@ -3,7 +3,6 @@ import '../../core/api/api_constants.dart';
 import '../../core/api/api_service.dart';
 import '../../core/api/app_exception.dart';
 import '../../core/utils/apex_response_helper.dart';
-import '../models/product/product_image_model.dart';
 import '../models/product/product_model.dart';
 
 class ProductRepository {
@@ -19,10 +18,7 @@ class ProductRepository {
   // ═══════════════════════════════════════════════════════════════════════════
 
   /// Get all products with optional caching (cache for 2 minutes)
-  Future<List<ProductModel>> getProducts({
-    bool forceRefresh = false,
-    String? username,
-  }) async {
+  Future<List<ProductModel>> getProducts({bool forceRefresh = false, String? username,}) async {
     final now = DateTime.now();
     final isUserSpecific = username != null && username.isNotEmpty;
 
@@ -33,14 +29,18 @@ class ProductRepository {
         _lastProductsFetch != null &&
         now.difference(_lastProductsFetch!) < _cacheTtl) {
       if (kDebugMode) {
-        debugPrint('[ProductRepository.getProducts] Cache HIT: ${_cachedProducts.length} products');
+        debugPrint(
+          '[ProductRepository.getProducts] Cache HIT: ${_cachedProducts.length} products',
+        );
       }
       return _cachedProducts;
     }
 
     try {
       if (kDebugMode) {
-        debugPrint('[ProductRepository.getProducts] Cache MISS - fetching from API...');
+        debugPrint(
+          '[ProductRepository.getProducts] Cache MISS - fetching from API...',
+        );
       }
 
       final queryParams = username != null && username.isNotEmpty
@@ -86,7 +86,8 @@ class ProductRepository {
 
       if (kDebugMode) {
         debugPrint(
-          '[ProductRepository.getProducts] API response received: ${response.runtimeType}',        );
+          '[ProductRepository.getProducts] API response received: ${response.runtimeType}',
+        );
       }
 
       if (response == null) {
@@ -147,11 +148,12 @@ class ProductRepository {
       }
 
       if (kDebugMode) {
-        debugPrint('[ProductRepository.getProducts] ✅ Final count after grouping: ${products.length} products');
+        debugPrint(
+          '[ProductRepository.getProducts] ✅ Final count after grouping: ${products.length} products',
+        );
       }
 
       return products;
-
     } on ServerException catch (e) {
       // Handle API errors specifically
       if (kDebugMode) {
@@ -185,28 +187,29 @@ class ProductRepository {
 
   /// Get products belonging to the current user (seller).
   /// Returns all products (active and inactive) for the user.
-  Future<List<ProductModel>> getMyProducts({
-    required String username,
-    bool forceRefresh = false,
-  }) async {
+  Future<List<ProductModel>> getMyProducts({required String username, bool forceRefresh = false,}) async {
     final normalizedUsername = username.trim().toLowerCase();
 
     if (normalizedUsername.isEmpty) return <ProductModel>[];
 
     if (kDebugMode) {
-      debugPrint('[ProductRepository.getMyProducts] Called with username="$normalizedUsername"');
+      debugPrint(
+        '[ProductRepository.getMyProducts] Called with username="$normalizedUsername"',
+      );
     }
 
     try {
       // Fetch flat (ungrouped) products directly from API
       final products = await _fetchFlatProducts(forceRefresh: forceRefresh);
 
-      final filtered = products.where((p) =>
-      p.createdBy.trim().toLowerCase() == normalizedUsername
-      ).toList();
+      final filtered = products
+          .where((p) => p.createdBy.trim().toLowerCase() == normalizedUsername)
+          .toList();
 
       if (kDebugMode) {
-        debugPrint('[ProductRepository.getMyProducts] ✅ Got ${filtered.length} products for username="$normalizedUsername"');
+        debugPrint(
+          '[ProductRepository.getMyProducts] ✅ Got ${filtered.length} products for username="$normalizedUsername"',
+        );
       }
 
       return filtered;
@@ -219,7 +222,32 @@ class ProductRepository {
       rethrow;
     }
   }
-  Future<List<ProductModel>> _fetchFlatProducts({bool forceRefresh = false}) async {
+
+  ///
+  /// Fetches products for a given provider username directly from the API
+  /// using the USERNAME query parameter — no client-side filtering needed.
+  Future<List<ProductModel>> getProviderProducts({
+    required String username,
+    bool forceRefresh = false,
+  }) async {
+    final normalizedUsername = username.trim();
+    if (normalizedUsername.isEmpty) return const [];
+
+    final response = await _apiService.get(
+      ApiConstants.getProducts,
+      queryParams: {'USERNAME': normalizedUsername},
+      isReadOperation: true,
+    );
+
+    if (response == null) return const [];
+
+    final rawItems = _extractItems(response);
+    if (rawItems.isEmpty) return const [];
+
+    return rawItems.map((item) => ProductModel.fromJson(item)).toList();
+  }
+
+  Future<List<ProductModel>> _fetchFlatProducts({bool forceRefresh = false,}) async {
     dynamic response;
 
     try {
@@ -242,288 +270,6 @@ class ProductRepository {
 
     return rawItems.map((item) => ProductModel.fromJson(item)).toList();
   }
-  /// Get images for a specific item.
-
-  Future<void> insertItemImage({
-    required int itemId,
-    required String imageBase64,
-    required bool isDefault,
-  }) async {
-    try {
-      final response = await _apiService.post(
-        ApiConstants.insertItemImages,
-        body: {
-          'item_id': itemId,
-          'is_Default': isDefault ? 1 : 0,
-          'image_base64': imageBase64.trim(),
-        },
-        isReadOperation: false,
-      );
-      ApexResponseHelper.unwrapResponse(response, 'InsertItemImages');
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Error inserting item image: $e');
-      }
-      rethrow;
-    }
-  }
-
-  /// Insert a new product.
-  Future<void> insertProduct(CreateProductRequest request) async {
-    try {
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Inserting new product');
-      }
-
-      await _apiService.post(
-        ApiConstants.insertProduct,
-        body: request.toJson(),
-        isReadOperation: false,
-      );
-
-      _invalidateCache();
-
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Product inserted successfully');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Error inserting product: $e');
-      }
-      rethrow;
-    }
-  }
-
-  /// Update an existing product.
-  Future<void> updateProduct(UpdateProductRequest request) async {
-    try {
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Updating product id=${request.id}');
-      }
-
-      await _apiService.post(
-        ApiConstants.updateItem,
-        body: request.toJson(),
-        isReadOperation: false,
-      );
-
-      _invalidateCache();
-
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Product updated successfully');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Error updating product: $e');
-      }
-      rethrow;
-    }
-  }
-
-  /// Insert product variant details.
-  ///
-  /// API shape (POST /InsertProductDetails):
-  /// ```json
-  /// {
-  ///   "details": [
-  ///     {
-  ///       "item_id": 505,
-  ///       "brand": "Nike",
-  ///       "color": "Black",
-  ///       "item_size": "L",
-  ///       "discount": 10,
-  ///       "item_price": 50,
-  ///       "item_qty": 5,
-  ///       "is_active": 1
-  ///     }
-  ///   ]
-  /// }
-  /// ```
-  Future<void> insertProductDetails({
-    required int itemId,
-    required List<CreateProductDetail> details,
-    required String createdBy,
-  }) async {
-    if (itemId <= 0 || details.isEmpty) {
-      throw ServerException(
-        'Invalid payload: itemId=$itemId details=${details.length}',
-      );
-    }
-
-    try {
-      if (kDebugMode) {
-        debugPrint(
-          '[ProductRepository] Inserting product details for itemId=$itemId',
-        );
-      }
-
-      // FIX 2: "details" is the top-level key. item_id goes INSIDE each row,
-      // NOT at the top level. Matches ProductService.insertProductDetails.
-      final body = <String, dynamic>{
-        'details': details.map((d) {
-          return <String, dynamic>{
-            'item_id': itemId, // ← inside each detail row
-            ...d.toJson(), // brand, color, item_size, discount, item_price, item_qty, is_active
-            if (createdBy.trim().isNotEmpty) 'created_by': createdBy.trim(),
-          };
-        }).toList(),
-      };
-
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] insertProductDetails body: $body');
-      }
-
-      await _apiService.post(
-        ApiConstants.insertProductDetails,
-        body: body,
-        isReadOperation: false,
-      );
-
-      _invalidateCache();
-
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Product details inserted successfully');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Error inserting product variants: $e');
-      }
-      rethrow;
-    }
-  }
-
-  /// Delete a product variant detail.
-  Future<bool> deleteVariantDetail(int itemDetId) async {
-    try {
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Deleting variant detail $itemDetId');
-      }
-
-      await _apiService.post(
-        ApiConstants.deleteItemDetails,
-        body: {'item_det_id': itemDetId},
-        isReadOperation: false,
-      );
-
-      _invalidateCache();
-
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Variant detail deleted successfully');
-      }
-
-      return true;
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Error deleting variant detail: $e');
-      }
-      rethrow;
-    }
-  }
-
-  /// Get user favorites.
-  Future<List<ProductModel>> getUserFavorites({
-    required String username,
-  }) async {
-    try {
-      final normalizedUsername = username.trim();
-      if (normalizedUsername.isEmpty) {
-        return <ProductModel>[];
-      }
-
-      if (kDebugMode) {
-        debugPrint(
-          '[ProductRepository] Fetching favorites for $normalizedUsername',
-        );
-      }
-
-      final response = await _apiService.get(
-        ApiConstants.getUserFavorites,
-        queryParams: {'USERNAME': normalizedUsername},
-        isReadOperation: true,
-      );
-
-      if (response == null) return <ProductModel>[];
-
-      final rawItems = _extractItems(response).where((item) {
-        final rawId =
-            item['ITEM_ID'] ?? item['item_id'] ?? item['ID'] ?? item['id'];
-        if (rawId is num) return rawId.toInt() > 0;
-        return int.tryParse('${rawId ?? ''}') != null &&
-            int.parse('${rawId ?? ''}') > 0;
-      });
-      return rawItems.map((item) => ProductModel.fromJson(item)).toList();
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Error fetching favorites: $e');
-      }
-      rethrow;
-    }
-  }
-
-  /// Toggle favorite status for a product.
-  Future<void> toggleFavorite({
-    required int itemId,
-    required String username,
-  }) async {
-    try {
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Toggling favorite for itemId=$itemId');
-      }
-
-      await _apiService.post(
-        ApiConstants.toggleFavoriteItem,
-        body: {'item_id': itemId, 'username': username},
-        isReadOperation: false,
-      );
-
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Favorite toggled successfully');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Error toggling favorite: $e');
-      }
-      rethrow;
-    }
-  }
-
-  /// Add a comment/review for a product.
-  Future<void> addItemComment({
-    required int itemId,
-    required String username,
-    required int rating,
-    required String comment,
-  }) async {
-    try {
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Adding comment for itemId=$itemId');
-      }
-
-      await _apiService.post(
-        ApiConstants.addItemComment,
-        body: {
-          'item_id': itemId,
-          'username': username,
-          'rating': rating,
-          'comment': comment,
-        },
-        isReadOperation: false,
-      );
-
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Comment added successfully');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[ProductRepository] Error adding comment: $e');
-      }
-      rethrow;
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Private helpers
-  // ═══════════════════════════════════════════════════════════════════════════
 
   void _invalidateCache() {
     _cachedProducts = <ProductModel>[];
@@ -578,15 +324,8 @@ class ProductRepository {
     return const [];
   }
 
-  List<ApiProductDetails> _parseItemDetails(dynamic response) {
-    final items = _extractItems(response);
-    return items.map((item) => ApiProductDetails.fromJson(item)).toList();
-  }
 
-  List<ApiItemImage> _parseItemImages(dynamic response) {
-    final items = _extractItems(response);
-    return items.map((item) => ApiItemImage.fromJson(item)).toList();
-  }
+
 
   /// Groups flat product rows (one row per variant) into one ApiProduct per
   /// item ID — identical to ProductService._groupProductsByItemId.

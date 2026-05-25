@@ -7,12 +7,14 @@ import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
 // Core
+import '../../controllers/notification_controller.dart';
 import '../../repositories/address_repository.dart';
 import '../../repositories/cart_repository.dart';
 import '../../repositories/checkout_repository.dart';
 import '../../repositories/codes_repository.dart';
 import '../../repositories/comment_repository.dart';
 import '../../repositories/credit_card_repository.dart';
+import '../../repositories/notification_repository.dart';
 import '../../repositories/order_repository.dart';
 import '../../repositories/product_repository.dart';
 import '../../repositories/profile_repository.dart';
@@ -146,6 +148,10 @@ abstract final class AppInitializer {
     Get.lazyPut<VisualSearchRepository>(
       () => VisualSearchRepository(),
       fenix: true,
+    );
+    Get.lazyPut<NotificationRepository>(() => NotificationRepository());
+    Get.lazyPut<NotificationController>(
+          () => NotificationController(Get.find<NotificationRepository>()),
     );
   }
 

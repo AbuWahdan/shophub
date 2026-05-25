@@ -59,10 +59,7 @@ class CheckoutRepository {
     }
   }
 
-  Future<PromoValidationResult> validatePromoCode({
-    required String code,
-    required double orderAmount,
-  }) async {
+  Future<PromoValidationResult> validatePromoCode({required String code, required double orderAmount,}) async {
     final normalizedCode = code.trim().toUpperCase();
     if (normalizedCode.isEmpty || orderAmount <= 0) {
       return PromoValidationResult.invalid();
@@ -96,4 +93,5 @@ class CheckoutRepository {
 
     return PromoValidationResult.invalid();
   }
+
 }

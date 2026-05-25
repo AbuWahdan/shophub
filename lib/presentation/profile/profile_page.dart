@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/config/app_images.dart';
 import '../../core/config/route.dart';
-
-import '../../core/app/app_theme.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_radius.dart';
 import '../../design/app_spacing.dart';
@@ -89,6 +87,12 @@ class ProfilePage extends StatelessWidget {
                 () {
                   Navigator.pushNamed(context, AppRoutes.myProducts);
                 },
+              ),
+              _buildMenuItem(
+                context,
+                Icons.notifications,
+                l10n.notifications,
+                    () => Navigator.pushNamed(context, AppRoutes.notifications),
               ),
               _buildMenuItem(
                 context,

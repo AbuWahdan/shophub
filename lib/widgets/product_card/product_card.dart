@@ -41,8 +41,7 @@ class _ProductCardState extends State<ProductCard> {
     setState(() => _isOpeningDetails = true);
     widget.onSelected?.call(widget.product);
     try {
-      await Navigator.pushNamed(
-        context,
+      await Get.toNamed(
         AppRoutes.productDetails,
         arguments: {'product': widget.product},
       );

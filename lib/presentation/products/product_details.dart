@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:sinwar_shoping/presentation/products/widgets/product_details_image_carousel.dart';
 import 'package:sinwar_shoping/presentation/products/widgets/product_details_info_section.dart';
 import 'package:sinwar_shoping/presentation/products/widgets/product_details_variant_section.dart';
-
+import 'package:sinwar_shoping/presentation/products/widgets/provider_section.dart';
 import '../../../models/cart_item_model.dart';
 import '../../../models/data.dart';
 import '../../../models/item_comment_model.dart';
@@ -268,6 +268,16 @@ class _ProductDetailsState extends State<ProductDetails> {
                               selectedVariant: _selectedVariant,
                               hasSingleVariant: _hasSingleVariant,
                             ),
+                            if (widget.product.itemOwner?.trim().isNotEmpty ?? false) ...[
+                              const SizedBox(height: AppSpacing.lg),
+                              ProviderSection(
+                                providerName: widget.product.itemOwner!.trim(),
+                                onTap: () => Get.toNamed(
+                                  AppRoutes.providerProducts,
+                                  arguments: widget.product.itemOwner!.trim(),
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: AppSpacing.lg),
                             ProductDetailsVariantSection(
                               variants: _variants,

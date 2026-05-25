@@ -16,6 +16,10 @@ class ApiConstants {
   static const String getSizes = '/products/GetSizes';
   static const String getSizeGroups = '/products/GetGroupsSize';
 
+  // Notifications
+  static const String markAsRead = '/users/MarkNotificationAsRead';
+  static const String getNotifications = '/users/GetUserNotifications';
+
   // Favourites
   static const String getUserFavorites = '/products/GetUserFavorites';
   static const String toggleFavoriteItem = '/products/ToggleFavoriteItem';

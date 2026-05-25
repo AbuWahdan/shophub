@@ -35,7 +35,7 @@ class _ItemReviewSectionState extends State<ItemReviewSection> {
     super.initState();
     _controllerTag = 'item-review-${widget.itemId}-${identityHashCode(this)}';
     Get.lazyPut<ItemReviewController>(
-      () => ItemReviewController(Get.find<CommentRepository>()),
+          () => ItemReviewController(Get.find<CommentRepository>()),
       tag: _controllerTag,
     );
     _controller = Get.find<ItemReviewController>(tag: _controllerTag);
@@ -171,10 +171,10 @@ class _ItemReviewSectionState extends State<ItemReviewSection> {
                     : _handleSubmit,
                 leading: _controller.isSubmitting.value
                     ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
                     : null,
               ),
             ],
@@ -214,7 +214,7 @@ class _ReadOnlyReviewCard extends StatelessWidget {
           Row(
             children: List.generate(
               5,
-              (index) => Icon(
+                  (index) => Icon(
                 index < review.rate ? Icons.star : Icons.star_border,
                 color: index < review.rate
                     ? AppColors.accent
