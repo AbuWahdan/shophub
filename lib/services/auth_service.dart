@@ -512,60 +512,6 @@ class AuthService {
     }
   }
 
-  // ========================= RESET PASSWORD =========================
-
-  Future<void> resetPassword({
-    required String username,
-    required String newPassword,
-    String? oldPassword,
-  }) async {
-    final usernameValue = username.trim();
-    final passwordValue = newPassword.trim();
-    final oldPasswordValue = oldPassword?.trim();
-
-    if (usernameValue.isEmpty) throw AuthException('Username is required.');
-    if (passwordValue.isEmpty) throw AuthException('Password is required.');
-
-    String? lastError;
-    TimeoutException? timeoutError;
-    bool hadNetworkError = false;
-
-    final payload = ForgetPasswordRequestModel(
-      username: usernameValue,
-      newPassword: passwordValue,
-      oldPassword:
-      oldPasswordValue != null && oldPasswordValue.isNotEmpty ? oldPasswordValue : null,
-    ).toJson();
-
-    for (int attempt = 0; attempt < 2; attempt++) {
-      try {
-        final response = await _client
-            .post(
-          Uri.parse('$_baseUrl/ForgetPassword'),
-          headers: _defaultHeaders(),
-          body: jsonEncode(payload),
-        )
-            .timeout(_timeout);
-
-        if (response.statusCode >= 200 && response.statusCode < 300) return;
-
-        lastError = _extractMessage(_decode(response.body)) ??
-            'Password reset failed (HTTP ${response.statusCode}).';
-        continue;
-      } on TimeoutException catch (error) {
-        timeoutError = error;
-        continue;
-      } catch (_) {
-        hadNetworkError = true;
-        continue;
-      }
-    }
-
-    if (timeoutError != null) throw AuthException('Request timed out. Please try again.');
-    if (hadNetworkError && lastError == null) throw AuthException('Network error. Please try again.');
-    throw AuthException(lastError ?? 'Password reset failed.');
-  }
-
   // ========================= HELPERS =========================
 
   Map<String, String> _defaultHeaders() => const {

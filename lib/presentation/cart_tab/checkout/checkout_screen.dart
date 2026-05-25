@@ -177,11 +177,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return _paymentMethodOptions
         .map(
           (option) => PaymentMethodModel(
-            id: option.minorCode,
-            label: option.localizedTitle(context),
-            icon: _paymentMethodIcon(option),
-          ),
-        )
+        id: option.minorCode,
+        label: option.localizedTitle(context),
+        icon: _paymentMethodIcon(option),
+      ),
+    )
         .toList(growable: false);
   }
 
@@ -214,7 +214,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         _paymentMethodOptions = options;
         if (_selectedPaymentMethodId != null &&
             !_paymentMethodOptions.any(
-              (option) => option.minorCode == _selectedPaymentMethodId,
+                  (option) => option.minorCode == _selectedPaymentMethodId,
             )) {
           _selectedPaymentMethodId = null;
         }
@@ -310,7 +310,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       builder: (_) => AddressSelectionBottomSheet(
         savedAddresses: _addressController.addresses.toList(),
         selectedAddressId:
-            _selectedAddress?.addressId ??
+        _selectedAddress?.addressId ??
             _addressController.selectedAddressId.value,
         onAddressSelected: (address) {
           setState(() {
@@ -533,7 +533,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       )
                     else
                       ...widget.cartItems.map(
-                        (item) => Padding(
+                            (item) => Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.md),
                           child: _OrderSummaryRow(item: item),
                         ),
@@ -575,53 +575,53 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             Expanded(
                               child: _isLoadingAddresses
                                   ? const Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: AppSpacing.sm,
-                                      ),
-                                      child: SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                    )
+                                padding: EdgeInsets.symmetric(
+                                  vertical: AppSpacing.sm,
+                                ),
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              )
                                   : Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _selectedAddress?.label ??
-                                              l10n.checkoutSelectDeliveryAddress,
-                                          style: AppTextStyles.bodyMedium
-                                              .copyWith(
-                                                color: _selectedAddress != null
-                                                    ? null
-                                                    : AppColors.neutral600,
-                                              ),
-                                        ),
-                                        if (_selectedAddress != null) ...[
-                                          const SizedBox(height: AppSpacing.xs),
-                                          Text(
-                                            _selectedAddress!.streetAddress,
-                                            style: AppTextStyles.bodySmall,
-                                          ),
-                                          const SizedBox(height: AppSpacing.xs),
-                                          Text(
-                                            [
-                                                  _selectedAddress!.city,
-                                                  _selectedAddress!.country,
-                                                ]
-                                                .where(
-                                                  (value) =>
-                                                      value.trim().isNotEmpty,
-                                                )
-                                                .join(', '),
-                                            style: AppTextStyles.bodySmall,
-                                          ),
-                                        ],
-                                      ],
+                                crossAxisAlignment:
+                                CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _selectedAddress?.label ??
+                                        l10n.checkoutSelectDeliveryAddress,
+                                    style: AppTextStyles.bodyMedium
+                                        .copyWith(
+                                      color: _selectedAddress != null
+                                          ? null
+                                          : AppColors.neutral600,
                                     ),
+                                  ),
+                                  if (_selectedAddress != null) ...[
+                                    const SizedBox(height: AppSpacing.xs),
+                                    Text(
+                                      _selectedAddress!.streetAddress,
+                                      style: AppTextStyles.bodySmall,
+                                    ),
+                                    const SizedBox(height: AppSpacing.xs),
+                                    Text(
+                                      [
+                                        _selectedAddress!.city,
+                                        _selectedAddress!.country,
+                                      ]
+                                          .where(
+                                            (value) =>
+                                        value.trim().isNotEmpty,
+                                      )
+                                          .join(', '),
+                                      style: AppTextStyles.bodySmall,
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
                             const Icon(Icons.keyboard_arrow_down),
                           ],
@@ -699,10 +699,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               color: AppColors.success,
                             )
                           else if (_promoError != null)
-                            const Icon(
-                              Icons.error_outline,
-                              color: AppColors.error,
-                            ),
+                              const Icon(
+                                Icons.error_outline,
+                                color: AppColors.error,
+                              ),
                         ],
                       ),
                     ),

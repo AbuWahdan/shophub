@@ -28,7 +28,6 @@ import '../../controllers/cart_controller.dart';
 import '../../controllers/credit_card_controller.dart';
 import '../../controllers/my_products_controller.dart';
 import '../../controllers/order_controller.dart';
-import '../../controllers/product_controller.dart';
 import '../config/mapbox_config.dart';
 import '../../presentation/profile/settings/app_settings.dart';
 import '../state/auth_state.dart';
@@ -156,10 +155,7 @@ abstract final class AppInitializer {
   }
 
   static void _registerControllers() {
-    Get.lazyPut<ProductController>(
-      () => ProductController(Get.find<ProductRepository>()),
-      fenix: true,
-    );
+
     Get.lazyPut<MyProductsController>(
       () => MyProductsController(Get.find<ProductRepository>()),
       fenix: true,

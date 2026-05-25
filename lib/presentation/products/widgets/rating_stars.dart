@@ -4,9 +4,9 @@ class RatingStars extends StatelessWidget {
   const RatingStars({
     super.key,
     required this.rating,
-    this.size = 16,
+    this.size = 12,
     this.maxStars = 5,
-    this.color = const Color(0xFFFFB800),
+    this.color = const Color(0xFFf5a623),
   });
 
   final double rating;

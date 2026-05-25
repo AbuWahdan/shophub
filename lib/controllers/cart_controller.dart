@@ -4,20 +4,6 @@ import '../models/cart_item_model.dart';
 import '../repositories/cart_repository.dart';
 import '../services/app_notification_service.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CART CONTROLLER
-//
-// Responsibilities:
-//   • Owns the reactive cart state (items, loading flags)
-//   • Enforces quantity bounds BEFORE hitting the repository
-//   • Prevents rapid double-taps via per-item debounce
-//   • Rolls back optimistic UI updates on failure
-//
-// What it does NOT do:
-//   • Compute deltas or API payloads (that is CartRepository's concern)
-//   • Know anything about API accumulation behavior
-// ─────────────────────────────────────────────────────────────────────────────
-
 class CartController extends GetxController {
   final CartRepository _repo;
   CartController(this._repo);
@@ -85,11 +71,6 @@ class CartController extends GetxController {
   void _showSuccess(String message) =>
       AppNotificationService.instance.showSuccess(null, message);
 
-  // ── PUBLIC API ───────────────────────────────────────────────────────────────
-
-  // ─────────────────────────────
-  // LOAD CART
-  // ─────────────────────────────
 
   Future<void> loadCart({required String username}) async {
     final normalized = username.trim();
@@ -117,12 +98,6 @@ class CartController extends GetxController {
     }
   }
 
-  // ─────────────────────────────
-  // ADD ITEM (new item or re-add)
-  // ─────────────────────────────
-  //
-  // Sends delta qty to the API. If the item already exists in cart,
-  // caps the delta so it does not exceed remaining stock.
 
   Future<void> addItem({
     required int itemId,
@@ -311,34 +286,4 @@ class CartController extends GetxController {
     }
   }
 
-  // ─────────────────────────────
-  // DEBUG VALIDATION
-  // ─────────────────────────────
-
-  Map<String, dynamic> debugValidateState() {
-    final errors = <String>[];
-
-    final ids = items.map((i) => i.detailId).toList();
-    if (ids.toSet().length != ids.length) {
-      errors.add('Duplicate detailIds detected: $ids');
-    }
-
-    for (final item in items) {
-      if (item.bookedQty < 1) {
-        errors.add('${item.name}: bookedQty=${item.bookedQty} < 1');
-      }
-      if (item.bookedQty > item.availableQty) {
-        errors.add(
-          '${item.name}: bookedQty=${item.bookedQty} '
-              '> availableQty=${item.availableQty}',
-        );
-      }
-    }
-
-    if (kDebugMode && errors.isNotEmpty) {
-      debugPrint('[CartController] ⚠️ Validation errors: $errors');
-    }
-
-    return {'isValid': errors.isEmpty, 'errors': errors};
-  }
 }

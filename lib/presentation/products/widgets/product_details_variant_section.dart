@@ -63,6 +63,9 @@ class _SingleVariantCard extends StatelessWidget {
   }
 }
 
+// Updated _MultiVariantList to use a Wrap similar to your HTML .colors/.sizes
+// --------------------------------------------------------------------------
+
 class _MultiVariantList extends StatelessWidget {
   final List<ProductVariant> variants;
   final ProductVariant selectedVariant;
@@ -79,30 +82,36 @@ class _MultiVariantList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          AppLocalizations.of(context).productDetails,
-          style: AppTextStyles.titleMedium,
-        ),
-        const SizedBox(height: AppSpacing.md),
-        ...variants.map(
-              (variant) => Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: ProductVariantCardWithStock(
-              variant: variant,
-              selected: selectedVariant.detId > 0
-                  ? selectedVariant.detId == variant.detId
-                  : selectedVariant.size == variant.size &&
-                  selectedVariant.color == variant.color,
-              quantity: 1,
+        const Text("Options", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: variants.map((variant) {
+            final isSelected = selectedVariant.detId == variant.detId;
+            return InkWell(
               onTap: () => onVariantSelected(variant),
-            ),
-          ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF4e54c8) : const Color(0xFFEEEEEE),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  "${variant.size} / ${variant.color}",
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isSelected ? Colors.white : Colors.black,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
   }
 }
-
 class _StockBadge extends StatelessWidget {
   final int stock;
 

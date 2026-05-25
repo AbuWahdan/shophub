@@ -9,6 +9,21 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
+  String get promoCodeLabel => 'كود الخصم';
+
+  @override
+  String get viewDetails => 'عرض التفاصيل';
+
+  @override
+  String get orderDetailsTitle => 'تفاصيل الطلب';
+
+  @override
+  String get addToCart => 'أضف إلى السلة';
+
+  @override
+  String get orderNet => 'صافي الطلب';
+
+  @override
   String get notifications => 'الإشعارات';
 
   @override
@@ -837,6 +852,50 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get addressesTitle => 'العناوين';
+
+  @override
+  String get savedAddressesTitle => 'العناوين المحفوظة';
+
+  @override
+  String get searchSavedAddressesHint => 'ابحث في العناوين المحفوظة';
+
+  @override
+  String get addNewAddress => 'إضافة عنوان جديد';
+
+  @override
+  String get noSavedAddresses => 'لا توجد عناوين محفوظة بعد';
+
+  @override
+  String get addressesLoginRequired => 'يرجى تسجيل الدخول لإدارة العناوين';
+
+  @override
+  String get addressesSettingsLabel => 'إعدادات العناوين';
+
+  @override
+  String get addressesAdded => 'تمت إضافة العنوان بنجاح';
+
+  @override
+  String get addressesDeleteTitle => 'حذف العنوان';
+
+  @override
+  String addressesDeleteMessage(String label) {
+    return 'حذف \"$label\"؟';
+  }
+
+  @override
+  String get addressesFallbackCountry => 'الأردن';
+
+  @override
+  String get useCurrentLocation => 'استخدام الموقع الحالي';
+
+  @override
+  String get changeLocation => 'تغيير الموقع';
+
+  @override
+  String get orEnterManually => 'أو أدخل يدوياً';
+
+  @override
+  String get savingLabel => 'جارٍ الحفظ...';
 
   @override
   String get addressesDefault => 'افتراضي';

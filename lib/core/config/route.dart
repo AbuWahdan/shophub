@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sinwar_shoping/models/product/product_model.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/item_comment_model.dart';
+import '../../models/orders_model.dart';
 import '../../models/user_model.dart';
 import '../../presentation/auth/forgot_password_email_screen.dart';
 import '../../presentation/auth/login/login_screen.dart';
@@ -16,15 +17,16 @@ import '../../presentation/home_tab/main_page.dart';
 import '../../presentation/products/comments/comments_screen.dart';
 import '../../presentation/profile/my_products/my_products_page.dart';
 import '../../presentation/profile/notifications/notifications_screen.dart';
+import '../../presentation/profile/orders/order_details_screen.dart';
 import '../../presentation/profile/settings/change_email/change_email_screen.dart';
 import '../../presentation/profile/settings/change_email/verify_new_email_screen.dart';
 import '../../presentation/profile/settings/widgets/info_page.dart';
-import '../../presentation/products/product_details.dart';
+import '../../presentation/products/product_details_screen.dart';
 import '../../presentation/products/provider_products_screen.dart';
 import '../../presentation/profile/addresses/addresses_page.dart';
 import '../../presentation/profile/edit_profile/edit_profile_screen.dart';
 import '../../presentation/cart_tab/checkout/order_confirmation/order_confirmation_screen.dart';
-import '../../presentation/profile/orders/orders_page.dart';
+import '../../presentation/profile/orders/my_orders_screen.dart';
 import '../../presentation/profile/settings/about/about_page.dart';
 import '../../presentation/profile/settings/change_password/change_password_screen.dart';
 import '../../presentation/profile/settings/profile_settings_page.dart';
@@ -76,6 +78,8 @@ class AppRoutes {
   static const String rateProduct = '/rate-product';
 
   static const String signupOtpVerification = '/signup-otp-verification';
+  static const String orderDetails = '/order_details_screen';
+
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -123,7 +127,19 @@ class AppRoutes {
             pendingUser: args['pendingUser'] as UserModel?, // <-- must be here
           ),
         );
+      case orderDetails: // Replace with your actual string or enum, e.g., '/orderDetails'
+        final args = settings.arguments as Map<String, dynamic>? ?? {};
 
+        return MaterialPageRoute(
+          settings: settings, // Passing settings is best practice for analytics/deep linking
+          builder: (_) => OrderDetailsScreen(
+            // Ensure the type (int or String) matches your orderId definition
+            orderId: args['orderId'] as int? ?? 0,
+            orderNo: args['orderNo'] as String? ?? '',
+            // We pass the full model so the details screen doesn't have to refetch it
+            order: args['order'] as OrdersModel,
+          ),
+        );
       case notifications:
         return MaterialPageRoute(
           settings: settings,
@@ -178,7 +194,7 @@ class AppRoutes {
       case orders:
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => const OrdersPage(),
+          builder: (_) => const MyOrdersScreen(),
         );
 
       case addresses:
@@ -364,7 +380,7 @@ class AppRoutes {
         final selectedDetId = args?['selectedDetId'] as int?;
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => ProductDetails(
+          builder: (_) => ProductDetailsScreen(
             product: product,
             initialSize: selectedSize,
             initialColor: selectedColor,

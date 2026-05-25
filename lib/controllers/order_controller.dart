@@ -52,10 +52,6 @@ class OrderController extends ChangeNotifier {
     }
   }
 
-  /// Refresh orders for the current user
-  Future<void> refreshOrders({required String username}) async {
-    await loadOrders(username: username);
-  }
 
   Future<List<OrderDetailItemModel>> getOrderDetails(int orderId) {
     return _repo.getOrderDetails(orderId);

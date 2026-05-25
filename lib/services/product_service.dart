@@ -217,30 +217,6 @@ class ProductService {
     return filtered;
   }
 
-  /// Filters [allProducts] by [categoryId] (respecting parent→children
-  /// relationships), stores the result in the per-category cache, and returns it.
-  List<ProductModel> _filterAndCache(int categoryId,
-      List<ProductModel> allProducts,
-      DateTime now,) {
-    final category = CategoriesData.getCategoryById(categoryId);
-
-    final List<ProductModel> filtered;
-    if (category != null && category.isMainCategory) {
-      final categoryIds = <int>{
-        category.id,
-        ...category.children.map((c) => c.id),
-      };
-      filtered = allProducts
-          .where((p) => categoryIds.contains(p.categoryId))
-          .toList();
-    } else {
-      filtered = allProducts.where((p) => p.categoryId == categoryId).toList();
-    }
-
-    _categoryCache[categoryId] = filtered;
-    _categoryCacheTimes[categoryId] = now;
-    return filtered;
-  }
 
   Future<CategoryModel?> loadCategoryById(int id) async {
     final uri = Uri.parse(

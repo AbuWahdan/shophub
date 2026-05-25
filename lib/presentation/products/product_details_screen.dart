@@ -15,7 +15,6 @@ import '../../core/state/auth_state.dart';
 import '../../core/state/review_refresh_notifier.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_radius.dart';
-import '../../design/app_shadows.dart';
 import '../../design/app_spacing.dart';
 import '../../design/app_text_styles.dart';
 import '../../l10n/app_localizations.dart';
@@ -31,13 +30,13 @@ import '../../widgets/product_card/add_to_cart_bottom_sheet/widgets/product_vari
 import '../../controllers/floating_cart_controller.dart';
 import 'widgets/product_details_reviews_section.dart';
 
-class ProductDetails extends StatefulWidget {
+class ProductDetailsScreen extends StatefulWidget {
   final ProductModel product;
   final String? initialSize;
   final String? initialColor;
   final int? initialDetId;
 
-  const ProductDetails({
+  const ProductDetailsScreen({
     super.key,
     required this.product,
     this.initialSize,
@@ -46,10 +45,10 @@ class ProductDetails extends StatefulWidget {
   });
 
   @override
-  State<ProductDetails> createState() => _ProductDetailsState();
+  State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
 }
 
-class _ProductDetailsState extends State<ProductDetails> {
+class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   late final CommentRepository _commentRepository;
   late final FloatingCartController _floatingCartController;
   late Future<List<ItemCommentModel>> _commentsFuture;
@@ -169,7 +168,7 @@ class _ProductDetailsState extends State<ProductDetails> {
         size: r.size.toString(),
         discount: r.discount,
         price: r.price,
-        stock: r.stock,
+        stock: r.stock, // Relies safely on the available qty field
       ))
           .toList();
       setState(() {
@@ -227,6 +226,7 @@ class _ProductDetailsState extends State<ProductDetails> {
     return Stack(
       children: [
         Scaffold(
+          extendBody: true, // Allows content to scroll behind the floating button
           body: Stack(
             children: [
               RefreshIndicator(
@@ -297,7 +297,8 @@ class _ProductDetailsState extends State<ProductDetails> {
                                     .getItemComments(itemId: widget.product.id);
                               }),
                             ),
-                            const SizedBox(height: AppSpacing.xxl * 3),
+                            // Extra padding so content isn't obscured by the floating button
+                            const SizedBox(height: AppSpacing.xxl * 5),
                           ],
                         ),
                       ),
@@ -312,7 +313,8 @@ class _ProductDetailsState extends State<ProductDetails> {
               ),
             ],
           ),
-          bottomNavigationBar: _AddToCartBar(
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+          floatingActionButton: _AddToCartBar(
             isLoading: _isAddingToCart || auth.isInitializing || !auth.isInitialized,
             onTap: _openAddToCartSheet,
           ),
@@ -490,6 +492,15 @@ class _AppBarOverlay extends StatelessWidget {
         elevation: 0,
         actions: [
           IconButton(
+            icon: Icon(
+              Icons.share_outlined,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            onPressed: () {
+              // TODO: Implement share logic
+            },
+          ),
+          IconButton(
             icon: isToggling
                 ? const SizedBox(
               width: 18,
@@ -499,7 +510,7 @@ class _AppBarOverlay extends StatelessWidget {
                 : Icon(
               isFavorite ? Icons.favorite : Icons.favorite_border,
               color: isFavorite
-                  ? AppColors.error
+                  ? AppColors.error // Keep your defined error color for active heart
                   : Theme.of(context).colorScheme.onSurface,
             ),
             onPressed: isToggling ? null : onFavoriteTap,
@@ -519,22 +530,19 @@ class _AddToCartBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      top: false,
-      child: Container(
-        padding: AppSpacing.insetsLg,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          boxShadow: [AppShadows.subtleShadow],
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         child: SizedBox(
           width: double.infinity,
-          height: AppSpacing.buttonMd,
+          height: 56, // Standard height for floating buttons
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
+              elevation: 4, // Adds floating drop shadow
+              shadowColor: AppColors.primary.withOpacity(0.5),
               backgroundColor: AppColors.primary,
               foregroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.lg),
+                borderRadius: BorderRadius.circular(AppRadius.xxl), // Pill shape
               ),
             ),
             onPressed: isLoading ? null : onTap,

@@ -42,10 +42,10 @@ class ProductDetailsImageCarousel extends StatelessWidget {
     }
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _MainImagePager(
           controller: imageController,
-          currentIndex: currentIndex,
           imageCount: imageCount,
           hasLoadedImages: hasLoadedImages,
           itemImages: itemImages,
@@ -67,10 +67,12 @@ class ProductDetailsImageCarousel extends StatelessWidget {
         if (isLoading)
           const Padding(
             padding: EdgeInsets.only(bottom: AppSpacing.md),
-            child: SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
+            child: Center(
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
             ),
           ),
         if (loadError != null && loadError!.trim().isNotEmpty)
@@ -88,8 +90,9 @@ class ProductDetailsImageCarousel extends StatelessWidget {
   void _openViewer(BuildContext context, int initialIndex) {
     final paths = hasLoadedImages
         ? itemImages
-        .map((img) =>
-    img.imagePath.trim().isNotEmpty ? img.imagePath.trim() : img.imageBase64)
+        .map((img) => img.imagePath.trim().isNotEmpty
+        ? img.imagePath.trim()
+        : img.imageBase64)
         .where((s) => s.isNotEmpty)
         .toList()
         : List<String>.from(fallbackImages);
@@ -110,7 +113,7 @@ class _EmptyImagePlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: AppSpacing.imageLg,
+      height: 200, // Matches your HTML .hero height
       color: Theme.of(context).colorScheme.surface,
       alignment: Alignment.center,
       child: const Icon(Icons.broken_image_outlined, size: 56),
@@ -120,7 +123,6 @@ class _EmptyImagePlaceholder extends StatelessWidget {
 
 class _MainImagePager extends StatelessWidget {
   final PageController controller;
-  final int currentIndex;
   final int imageCount;
   final bool hasLoadedImages;
   final List<ProductImageModel> itemImages;
@@ -131,7 +133,6 @@ class _MainImagePager extends StatelessWidget {
 
   const _MainImagePager({
     required this.controller,
-    required this.currentIndex,
     required this.imageCount,
     required this.hasLoadedImages,
     required this.itemImages,
@@ -143,72 +144,26 @@ class _MainImagePager extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          height: AppSpacing.imageLg,
-          color: Theme.of(context).colorScheme.surface,
-          child: PageView.builder(
-            controller: controller,
-            onPageChanged: onPageChanged,
-            itemCount: imageCount,
-            itemBuilder: (context, index) => GestureDetector(
-              onTap: () => onImageTap(index),
-              child: Hero(
-                tag: 'product_$productId',
-                child: _GalleryImage(
-                  index: index,
-                  hasLoadedImages: hasLoadedImages,
-                  itemImages: itemImages,
-                  fallbackImages: fallbackImages,
-                ),
-              ),
+    return Container(
+      height: 300, // Adjusted for typical mobile screen proportions based on your hero style
+      width: double.infinity,
+      color: Theme.of(context).colorScheme.surface,
+      child: PageView.builder(
+        controller: controller,
+        onPageChanged: onPageChanged,
+        itemCount: imageCount,
+        itemBuilder: (context, index) => GestureDetector(
+          onTap: () => onImageTap(index),
+          child: Hero(
+            tag: 'product_$productId',
+            child: _GalleryImage(
+              index: index,
+              hasLoadedImages: hasLoadedImages,
+              itemImages: itemImages,
+              fallbackImages: fallbackImages,
             ),
           ),
         ),
-        Positioned(
-          bottom: AppSpacing.md,
-          left: 0,
-          right: 0,
-          child: _PageIndicator(
-            count: imageCount,
-            currentIndex: currentIndex,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _PageIndicator extends StatelessWidget {
-  final int count;
-  final int currentIndex;
-
-  const _PageIndicator({required this.count, required this.currentIndex});
-
-  // ✅ AFTER
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0), // Adds a safe breathing room on the edges
-      child: Wrap(                                           // Changed from Row to Wrap
-        alignment: WrapAlignment.center,                     // Changed from mainAxisAlignment
-        runSpacing: 4.0,                                     // Adds vertical spacing if the dots wrap to a second line
-        children: List.generate(count, (i) {
-          final isActive = i == currentIndex;
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: isActive ? AppSpacing.xxl : AppSpacing.sm,
-            height: AppSpacing.sm,
-            margin: const EdgeInsets.symmetric(horizontal: 2),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppSpacing.xs),
-              color: isActive
-                  ? AppColors.primary
-                  : Theme.of(context).colorScheme.surface.withValues(alpha: 0.6),
-            ),
-          );
-        }),
       ),
     );
   }
@@ -236,42 +191,36 @@ class _ThumbnailStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: AppSpacing.insetsMd,
+      // Padding exactly matching your HTML .thumbs class
+      padding: const EdgeInsets.all(10.0),
       child: SizedBox(
-        height: AppSpacing.imageSm,
+        height: 50, // Strict 50px height from .thumb
         child: ListView.separated(
-          padding: AppSpacing.horizontal(AppSpacing.lg),
           scrollDirection: Axis.horizontal,
           itemCount: imageCount,
-          separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+          separatorBuilder: (_, __) => const SizedBox(width: 8), // 8px gap from .thumbs
           itemBuilder: (context, i) {
             final isActive = i == currentIndex;
             return GestureDetector(
               onTap: () => onTap(i),
               onDoubleTap: () => onDoubleTap(i),
               child: Container(
-                padding: AppSpacing.insetsSm,
+                width: 50, // Strict 50px width from .thumb
+                height: 50,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppSpacing.sm),
+                  borderRadius: BorderRadius.circular(10), // 10px radius from .thumb
                   border: Border.all(
-                    color: isActive
-                        ? AppColors.primary
-                        : Theme.of(context).dividerColor,
-                    width: isActive
-                        ? AppSpacing.borderThick
-                        : AppSpacing.borderThin,
+                    color: isActive ? AppColors.primary : Colors.transparent,
+                    width: 2, // 2px solid border from .thumb
                   ),
-                  color: Theme.of(context).colorScheme.surface,
                 ),
-                child: SizedBox(
-                  width: AppSpacing.imageSm,
-                  height: AppSpacing.imageSm,
-                  child: _GalleryImage(
-                    index: i,
-                    hasLoadedImages: hasLoadedImages,
-                    itemImages: itemImages,
-                    fallbackImages: fallbackImages,
-                  ),
+                // ClipRRect ensures the image stays inside the 10px rounded corners
+                clipBehavior: Clip.antiAlias,
+                child: _GalleryImage(
+                  index: i,
+                  hasLoadedImages: hasLoadedImages,
+                  itemImages: itemImages,
+                  fallbackImages: fallbackImages,
                 ),
               ),
             );
@@ -311,6 +260,6 @@ class _GalleryImage extends StatelessWidget {
     if (index < 0 || index >= fallbackImages.length) {
       return const Center(child: Icon(Icons.broken_image_outlined));
     }
-    return CustomImage(path: fallbackImages[index], fit: BoxFit.cover);
+    return CustomImage(path: fallbackImages[index], fit: BoxFit.cover); // Matches background-size: cover
   }
 }

@@ -23,28 +23,41 @@ class ProductDetailsInfoSection extends StatelessWidget {
         selectedVariant != null &&
         isMeaningfulProductValue(selectedVariant!.color);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (product.name.trim().isNotEmpty)
-          Text(
-            product.name.trim(),
-            style: AppTextStyles.headingSmall,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        if (showColorCircle) ...[
-          const SizedBox(height: AppSpacing.sm),
-          ProductColorCircle(
-            colorValue: selectedVariant!.color,
-            showLabel: false,
-          ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0), // Matches .info { padding: 12px; }
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (product.name.trim().isNotEmpty)
+            Text(
+              product.name.trim(),
+              style: AppTextStyles.titleLarge.copyWith(
+                fontSize: 16, // Matching HTML exactly
+                fontWeight: FontWeight.w800, // Matching HTML exactly
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          if (showColorCircle) ...[
+            const SizedBox(height: AppSpacing.sm),
+            ProductColorCircle(
+              colorValue: selectedVariant!.color,
+              showLabel: false,
+            ),
+          ],
+          if (product.category.trim().isNotEmpty) ...[
+            const SizedBox(height: 10), // Matches your desc top-margin
+            Text(
+              product.category.trim(),
+              style: AppTextStyles.bodyMedium.copyWith(
+                fontSize: 12,
+                color: Colors.grey.shade600, // Matches .desc { color: #666; }
+              ),
+            ),
+          ],
         ],
-        if (product.category.trim().isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.xs),
-          Text(product.category.trim(), style: AppTextStyles.bodySmall),
-        ],
-      ],
+      ),
     );
   }
 }

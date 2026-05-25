@@ -152,34 +152,26 @@ class _ReviewsList extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _ReviewsHeader(
-              count: comments.length,
-              canViewAll: comments.isNotEmpty,
-              product: product,
-              comments: comments,
-            ),
-            const SizedBox(height: AppSpacing.md),
+            _ReviewsHeader(count: comments.length, canViewAll: comments.isNotEmpty, product: product, comments: comments),
+            const SizedBox(height: 12),
             if (snapshot.connectionState == ConnectionState.waiting)
               const _ReviewsSkeletonLoader()
             else if (snapshot.hasError)
-              _ReviewsError(
-                error: snapshot.error.toString(),
-                onRetry: onRetry,
-              )
+              _ReviewsError(error: snapshot.error.toString(), onRetry: onRetry)
             else if (comments.isEmpty)
-                const CustomEmptyState(
-                  icon: Icons.rate_review_outlined,
-                  title: 'No reviews yet',
-                  subtitle: 'Be the first to share your experience.',
-                )
+                const CustomEmptyState(icon: Icons.rate_review_outlined, title: 'No reviews yet', subtitle: 'Be the first to share your experience.')
               else
                 Column(
-                  children: preview
-                      .map((c) => Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  children: preview.map((c) => Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(10), // .comment padding
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12), // .comment border-radius
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+                    ),
                     child: ProductCommentCard(comment: c),
-                  ))
-                      .toList(),
+                  )).toList(),
                 ),
           ],
         );

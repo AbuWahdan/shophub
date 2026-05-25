@@ -54,12 +54,6 @@ class MyProductsController extends GetxController {
     }
   }
 
-  void clearProducts() {
-    products.clear();
-    error.value = '';
-    username = '';
-    userId = 0;
-  }
 
   // ── Private ───────────────────────────────────────────────────────────────
 

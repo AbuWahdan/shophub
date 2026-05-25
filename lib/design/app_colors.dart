@@ -64,4 +64,11 @@ static const Color cardMastercardStart = Color(0xFFB42318);
 static const Color cardMastercardEnd = Color(0xFFFF6B35);
 static const Color cardDefaultStart = Color(0xFF1A1D26);
 static const Color cardDefaultEnd = Color(0xFF65718A);
+
+  static const Color info = Color(0xFF2196F3);
+
+  static const Color grey = Color(0xFF9E9E9E);
+
+
+
 }

@@ -98,6 +98,36 @@ abstract class AppLocalizations {
     Locale('en'),
   ];
 
+  /// No description provided for @promoCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Promo Code'**
+  String get promoCodeLabel;
+
+  /// No description provided for @viewDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View Details'**
+  String get viewDetails;
+
+  /// No description provided for @orderDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Order Details'**
+  String get orderDetailsTitle;
+
+  /// No description provided for @addToCart.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Cart'**
+  String get addToCart;
+
+  /// No description provided for @orderNet.
+  ///
+  /// In en, this message translates to:
+  /// **'Net Order'**
+  String get orderNet;
+
   /// No description provided for @notifications.
   ///
   /// In en, this message translates to:
@@ -1705,6 +1735,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Addresses'**
   String get addressesTitle;
+
+  /// No description provided for @savedAddressesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved Addresses'**
+  String get savedAddressesTitle;
+
+  /// No description provided for @searchSavedAddressesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search saved addresses'**
+  String get searchSavedAddressesHint;
+
+  /// No description provided for @addNewAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Add New Address'**
+  String get addNewAddress;
+
+  /// No description provided for @noSavedAddresses.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved addresses yet'**
+  String get noSavedAddresses;
+
+  /// No description provided for @addressesLoginRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please log in to manage addresses'**
+  String get addressesLoginRequired;
+
+  /// No description provided for @addressesSettingsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Address settings'**
+  String get addressesSettingsLabel;
+
+  /// No description provided for @addressesAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Address added successfully'**
+  String get addressesAdded;
+
+  /// No description provided for @addressesDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete address'**
+  String get addressesDeleteTitle;
+
+  /// No description provided for @addressesDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{label}\"?'**
+  String addressesDeleteMessage(String label);
+
+  /// No description provided for @addressesFallbackCountry.
+  ///
+  /// In en, this message translates to:
+  /// **'Jordan'**
+  String get addressesFallbackCountry;
+
+  /// No description provided for @useCurrentLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Current Location'**
+  String get useCurrentLocation;
+
+  /// No description provided for @changeLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Change location'**
+  String get changeLocation;
+
+  /// No description provided for @orEnterManually.
+  ///
+  /// In en, this message translates to:
+  /// **'OR ENTER MANUALLY'**
+  String get orEnterManually;
+
+  /// No description provided for @savingLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get savingLabel;
 
   /// No description provided for @addressesDefault.
   ///

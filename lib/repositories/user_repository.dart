@@ -48,16 +48,6 @@ class UserRepository {
     }
   }
 
-  /// Reset or change user password.
-  ///
-  /// - OTP flow   → [oldPassword] is null   → sends {username, new_password}
-  /// - Change flow → [oldPassword] is set   → sends {username, old_password, new_password}
-  ///
-  /// The API always returns HTTP 200. Success/failure is indicated by the
-  /// body: {"status": 1} = success, {"status": 0} = failure (e.g. wrong
-  /// current password).  Any other truthy status string is also treated as
-  /// success so the method works if the backend ever changes to
-  /// {"status": "success"}.
   Future<void> resetPassword({
     required String username,
     required String newPassword,

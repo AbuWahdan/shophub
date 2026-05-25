@@ -9,6 +9,21 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get promoCodeLabel => 'Promo Code';
+
+  @override
+  String get viewDetails => 'View Details';
+
+  @override
+  String get orderDetailsTitle => 'Order Details';
+
+  @override
+  String get addToCart => 'Add to Cart';
+
+  @override
+  String get orderNet => 'Net Order';
+
+  @override
   String get notifications => 'Notifications';
 
   @override
@@ -839,6 +854,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addressesTitle => 'Addresses';
+
+  @override
+  String get savedAddressesTitle => 'Saved Addresses';
+
+  @override
+  String get searchSavedAddressesHint => 'Search saved addresses';
+
+  @override
+  String get addNewAddress => 'Add New Address';
+
+  @override
+  String get noSavedAddresses => 'No saved addresses yet';
+
+  @override
+  String get addressesLoginRequired => 'Please log in to manage addresses';
+
+  @override
+  String get addressesSettingsLabel => 'Address settings';
+
+  @override
+  String get addressesAdded => 'Address added successfully';
+
+  @override
+  String get addressesDeleteTitle => 'Delete address';
+
+  @override
+  String addressesDeleteMessage(String label) {
+    return 'Delete \"$label\"?';
+  }
+
+  @override
+  String get addressesFallbackCountry => 'Jordan';
+
+  @override
+  String get useCurrentLocation => 'Use Current Location';
+
+  @override
+  String get changeLocation => 'Change location';
+
+  @override
+  String get orEnterManually => 'OR ENTER MANUALLY';
+
+  @override
+  String get savingLabel => 'Saving...';
 
   @override
   String get addressesDefault => 'Default';

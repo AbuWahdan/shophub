@@ -5,5 +5,7 @@ class AppRadius {
   static const double md = 12.0;
   static const double lg = 16.0;
   static const double xl = 24.0;
+  static const double xxl = 36.0;
+
   static const double full = 100.0; // For pill-shaped buttons
 }

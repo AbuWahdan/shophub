@@ -1,4 +1,10 @@
 {
+
+  "promoCodeLabel": "Promo Code",
+  "viewDetails": "View Details",
+  "orderDetailsTitle": "Order Details",
+  "addToCart": "Add to Cart",
+  "orderNet": "Net Order",
   "notifications": "Notifications",
   "notificationsMarkAllRead": "Mark all as read",
   "notificationsEmpty": "No notifications yet",
@@ -289,6 +295,27 @@
   "addressesSaved": "Address saved successfully",
   "addressesDeleted": "Address deleted successfully",
   "addressesTitle": "Addresses",
+  "savedAddressesTitle": "Saved Addresses",
+  "searchSavedAddressesHint": "Search saved addresses",
+  "addNewAddress": "Add New Address",
+  "noSavedAddresses": "No saved addresses yet",
+  "addressesLoginRequired": "Please log in to manage addresses",
+  "addressesSettingsLabel": "Address settings",
+  "addressesAdded": "Address added successfully",
+  "addressesDeleteTitle": "Delete address",
+  "addressesDeleteMessage": "Delete \"{label}\"?",
+  "@addressesDeleteMessage": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "addressesFallbackCountry": "Jordan",
+  "useCurrentLocation": "Use Current Location",
+  "changeLocation": "Change location",
+  "orEnterManually": "OR ENTER MANUALLY",
+  "savingLabel": "Saving...",
   "addressesDefault": "Default",
   "commonEdit": "Edit",
   "addressesSetDefault": "Set as Default",

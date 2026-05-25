@@ -1,4 +1,10 @@
 {
+
+  "promoCodeLabel": "كود الخصم",
+  "viewDetails": "عرض التفاصيل",
+  "orderDetailsTitle": "تفاصيل الطلب",
+  "addToCart": "أضف إلى السلة",
+  "orderNet": "صافي الطلب",
   "notifications": "الإشعارات",
   "notificationsMarkAllRead": "تحديد الكل كمقروء",
   "notificationsEmpty": "لا توجد إشعارات بعد",
@@ -252,6 +258,27 @@
   "addressesSaved": "تم حفظ العنوان بنجاح",
   "addressesDeleted": "تم حذف العنوان بنجاح",
   "addressesTitle": "العناوين",
+  "savedAddressesTitle": "العناوين المحفوظة",
+  "searchSavedAddressesHint": "ابحث في العناوين المحفوظة",
+  "addNewAddress": "إضافة عنوان جديد",
+  "noSavedAddresses": "لا توجد عناوين محفوظة بعد",
+  "addressesLoginRequired": "يرجى تسجيل الدخول لإدارة العناوين",
+  "addressesSettingsLabel": "إعدادات العناوين",
+  "addressesAdded": "تمت إضافة العنوان بنجاح",
+  "addressesDeleteTitle": "حذف العنوان",
+  "addressesDeleteMessage": "حذف \"{label}\"؟",
+  "@addressesDeleteMessage": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "addressesFallbackCountry": "الأردن",
+  "useCurrentLocation": "استخدام الموقع الحالي",
+  "changeLocation": "تغيير الموقع",
+  "orEnterManually": "أو أدخل يدوياً",
+  "savingLabel": "جارٍ الحفظ...",
   "addressesDefault": "افتراضي",
   "commonEdit": "تعديل",
   "addressesSetDefault": "تعيين كافتراضي",

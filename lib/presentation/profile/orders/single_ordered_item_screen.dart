@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../models/order_detail_item_model.dart';
-import '../../products/widgets/item_review_section.dart';
+import 'widgets/item_review_section.dart';
 import '../my_products/color_picker/color_parsing_extension.dart';
 import '../../../design/app_colors.dart';
 import '../../../design/app_spacing.dart';
