@@ -5,7 +5,7 @@ import '../../../../design/app_colors.dart';
 import '../../../../design/app_radius.dart';
 import '../../../../design/app_spacing.dart';
 import '../../../../design/app_text_styles.dart';
-import '../../widgets/rating_stars.dart';
+import 'rating_stars.dart';
 
 class ProductCommentCard extends StatefulWidget {
   const ProductCommentCard({

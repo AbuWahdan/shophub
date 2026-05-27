@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../models/data.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_instance/src/extension_instance.dart';
+import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
+import '../controllers/cart_controller.dart';
 import '../widgets/BottomNavigationBar/bottom_navigation_bar.dart';
 import 'cart_tab/shopping_cart_screen.dart';
 import 'home_tab/home_page.dart';
@@ -73,11 +76,13 @@ class _MainNavigatorState extends State<MainNavigator> {
       ),
       bottomNavigationBar: SafeArea(
         top: false,
-        child: ValueListenableBuilder<int>(
-          valueListenable: AppData.cartCountNotifier,
-          builder: (context, cartItemCount, _) => CustomBottomNavigationBar(
+        child:
+        // ValueListenableBuilder<int>(
+        //   valueListenable: Get.find<CartController>().cartCount.value,
+        //   builder: (context, cartItemCount, _)
+          Obx(()=> CustomBottomNavigationBar(
             onIconPresedCallback: onBottomIconPressed,
-            //cartBadgeCount: cartItemCount,
+            cartBadgeCount: Get.find<CartController>().cartCount.value,
           ),
         ),
       ),

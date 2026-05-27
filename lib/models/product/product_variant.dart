@@ -1,8 +1,3 @@
-// models/product_variant.dart
-//
-// Single-responsibility: represents one variant row returned by the API.
-// No UI concerns, no controller logic.
-
 class ProductVariant {
   final int detId;
   final String brand;
@@ -24,23 +19,9 @@ class ProductVariant {
     required this.stock,
   });
 
-  // ── Computed helpers ───────────────────────────────────────────────────────
 
-  bool get isInStock => stock > 0;
 
-  double get finalPrice {
-    if (discount > 0 && discount < 100) {
-      return price * (1 - discount / 100);
-    }
-    return price;
-  }
 
-  bool get hasDiscount => discount > 0 && discount < 100;
-
-  // ── Equality / identity ────────────────────────────────────────────────────
-
-  /// Two variants are considered the same if they share the same [detId].
-  /// Used by the bottom-sheet to track selection.
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

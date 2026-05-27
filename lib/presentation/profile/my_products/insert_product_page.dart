@@ -4,8 +4,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:sinwar_shoping/presentation/profile/my_products/widgets/product_image_cropper.dart';
 import 'package:sinwar_shoping/presentation/profile/my_products/widgets/variant_card.dart';
 
+import '../../../core/api/exceptions.dart';
 import '../../../models/product/product_model.dart';
 import '../../../core/config/size_options.dart';
+import '../../../design/app_colors.dart';
+import '../../../design/app_radius.dart';
 import '../../../design/app_spacing.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/product_service.dart';
@@ -69,6 +72,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
   // ── Image helpers ─────────────────────────────────────────────────────────
 
   Future<void> _showImageSourcePicker() async {
+    final l10n = AppLocalizations.of(context);
     await showModalBottomSheet<void>(
       context: context,
       builder: (ctx) => SafeArea(
@@ -77,7 +81,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Pick from gallery'),
+              title: Text(l10n.productPickFromGallery),
               onTap: () async {
                 Navigator.pop(ctx);
                 await _pickImage(ImageSource.gallery);
@@ -85,7 +89,7 @@ class _InsertProductPageState extends State<InsertProductPage> {
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt),
-              title: const Text('Take a photo'),
+              title: Text(l10n.productTakePhoto),
               onTap: () async {
                 Navigator.pop(ctx);
                 await _pickImage(ImageSource.camera);
@@ -270,14 +274,61 @@ class _InsertProductPageState extends State<InsertProductPage> {
     final validators = ProductValidators.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.insertProductMenu)),
+      appBar: AppBar(
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        surfaceTintColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).colorScheme.onBackground,
+        title: Text(
+          l10n.insertProductMenu,
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: AppSpacing.insetsMd,
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(color: Theme.of(context).dividerColor),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.insertProductMenu,
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      l10n.productInsertAction,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Form(
+                key: _formKey,
+                child: Container(
+                  padding: AppSpacing.insetsMd,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: Theme.of(context).dividerColor),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ── Basic info ────────────────────────────────────────────
                 CustomTextField(
@@ -364,10 +415,10 @@ class _InsertProductPageState extends State<InsertProductPage> {
                 const SizedBox(height: AppSpacing.lg),
               ],
             ),
-          ),
+          ),)]
         ),
-      ),
-    );
+        ),
+    ));
   }
 }
 

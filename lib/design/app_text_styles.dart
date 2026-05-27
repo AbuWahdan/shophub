@@ -45,14 +45,6 @@ class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
-  // --- Title Styles (Sub-headers and list items) ---
-  static const TextStyle titleLarge = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-  );
-
   static const TextStyle titleMedium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 14,
@@ -107,14 +99,6 @@ class AppTextStyles {
     color: AppColors.textSecondary,
   );
 
-  static const TextStyle labelSmall = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 10,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textSecondary,
-    letterSpacing: 0.5,
-  );
-
   static const TextStyle caption = TextStyle(
     fontFamily: fontFamily,
     fontSize: 11,
@@ -144,9 +128,35 @@ class AppTextStyles {
     color: AppColors.white,
   );
 
+  static const TextStyle discountRibbon = TextStyle(
+    color: Colors.white,
+    fontWeight: FontWeight.w700,
+    fontSize: 9,
+    height: 1.1,
+  );
+
+  static const TextStyle savingsBadge = TextStyle(
+    color: Colors.white,
+    fontWeight: FontWeight.w600,
+    fontSize: 11,
+  );
+
+  static const TextStyle priceLabel = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w700,
+  );
+
+  static const TextStyle originalPrice = TextStyle(fontSize: 10);
+
+  static TextStyle get titleLarge =>
+      const TextStyle(fontSize: 18, fontWeight: FontWeight.w700);
+
+  static const TextStyle labelSmall = TextStyle(
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+  );
   // --- Helper Methods ---
 
-  /// Returns a copy of the style with a bold weight.
   static TextStyle strong(TextStyle style) {
     return style.copyWith(fontWeight: FontWeight.w700);
   }

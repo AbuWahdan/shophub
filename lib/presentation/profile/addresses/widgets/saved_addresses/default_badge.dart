@@ -20,7 +20,7 @@ class DefaultBadge extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppRadius.full),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         l10n.addressesDefault.toUpperCase(),

@@ -1,91 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:sinwar_shoping/presentation/products/widgets/rating_stars.dart';
 
-import '../../../core/config/route.dart';
-import '../../../design/app_colors.dart';
-import '../../../design/app_radius.dart';
-import '../../../design/app_spacing.dart';
-import '../../../design/app_text_styles.dart';
-import '../../../l10n/app_localizations.dart';
-import '../../../models/item_comment_model.dart';
-import '../../../models/product/product_model.dart';
-import '../../../widgets/custom_empty_state/custom_empty_state.dart';
-import '../comments/widgets/product_comment_card.dart';
+import '../../../../design/app_colors.dart';
+import '../../../../design/app_spacing.dart';
+import '../../../../design/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../models/item_comment_model.dart';
+import '../../../../models/product/product_model.dart';
 
 class ProductDetailsReviewsSection extends StatelessWidget {
   final ProductModel product;
-  final Future<List<ItemCommentModel>> commentsFuture;
+  final List<ItemCommentModel>? comments;
+  final bool isLoading;
+  final String? error;
   final bool isExpanded;
   final VoidCallback onToggleExpanded;
-  final VoidCallback onRetryComments;
+  final VoidCallback onRetry;
 
   const ProductDetailsReviewsSection({
     super.key,
     required this.product,
-    required this.commentsFuture,
+    required this.comments,
+    required this.isLoading,
+    required this.error,
     required this.isExpanded,
     required this.onToggleExpanded,
-    required this.onRetryComments,
+    required this.onRetry,
   });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _RatingRow(product: product),
-        const SizedBox(height: AppSpacing.xxl),
-        _DescriptionSection(
-          description: product.description,
-          isExpanded: isExpanded,
-          onToggle: onToggleExpanded,
-        ),
-        const SizedBox(height: AppSpacing.xxl),
-        _ReviewsList(
-          product: product,
-          commentsFuture: commentsFuture,
-          onRetry: onRetryComments,
-        ),
-      ],
-    );
-  }
-}
-
-class _RatingRow extends StatelessWidget {
-  final ProductModel product;
-
-  const _RatingRow({required this.product});
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.xs,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        RatingStars(rating: product.rating, size: AppSpacing.iconSm),
-        Text(product.rating.toStringAsFixed(1), style: AppTextStyles.labelLarge),
-        Text(
-          AppLocalizations.of(context).productReviews(product.reviewCount),
-          style: AppTextStyles.bodySmall,
-        ),
-      ],
-    );
-  }
-}
-
-class _DescriptionSection extends StatelessWidget {
-  final String description;
-  final bool isExpanded;
-  final VoidCallback onToggle;
-
-  const _DescriptionSection({
-    required this.description,
-    required this.isExpanded,
-    required this.onToggle,
-  });
-
-  static const int _previewLength = 100;
 
   @override
   Widget build(BuildContext context) {
@@ -94,186 +34,300 @@ class _DescriptionSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                l10n.productDescription,
-                style: AppTextStyles.titleMedium,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            TextButton(
-              onPressed: onToggle,
-              child: Text(isExpanded ? l10n.productShowLess : l10n.productShowMore),
-            ),
-          ],
+        _ReviewsHeader(
+          product: product,
+          isExpanded: isExpanded,
+          onToggle: onToggleExpanded,
         ),
-        const SizedBox(height: AppSpacing.sm),
-        AnimatedCrossFade(
-          firstChild: Text(
-            description.length > _previewLength
-                ? '${description.substring(0, _previewLength)}...'
-                : description,
-            style: AppTextStyles.bodySmall,
+        if (isExpanded) ...[
+          const SizedBox(height: AppSpacing.md),
+          _ReviewsBody(
+            comments: comments,
+            isLoading: isLoading,
+            error: error,
+            onRetry: onRetry,
           ),
-          secondChild: Text(description, style: AppTextStyles.bodySmall),
-          crossFadeState:
-          isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-          duration: const Duration(milliseconds: 300),
-        ),
+        ],
       ],
-    );
-  }
-}
-
-class _ReviewsList extends StatelessWidget {
-  final ProductModel product;
-  final Future<List<ItemCommentModel>> commentsFuture;
-  final VoidCallback onRetry;
-
-  const _ReviewsList({
-    required this.product,
-    required this.commentsFuture,
-    required this.onRetry,
-  });
-
-  static const int _previewCount = 3;
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<ItemCommentModel>>(
-      future: commentsFuture,
-      builder: (context, snapshot) {
-        final comments = snapshot.data ?? const <ItemCommentModel>[];
-        final preview = comments.take(_previewCount).toList(growable: false);
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _ReviewsHeader(count: comments.length, canViewAll: comments.isNotEmpty, product: product, comments: comments),
-            const SizedBox(height: 12),
-            if (snapshot.connectionState == ConnectionState.waiting)
-              const _ReviewsSkeletonLoader()
-            else if (snapshot.hasError)
-              _ReviewsError(error: snapshot.error.toString(), onRetry: onRetry)
-            else if (comments.isEmpty)
-                const CustomEmptyState(icon: Icons.rate_review_outlined, title: 'No reviews yet', subtitle: 'Be the first to share your experience.')
-              else
-                Column(
-                  children: preview.map((c) => Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(10), // .comment padding
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12), // .comment border-radius
-                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
-                    ),
-                    child: ProductCommentCard(comment: c),
-                  )).toList(),
-                ),
-          ],
-        );
-      },
     );
   }
 }
 
 class _ReviewsHeader extends StatelessWidget {
-  final int count;
-  final bool canViewAll;
   final ProductModel product;
-  final List<ItemCommentModel> comments;
+  final bool isExpanded;
+  final VoidCallback onToggle;
 
   const _ReviewsHeader({
-    required this.count,
-    required this.canViewAll,
     required this.product,
-    required this.comments,
+    required this.isExpanded,
+    required this.onToggle,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text('Reviews ($count)', style: AppTextStyles.titleMedium),
-        ),
-        if (canViewAll)
-          TextButton(
-            onPressed: () => Navigator.pushNamed(
-              context,
-              AppRoutes.productComments,
-              arguments: {
-                'productId': product.id,
-                'productName': product.name,
-                'comments': comments,
-              },
-            ),
-            child: Text(AppLocalizations.of(context).viewAll),
+    final l10n = AppLocalizations.of(context);
+
+    return GestureDetector(
+      onTap: onToggle,
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        children: [
+          Flexible(child: Text(l10n.productReviews(product.reviewCount ?? 0), overflow: TextOverflow.ellipsis)),
+          const SizedBox(width: AppSpacing.sm),
+          _RatingChip(rating: product.rating, reviewCount: product.reviewCount),
+          const Spacer(),
+          Icon(
+            isExpanded ? Icons.expand_less : Icons.expand_more,
+            color: AppColors.textSecondary,
           ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-class _ReviewsSkeletonLoader extends StatelessWidget {
-  const _ReviewsSkeletonLoader();
+class _RatingChip extends StatelessWidget {
+  final double? rating;
+  final int? reviewCount;
+
+  const _RatingChip({this.rating, this.reviewCount});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(
-        3,
-            (_) => Container(
-          width: double.infinity,
-          margin: const EdgeInsets.only(bottom: AppSpacing.md),
-          padding: AppSpacing.insetsLg,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(AppRadius.md),
+    if (rating == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(AppSpacing.sm),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.star_rounded, size: 14, color: AppColors.warning),
+          const SizedBox(width: 2),
+          Text(
+            rating!.toStringAsFixed(1),
+            style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.warning,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(width: 120, height: 14, color: AppColors.surfaceVariant),
-              const SizedBox(height: AppSpacing.sm),
-              Container(width: 80, height: 12, color: AppColors.surfaceVariant),
-              const SizedBox(height: AppSpacing.md),
-              Container(width: double.infinity, height: 12, color: AppColors.surfaceVariant),
-              const SizedBox(height: AppSpacing.xs),
-              Container(
-                width: MediaQuery.of(context).size.width * 0.5,
-                height: 12,
-                color: AppColors.surfaceVariant,
+          if (reviewCount != null) ...[
+            const SizedBox(width: 4),
+            Text(
+              '($reviewCount)',
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.textSecondary,
               ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewsBody extends StatelessWidget {
+  final List<ItemCommentModel>? comments;
+  final bool isLoading;
+  final String? error;
+  final VoidCallback onRetry;
+
+  const _ReviewsBody({
+    required this.comments,
+    required this.isLoading,
+    required this.error,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    if (isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (error != null) {
+      return _ErrorState(message: error!, onRetry: onRetry);
+    }
+
+    final list = comments ?? [];
+
+    if (list.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+        child: Center(
+          child: Text(
+            l10n.productNoReviews,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: list.length,
+      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+      itemBuilder: (context, index) => _ReviewCard(comment: list[index]),
+    );
+  }
+}
+
+class _ReviewCard extends StatelessWidget {
+  final ItemCommentModel comment;
+
+  const _ReviewCard({required this.comment});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: AppSpacing.insetsSm,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.md),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowPrimary.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _ReviewerAvatar(name: comment.username),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      comment.username,
+                      style: AppTextStyles.labelMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (comment.createdAt != null)
+                      Text(
+                        comment.hasCreatedAt.toString(),
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              _StarRow(rating: comment.rating),
             ],
           ),
+          if (comment.comment.trim().isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              comment.comment,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewerAvatar extends StatelessWidget {
+  final String name;
+
+  const _ReviewerAvatar({required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    final initial =
+    name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : '?';
+
+    return CircleAvatar(
+      radius: 18,
+      backgroundColor: AppColors.primary.withOpacity(0.15),
+      child: Text(
+        initial,
+        style: AppTextStyles.labelMedium.copyWith(
+          color: AppColors.primary,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
   }
 }
 
-class _ReviewsError extends StatelessWidget {
-  final String error;
-  final VoidCallback onRetry;
+class _StarRow extends StatelessWidget {
+  final int? rating;
 
-  const _ReviewsError({required this.error, required this.onRetry});
+  const _StarRow({this.rating});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(error, style: AppTextStyles.bodySmall.copyWith(color: AppColors.error)),
-        const SizedBox(height: AppSpacing.sm),
-        TextButton(
-          onPressed: onRetry,
-          child: Text(AppLocalizations.of(context).retry),
+    final filled = (rating ?? 0).clamp(0, 5);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(
+        5,
+            (i) => Icon(
+          i < filled ? Icons.star_rounded : Icons.star_outline_rounded,
+          size: 14,
+          color: AppColors.warning,
         ),
-      ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _ErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+      child: Column(
+        children: [
+          Icon(Icons.error_outline, color: AppColors.error, size: 36),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            message,
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh),
+            label: Text(l10n.actionRetry),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../../design/app_colors.dart';
+import '../../../../design/app_radius.dart';
 import '../../../../design/app_spacing.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../models/product/product_image_model.dart';
@@ -168,10 +169,11 @@ class EditImagesSection extends StatelessWidget {
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 140,
+              crossAxisSpacing: AppSpacing.md,
+              mainAxisSpacing: AppSpacing.md,
+              childAspectRatio: 1,
             ),
             itemCount: images.length + 1,
             itemBuilder: (_, i) {
@@ -205,6 +207,10 @@ class EditImagesSection extends StatelessWidget {
           label: Text(isUploading ? l10n.productUploading : l10n.productAddImage),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size(double.infinity, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            side: BorderSide(color: Theme.of(context).colorScheme.outline),
           ),
         ),
       ],
@@ -251,26 +257,37 @@ class _EmptyPreviewPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.add_photo_alternate_outlined,
-            size: 52, color: AppColors.neutral500),
-        SizedBox(height: 12),
-        Text(
-          'Tap to add product image',
-          style: TextStyle(
-            fontSize: 15,
-            color: AppColors.neutral600,
-            fontWeight: FontWeight.w500,
+    final l10n = AppLocalizations.of(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.add_photo_alternate_outlined,
+            size: 52,
+            color: AppColors.neutral500,
           ),
-        ),
-        SizedBox(height: 4),
-        Text(
-          'JPG, PNG supported',
-          style: TextStyle(fontSize: 12, color: AppColors.neutral400),
-        ),
-      ],
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            l10n.productTapToAddImage,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 15,
+              color: AppColors.neutral600,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            l10n.productImageFormatsHint,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.neutral400,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -283,28 +300,33 @@ class _FilledPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     return Stack(
       fit: StackFit.expand,
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           child: Image.file(File(imagePath), fit: BoxFit.cover),
         ),
         Positioned(
           bottom: 10,
           left: 10,
           child: _Badge(
-            color: AppColors.primary,
-            child: const Row(
+            color: theme.colorScheme.primary,
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.star, size: 12, color: Colors.white),
-                SizedBox(width: 4),
-                Text('Default',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600)),
+                const Icon(Icons.star, size: 12, color: Colors.white),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  l10n.productDefaultLabel,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),
@@ -315,8 +337,10 @@ class _FilledPreview extends StatelessWidget {
             right: 10,
             child: _Badge(
               color: Colors.black54,
-              child: Text('$imageCount photos',
-                  style: const TextStyle(color: Colors.white, fontSize: 11)),
+              child: Text(
+                '+$imageCount',
+                style: const TextStyle(color: Colors.white, fontSize: 11),
+              ),
             ),
           ),
         Positioned(
@@ -324,13 +348,15 @@ class _FilledPreview extends StatelessWidget {
           left: 10,
           child: _Badge(
             color: Colors.black38,
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.zoom_in, size: 12, color: Colors.white),
-                SizedBox(width: 4),
-                Text('Tap to view',
-                    style: TextStyle(color: Colors.white, fontSize: 11)),
+                const Icon(Icons.zoom_in, size: 12, color: Colors.white),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  l10n.productTapToView,
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                ),
               ],
             ),
           ),
@@ -353,6 +379,7 @@ class _AddThumbnailButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return GestureDetector(
       onTap: isSubmitting ? null : onPressed,
       child: Container(
@@ -360,17 +387,21 @@ class _AddThumbnailButton extends StatelessWidget {
         height: 88,
         decoration: BoxDecoration(
           color: AppColors.surfaceVariant,
-          borderRadius: BorderRadius.circular(AppSpacing.sm),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           border: Border.all(color: AppColors.neutral400, width: 1.5),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.add_photo_alternate_outlined,
-                color: AppColors.primary, size: 26),
-            const SizedBox(height: 4),
+            const Icon(
+              Icons.add_photo_alternate_outlined,
+              color: AppColors.primary,
+              size: 26,
+            ),
+            const SizedBox(height: AppSpacing.xs),
             Text(
-              uploading ? 'Uploading' : 'Add',
+              uploading ? l10n.productUploading : l10n.productAddImage,
+              textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 11,
                 color: AppColors.primary,
@@ -412,14 +443,14 @@ class _LocalImageThumbnail extends StatelessWidget {
             width: 88,
             height: 88,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppSpacing.sm),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
               border: Border.all(
                 color: isDefault ? AppColors.primary : AppColors.neutral300,
                 width: isDefault ? 2.5 : 1,
               ),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppSpacing.sm - 1),
+              borderRadius: BorderRadius.circular(AppRadius.sm - 1),
               child: Image.file(File(path), fit: BoxFit.cover),
             ),
           ),
@@ -428,7 +459,7 @@ class _LocalImageThumbnail extends StatelessWidget {
           top: 2,
           right: 2,
           child: _ThumbnailIconButton(
-            color: isDefault ? AppColors.warning : Colors.black45,
+            color: isDefault ? AppColors.warning : AppColors.neutral600.withOpacity(0.75),
             icon: isDefault ? Icons.star : Icons.star_border,
             isSubmitting: isSubmitting,
             onTap: onSetDefault,
@@ -438,7 +469,7 @@ class _LocalImageThumbnail extends StatelessWidget {
           top: 2,
           left: 2,
           child: _ThumbnailIconButton(
-            color: Colors.black45,
+            color: AppColors.neutral600.withOpacity(0.75),
             icon: Icons.close,
             isSubmitting: isSubmitting,
             onTap: onRemove,
@@ -466,20 +497,8 @@ class _ServerImageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final bytes = ImageConverter.base64ToBytes(image.imageBase64);
-    //
-    // Widget imageWidget;
-    // if (bytes != null) {
-    //   imageWidget = Image.memory(bytes, fit: BoxFit.cover);
-    // } else if (image.imagePath.trim().isNotEmpty) {
-    //   imageWidget = Image.network(
-    //     image.imagePath,
-    //     fit: BoxFit.cover,
-    //     errorBuilder: (_, __, ___) => _BrokenImage(),
-    //   );
-    // } else {
-    //   imageWidget = _BrokenImage();
-    // }
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
 
     return Stack(
       fit: StackFit.expand,
@@ -487,8 +506,10 @@ class _ServerImageTile extends StatelessWidget {
         GestureDetector(
           onTap: isSubmitting ? null : onTap,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Container(),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: Container(
+              color: theme.cardColor,
+            ),
           ),
         ),
         Positioned(
@@ -496,7 +517,7 @@ class _ServerImageTile extends StatelessWidget {
           left: 6,
           child: Icon(
             isDefault ? Icons.star_rounded : Icons.star_outline_rounded,
-            color: isDefault ? Colors.amber : Colors.white,
+            color: isDefault ? AppColors.warning : AppColors.white,
             size: 20,
           ),
         ),
@@ -505,10 +526,10 @@ class _ServerImageTile extends StatelessWidget {
             bottom: 4,
             left: 4,
             child: _Badge(
-              color: Theme.of(context).colorScheme.primary,
-              child: const Text(
-                'Default',
-                style: TextStyle(color: Colors.white, fontSize: 10),
+              color: theme.colorScheme.primary,
+              child: Text(
+                l10n.productDefaultLabel,
+                style: const TextStyle(color: Colors.white, fontSize: 10),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -521,9 +542,9 @@ class _ServerImageTile extends StatelessWidget {
               onTap: isSubmitting ? null : onSetDefault,
               child: _Badge(
                 color: Colors.black54,
-                child: const Text(
-                  'Set default',
-                  style: TextStyle(color: Colors.white, fontSize: 10),
+                child: Text(
+                  l10n.productSetDefault,
+                  style: const TextStyle(color: Colors.white, fontSize: 10),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -562,8 +583,18 @@ class _ThumbnailIconButton extends StatelessWidget {
     return GestureDetector(
       onTap: isSubmitting ? null : onTap,
       child: Container(
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        padding: const EdgeInsets.all(AppSpacing.xs),
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Icon(icon, size: 13, color: Colors.white),
       ),
     );
@@ -579,10 +610,10 @@ class _Badge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: child,
     );

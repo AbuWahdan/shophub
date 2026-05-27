@@ -5,6 +5,7 @@ import '../../models/category_model.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:http/http.dart' as http;
 import '../../core/utils/apex_response_helper.dart';
+import '../core/api/exceptions.dart';
 import '../models/product/product_image_model.dart';
 import '../../models/cart_item_model.dart';
 import '../models/product/product_model.dart';
@@ -25,12 +26,18 @@ class ProductService {
 
   ProductService({http.Client? client}) : _client = client ?? ApiClient();
 
-  Future<List<ProductModel>> getProducts({bool forceRefresh = false, String? createdBy, int? categoryId, int? detId,}) async {
+  Future<List<ProductModel>> getProducts({
+    bool forceRefresh = false,
+    String? createdBy,
+    int? categoryId,
+    int? detId,
+  }) async {
     final normalizedCreatedBy = createdBy?.trim();
-    final hasCreatedByFilter =
-        normalizedCreatedBy != null && normalizedCreatedBy.isNotEmpty;
+    final hasCreatedByFilter = normalizedCreatedBy != null && normalizedCreatedBy.isNotEmpty;
     final hasCategoryFilter = categoryId != null;
     final now = DateTime.now();
+
+    // 1. Return from cache if valid and no specific filters are applied
     if (!hasCreatedByFilter &&
         !hasCategoryFilter &&
         !forceRefresh &&
@@ -41,124 +48,62 @@ class ProductService {
     }
 
     final request = GetProductsRequest(
-      createdBy: normalizedCreatedBy, categoryId: categoryId, detId: detId,
+      createdBy: normalizedCreatedBy,
+      categoryId: categoryId,
+      detId: detId,
     );
-    final endpoints = <String>[_getProductsUrl];
 
-    String? lastError;
-    final errors = <String>[];
-    var hasRecoverableEmpty = false;
+    final uri = Uri.parse(_getProductsUrl);
 
-    for (final endpoint in endpoints) {
-      final uri = Uri.parse(endpoint);
-      final queryBase = {
-        ...uri.queryParameters,
-        ...request.toQueryParameters(),
-      };
-      final getRequests = <Future<http.Response?>>[
-        _safeGetOrNull(
-          uri.replace(
-            queryParameters: {
-              ...queryBase,
-              if (hasCreatedByFilter) 'created_by': normalizedCreatedBy,
-            },
-          ),
-        ),
-      ];
-      if (hasCreatedByFilter) {
-        getRequests.add(
-          _safeGetOrNull(
-            uri.replace(
-              queryParameters: {
-                ...queryBase,
-                'CREATED_BY': normalizedCreatedBy,
-              },
-            ),
-          ),
-        );
-        getRequests.add(
-          _safeGetOrNull(
-            uri.replace(
-              queryParameters: {
-                ...queryBase,
-                'CREATED_BY': normalizedCreatedBy,
-              },
-            ),
-          ),
-        );
-      }
-      final responses = await Future.wait<http.Response?>([
-        ...getRequests,
-        _safePostOrNull(
-          uri,
-          body: hasCreatedByFilter
-              ? {...request.toBody(), 'created_by': normalizedCreatedBy}
-              : request.toBody(),
-        ),
-      ]);
+    // 2. Build the exact query parameters expected by the backend
+    final queryParams = {
+      ...uri.queryParameters,
+      ...request.toQueryParameters(),
+      if (hasCreatedByFilter) 'created_by': normalizedCreatedBy!,
+    };
 
-      for (final response in responses) {
-        if (response == null) {
-          errors.add('$endpoint -> request failed');
-          continue;
-        }
-        final data = _decode(response.body);
-        if (response.statusCode == 404 || response.statusCode == 405) {
-          hasRecoverableEmpty = true;
-          return <ProductModel>[];
-        }
-        if (response.statusCode < 200 || response.statusCode >= 300) {
-          lastError =
-              _extractMessage(data) ??
-                  'Fetching products failed (HTTP ${response.statusCode}).';
-          errors.add('$endpoint -> HTTP ${response.statusCode}');
-          continue;
-        }
+    // 3. Make a single, clean API call
+    final response = await _safeGetOrNull(
+      uri.replace(queryParameters: queryParams),
+    );
 
-        final items = _extractItems(data);
-        if (items.isEmpty) {
-          hasRecoverableEmpty = true;
-          return <ProductModel>[];
-        }
-        var products = _groupProductsByItemId(
-          items.map(ProductModel.fromJson).toList(),
-        );
-        if (hasCreatedByFilter) {
-          final name = normalizedCreatedBy.toLowerCase().trim();
-          products = products
-              .where(
-                (product) => product.createdBy.toLowerCase().trim() == name,
-          )
-              .toList();
-        }
-        if (hasCreatedByFilter) {
-          return products;
-        }
-        if (products.isEmpty) {
-          errors.add('$endpoint -> empty');
-          continue;
-        }
-        if (!hasCreatedByFilter && !hasCategoryFilter) {
-          _cachedProducts = products;
-          _lastProductsFetch = now;
-        }
-        return products;
-      }
+    if (response == null) {
+      throw ProductException('Fetching products failed: Network or timeout error.');
     }
 
-    if (hasRecoverableEmpty) {
+    final data = _decode(response.body);
+
+    // 4. Handle standard HTTP empty states
+    if (response.statusCode == 404 || response.statusCode == 405) {
       return <ProductModel>[];
     }
 
-    throw ProductException(
-      '${lastError ?? 'Fetching products failed.'} (${errors.take(3).join(
-          ' | ')})',
-    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final lastError = _extractMessage(data) ??
+          'Fetching products failed (HTTP ${response.statusCode}).';
+      throw ProductException(lastError);
+    }
+
+    final items = _extractItems(data);
+    if (items.isEmpty) {
+      return <ProductModel>[];
+    }
+
+    // 5. Group the items and return exactly what the backend provided
+    final products = items
+        .map(ProductModel.fromJson)
+        .toList();
+
+    // 6. Update the global cache only if we fetched the complete list
+    if (!hasCreatedByFilter && !hasCategoryFilter) {
+      _cachedProducts = products;
+      _lastProductsFetch = now;
+    }
+
+    return products;
   }
 
-  Future<List<ProductModel>> getProductsByCategory(int categoryId, {
-    bool forceRefresh = false,
-  }) async {
+  Future<List<ProductModel>> getProductsByCategory(int categoryId, {bool forceRefresh = false,}) async {
     final now = DateTime.now();
 
     // Layer 1 — per-category in-memory cache.
@@ -767,13 +712,14 @@ class ProductService {
 
   List<Map<String, dynamic>> _extractImageRows(dynamic data) {
     if (data == null) return const [];
+    List<Map<String, dynamic>> rawRows = [];
+
     if (data is List) {
-      return data
+      rawRows = data
           .whereType<Map>()
           .map((item) => Map<String, dynamic>.from(item))
           .toList();
-    }
-    if (data is Map<String, dynamic>) {
+    } else if (data is Map<String, dynamic>) {
       final candidates = [
         data['data'],
         data['items'],
@@ -782,16 +728,29 @@ class ProductService {
       ];
       for (final candidate in candidates) {
         if (candidate is List) {
-          return candidate
+          rawRows = candidate
               .whereType<Map>()
               .map((item) => Map<String, dynamic>.from(item))
               .toList();
+          break;
         }
       }
     }
-    return const [];
-  }
 
+    // Defensive Check: Strip out obviously malformed, placeholder or broken strings
+    return rawRows.where((row) {
+      final base64Str = (row['image_base64'] ?? row['IMAGE_BASE64'] ?? '').toString().trim();
+      final pathStr = (row['image_path'] ?? row['IMAGE_PATH'] ?? '').toString().trim();
+
+      if (base64Str.isEmpty && pathStr.isEmpty) return false;
+      if (base64Str.toLowerCase() == 'null' || pathStr.toLowerCase() == 'null') return false;
+
+      // If base64 is present but too short to be a real image header, drop it safely
+      if (base64Str.isNotEmpty && base64Str.length < 20) return false;
+
+      return true;
+    }).toList();
+  }
   Future<http.Response> _safePost(Uri uri, {
     required Map<String, dynamic> body,
   }) async {
@@ -845,6 +804,21 @@ class ProductService {
     _categoryCacheTimes.clear();
   }
 
+  Future<List<ProductModel>> getAll({bool forceRefresh = false}) async {
+    final raw = await getProducts(forceRefresh: forceRefresh);
+    return raw; // no isActive filter — show everything the API returns
+  }
+
+  Future<List<ProductModel>> getByCategory(
+      int categoryId, {
+        bool forceRefresh = false,
+      }) async {
+    final raw = await getProductsByCategory(
+      categoryId,
+      forceRefresh: forceRefresh,
+    );
+    return raw;
+  }
   List<ProductModel> _filterByCategory(int categoryId, List<ProductModel> all) {
     final category = CategoriesData.getCategoryById(categoryId);
     if (category != null && category.isMainCategory) {
@@ -979,124 +953,30 @@ class ProductService {
     );
   }
 
-  List<ProductModel> _groupProductsByItemId(List<ProductModel> flatProducts) {
-    if (flatProducts.isEmpty) return const [];
+  List<ProductModel> _groupProductsByItemId(List<ProductModel> unGroupedList) {
+    if (unGroupedList.isEmpty) return const [];
 
-    final grouped = <int, List<ProductModel>>{};
-    for (final product in flatProducts) {
-      grouped.putIfAbsent(product.id, () => <ProductModel>[]).add(product);
-    }
+    final Map<int, ProductModel> grouped = {};
 
-    final result = <ProductModel>[];
-    for (final entry in grouped.entries) {
-      final rows = entry.value;
-      final base = rows.first;
+    for (final item in unGroupedList) {
+      // Use the uniform positive item identity mapping
+      final id = item.id;
 
-      final variants = <ProductVariant>[];
-      final seenVariantKeys = <String>{};
-      for (final row in rows) {
-        final sourceVariants = row.variants.isNotEmpty
-            ? row.variants
-            : <ProductVariant>[
-          ProductVariant(
-            detId: row.detId,
-            brand: '',
-            color: row.colors.isNotEmpty ? row.colors.first : '',
-            size: row.sizes.isNotEmpty ? row.sizes.first : '',
-            discount: 0,
-            price: row.basePrice,
-            stock: row.baseStock,
-          ),
-        ];
-        for (final variant in sourceVariants) {
-          final key =
-              '${variant.detId}|${variant.brand}|${variant.color}|${variant
-              .size}|${variant.price}|${variant.stock}';
-          if (seenVariantKeys.add(key)) {
-            variants.add(variant);
-          }
+      if (!grouped.containsKey(id)) {
+        // First variant discovered -> add product base instance
+        grouped[id] = item;
+      } else {
+        // Appends subsequent matching ID row attributes safely to variant options
+        // without discarding the primary UI base layout record
+        final completeRecord = grouped[id]!;
+        if (completeRecord.variants != null && item.variants != null) {
+          completeRecord.variants!.addAll(item.variants!);
         }
       }
-
-      final sizes = variants
-          .map((variant) => variant.size.trim())
-          .where((size) => size.isNotEmpty)
-          .toSet()
-          .toList();
-      final colors = variants
-          .map((variant) => variant.color.trim())
-          .where((color) => color.isNotEmpty)
-          .toSet()
-          .toList();
-
-      ProductVariant? displayVariant;
-      for (final variant in variants) {
-        if (displayVariant == null) {
-          displayVariant = variant;
-          continue;
-        }
-        final candidatePrice = variant.price * (1 - (variant.discount / 100));
-        final currentPrice =
-            displayVariant.price * (1 - (displayVariant.discount / 100));
-        if (candidatePrice < currentPrice) {
-          displayVariant = variant;
-        }
-      }
-
-      final mergedImages = rows
-          .expand((row) => row.images)
-          .map((image) => image.trim())
-          .where((image) => image.isNotEmpty)
-          .toSet()
-          .toList();
-
-      final displayPrice = displayVariant == null
-          ? base.price
-          : (displayVariant.price * (1 - (displayVariant.discount / 100)));
-
-      result.add(
-        ProductModel(
-          id: base.id,
-          detId: displayVariant?.detId ?? base.detId,
-          name: base.name,
-          description: base.description,
-          basePrice: displayVariant != null && displayVariant.price > 0
-              ? displayVariant.price
-              : base.basePrice,
-          baseStock: displayVariant?.stock ?? base.baseStock,
-          primaryImageUrl: mergedImages.isNotEmpty
-              ? mergedImages.first
-              : base.primaryImageUrl,
-          images: mergedImages.isNotEmpty ? mergedImages : base.images,
-          categoryId: base.categoryId,
-          category: base.category,
-          createdBy: base.createdBy,
-          itemOwner: base.itemOwner,
-          createdByUserId: base.createdByUserId,
-          isActive: rows.any((r) => r.isActive == 1) ? 1 : base.isActive,
-          discountPrice:
-          displayVariant != null &&
-              displayVariant.discount > 0 &&
-              displayVariant.discount < 100 &&
-              displayPrice > 0
-              ? displayPrice
-              : base.discountPrice,
-          variants: variants,
-          sizes: sizes.isNotEmpty ? sizes : base.sizes,
-          colors: colors.isNotEmpty ? colors : base.colors,
-          imagesByColor: base.imagesByColor,
-          stockByVariant: base.stockByVariant,
-          rating: base.rating,
-          reviewCount: base.reviewCount,
-          soldCount: base.soldCount,
-          isFavorite: base.isFavorite,
-        ),
-      );
     }
 
-    return result;
+    return grouped.values.toList();
   }
-
 
   // ========================= FAVORITES =========================
 
@@ -1269,13 +1149,6 @@ class ProductService {
 
 }
 
-class ProductException implements Exception {
-  final String message;
-  ProductException(this.message);
-
-  @override
-  String toString() => message;
-}
 
 class UpdateProductResult {
   final int statusCode;

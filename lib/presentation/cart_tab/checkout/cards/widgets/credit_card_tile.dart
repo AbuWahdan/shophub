@@ -245,7 +245,7 @@ class _Badge extends StatelessWidget {
       padding: AppSpacing.symmetric(h: AppSpacing.sm, v: AppSpacing.xs),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(AppRadius.full),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         label,

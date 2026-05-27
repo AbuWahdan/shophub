@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../data/categories_data.dart';
-import '../../../models/data.dart';
 import '../../models/product/product_model.dart';
 import '../../design/app_colors.dart';
 import '../../design/app_spacing.dart';
@@ -55,17 +54,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   _TabState get _currentTab => _tabStates[_tabKey] ?? const _TabState();
 
-  List<ProductModel> get _filteredProducts {
-    final query = _searchController.text.trim().toLowerCase();
-    if (query.isEmpty) return _currentTab.products;
-    return _currentTab.products.where((p) {
-      final categoryName =
-          CategoriesData.getCategoryById(p.categoryId)?.name ?? p.category;
-      return p.name.toLowerCase().contains(query) ||
-          categoryName.toLowerCase().contains(query);
-    }).toList();
-  }
-
   // ── Data loading ──────────────────────────────────────────────────────────
 
   Future<void> _loadTab({bool forceRefresh = false}) async {
@@ -81,30 +69,22 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _tabStates[tabKey] = (existing ?? const _TabState()).copyWith(
         isLoading: true,
-        // FIX: clear the previous error BEFORE showing the loading state
-        // so the error view never flashes while a new request is in-flight.
         error: null,
       );
     });
 
     try {
       final raw = _selectedCategoryId == null
-          ? await _productService.getProducts(forceRefresh: forceRefresh)
-          : await _productService.getProductsByCategory(
+          ? await _productService.getAll(forceRefresh: forceRefresh)
+          : await _productService.getByCategory(
         _selectedCategoryId!,
         forceRefresh: forceRefresh,
       );
       if (!mounted) return;
 
-      final active = raw.where((p) => p.isActive == 1).toList();
-
-      if (_selectedCategoryId == null) {
-        AppData.setProducts(active);
-      }
-
       setState(() {
         _tabStates[tabKey] = _TabState(
-          products: active,
+          products: raw,
           isLoaded: true,
           isLoading: false,
         );
@@ -180,7 +160,7 @@ class _MyHomePageState extends State<MyHomePage> {
             onPageChanged: _onPageChanged,
             itemBuilder: (_, __) => _ProductTabContent(
               tabState: _currentTab,
-              products: _filteredProducts,
+              products: _currentTab.products, // Fixed: Pass products directly without client-side text filtering
               onRefresh: () => _loadTab(forceRefresh: true),
             ),
           ),
@@ -322,8 +302,6 @@ class _ProductTabContent extends StatelessWidget {
       );
     }
 
-    // FIX: only show error when there is an error AND no products to show.
-    // Previously _errorMessage was set while loading, causing a flash.
     if (tabState.error != null && products.isEmpty) {
       return _ErrorView(onRetry: onRefresh);
     }

@@ -7,7 +7,6 @@ import '../../../design/app_text_styles.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/product/product_model.dart';
 import '../../../widgets/product_card/add_to_cart_bottom_sheet/widgets/product_variant_widgets.dart';
-import '../../../widgets/product_card/product_variant_card_with_stock.dart';
 
 class ProductDetailsVariantSection extends StatelessWidget {
   final List<ProductVariant> variants;

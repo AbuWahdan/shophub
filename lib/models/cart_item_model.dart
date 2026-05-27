@@ -287,11 +287,20 @@ class CartItemModel {
           price: price,
           stock: availableQty,
         ),
-      ],
+      ], finalPrice: finalUnitPrice,
     );
   }
 
   ProductModel get product => toProduct();
+
+  double get unitPrice => price;
+
+  double get finalUnitPrice => discountedPrice;
+
+  double get originalLineTotal => unitPrice * bookedQty;
+
+  int get stockCount => availableQty;
+
 
   @override
   String toString() =>

@@ -98,6 +98,162 @@ abstract class AppLocalizations {
     Locale('en'),
   ];
 
+  /// No description provided for @productFreeDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Free delivery'**
+  String get productFreeDelivery;
+
+  /// No description provided for @actionRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get actionRetry;
+
+  /// No description provided for @productNoReviews.
+  ///
+  /// In en, this message translates to:
+  /// **'No reviews yet'**
+  String get productNoReviews;
+
+  /// No description provided for @productSoldBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sold by'**
+  String get productSoldBy;
+
+  /// No description provided for @productLowStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Only {stock} left in stock'**
+  String productLowStock(Object stock);
+
+  /// No description provided for @jod.
+  ///
+  /// In en, this message translates to:
+  /// **'JOD'**
+  String get jod;
+
+  /// No description provided for @notificationCartVariantError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a product variant'**
+  String get notificationCartVariantError;
+
+  /// No description provided for @cartTotalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get cartTotalLabel;
+
+  /// No description provided for @productDiscountPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{discountPercentage}% OFF'**
+  String productDiscountPercent(Object discountPercentage);
+
+  /// No description provided for @productSavingsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Save {stringAsFixed}'**
+  String productSavingsShort(Object stringAsFixed);
+
+  /// No description provided for @productSavings.
+  ///
+  /// In en, this message translates to:
+  /// **'You save {stringAsFixed}'**
+  String productSavings(Object stringAsFixed);
+
+  /// No description provided for @productActiveHiddenSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This product is hidden from customers'**
+  String get productActiveHiddenSubtitle;
+
+  /// No description provided for @productActiveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Product Status'**
+  String get productActiveLabel;
+
+  /// No description provided for @productActiveStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get productActiveStatusActive;
+
+  /// No description provided for @productActiveStatusInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get productActiveStatusInactive;
+
+  /// No description provided for @productActiveVisibleSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This product is visible to customers'**
+  String get productActiveVisibleSubtitle;
+
+  /// No description provided for @productDefaultLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get productDefaultLabel;
+
+  /// No description provided for @productImageFormatsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Supported formats: JPG, PNG'**
+  String get productImageFormatsHint;
+
+  /// No description provided for @productPickFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick from Gallery'**
+  String get productPickFromGallery;
+
+  /// No description provided for @productRemoveVariant.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Variant'**
+  String get productRemoveVariant;
+
+  /// No description provided for @productSetDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as Default'**
+  String get productSetDefault;
+
+  /// No description provided for @productTakePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take Photo'**
+  String get productTakePhoto;
+
+  /// No description provided for @productTapToAddImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to add image'**
+  String get productTapToAddImage;
+
+  /// No description provided for @productTapToView.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to view'**
+  String get productTapToView;
+
+  /// No description provided for @productVariantHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Variant {number}'**
+  String productVariantHeading(Object number);
+
+  /// No description provided for @productVariantNewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New Variant'**
+  String get productVariantNewLabel;
+
   /// No description provided for @emptyCartTitle.
   ///
   /// In en, this message translates to:
@@ -565,6 +721,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update action'**
   String get productUpdateAction;
+
+  /// No description provided for @productIdLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Product ID: {id}'**
+  String productIdLabel(Object id);
+
+  /// No description provided for @productEditingProductDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Editing product details'**
+  String get productEditingProductDetails;
+
+  /// No description provided for @productTaxHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Include VAT or other applicable taxes.'**
+  String get productTaxHint;
 
   /// No description provided for @appTitle.
   ///

@@ -18,7 +18,7 @@ import '../../../../design/app_text_styles.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../models/product/product_model.dart';
 import '../../../../widgets/custom_empty_state/custom_empty_state.dart';
-import '../../../../widgets/product_card/add_to_cart_bottom_sheet/widgets/add_to_cart_action.dart';
+import '../../orders/widgets/add_to_cart_action.dart';
 import '../../../../widgets/product_card/product_card.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────

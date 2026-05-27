@@ -488,7 +488,7 @@ class _ProductCardInfo extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          '\$${product.price.toStringAsFixed(2)}',
+          '\$${product.finalPrice.toStringAsFixed(2)}',
           style: AppTextStyles.labelLarge.copyWith(
             color: Theme.of(
               context,

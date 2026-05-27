@@ -9,6 +9,94 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
+  String get productFreeDelivery => 'Free delivery';
+
+  @override
+  String get actionRetry => 'إعادة المحاولة';
+
+  @override
+  String get productNoReviews => 'لا توجد تقييمات بعد';
+
+  @override
+  String get productSoldBy => 'يباع بواسطة';
+
+  @override
+  String productLowStock(Object stock) {
+    return 'متبقي فقط $stock في المخزون';
+  }
+
+  @override
+  String get jod => 'د.أ';
+
+  @override
+  String get notificationCartVariantError => 'يرجى اختيار نوع المنتج';
+
+  @override
+  String get cartTotalLabel => 'الإجمالي';
+
+  @override
+  String productDiscountPercent(Object discountPercentage) {
+    return 'خصم $discountPercentage%';
+  }
+
+  @override
+  String productSavingsShort(Object stringAsFixed) {
+    return 'وفّر $stringAsFixed';
+  }
+
+  @override
+  String productSavings(Object stringAsFixed) {
+    return 'أنت توفر $stringAsFixed';
+  }
+
+  @override
+  String get productActiveHiddenSubtitle => 'هذا المنتج مخفي عن العملاء';
+
+  @override
+  String get productActiveLabel => 'حالة المنتج';
+
+  @override
+  String get productActiveStatusActive => 'نشط';
+
+  @override
+  String get productActiveStatusInactive => 'غير نشط';
+
+  @override
+  String get productActiveVisibleSubtitle => 'هذا المنتج ظاهر للعملاء';
+
+  @override
+  String get productDefaultLabel => 'افتراضي';
+
+  @override
+  String get productImageFormatsHint => 'الصيغ المدعومة: JPG, PNG';
+
+  @override
+  String get productPickFromGallery => 'اختيار من المعرض';
+
+  @override
+  String get productRemoveVariant => 'إزالة الخيار';
+
+  @override
+  String get productSetDefault => 'تعيين كافتراضي';
+
+  @override
+  String get productTakePhoto => 'التقاط صورة';
+
+  @override
+  String get productTapToAddImage => 'اضغط لإضافة صورة';
+
+  @override
+  String get productTapToView => 'اضغط للعرض';
+
+  @override
+  String productVariantHeading(Object number) {
+    return 'الخيار $number';
+  }
+
+  @override
+  String get productVariantNewLabel => 'خيار جديد';
+
+  @override
   String get emptyCartTitle => 'سلتك فارغة';
 
   @override
@@ -253,6 +341,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get productUpdateAction => 'إجراء التحديث';
+
+  @override
+  String productIdLabel(Object id) {
+    return 'معرّف المنتج: $id';
+  }
+
+  @override
+  String get productEditingProductDetails => 'تعديل تفاصيل المنتج';
+
+  @override
+  String get productTaxHint =>
+      'قم بتضمين ضريبة القيمة المضافة أو أي ضرائب أخرى مطبقة.';
 
   @override
   String get appTitle => 'ShopHub';

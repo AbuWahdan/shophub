@@ -5,7 +5,7 @@ import '../../../../controllers/order_controller.dart';
 import '../../../../models/order_detail_item_model.dart';
 import '../../../../models/orders_model.dart';
 import '../../../models/product/product_model.dart';
-import '../../../widgets/product_card/add_to_cart_bottom_sheet/widgets/add_to_cart_action.dart';
+import 'widgets/add_to_cart_action.dart';
 import '../my_products/color_picker/color_parsing_extension.dart';
 import '../../../core/state/auth_state.dart';
 import '../../../design/app_colors.dart';
@@ -429,7 +429,7 @@ class _OrderProductListItem extends StatelessWidget {
           price: item.unitPrice,
           stock: item.qty,
         ),
-      ],
+      ], finalPrice: item.unitPrice-item.itemDiscount *item.unitPrice,
     );
   }
 

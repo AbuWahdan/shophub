@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../../controllers/cart_controller.dart';
 import '../../../design/app_colors.dart';
 import '../../../design/app_spacing.dart';
@@ -12,7 +13,7 @@ import 'widgets/cart_item_card.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({
-    Key? key,
+    super.key,
     required this.cartController,
     required this.onTapItem,
     required this.onRemoveItem,
@@ -20,7 +21,7 @@ class CartScreen extends StatelessWidget {
     required this.onDecrement,
     required this.onCheckout,
     required this.onRefresh,
-  }) : super(key: key);
+  });
 
   final CartController cartController;
   final void Function(CartItemModel) onTapItem;
@@ -32,7 +33,7 @@ class CartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+    final l10n  = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -40,6 +41,7 @@ class CartScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.surfaceContainerLowest,
         elevation: 0,
+        scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
         title: Text(
           l10n.shoppingCartTitle,
@@ -50,7 +52,8 @@ class CartScreen extends StatelessWidget {
         color: AppColors.primary,
         onRefresh: onRefresh,
         child: Obx(() {
-          if (cartController.isLoading.value && cartController.items.isEmpty) {
+          final controller = Get.find<CartController>(); // same here
+          if (controller.isLoading.value && controller.items.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
 
@@ -64,11 +67,12 @@ class CartScreen extends StatelessWidget {
           }
 
           return ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
               AppSpacing.sm,
               AppSpacing.md,
-              AppSpacing.xl + 160,
+              AppSpacing.xl,
             ),
             itemCount: cartController.items.length,
             itemBuilder: (context, index) {
@@ -89,10 +93,14 @@ class CartScreen extends StatelessWidget {
         }),
       ),
       bottomNavigationBar: Obx(() {
-        final _ = cartController.items.length;
-        return OrderSummarySection(
-          cartController: cartController,
-          onCheckout: onCheckout,
+        final controller = Get.find<CartController>();
+        if (controller.items.isEmpty) return const SizedBox.shrink();
+        return AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          child: OrderSummarySection(
+            cartController: controller,
+            onCheckout: onCheckout,
+          ),
         );
       }),
     );

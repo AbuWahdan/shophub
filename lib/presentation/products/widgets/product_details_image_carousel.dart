@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../../design/app_colors.dart';
-import '../../../design/app_spacing.dart';
-import '../../../design/app_text_styles.dart';
-import '../../../models/product/product_image_model.dart';
-import '../../../widgets/custom_image.dart';
-import '../../../widgets/gallery_section/gallery_viewer.dart';
+import '../../../../design/app_colors.dart';
+import '../../../../design/app_radius.dart';
+import '../../../../design/app_spacing.dart';
+import '../../../../design/app_text_styles.dart';
+import '../../../../models/product/product_image_model.dart';
+import '../../../../widgets/custom_image.dart';
+import '../../../../widgets/gallery_section/gallery_viewer.dart';
 
 class ProductDetailsImageCarousel extends StatelessWidget {
   final PageController imageController;
@@ -37,9 +38,7 @@ class ProductDetailsImageCarousel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (imageCount == 0) {
-      return _EmptyImagePlaceholder();
-    }
+    if (imageCount == 0) return const _EmptyImagePlaceholder();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,9 +89,11 @@ class ProductDetailsImageCarousel extends StatelessWidget {
   void _openViewer(BuildContext context, int initialIndex) {
     final paths = hasLoadedImages
         ? itemImages
-        .map((img) => img.imagePath.trim().isNotEmpty
-        ? img.imagePath.trim()
-        : img.imageBase64)
+        .map(
+          (img) => img.imagePath.trim().isNotEmpty
+          ? img.imagePath.trim()
+          : img.imageBase64,
+    )
         .where((s) => s.isNotEmpty)
         .toList()
         : List<String>.from(fallbackImages);
@@ -107,16 +108,22 @@ class ProductDetailsImageCarousel extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _EmptyImagePlaceholder extends StatelessWidget {
+  const _EmptyImagePlaceholder();
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 200, // Matches your HTML .hero height
-      color: Theme.of(context).colorScheme.surface,
-      alignment: Alignment.center,
-      child: const Icon(Icons.broken_image_outlined, size: 56),
+    return AspectRatio(
+      aspectRatio: 4 / 3,
+      child: Container(
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        alignment: Alignment.center,
+        child: Icon(
+          Icons.broken_image_outlined,
+          size: 56,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
     );
   }
 }
@@ -144,25 +151,32 @@ class _MainImagePager extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 300, // Adjusted for typical mobile screen proportions based on your hero style
-      width: double.infinity,
-      color: Theme.of(context).colorScheme.surface,
-      child: PageView.builder(
-        controller: controller,
-        onPageChanged: onPageChanged,
-        itemCount: imageCount,
-        itemBuilder: (context, index) => GestureDetector(
-          onTap: () => onImageTap(index),
-          child: Hero(
-            tag: 'product_$productId',
-            child: _GalleryImage(
+    return AspectRatio(
+      aspectRatio: 4 / 3,
+      child: Container(
+        width: double.infinity,
+        color: Theme.of(context).colorScheme.surface,
+        child: PageView.builder(
+          controller: controller,
+          onPageChanged: onPageChanged,
+          itemCount: imageCount,
+          itemBuilder: (context, index) {
+            final image = _GalleryImage(
               index: index,
               hasLoadedImages: hasLoadedImages,
               itemImages: itemImages,
               fallbackImages: fallbackImages,
-            ),
-          ),
+            );
+            return GestureDetector(
+              onTap: () => onImageTap(index),
+              // Hero only on the first image — PageView renders all visible
+              // pages simultaneously, so wrapping every item causes duplicate
+              // tags within the same subtree.
+              child: index == 0
+                  ? Hero(tag: 'product_$productId', child: image)
+                  : image,
+            );
+          },
         ),
       ),
     );
@@ -191,30 +205,32 @@ class _ThumbnailStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      // Padding exactly matching your HTML .thumbs class
-      padding: const EdgeInsets.all(10.0),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       child: SizedBox(
-        height: 50, // Strict 50px height from .thumb
+        height: 56,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           itemCount: imageCount,
-          separatorBuilder: (_, __) => const SizedBox(width: 8), // 8px gap from .thumbs
+          separatorBuilder: (_, __) =>
+          const SizedBox(width: AppSpacing.xs),
           itemBuilder: (context, i) {
             final isActive = i == currentIndex;
             return GestureDetector(
               onTap: () => onTap(i),
               onDoubleTap: () => onDoubleTap(i),
-              child: Container(
-                width: 50, // Strict 50px width from .thumb
-                height: 50,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10), // 10px radius from .thumb
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                   border: Border.all(
-                    color: isActive ? AppColors.primary : Colors.transparent,
-                    width: 2, // 2px solid border from .thumb
+                    color: isActive
+                        ? AppColors.primary
+                        : AppColors.transparent,
+                    width: 2,
                   ),
                 ),
-                // ClipRRect ensures the image stays inside the 10px rounded corners
                 clipBehavior: Clip.antiAlias,
                 child: _GalleryImage(
                   index: i,
@@ -248,18 +264,32 @@ class _GalleryImage extends StatelessWidget {
   Widget build(BuildContext context) {
     if (hasLoadedImages) {
       if (index < 0 || index >= itemImages.length) {
-        return const Center(child: Icon(Icons.broken_image_outlined));
+        return const _BrokenImageIcon();
       }
       final path = itemImages[index].imagePath.trim();
       if (path.isNotEmpty) {
         return CustomImage(path: path, fit: BoxFit.cover);
       }
-      return const Center(child: Icon(Icons.broken_image_outlined));
+      return const _BrokenImageIcon();
     }
 
     if (index < 0 || index >= fallbackImages.length) {
-      return const Center(child: Icon(Icons.broken_image_outlined));
+      return const _BrokenImageIcon();
     }
-    return CustomImage(path: fallbackImages[index], fit: BoxFit.cover); // Matches background-size: cover
+    return CustomImage(path: fallbackImages[index], fit: BoxFit.cover);
+  }
+}
+
+class _BrokenImageIcon extends StatelessWidget {
+  const _BrokenImageIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Icon(
+        Icons.broken_image_outlined,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    );
   }
 }

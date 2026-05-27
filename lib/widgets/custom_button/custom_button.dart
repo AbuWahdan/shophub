@@ -35,7 +35,7 @@ class _CustomButtonState extends State<CustomButton> {
   Widget build(BuildContext context) {
     final isDisabled = widget.onPressed == null;
     final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadius.full),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
     );
 
     final child = Row(
@@ -78,7 +78,7 @@ class _CustomButtonState extends State<CustomButton> {
     } else if (widget.style == AppButtonStyle.primary) {
       button = Ink(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.full),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
           gradient: const LinearGradient(
             colors: [AppColors.primary, AppColors.primaryLight],
           ),
@@ -88,7 +88,7 @@ class _CustomButtonState extends State<CustomButton> {
           color: AppColors.transparent,
           shape: shape,
           child: InkWell(
-            borderRadius: BorderRadius.circular(AppRadius.full),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
             onTap: widget.onPressed,
             onTapDown: (_) => setState(() => _pressed = true),
             onTapUp: (_) => setState(() => _pressed = false),
@@ -102,7 +102,7 @@ class _CustomButtonState extends State<CustomButton> {
         color: AppColors.error,
         shape: shape,
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.full),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
           onTap: widget.onPressed,
           onTapDown: (_) => setState(() => _pressed = true),
           onTapUp: (_) => setState(() => _pressed = false),
@@ -115,14 +115,14 @@ class _CustomButtonState extends State<CustomButton> {
         color: AppColors.transparent,
         shape: shape,
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.full),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
           onTap: widget.onPressed,
           onTapDown: (_) => setState(() => _pressed = true),
           onTapUp: (_) => setState(() => _pressed = false),
           onTapCancel: () => setState(() => _pressed = false),
           child: Ink(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.full),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
               border: const Border.fromBorderSide(
                 BorderSide(color: AppColors.primary),
               ),

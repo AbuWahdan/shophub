@@ -36,7 +36,7 @@ class AppTheme {
           minimumSize: const Size(double.infinity, AppSpacing.buttonMd),
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.full)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
           textStyle: AppTextStyles.buttonLarge,
         ),
       ),

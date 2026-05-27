@@ -1,7 +1,10 @@
 
 import 'package:flutter/foundation.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_instance/src/extension_instance.dart';
+import 'package:get/get_rx/src/rx_types/rx_types.dart';
+import 'package:sinwar_shoping/controllers/product_controller.dart';
 
-import '../../models/data.dart';
 import '../../services/product_service.dart';
 import '../../core/state/auth_state.dart';
 import '../models/product/product_model.dart';
@@ -40,7 +43,52 @@ class WishlistController extends ChangeNotifier {
 
   bool isInWishlist(int productId) => _itemsById.containsKey(productId);
   bool isToggling(int productId) => _pendingToggleIds.contains(productId);
+// State
+  final RxList<ProductModel> wishlistProducts = <ProductModel>[].obs;
+  final RxSet<int> _wishlistIds = <int>{}.obs;
 
+  Set<int> get wishlistIds => _wishlistIds;
+
+  bool isFavorite(int productId) => _wishlistIds.contains(productId);
+
+// Called on cold start from local storage (before API responds)
+  void seedFromStorage(Set<int> ids) {
+    if (ids.isEmpty) return;
+    _wishlistIds.addAll(ids);
+  }
+
+// Called after getUserFavorites() API succeeds — replaces state entirely
+  void setWishlistProducts(List<ProductModel> items) {
+    _wishlistIds.assignAll(items.map((p) => p.id).toSet());
+    for (final p in items) p.isFavorite = true;
+    wishlistProducts.assignAll(items);
+    if (Get.isRegistered<ProductController>()) {
+      Get.find<ProductController>().syncFavoriteFlags(_wishlistIds);
+    }  }
+
+// Called on heart tap
+  void setFavorite(ProductModel product, bool value) {
+    product.isFavorite = value;
+
+    if (value) {
+      _wishlistIds.add(product.id);
+
+      if (!wishlistProducts.any((p) => p.id == product.id)) {
+        wishlistProducts.add(product);
+      }
+    } else {
+      _wishlistIds.remove(product.id);
+      wishlistProducts.removeWhere((p) => p.id == product.id);
+    }
+
+    if (Get.isRegistered<ProductController>()) {
+      Get.find<ProductController>().syncFavoriteFlags(_wishlistIds);
+    }
+
+    notifyListeners(); // important if UI uses ChangeNotifier
+  }
+  void toggleFavorite(ProductModel product) =>
+      setFavorite(product, !isFavorite(product.id));
   // ── Auth ──────────────────────────────────────────────────────────────────
 
   /// Called by the auth listener (e.g. via [ProxyProvider]) whenever auth
@@ -107,7 +155,7 @@ class WishlistController extends ChangeNotifier {
             }),
           );
         _applyPendingOverrides();
-        AppData.setWishlistProducts(items);
+        this.setWishlistProducts(items);
       } else {
         // Keep existing items; re-apply any in-flight toggles.
         _applyPendingOverrides();
@@ -195,12 +243,12 @@ class WishlistController extends ChangeNotifier {
   }) {
     if (wasInWishlist) {
       _itemsById.remove(product.id);
-      AppData.setFavorite(product, false);
+      this.setFavorite(product, false);
       product.isFavorite = false;
     } else {
       product.isFavorite = true;
       _itemsById[product.id] = product;
-      AppData.setFavorite(product, true);
+      this.setFavorite(product, true);
     }
   }
 
@@ -211,10 +259,10 @@ class WishlistController extends ChangeNotifier {
     if (wasInWishlist) {
       product.isFavorite = true;
       _itemsById[product.id] = product;
-      AppData.setFavorite(product, true);
+      this.setFavorite(product, true);
     } else {
       _itemsById.remove(product.id);
-      AppData.setFavorite(product, false);
+      this.setFavorite(product, false);
       product.isFavorite = false;
     }
   }
@@ -258,7 +306,8 @@ class WishlistController extends ChangeNotifier {
     _itemsById.clear();
     _pendingToggleIds.clear();
     _clearPendingOverrides();
-    AppData.setWishlistProducts(const []);
+    this.setWishlistProducts([]);
     notifyListeners();
   }
+
 }

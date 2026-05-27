@@ -126,7 +126,7 @@ class _DefaultBadge extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: AppColors.success.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.full),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         label.toUpperCase(),

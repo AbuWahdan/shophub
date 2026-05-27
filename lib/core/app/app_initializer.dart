@@ -8,6 +8,7 @@ import 'package:provider/single_child_widget.dart';
 
 // Core
 import '../../controllers/notification_controller.dart';
+import '../../controllers/product_controller.dart';
 import '../../repositories/address_repository.dart';
 import '../../repositories/cart_repository.dart';
 import '../../repositories/checkout_repository.dart';
@@ -155,6 +156,7 @@ abstract final class AppInitializer {
   }
 
   static void _registerControllers() {
+    Get.lazyPut(() => ProductController(Get.find<ProductRepository>()));
 
     Get.lazyPut<MyProductsController>(
       () => MyProductsController(Get.find<ProductRepository>()),

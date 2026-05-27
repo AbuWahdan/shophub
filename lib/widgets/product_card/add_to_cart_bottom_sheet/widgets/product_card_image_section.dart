@@ -4,18 +4,22 @@ import '../../../../design/app_colors.dart';
 import '../../../../design/app_radius.dart';
 import '../../../../design/app_spacing.dart';
 import '../../../../design/app_text_styles.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../models/product/product_model.dart';
 import '../../../../services/product_service.dart';
 import '../../../custom_image.dart';
 
+/// Image area of a [ProductCard].
+///
+/// Overlay layout (top-to-bottom, start-to-end):
+///   TL  → wishlist toggle
+///   TR  → discount percentage ribbon
+///   BL  → price tag (final price + crossed-out original when discounted)
+///   BR  → add-to-cart button
+///
+/// A second "savings amount" badge sits just below the ribbon (TR) so
+/// the customer sees both *how much off* and *how much saved* at a glance.
 class ProductCardImageSection extends StatefulWidget {
-  final ProductModel product;
-  final bool isFavorite;
-  final bool isToggling;
-  final bool isAddingToCart;
-  final VoidCallback onFavoriteTap;
-  final VoidCallback onCartTap;
-
   const ProductCardImageSection({
     super.key,
     required this.product,
@@ -26,89 +30,68 @@ class ProductCardImageSection extends StatefulWidget {
     required this.onCartTap,
   });
 
+  final ProductModel product;
+  final bool isFavorite;
+  final bool isToggling;
+  final bool isAddingToCart;
+  final VoidCallback onFavoriteTap;
+  final VoidCallback onCartTap;
+
   @override
-  State<ProductCardImageSection> createState() => _ProductCardImageSectionState();
+  State<ProductCardImageSection> createState() =>
+      _ProductCardImageSectionState();
 }
 
 class _ProductCardImageSectionState extends State<ProductCardImageSection> {
-  static final _cache = <int, String>{};
+  static final Map<int, String> _imageCache = {};
 
-  late Future<String?> _coverFuture;
+  late final Future<String?> _coverFuture;
 
   @override
   void initState() {
     super.initState();
-    _coverFuture = _loadCover();
+    _coverFuture = _resolveCoverImage();
   }
 
-  Future<String?> _loadCover() async {
+  Future<String?> _resolveCoverImage() async {
     final id = widget.product.id;
-    if (_cache.containsKey(id)) return _cache[id];
+    if (_imageCache.containsKey(id)) return _imageCache[id];
 
     try {
       final images = await ProductService().getItemImages(itemId: id);
       if (images.isNotEmpty) {
         final path = images.first.imagePath.trim();
         if (path.isNotEmpty) {
-          _cache[id] = path;
+          _imageCache[id] = path;
           return path;
         }
       }
     } catch (_) {}
 
-    // Fallback to legacy product.images list
-    final legacy = widget.product.images;
-    if (legacy.isNotEmpty && legacy.first.trim().isNotEmpty) {
-      return legacy.first.trim();
+    final legacyImages = widget.product.images;
+    if (legacyImages.isNotEmpty && legacyImages.first.trim().isNotEmpty) {
+      return legacyImages.first.trim();
     }
     return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final textDir = Directionality.of(context);
+    final theme     = Theme.of(context);
+    final textDir   = Directionality.of(context);
+    final product   = widget.product;
+    final hasDiscount = product.discountPercentage > 0;
 
-    // AspectRatio 4:3 — image height is always 75% of card width.
-    // No fixed height → no overflow on any device.
     return AspectRatio(
       aspectRatio: 4 / 3,
       child: Stack(
         children: [
-          // ── Cover image ──────────────────────────────────────────────────
-          Positioned.fill(
-            child: Hero(
-              tag: 'product_${widget.product.id}',
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(AppRadius.lg),
-                ),
-                child: FutureBuilder<String?>(
-                  future: _coverFuture,
-                  builder: (context, snapshot) {
-                    final path = snapshot.data;
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Container(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        alignment: Alignment.center,
-                        child: const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      );
-                    }
-                    if (path != null && path.isNotEmpty) {
-                      return CustomImage(path: path, fit: BoxFit.cover);
-                    }
-                    return _ImagePlaceholder();
-                  },
-                ),
-              ),
-            ),
+          _CoverImage(
+            product: product,
+            coverFuture: _coverFuture,
+            theme: theme,
           ),
 
-          // ── Wishlist button (top-start) ───────────────────────────────────
           Positioned.directional(
             textDirection: textDir,
             top: AppSpacing.sm,
@@ -120,24 +103,32 @@ class _ProductCardImageSectionState extends State<ProductCardImageSection> {
             ),
           ),
 
-          // ── Discount ribbon (top-end) ─────────────────────────────────────
-          if (widget.product.discountPercentage > 0)
+          if (hasDiscount) ...[
             Positioned.directional(
               textDirection: textDir,
               top: 0,
               end: 0,
-              child: _DiscountRibbon(discount: widget.product.discountPercentage),
+              child: _DiscountRibbon(
+                discountPercentage: product.discountPercentage,
+              ),
             ),
+            Positioned.directional(
+              textDirection: textDir,
+              top: AppSpacing.xxl + AppSpacing.xs,
+              end: AppSpacing.xs,
+              child: _SavingsAmountBadge(
+                savingsAmount: product.basePrice - product.finalPrice,
+              ),
+            ),
+          ],
 
-          // ── Price tag (bottom-start) ──────────────────────────────────────
           Positioned.directional(
             textDirection: textDir,
             start: AppSpacing.sm,
             bottom: AppSpacing.sm,
-            child: _PriceTag(product: widget.product, theme: theme),
+            child: _PriceTag(product: product, theme: theme),
           ),
 
-          // ── Cart button (bottom-end) ──────────────────────────────────────
           Positioned.directional(
             textDirection: textDir,
             end: AppSpacing.sm,
@@ -153,76 +144,147 @@ class _ProductCardImageSectionState extends State<ProductCardImageSection> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Private sub-widgets
-// ─────────────────────────────────────────────────────────────────────────────
+class _CoverImage extends StatelessWidget {
+  const _CoverImage({
+    required this.product,
+    required this.coverFuture,
+    required this.theme,
+  });
 
-class _ImagePlaceholder extends StatelessWidget {
+  final ProductModel product;
+  final Future<String?> coverFuture;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: Hero(
+        tag: 'product_${product.id}',
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadius.lg),
+          ),
+          child: FutureBuilder<String?>(
+            future: coverFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return _ImageLoadingPlaceholder(theme: theme);
+              }
+              final path = snapshot.data;
+              if (path != null && path.isNotEmpty) {
+                return CustomImage(path: path, fit: BoxFit.cover);
+              }
+              return _ImageErrorPlaceholder(theme: theme);
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ImageLoadingPlaceholder extends StatelessWidget {
+  const _ImageLoadingPlaceholder({required this.theme});
+
+  final ThemeData theme;
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      color: theme.colorScheme.surfaceContainerHighest,
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: AppSpacing.iconMd,
+        height: AppSpacing.iconMd,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: AppColors.primary,
+        ),
+      ),
+    );
+  }
+}
+
+class _ImageErrorPlaceholder extends StatelessWidget {
+  const _ImageErrorPlaceholder({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: theme.colorScheme.surfaceContainerHighest,
       alignment: Alignment.center,
       child: Icon(
-        Icons.image_outlined,
+        Icons.image_search_rounded,
         size: AppSpacing.iconLg,
-        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
       ),
     );
   }
 }
 
 class _WishlistButton extends StatelessWidget {
-  final bool isFavorite;
-  final bool isToggling;
-  final VoidCallback onTap;
-
   const _WishlistButton({
     required this.isFavorite,
     required this.isToggling,
     required this.onTap,
   });
 
+  final bool isFavorite;
+  final bool isToggling;
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    // Size is 10% of screen width, clamped between 28–40 logical px.
-    final size = (MediaQuery.sizeOf(context).width * 0.10).clamp(28.0, 40.0);
-    final iconSize = size * 0.5;
+    final theme    = Theme.of(context);
+    final diameter = (MediaQuery.sizeOf(context).width * 0.10).clamp(28.0, 40.0);
+    final iconSize = diameter * 0.50;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: isToggling ? null : onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: isFavorite
-              ? AppColors.error.withValues(alpha: 0.12)
-              : theme.colorScheme.surface.withValues(alpha: 0.9),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        alignment: Alignment.center,
-        child: isToggling
-            ? SizedBox(
-          width: iconSize,
-          height: iconSize,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: AppColors.error,
+    return Semantics(
+      button: true,
+      label: isFavorite ? 'Remove from wishlist' : 'Add to wishlist',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: isToggling ? null : onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: diameter,
+          height: diameter,
+          decoration: BoxDecoration(
+            color: isFavorite
+                ? AppColors.wishlistActive.withValues(alpha: 0.12)
+                : theme.colorScheme.surface.withValues(alpha: 0.9),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        )
-            : Icon(
-          isFavorite ? Icons.favorite : Icons.favorite_border,
-          color: isFavorite ? AppColors.error : theme.colorScheme.onSurface,
-          size: iconSize,
+          alignment: Alignment.center,
+          child: isToggling
+              ? SizedBox(
+            width: iconSize,
+            height: iconSize,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.wishlistActive,
+            ),
+          )
+              : AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: Icon(
+              isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+              key: ValueKey<bool>(isFavorite),
+              color: isFavorite
+                  ? AppColors.wishlistActive
+                  : theme.colorScheme.onSurface,
+              size: iconSize,
+            ),
+          ),
         ),
       ),
     );
@@ -230,28 +292,24 @@ class _WishlistButton extends StatelessWidget {
 }
 
 class _DiscountRibbon extends StatelessWidget {
-  final int discount;
+  const _DiscountRibbon({required this.discountPercentage});
 
-  const _DiscountRibbon({required this.discount});
+  final int discountPercentage;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return ClipPath(
       clipper: _RibbonClipper(),
       child: Container(
-        width: 48,
-        height: 48,
+        width: AppSpacing.ribbonSize,
+        height: AppSpacing.ribbonSize,
         color: AppColors.saleBadge,
-        alignment: const Alignment(0, -0.4),
+        alignment: const Alignment(0, -0.3),
         child: Text(
-          '-$discount%',
+          l10n.productDiscountPercent(discountPercentage),
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 9,
-            height: 1.1,
-          ),
+          style: AppTextStyles.discountRibbon,
         ),
       ),
     );
@@ -272,19 +330,62 @@ class _RibbonClipper extends CustomClipper<Path> {
   bool shouldReclip(_RibbonClipper old) => false;
 }
 
-class _PriceTag extends StatelessWidget {
-  final ProductModel product;
-  final ThemeData theme;
+class _SavingsAmountBadge extends StatelessWidget {
+  const _SavingsAmountBadge({required this.savingsAmount});
 
-  const _PriceTag({required this.product, required this.theme});
+  final double savingsAmount;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.priceGreen,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.priceGreen.withValues(alpha: 0.35),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        l10n.productSavingsShort(savingsAmount.toStringAsFixed(2)),
+        style: AppTextStyles.savingsBadge,
+      ),
+    );
+  }
+}
+
+class _PriceTag extends StatelessWidget {
+  const _PriceTag({required this.product, required this.theme});
+
+  final ProductModel product;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasDiscount = product.discountPercentage > 0;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs + 1,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(AppRadius.md),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.10),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -292,19 +393,18 @@ class _PriceTag extends StatelessWidget {
         children: [
           Text(
             product.finalPrice.toStringAsFixed(2),
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
+            style: AppTextStyles.priceLabel.copyWith(
               color: AppColors.priceGreen,
             ),
           ),
-          if (product.discountPercentage > 0)
+          if (hasDiscount)
             Text(
-              product.price.toStringAsFixed(2),
-              style: TextStyle(
-                fontSize: 10,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              product.basePrice.toStringAsFixed(2),
+              style: AppTextStyles.originalPrice.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
                 decoration: TextDecoration.lineThrough,
+                decorationColor:
+                theme.colorScheme.onSurface.withValues(alpha: 0.45),
               ),
             ),
         ],
@@ -314,51 +414,50 @@ class _PriceTag extends StatelessWidget {
 }
 
 class _CartButton extends StatelessWidget {
+  const _CartButton({required this.isLoading, required this.onTap});
+
   final bool isLoading;
   final VoidCallback onTap;
 
-  const _CartButton({required this.isLoading, required this.onTap});
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    // Responsive size: 9% of screen width, clamped 28–38px
-    final size = (MediaQuery.sizeOf(context).width * 0.09).clamp(28.0, 38.0);
-    final iconSize = size * 0.48;
+    final theme    = Theme.of(context);
+    final diameter = (MediaQuery.sizeOf(context).width * 0.09).clamp(28.0, 40.0);
+    final iconSize = diameter * 0.48;
+    final l10n = AppLocalizations.of(context);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: isLoading ? null : onTap,
-        customBorder: const CircleBorder(),
-        child: Ink(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+    return Semantics(
+      button: true,
+      label: l10n.addToCart,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isLoading ? null : onTap,
+          customBorder: const CircleBorder(),
+          splashColor: AppColors.primary.withValues(alpha: 0.18),
+          highlightColor: AppColors.primary.withValues(alpha: 0.10),
+          child: Ink(
+            width: diameter,
+            height: diameter,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: isLoading
+                  ? SizedBox(
+                width: iconSize * 0.75,
+                height: iconSize * 0.75,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.white,
+                ),
+              )
+                  : Icon(
+                Icons.shopping_cart_outlined,
+                size: iconSize,
+                color: AppColors.white,
               ),
-            ],
-          ),
-          child: Center(
-            child: isLoading
-                ? SizedBox(
-              width: iconSize * 0.8,
-              height: iconSize * 0.8,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: AppColors.cartIconColor,
-              ),
-            )
-                : Icon(
-              Icons.shopping_cart_outlined,
-              size: iconSize,
-              color: AppColors.cartIconColor,
             ),
           ),
         ),

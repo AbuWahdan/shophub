@@ -5,26 +5,12 @@ import '../../../../../controllers/cart_controller.dart';
 import '../../../../../core/state/auth_state.dart';
 import '../../../../../design/app_colors.dart';
 import '../../../../../l10n/app_localizations.dart';
-import '../../../../../models/data.dart';
+import '../../../../core/api/exceptions.dart';
 import '../../../../models/product/product_model.dart';
-import '../../../../../services/product_service.dart';
-import '../../../custom__snack_bar/custom_snack_bar.dart';
-import '../add_to_cart_bottom_sheet.dart';
+import '../../../../widgets/custom__snack_bar/custom_snack_bar.dart';
+import '../../../../widgets/product_card/add_to_cart_bottom_sheet/add_to_cart_bottom_sheet.dart';
 
-/// A stateless utility that encapsulates the full "add to cart" user journey:
-///
-///   1. Ensure the user is authenticated.
-///   2. Present [AddToCartBottomSheet] to collect variant + quantity.
-///   3. Call [CartController.addItem] to persist the selection.
-///   4. Sync [AppData] cache and show a result [CustomSnackBar].
-///
-/// Extracted from [WishlistPage] so it can be reused by any screen
-/// (wishlist, order details, product listing, etc.) without duplication.
-///
-/// Usage:
-/// ```dart
-/// await AddToCartAction.execute(context: context, product: product);
-/// ```
+
 abstract final class AddToCartAction {
   /// Runs the full add-to-cart flow for [product].
   ///
@@ -93,7 +79,7 @@ abstract final class AddToCartAction {
       if (!context.mounted) return false;
 
       // ── Step 4: sync AppData cache ─────────────────────────────────────────
-      AppData.addToCart(
+      Get.find<CartController>().addToCart(
         product: product,
         quantity: selection.qty,
         size: variant.size.trim().isEmpty

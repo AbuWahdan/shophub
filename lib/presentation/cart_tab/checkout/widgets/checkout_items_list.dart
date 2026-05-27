@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../design/app_spacing.dart';
 import '../../../../models/cart_item_model.dart';
-import 'checkout_item_tile.dart';
+import 'checkout_item_card.dart';
 
 class CheckoutItemsList extends StatelessWidget {
   const CheckoutItemsList({super.key, required this.items});
@@ -16,7 +16,7 @@ class CheckoutItemsList extends StatelessWidget {
           .map(
             (item) => Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: CheckoutItemTile(item: item),
+              child: CheckoutItemCard(item: item),
             ),
           )
           .toList(),

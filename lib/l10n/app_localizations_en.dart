@@ -9,6 +9,96 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get productFreeDelivery => 'Free delivery';
+
+  @override
+  String get actionRetry => 'Retry';
+
+  @override
+  String get productNoReviews => 'No reviews yet';
+
+  @override
+  String get productSoldBy => 'Sold by';
+
+  @override
+  String productLowStock(Object stock) {
+    return 'Only $stock left in stock';
+  }
+
+  @override
+  String get jod => 'JOD';
+
+  @override
+  String get notificationCartVariantError => 'Please select a product variant';
+
+  @override
+  String get cartTotalLabel => 'Total';
+
+  @override
+  String productDiscountPercent(Object discountPercentage) {
+    return '$discountPercentage% OFF';
+  }
+
+  @override
+  String productSavingsShort(Object stringAsFixed) {
+    return 'Save $stringAsFixed';
+  }
+
+  @override
+  String productSavings(Object stringAsFixed) {
+    return 'You save $stringAsFixed';
+  }
+
+  @override
+  String get productActiveHiddenSubtitle =>
+      'This product is hidden from customers';
+
+  @override
+  String get productActiveLabel => 'Product Status';
+
+  @override
+  String get productActiveStatusActive => 'Active';
+
+  @override
+  String get productActiveStatusInactive => 'Inactive';
+
+  @override
+  String get productActiveVisibleSubtitle =>
+      'This product is visible to customers';
+
+  @override
+  String get productDefaultLabel => 'Default';
+
+  @override
+  String get productImageFormatsHint => 'Supported formats: JPG, PNG';
+
+  @override
+  String get productPickFromGallery => 'Pick from Gallery';
+
+  @override
+  String get productRemoveVariant => 'Remove Variant';
+
+  @override
+  String get productSetDefault => 'Set as Default';
+
+  @override
+  String get productTakePhoto => 'Take Photo';
+
+  @override
+  String get productTapToAddImage => 'Tap to add image';
+
+  @override
+  String get productTapToView => 'Tap to view';
+
+  @override
+  String productVariantHeading(Object number) {
+    return 'Variant $number';
+  }
+
+  @override
+  String get productVariantNewLabel => 'New Variant';
+
+  @override
   String get emptyCartTitle => 'Your cart is empty';
 
   @override
@@ -254,6 +344,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get productUpdateAction => 'Update action';
+
+  @override
+  String productIdLabel(Object id) {
+    return 'Product ID: $id';
+  }
+
+  @override
+  String get productEditingProductDetails => 'Editing product details';
+
+  @override
+  String get productTaxHint => 'Include VAT or other applicable taxes.';
 
   @override
   String get appTitle => 'ShopHub';

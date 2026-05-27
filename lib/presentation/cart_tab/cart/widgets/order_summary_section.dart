@@ -7,95 +7,190 @@ import '../../../../design/app_spacing.dart';
 import '../../../../design/app_text_styles.dart';
 import '../../../../l10n/app_localizations.dart';
 
-
+/// Sticky bottom panel showing the cart price breakdown and checkout CTA.
+///
+/// Price rows:
+///   Subtotal  — original total before any discounts
+///   Discount  — total amount saved (hidden when 0)
+///   Total     — final amount the customer pays (green, bold)
 class OrderSummarySection extends StatelessWidget {
-  const OrderSummarySection({Key? key, required this.cartController, required this.onCheckout}) : super(key: key);
+  const OrderSummarySection({
+    super.key,
+    required this.cartController,
+    required this.onCheckout,
+  });
 
   final CartController cartController;
   final VoidCallback onCheckout;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
 
-    if (cartController.items.isEmpty || cartController.isLoading.value) {
-      return const SizedBox.shrink();
-    }
+    final l10n         = AppLocalizations.of(context);
+    final theme        = Theme.of(context);
+    final colorScheme  = theme.colorScheme;
+
+    final originalTotal  = cartController.originalTotalPrice;
+    final finalTotal     = cartController.totalPrice;
+    final totalDiscount  = originalTotal - finalTotal;
+    final hasDiscount    = totalDiscount > 0.001;
 
     return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
-          boxShadow: [
-            BoxShadow(
-              color: theme.shadowColor.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, -4),
+        child: Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            border: Border(
+              top: BorderSide(
+                color: colorScheme.outlineVariant,
+                width: AppSpacing.borderThin,
+              ),
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.sm,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _SummaryRow(label: l10n.subtotalLabel, value: '\$${cartController.totalPrice.toStringAsFixed(2)}'),
-                      const SizedBox(height: 6),
-                      _SummaryRow(label: l10n.discountLabel, value: '\$0.00'),
-                      const SizedBox(height: 6),
-                      _SummaryRow(label: l10n.taxLabel, value: '\$0.00'),
-                      const SizedBox(height: 8),
-                      _SummaryRow(label: l10n.totalLabel, value: '\$${cartController.totalPrice.toStringAsFixed(2)}', isTotal: true),
-                    ],
+                _PriceRow(
+                  label: l10n.subtotalLabel,
+                  value: '${l10n.jod} ${originalTotal.toStringAsFixed(3)}',
+                ),
+                if (hasDiscount) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  _PriceRow(
+                    label: l10n.discountLabel,
+                    value: '- ${l10n.jod} ${totalDiscount.toStringAsFixed(3)}',
+                    valueColor: AppColors.priceGreen,
+                  ),
+                ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                  child: Divider(
+                    color: colorScheme.outlineVariant,
+                    thickness: AppSpacing.borderThin,
+                    height: 0,
                   ),
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                SizedBox(
-                  width: 180,
-                  child: ElevatedButton(
-                    onPressed: onCheckout,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
-                      elevation: 0,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            l10n.totalLabel,
+                            style: AppTextStyles.caption.copyWith(
+                              color: colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xxs),
+                          Text(
+                            '${l10n.jod} ${finalTotal.toStringAsFixed(3)}',
+                            style: AppTextStyles.titleLarge.copyWith(
+                              color: AppColors.priceGreen,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          if (hasDiscount)
+                            Text(
+                              '${l10n.jod} ${originalTotal.toStringAsFixed(3)}',
+                              style: AppTextStyles.caption.copyWith(
+                                decoration: TextDecoration.lineThrough,
+                                decorationColor:
+                                colorScheme.onSurface.withValues(alpha: 0.38),
+                                color:
+                                colorScheme.onSurface.withValues(alpha: 0.38),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      child: Text(l10n.proceedToCheckoutButton, style: AppTextStyles.labelLarge.copyWith(color: Colors.white, fontWeight: FontWeight.w700)),
-                    ),
-                  ),
+                    const SizedBox(width: AppSpacing.md),
+                    _CheckoutButton(l10n: l10n, onPressed: onCheckout),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
-      ),
     );
   }
 }
 
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({Key? key, required this.label, required this.value, this.isTotal = false}) : super(key: key);
+class _PriceRow extends StatelessWidget {
+  const _PriceRow({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
 
   final String label;
   final String value;
-  final bool isTotal;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Expanded(child: Text(label, style: AppTextStyles.caption.copyWith(color: Theme.of(context).colorScheme.tertiary))),
-        Text(value, style: isTotal ? AppTextStyles.titleLarge.copyWith(color: AppColors.primary, fontWeight: FontWeight.w800) : AppTextStyles.bodyMedium),
+        Expanded(
+          child: Text(
+            label,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: valueColor ?? colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
+    );
+  }
+}
+
+class _CheckoutButton extends StatelessWidget {
+  const _CheckoutButton({required this.l10n, required this.onPressed});
+
+  final AppLocalizations l10n;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      width: 160,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.white,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+        ),
+        child: Text(
+          l10n.proceedToCheckoutButton,
+          style: AppTextStyles.buttonLarge,
+        ),
+      ),
     );
   }
 }

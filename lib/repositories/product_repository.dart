@@ -72,6 +72,9 @@ class ProductRepository {
     return rawItems.map((item) => ProductModel.fromJson(item)).toList();
   }
 
+  Future<List<ProductModel>> fetchAllProducts({bool forceRefresh = false}) {
+    return _fetchFlatProducts(forceRefresh: forceRefresh);
+  }
   Future<List<ProductModel>> _fetchFlatProducts({bool forceRefresh = false,}) async {
     dynamic response;
 

@@ -119,20 +119,18 @@ class _ShoppingCartScreenState extends State<ShoppingCartScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
-      body: CartScreen(
-        cartController: _cartController,
-        onTapItem: _openProductDetails,
-        onRemoveItem: (item) {
-          if (item == null) return _navigateToHome();
-          _confirmRemoveItem(item);
-        },
-        onIncrement: _onIncrement,
-        onDecrement: _onDecrement,
-        onCheckout: _navigateToCheckout,
-        onRefresh: _loadCart,
-      ),
+    // Return CartScreen directly. No Scaffold wrapper!
+    return CartScreen(
+      cartController: _cartController,
+      onTapItem: _openProductDetails,
+      onRemoveItem: (item) {
+        if (item == null) return _navigateToHome();
+        _confirmRemoveItem(item);
+      },
+      onIncrement: _onIncrement,
+      onDecrement: _onDecrement,
+      onCheckout: _navigateToCheckout,
+      onRefresh: _loadCart,
     );
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:intl/intl.dart';
-import '../../../../../models/data.dart';
+import '../../../../controllers/cart_controller.dart';
 import '../../../../core/config/route.dart';
 import '../../../../design/app_colors.dart';
 import '../../../../design/app_radius.dart';
@@ -115,7 +117,7 @@ class OrderConfirmationScreen extends StatelessWidget {
 
   void _handleContinue(BuildContext context) {
     onContinue?.call();
-    AppData.setCartItems(const []);
+    Get.find<CartController>().setCartItems(const []);
     final switched = MainNavigator.switchToTab(context, homeTabIndex);
     if (switched) {
       Navigator.of(context).popUntil((route) => route.isFirst);

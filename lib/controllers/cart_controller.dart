@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../models/cart_item_model.dart';
+import '../models/product/product_model.dart';
 import '../repositories/cart_repository.dart';
 import '../services/app_notification_service.dart';
 
@@ -37,7 +38,87 @@ class CartController extends GetxController {
 
   bool canDecrement(CartItemModel item) => item.bookedQty > 1;
 
+  double get originalTotalPrice =>
+      items.fold(0.0, (sum, i) => sum + i.originalLineTotal);
   // ── Private helpers ─────────────────────────────────────────────────────────
+// State
+  final RxList<CartItemModel> cartItems = <CartItemModel>[].obs;
+  final RxInt cartCount = 0.obs;
+
+  void setCartItems(List<CartItemModel> items) {
+    cartItems.assignAll(items);
+    _syncCount();
+  }
+
+  void addToCart({
+    required ProductModel product,
+    required int quantity,
+    required String size,
+    required String color,
+    required int detId,
+    String username = '',
+  }) {
+    if (quantity <= 0) return;
+
+    final normalizedSize = size.trim().isEmpty ? 'Default' : size.trim();
+    final normalizedColor = color.trim().isEmpty ? 'Default' : color.trim();
+    final resolvedDetId = detId > 0 ? detId : product.detId;
+
+    final matchingVariant = product.variantFor(
+      size: normalizedSize,
+      color: normalizedColor,
+    );
+    final sourceVariant = matchingVariant ??
+        (product.variants.isNotEmpty ? product.variants.first : null);
+
+    final itemPrice = sourceVariant != null && sourceVariant.price > 0
+        ? sourceVariant.price
+        : product.finalPrice;
+    final itemDiscount = sourceVariant?.discount ?? product.discountPercentage.toDouble();
+    final availableQty = sourceVariant != null && sourceVariant.stock > 0
+        ? sourceVariant.stock
+        : product.baseStock;
+
+    final existingIndex = cartItems.indexWhere((item) {
+      if (resolvedDetId > 0 && item.itemDetId == resolvedDetId) return true;
+      return item.itemId == product.id &&
+          item.displaySize == normalizedSize &&
+          item.displayColor == normalizedColor;
+    });
+
+    if (existingIndex != -1) {
+      final existing = cartItems[existingIndex];
+      cartItems[existingIndex] = existing.copyWith(
+        bookedQty: existing.bookedQty + quantity,
+        availableQty: availableQty,
+      );
+      _syncCount();
+      return;
+    }
+
+    cartItems.add(CartItemModel(
+      detailId: resolvedDetId,
+      itemId: product.id,
+      itemDetId: resolvedDetId,
+      username: username,
+      bookedQty: quantity,
+      availableQty: availableQty,
+      name: product.name,
+      description: product.description,
+      price: itemPrice,
+      discount: itemDiscount,
+      imageUrl: product.primaryImageUrl,
+      color: normalizedColor,
+      size: normalizedSize,
+      brand: matchingVariant?.brand ??
+          (product.variants.isNotEmpty ? product.variants.first.brand : ''),
+    ));
+    _syncCount();
+  }
+
+  void _syncCount() {
+    cartCount.value = cartItems.fold(0, (sum, item) => sum + item.bookedQty);
+  }
 
   void _setBusy(int detailId, {required bool busy}) {
     if (busy) {

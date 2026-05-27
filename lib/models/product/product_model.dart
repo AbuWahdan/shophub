@@ -26,6 +26,7 @@ class ProductModel {
   final int reviewCount;
   final int soldCount;
   bool isFavorite;
+  final double finalPrice;
 
   ProductModel({
     required this.id,
@@ -52,11 +53,12 @@ class ProductModel {
     this.reviewCount = 0,
     this.soldCount = 0,
     this.isFavorite = false,
+    required this.finalPrice,
   }) : images = images ?? (primaryImageUrl.isEmpty ? [] : [primaryImageUrl]);
 
-  double get price => finalPrice;
+
   int get quantity => baseStock;
-  double get finalPrice => discountPrice ?? basePrice;
+
 
   int get discountPercentage {
     if (discountPrice == null || basePrice == 0) return 0;
@@ -102,6 +104,10 @@ class ProductModel {
     final parsedPrice = _asDouble(
       _pick(json, const ['item_price', 'ITEM_PRICE']),
     );
+    final parsedFinalPrice = _asNullableDouble(
+      _pick(json, const ['FINAL_PRICE', 'final_price']),
+    );
+
     final parsedAlternatePrice = _asNullableDouble(
       _pick(json, const [
         'discount_price',
@@ -135,6 +141,7 @@ class ProductModel {
       detId: topLevelDetId > 0 ? topLevelDetId : selectedVariant.detId,
       name: _asString(json, const ['item_name', 'ITEM_NAME']),
       description: _asString(json, const ['item_desc', 'ITEM_DESC']),
+      finalPrice: parsedFinalPrice ?? parsedPrice,
       basePrice: _resolveOriginalPrice(
         rawPrice: parsedPrice,
         explicitAltPrice: parsedAlternatePrice,
@@ -157,7 +164,7 @@ class ProductModel {
         'item_cat',
         'ITEM_CAT',
       ]),
-        createdBy: _asString(json, const [
+      createdBy: _asString(json, const [
         'created_by',
         'CREATED_BY',
         'creatd_by',
@@ -179,6 +186,7 @@ class ProductModel {
       isActive: _asInt(_pick(json, const ['is_active', 'IS_ACTIVE'])),
       discountPrice: _resolveDiscountedPrice(
         rawPrice: parsedPrice,
+        finalPrice: parsedFinalPrice,        // ← new param
         explicitAltPrice: parsedAlternatePrice,
         variant: selectedVariant,
       ),
@@ -252,7 +260,10 @@ class ProductModel {
     return double.tryParse((value ?? '').toString()) ?? fallback;
   }
 
-  static String? _asNullableString(Map<String, dynamic> json, List<String> keys) {
+  static String? _asNullableString(
+    Map<String, dynamic> json,
+    List<String> keys,
+  ) {
     final value = _pick(json, keys);
     if (value == null) return null;
     final normalized = value.toString().trim();
@@ -341,32 +352,26 @@ class ProductModel {
     required double? explicitAltPrice,
     required ProductVariant variant,
   }) {
+    // rawPrice (ITEM_PRICE) is always the original/base price
     final variantPrice = variant.price > 0 ? variant.price : rawPrice;
-    if (variantPrice <= 0 && explicitAltPrice != null && explicitAltPrice > 0) {
-      return explicitAltPrice;
-    }
-    if (explicitAltPrice != null &&
-        explicitAltPrice > variantPrice &&
-        variantPrice > 0) {
-      return explicitAltPrice;
-    }
-    return variantPrice;
+    return variantPrice > 0 ? variantPrice : (explicitAltPrice ?? 0.0);
   }
 
   static double? _resolveDiscountedPrice({
     required double rawPrice,
+    required double? finalPrice,
     required double? explicitAltPrice,
     required ProductVariant variant,
   }) {
     final variantPrice = variant.price > 0 ? variant.price : rawPrice;
 
+    if (finalPrice != null && finalPrice > 0 && finalPrice < variantPrice) {
+      return finalPrice;
+    }
+
     if (explicitAltPrice != null &&
         explicitAltPrice > 0 &&
-        variantPrice > 0 &&
-        explicitAltPrice != variantPrice) {
-      if (explicitAltPrice > variantPrice) {
-        return variantPrice;
-      }
+        explicitAltPrice < variantPrice) {
       return explicitAltPrice;
     }
 
@@ -377,7 +382,6 @@ class ProductModel {
     return null;
   }
 }
-
 class GetProductsRequest {
   final String? createdBy;
   final int? categoryId;

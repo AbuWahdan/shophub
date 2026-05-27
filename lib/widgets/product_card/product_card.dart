@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+
 import '../../../../controllers/cart_controller.dart';
-import '../../../../models/data.dart';
+
 import '../../controllers/wishlist_controller.dart';
+import '../../core/api/exceptions.dart';
 import '../../core/config/route.dart';
 import '../../core/state/auth_state.dart';
 import '../../design/app_radius.dart';
@@ -16,11 +18,17 @@ import 'add_to_cart_bottom_sheet/add_to_cart_bottom_sheet.dart';
 import 'add_to_cart_bottom_sheet/widgets/product_card_image_section.dart';
 import 'add_to_cart_bottom_sheet/widgets/product_card_info_section.dart';
 
+/// A tappable product tile used inside grid/list views.
+///
+/// Responsibilities (logic unchanged from original):
+///  - Navigate to product-details screen on tap.
+///  - Toggle wishlist with auth-guard.
+///  - Open the add-to-cart bottom sheet with auth-guard.
+///
+/// Visual responsibilities:
+///  - Elevated card surface with [AppShadows.cardShadow].
+///  - Image section fills the top, info section anchors the bottom.
 class ProductCard extends StatefulWidget {
-  final ProductModel product;
-  final ValueChanged<ProductModel>? onSelected;
-  final VoidCallback? onCartTap;
-
   const ProductCard({
     super.key,
     required this.product,
@@ -28,15 +36,19 @@ class ProductCard extends StatefulWidget {
     this.onCartTap,
   });
 
+  final ProductModel product;
+  final ValueChanged<ProductModel>? onSelected;
+  final VoidCallback? onCartTap;
+
   @override
   State<ProductCard> createState() => _ProductCardState();
 }
 
 class _ProductCardState extends State<ProductCard> {
-  bool _isAddingToCart = false;
+  bool _isAddingToCart   = false;
   bool _isOpeningDetails = false;
 
-  Future<void> _openProductDetails() async {
+  Future<void> _navigateToDetails() async {
     if (_isOpeningDetails) return;
     setState(() => _isOpeningDetails = true);
     widget.onSelected?.call(widget.product);
@@ -50,7 +62,7 @@ class _ProductCardState extends State<ProductCard> {
     }
   }
 
-  Future<void> _handleToggleFavorite() async {
+  Future<void> _toggleFavorite() async {
     final auth = context.read<AuthState>();
     await auth.ensureInitialized();
     if (!mounted) return;
@@ -77,7 +89,7 @@ class _ProductCardState extends State<ProductCard> {
     }
   }
 
-  Future<void> _handleAddToCart() async {
+  Future<void> _addToCart() async {
     if (widget.onCartTap != null) {
       widget.onCartTap!();
       return;
@@ -122,7 +134,9 @@ class _ProductCardState extends State<ProductCard> {
       );
 
       if (itemDetId <= 0) {
-        throw ProductException('Unable to determine selected product variant.');
+        throw ProductException(
+          AppLocalizations.of(context).notificationCartVariantError,
+        );
       }
 
       await Get.find<CartController>().addItem(
@@ -134,17 +148,22 @@ class _ProductCardState extends State<ProductCard> {
 
       if (!mounted) return;
 
-      AppData.addToCart(
+      Get.find<CartController>().addToCart(
         product: widget.product,
         quantity: selection.qty,
-        size: selectedVariant.size.trim().isEmpty ? 'Default' : selectedVariant.size,
-        color: selectedVariant.color.trim().isEmpty ? 'Default' : selectedVariant.color,
+        size: selectedVariant.size.trim().isEmpty
+            ? AppLocalizations.of(context).variantDefaultSize
+            : selectedVariant.size,
+        color: selectedVariant.color.trim().isEmpty
+            ? AppLocalizations.of(context).variantDefaultColor
+            : selectedVariant.color,
         detId: itemDetId,
       );
 
       AppNotificationService.instance.showSuccess(
         context,
-        AppLocalizations.of(context).notificationProductAddedToCart(widget.product.name),
+        AppLocalizations.of(context)
+            .notificationProductAddedToCart(widget.product.name),
       );
     } on ProductException catch (e) {
       if (!mounted) return;
@@ -162,10 +181,10 @@ class _ProductCardState extends State<ProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    final product = widget.product;
-    final wishlistState = context.watch<WishlistController>();
-    final isFavorite = wishlistState.isInWishlist(product.id);
-    final isToggling = wishlistState.isToggling(product.id);
+    final product      = widget.product;
+    final wishlist     = context.watch<WishlistController>();
+    final isFavorite   = wishlist.isInWishlist(product.id);
+    final isToggling   = wishlist.isToggling(product.id);
     product.isFavorite = isFavorite;
 
     return DecoratedBox(
@@ -177,26 +196,23 @@ class _ProductCardState extends State<ProductCard> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: InkWell(
-          onTap: _isOpeningDetails ? null : _openProductDetails,
-          child: // ✅ AFTER
-          Column(
+          onTap: _isOpeningDetails ? null : _navigateToDetails,
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Wrap the Image section in Expanded
               Expanded(
                 child: ProductCardImageSection(
                   product: product,
                   isFavorite: isFavorite,
                   isToggling: isToggling,
                   isAddingToCart: _isAddingToCart,
-                  onFavoriteTap: _handleToggleFavorite,
-                  onCartTap: _handleAddToCart,
+                  onFavoriteTap: _toggleFavorite,
+                  onCartTap: _addToCart,
                 ),
               ),
-              // 2. Info section takes exactly the space it needs at the bottom
               ProductCardInfoSection(product: product),
             ],
-          )
+          ),
         ),
       ),
     );

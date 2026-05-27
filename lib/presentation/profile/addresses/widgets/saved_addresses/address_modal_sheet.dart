@@ -62,7 +62,7 @@ class AddressModalSheet extends StatelessWidget {
                   height: AppSpacing.xs,
                   decoration: BoxDecoration(
                     color: AppColors.neutral300,
-                    borderRadius: BorderRadius.circular(AppRadius.full),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                 ),
               ),

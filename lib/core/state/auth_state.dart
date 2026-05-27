@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../models/data.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_instance/src/extension_instance.dart';
+import '../../controllers/cart_controller.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
@@ -53,7 +55,7 @@ class AuthState extends ChangeNotifier {
       if (_isLoggedIn && (_user?.username.trim().isNotEmpty ?? false)) {
         unawaited(_synchronizeCartCache());
       } else {
-        AppData.setCartItems(const []);
+        Get.find<CartController>().setCartItems(const []);
       }
     }();
     return _initializationFuture;
@@ -88,14 +90,14 @@ class AuthState extends ChangeNotifier {
       _isLoggedIn = false;
       _user = null;
       _userId = 0;
-      AppData.setCartItems(const []);
+      Get.find<CartController>().setCartItems(const []);
       return false;
     } catch (_) {
       _errorMessage = 'Something went wrong. Try again.';
       _isLoggedIn = false;
       _user = null;
       _userId = 0;
-      AppData.setCartItems(const []);
+      Get.find<CartController>().setCartItems(const []);
       return false;
     } finally {
       _setLoading(false);
@@ -128,7 +130,7 @@ class AuthState extends ChangeNotifier {
     _user = null;
     _userId = 0;
     _errorMessage = null;
-    AppData.setCartItems(const []);
+    Get.find<CartController>().setCartItems(const []);
     notifyListeners();
   }
 
@@ -148,16 +150,16 @@ class AuthState extends ChangeNotifier {
   Future<void> _synchronizeCartCache({bool clearOnFailure = false}) async {
     final username = _user?.username.trim() ?? '';
     if (username.isEmpty) {
-      AppData.setCartItems(const []);
+      Get.find<CartController>().setCartItems(const []);
       return;
     }
 
     try {
       final cartItems = await _productService.getItemCart(username: username);
-      AppData.setCartItems(cartItems);
+      Get.find<CartController>().setCartItems(cartItems);
     } catch (_) {
       if (clearOnFailure) {
-        AppData.setCartItems(const []);
+        Get.find<CartController>().setCartItems(const []);
       }
     }
   }

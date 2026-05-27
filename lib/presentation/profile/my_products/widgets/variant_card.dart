@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/config/size_options.dart';
+import '../../../../design/app_colors.dart';
+import '../../../../design/app_radius.dart';
 import '../../../../design/app_spacing.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../widgets/custom_text_field/custom_text_field.dart';
@@ -47,146 +49,170 @@ class VariantCard extends StatelessWidget {
 
     final borderColor = entry.isActive
         ? Theme.of(context).dividerColor
-        : colorScheme.error.withValues(alpha: 0.5);
+        : colorScheme.error.withOpacity(0.5);
+    final accentColor = entry.isActive ? Theme.of(context).colorScheme.primary : colorScheme.error;
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: borderColor),
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: borderColor),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x11000000),
+            blurRadius: 18,
+            offset: Offset(0, 6),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _VariantCardHeader(
-              index: index,
-              entry: entry,
-              isSubmitting: isSubmitting,
-              showActiveToggle: showActiveToggle,
-              showRemoveButton: showRemoveButton,
-              onActiveToggled: onActiveToggled,
-              onRemovePressed: onRemovePressed,
-            ),
-            if (!entry.isActive && entry.pendingDeactivate)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: Text(
-                  l10n.variantWillBeRemovedOnSave,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelSmall?.copyWith(color: colorScheme.error),
-                  overflow: TextOverflow.ellipsis,
-                ),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            decoration: BoxDecoration(
+              color: accentColor.withOpacity(0.85),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(AppRadius.lg),
+                bottomLeft: Radius.circular(AppRadius.lg),
               ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: CustomTextField(
-                    controller: entry.brandController,
-                    label: l10n.productBrand,
-                    hintText: l10n.productBrandHint,
-                    textInputAction: TextInputAction.next,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: ColorHexField(
-                    initialColor: entry.colorController.text,
-                    label: l10n.productColor,
-
-                    onColorChanged: (v) => entry.colorController.text = v,
-                  ),
-                ),
-              ],
             ),
-            const SizedBox(height: AppSpacing.md),
-            _SizeGroupDropdown(
-              entry: entry,
-              isSubmitting: isSubmitting,
-              onChanged: onSizeGroupChanged,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            _SizeDropdown(
-              entry: entry,
-              groupSizes: groupSizes,
-              isSubmitting: isSubmitting,
-              onChanged: onSizeChanged,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final isCompact = constraints.maxWidth < 520;
-                final fields = [
-                  CustomTextField(
-                    controller: entry.priceController,
-                    label: l10n.productPriceLabel,
-                    hintText: l10n.productPriceHint,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _VariantCardHeader(
+                    index: index,
+                    entry: entry,
+                    isSubmitting: isSubmitting,
+                    showActiveToggle: showActiveToggle,
+                    showRemoveButton: showRemoveButton,
+                    onActiveToggled: onActiveToggled,
+                    onRemovePressed: onRemovePressed,
+                  ),
+                  if (!entry.isActive && entry.pendingDeactivate)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: Text(
+                        l10n.variantWillBeRemovedOnSave,
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelSmall
+                            ?.copyWith(color: colorScheme.error),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    validator: validators.positiveDouble,
-                    showRequiredAsterisk: true,
-                    textInputAction: TextInputAction.next,
-                  ),
-                  CustomTextField(
-                    controller: entry.qtyController,
-                    label: l10n.productQuantityLabel,
-                    hintText: l10n.productQuantityHint,
-                    keyboardType: TextInputType.number,
-                    validator: validators.positiveInt,
-                    showRequiredAsterisk: true,
-                    textInputAction: TextInputAction.next,
-                  ),
-                  CustomTextField(
-                    controller: entry.discountController,
-                    label: l10n.productDiscountLabel,
-                    hintText: l10n.productDiscountHint,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    validator: validators.optionalDiscount,
-                    textInputAction: TextInputAction.next,
-                  ),
-                  CustomTextField(
-                    controller: entry.taxController,
-                    label: l10n.tax,
-                    hintText: 'Tax percentage',
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    validator: validators.optionalDiscount,
-                    textInputAction: TextInputAction.done,
-                  ),
-                ];
-
-                if (isCompact) {
-                  return Column(
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
                     children: [
-                      for (var i = 0; i < fields.length; i++) ...[
-                        fields[i],
-                        if (i != fields.length - 1)
-                          const SizedBox(height: AppSpacing.md),
-                      ],
+                      Expanded(
+                        child: CustomTextField(
+                          controller: entry.brandController,
+                          label: l10n.productBrand,
+                          hintText: l10n.productBrandHint,
+                          textInputAction: TextInputAction.next,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: ColorHexField(
+                          initialColor: entry.colorController.text,
+                          label: l10n.productColor,
+                          onColorChanged: (v) => entry.colorController.text = v,
+                        ),
+                      ),
                     ],
-                  );
-                }
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _SizeGroupDropdown(
+                    entry: entry,
+                    isSubmitting: isSubmitting,
+                    onChanged: onSizeGroupChanged,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _SizeDropdown(
+                    entry: entry,
+                    groupSizes: groupSizes,
+                    isSubmitting: isSubmitting,
+                    onChanged: onSizeChanged,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isCompact = constraints.maxWidth < 520;
+                      final fields = [
+                        CustomTextField(
+                          controller: entry.priceController,
+                          label: l10n.productPriceLabel,
+                          hintText: l10n.productPriceHint,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          validator: validators.positiveDouble,
+                          showRequiredAsterisk: true,
+                          textInputAction: TextInputAction.next,
+                        ),
+                        CustomTextField(
+                          controller: entry.qtyController,
+                          label: l10n.productQuantityLabel,
+                          hintText: l10n.productQuantityHint,
+                          keyboardType: TextInputType.number,
+                          validator: validators.positiveInt,
+                          showRequiredAsterisk: true,
+                          textInputAction: TextInputAction.next,
+                        ),
+                        CustomTextField(
+                          controller: entry.discountController,
+                          label: l10n.productDiscountLabel,
+                          hintText: l10n.productDiscountHint,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          validator: validators.optionalDiscount,
+                          textInputAction: TextInputAction.next,
+                        ),
+                        CustomTextField(
+                          controller: entry.taxController,
+                          label: l10n.taxLabel,
+                          hintText: l10n.productTaxHint,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          validator: validators.optionalDiscount,
+                          textInputAction: TextInputAction.done,
+                        ),
+                      ];
 
-                return Row(
-                  children: [
-                    for (var i = 0; i < fields.length; i++) ...[
-                      Expanded(child: fields[i]),
-                      if (i != fields.length - 1)
-                        const SizedBox(width: AppSpacing.md),
-                    ],
-                  ],
-                );
-              },
+                      if (isCompact) {
+                        return Column(
+                          children: [
+                            for (var i = 0; i < fields.length; i++) ...[
+                              fields[i],
+                              if (i != fields.length - 1)
+                                const SizedBox(height: AppSpacing.md),
+                            ],
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        children: [
+                          for (var i = 0; i < fields.length; i++) ...[
+                            Expanded(child: fields[i]),
+                            if (i != fields.length - 1)
+                              const SizedBox(width: AppSpacing.md),
+                          ],
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -217,24 +243,26 @@ class _VariantCardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Row(
       children: [
         Expanded(
           child: Text(
-            'Variant ${index + 1}${entry.isNew ? ' (new)' : ''}',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            '${l10n.productVariantHeading(index + 1)}${entry.isNew ? ' ${l10n.productVariantNewLabel}' : ''}',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: AppSpacing.xs),
         if (showRemoveButton && entry.isNew)
           IconButton(
             icon: const Icon(Icons.close, size: 20),
-            tooltip: 'Remove variant',
+            tooltip: l10n.productRemoveVariant,
             onPressed: isSubmitting ? null : onRemovePressed,
           )
         else if (showActiveToggle)
@@ -243,16 +271,20 @@ class _VariantCardHeader extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  entry.isActive ? 'Active' : 'Inactive',
+                  entry.isActive
+                      ? l10n.productActiveStatusActive
+                      : l10n.productActiveStatusInactive,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: entry.isActive ? Colors.green : colorScheme.error,
-                  ),
+                        color: entry.isActive
+                            ? colorScheme.primary
+                            : colorScheme.error,
+                      ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               Switch(
                 value: entry.isActive,
-                activeThumbColor: Colors.green,
+                activeColor: colorScheme.primary,
                 onChanged: isSubmitting ? null : onActiveToggled,
               ),
             ],
@@ -282,10 +314,12 @@ class _SizeGroupDropdown extends StatelessWidget {
       isExpanded: true,
       decoration: InputDecoration(
         labelText: l10n.productSizeGroup,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 14,
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
         ),
       ),
       hint: Text(
@@ -327,10 +361,12 @@ class _SizeDropdown extends StatelessWidget {
       isExpanded: true,
       decoration: InputDecoration(
         labelText: l10n.productSize,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 14,
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
         ),
       ),
       hint: Text(

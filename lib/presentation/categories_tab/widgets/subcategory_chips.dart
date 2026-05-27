@@ -49,7 +49,7 @@ class SubcategoryChips extends StatelessWidget {
                   color: selected ? AppColors.white : AppColors.textSecondary,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.full),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
                   side: BorderSide(
                     color: selected ? AppColors.primary : AppColors.border,
                   ),

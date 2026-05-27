@@ -7,6 +7,8 @@ import '../../../../models/category_model.dart';
 import '../../../models/product/product_model.dart';
 import '../../../models/product/product_image_model.dart';
 import '../../../core/config/size_options.dart';
+import '../../../design/app_colors.dart';
+import '../../../design/app_radius.dart';
 import '../../../design/app_spacing.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../services/product_service.dart';
@@ -383,18 +385,33 @@ class _EditProductPageState extends State<EditProductPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.productEditTitle, overflow: TextOverflow.ellipsis),
+        centerTitle: true,
         elevation: 0,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        surfaceTintColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).colorScheme.onBackground,
+        title: Text(
+          l10n.productEditTitle,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
       ),
       body: SafeArea(
         child: _isSubmitting
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSpacing.lg),
+                padding: AppSpacing.insetsMd,
                 child: Form(
                   key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Container(
+                    padding: AppSpacing.insetsMd,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: Theme.of(context).dividerColor),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _EditProductHeader(itemId: _itemId),
                       const SizedBox(height: AppSpacing.xl),
@@ -460,6 +477,7 @@ class _EditProductPageState extends State<EditProductPage> {
                   ),
                 ),
               ),
+            ),
       ),
     );
   }
@@ -476,22 +494,24 @@ class _EditProductHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
+        color: colorScheme.primary.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: colorScheme.primary.withOpacity(0.18)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
+              color: colorScheme.primary.withOpacity(0.18),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Icon(
               Icons.shopping_bag_outlined,
@@ -505,14 +525,14 @@ class _EditProductHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Product ID: $itemId',
-                  style: Theme.of(context).textTheme.labelSmall,
+                  l10n.productIdLabel(itemId),
+                  style: theme.textTheme.labelSmall,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Editing product details',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  l10n.productEditingProductDetails,
+                  style: theme.textTheme.bodyMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
