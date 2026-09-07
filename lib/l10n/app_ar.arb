@@ -1,5 +1,10 @@
 {
 
+  "noSearchHistory": "لا يوجد سجل بحث",
+  "recentSearches": "عمليات البحث الأخيرة",
+  "clearAll": "مسح الكل",
+  "searchPrompt": "ابحث عن الخدمات أو مقدمي الخدمة أو المنتجات",
+  "noResultsForQuery": "لم يتم العثور على نتائج لـ \"{query}\"",
   "productFreeDelivery": "Free delivery",
   "actionRetry": "إعادة المحاولة",
   "productNoReviews": "لا توجد تقييمات بعد",

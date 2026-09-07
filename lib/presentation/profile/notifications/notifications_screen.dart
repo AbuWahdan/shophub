@@ -205,7 +205,7 @@ class _NotificationCard extends StatelessWidget {
   }
 }
 
-// ── Notification icon ─────────────────────────────────────────────────────────
+// ── Notification icons ─────────────────────────────────────────────────────────
 
 class _NotificationIcon extends StatelessWidget {
   const _NotificationIcon({

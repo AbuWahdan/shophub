@@ -130,7 +130,7 @@
 //                     final star = index + 1;
 //                     final selected = star <= _selectedRating;
 //                     return IconButton(
-//                       icon: Icon(
+//                       icons: Icon(
 //                         selected
 //                             ? Icons.star_rounded
 //                             : Icons.star_outline_rounded,

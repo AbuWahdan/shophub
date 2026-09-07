@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../design/app_radius.dart';
 import '../../../../design/app_spacing.dart';
 
-/// Consistent section header with an icon badge and bold title.
+/// Consistent section header with an icons badge and bold title.
 /// Shared across [InsertProductPage] and [EditProductPage].
 class ProductSectionTitle extends StatelessWidget {
   const ProductSectionTitle({

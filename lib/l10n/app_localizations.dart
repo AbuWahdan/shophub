@@ -98,6 +98,36 @@ abstract class AppLocalizations {
     Locale('en'),
   ];
 
+  /// No description provided for @noSearchHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No search history'**
+  String get noSearchHistory;
+
+  /// No description provided for @recentSearches.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Searches'**
+  String get recentSearches;
+
+  /// No description provided for @clearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All'**
+  String get clearAll;
+
+  /// No description provided for @searchPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for services, providers, or products'**
+  String get searchPrompt;
+
+  /// No description provided for @noResultsForQuery.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found for \"{query}\"'**
+  String noResultsForQuery(Object query);
+
   /// No description provided for @productFreeDelivery.
   ///
   /// In en, this message translates to:

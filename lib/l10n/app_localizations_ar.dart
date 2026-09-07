@@ -9,6 +9,23 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
+  String get noSearchHistory => 'لا يوجد سجل بحث';
+
+  @override
+  String get recentSearches => 'عمليات البحث الأخيرة';
+
+  @override
+  String get clearAll => 'مسح الكل';
+
+  @override
+  String get searchPrompt => 'ابحث عن الخدمات أو مقدمي الخدمة أو المنتجات';
+
+  @override
+  String noResultsForQuery(Object query) {
+    return 'لم يتم العثور على نتائج لـ \"$query\"';
+  }
+
+  @override
   String get productFreeDelivery => 'Free delivery';
 
   @override

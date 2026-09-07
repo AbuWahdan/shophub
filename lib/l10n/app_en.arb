@@ -1,5 +1,10 @@
 {
 
+  "noSearchHistory": "No search history",
+  "recentSearches": "Recent Searches",
+  "clearAll": "Clear All",
+  "searchPrompt": "Search for services, providers, or products",
+  "noResultsForQuery": "No results found for \"{query}\"",
   "productFreeDelivery": "Free delivery",
   "actionRetry": "Retry",
   "productNoReviews": "No reviews yet",

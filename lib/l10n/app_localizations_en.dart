@@ -9,6 +9,23 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get noSearchHistory => 'No search history';
+
+  @override
+  String get recentSearches => 'Recent Searches';
+
+  @override
+  String get clearAll => 'Clear All';
+
+  @override
+  String get searchPrompt => 'Search for services, providers, or products';
+
+  @override
+  String noResultsForQuery(Object query) {
+    return 'No results found for \"$query\"';
+  }
+
+  @override
   String get productFreeDelivery => 'Free delivery';
 
   @override

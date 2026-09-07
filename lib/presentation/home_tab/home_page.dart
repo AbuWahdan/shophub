@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sinwar_shoping/presentation/home_tab/search_screen/search_screen.dart';
 
 import '../../../data/categories_data.dart';
 import '../../models/product/product_model.dart';
@@ -93,7 +94,6 @@ class _MyHomePageState extends State<MyHomePage> {
       if (!mounted) return;
       setState(() {
         _tabStates[tabKey] = _TabState(
-          // Keep stale data visible if we already had some.
           products: existing?.products ?? const [],
           isLoaded: existing?.isLoaded ?? false,
           isLoading: false,
@@ -123,6 +123,24 @@ class _MyHomePageState extends State<MyHomePage> {
     _loadTab();
   }
 
+  // ── Navigation ────────────────────────────────────────────────────────────
+
+  /// Navigates to the [SearchScreen].
+  ///
+  /// The search bar widget is read-only / tappable on the Home screen —
+  /// actual typing happens on the dedicated SearchScreen.
+  void _openSearchScreen() {
+    // TODO: Replace 'guest' with the real username from your session/auth service.
+    const username = 'guest';
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SearchScreen(username: username),
+      ),
+    );
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
@@ -132,18 +150,23 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return Column(
       children: [
-        _SearchRow(
-          controller: _searchController,
-          hasSearchText: _hasSearchText,
-          onChanged: (value) =>
-              setState(() => _hasSearchText = value.trim().isNotEmpty),
-          onClear: () {
-            _searchController.clear();
-            setState(() => _hasSearchText = false);
-          },
-          onCameraTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CameraPickerScreen()),
+        // Tapping the search bar navigates to the full search screen.
+        GestureDetector(
+          onTap: _openSearchScreen,
+          // AbsorbPointer prevents the TextField inside CustomSearchBar
+          // from receiving focus — it acts only as a visual trigger.
+          child: AbsorbPointer(
+            child: _SearchRow(
+              controller: _searchController,
+              hasSearchText: _hasSearchText,
+              onChanged: (_) {},
+              onClear: () {},
+              onCameraTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const CameraPickerScreen()),
+              ),
+            ),
           ),
         ),
         _CategoryTabBar(
@@ -160,7 +183,7 @@ class _MyHomePageState extends State<MyHomePage> {
             onPageChanged: _onPageChanged,
             itemBuilder: (_, __) => _ProductTabContent(
               tabState: _currentTab,
-              products: _currentTab.products, // Fixed: Pass products directly without client-side text filtering
+              products: _currentTab.products,
               onRefresh: () => _loadTab(forceRefresh: true),
             ),
           ),

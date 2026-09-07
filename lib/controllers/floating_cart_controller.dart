@@ -55,7 +55,7 @@ class FloatingCartController extends GetxController {
     //     (sum, item) => sum + item.bookedQty,
     //   );
     // } catch (e) {
-    //   // Silent fail for UI - cart icon just shows 0
+    //   // Silent fail for UI - cart icons just shows 0
     //   cartCount.value = 0;
     // }
   }

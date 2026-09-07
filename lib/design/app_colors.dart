@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 abstract final class AppColors {
   // ── Brand ──────────────────────────────────────────────────────────────────
-  static const Color primary = Color(0xFF2B3EFF);
-  static const Color primaryLight = Color(0xFF697AFF);
+  static const Color primary = Color(0xFF4E54C8);
+  static const Color primaryLight = Color(0xFF8F94FB);
   static const Color primaryDark = Color(0xFF0018CC);
   static const Color onPrimary = Colors.white;
   static const Color secondary = Color(0xFF4ECDC4);
@@ -69,17 +69,17 @@ abstract final class AppColors {
   static const Color neutral600 = Color(0xFF65718A);
 
   // ── Light-theme surface tokens ─────────────────────────────────────────────
-  static const Color background = Color(0xFFF8F9FE);
+  static const Color background = Color(0xFFE9ECEF);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color surfaceVariant = Color(0xFFF0F2FF);
   static const Color textPrimary = Color(0xFF1A1D26);
   static const Color textSecondary = Color(0xFF6B7280);
   static const Color textHint = Color(0xFFB0B7C3);
-  static const Color border = Color(0xFFE8ECF4);
+  static const Color border = Color(0xFFDFE6F0);
   static const Color divider = Color(0xFFF0F2F5);
 
   /// Colored shadow tinted with [primary] for elevated cards.
-  static const Color shadowPrimary = Color(0x1A2B3EFF);
+  static const Color shadowPrimary = Color(0x1A4E54C8);
 
   // ── Dark-theme surface tokens ──────────────────────────────────────────────
   static const Color backgroundDark = Color(0xFF10111A);
@@ -95,7 +95,7 @@ abstract final class AppColors {
 
   // ── Payment-card gradients ─────────────────────────────────────────────────
   static const Color cardVisaStart = Color(0xFF0B1F66);
-  static const Color cardVisaEnd = Color(0xFF2B3EFF);
+  static const Color cardVisaEnd = Color(0xFF4E54C8);
   static const Color cardMastercardStart = Color(0xFFB42318);
   static const Color cardMastercardEnd = Color(0xFFFF6B35);
   static const Color cardDefaultStart = Color(0xFF1A1D26);
